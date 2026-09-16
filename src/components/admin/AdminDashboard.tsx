@@ -18,7 +18,7 @@ export const AdminDashboard: React.FC = () => {
     storeSettings,
   } = useShop();
 
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'settings' | 'pos' | 'logs' | 'reports'>('pos');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'settings' | 'pos' | 'logs' | 'reports'>('products');
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
   // Dynamic Metrics Calculation
@@ -46,14 +46,10 @@ export const AdminDashboard: React.FC = () => {
           setActiveTab('reports');
           sessionStorage.removeItem('huda_target_tab');
         } else if (
-          targetTab === 'products' ||
-          params.get('tab') === 'products' ||
-          params.get('tab') === 'stock' ||
-          params.get('tab') === 'inventory' ||
-          params.get('products') === 'true'
+          params.get('tab') === 'pos' ||
+          params.get('tab') === 'cashier'
         ) {
-          setActiveTab('products');
-          sessionStorage.removeItem('huda_target_tab');
+          setActiveTab('pos');
         } else if (
           params.get('tab') === 'orders'
         ) {
@@ -62,6 +58,8 @@ export const AdminDashboard: React.FC = () => {
           params.get('tab') === 'settings'
         ) {
           setActiveTab('settings');
+        } else {
+          setActiveTab('products');
         }
       };
 
