@@ -1,7 +1,85 @@
 import { Product, Coupon, ProductReview } from '../types';
 
-// Production Clean Slate: Starts with 0 Products so the store owner can add real inventory
-export const INITIAL_PRODUCTS: Product[] = [];
+export const INITIAL_PRODUCTS: Product[] = [
+  {
+    id: 'huda-prod-abaya-01',
+    title: 'ชุดอาบายะห์ดูไบ ปักลูกปัดเลื่อมทองคำ Royal Gold Abaya',
+    arabicTitle: 'عباية دبي الملكية المطرزة بالذهب',
+    category: 'abaya',
+    description: 'ชุดอาบายะห์นำเข้าจากดูไบ UAE ตัดเย็บจากผ้า Nida Silk Premium แท้ นุ่มลื่น เบาสบาย ไม่ร้อน ตกแต่งด้วยงานปักลูกปัดสีทองอร่ามสไตล์ราชวงศ์ดูไบ มาพร้อมผ้าคลุมชีฟองเข้าชุด (Hijab)',
+    fabric: 'Nida Silk Dubai Original',
+    origin: 'เมืองดูไบ, UAE',
+    images: ['https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop'],
+    colors: ['สีดำ (Black)', 'สีทอง (Gold)'],
+    variants: [
+      { id: 'var-aby-52', name: 'Size 52 (ส่วนสูง ~150-155 ซม.)', sku: 'HD-ABY-52', price: 2990, costPrice: 1490, stockQuantity: 8, color: 'สีดำ (Black)' },
+      { id: 'var-aby-54', name: 'Size 54 (ส่วนสูง ~155-160 ซม.)', sku: 'HD-ABY-54', price: 2990, costPrice: 1490, stockQuantity: 12, color: 'สีดำ (Black)' },
+      { id: 'var-aby-56', name: 'Size 56 (ส่วนสูง ~160-165 ซม.)', sku: 'HD-ABY-56', price: 2990, costPrice: 1490, stockQuantity: 6, color: 'สีดำ (Black)' },
+      { id: 'var-aby-58', name: 'Size 58 (ส่วนสูง ~165-170 ซม.)', sku: 'HD-ABY-58', price: 3190, costPrice: 1590, stockQuantity: 4, color: 'สีดำ (Black)' },
+    ],
+    rating: 5.0,
+    reviewsCount: 18,
+    isNew: true,
+    updatedAt: Date.now(),
+  },
+  {
+    id: 'huda-prod-kaftan-01',
+    title: 'ชุดคัฟทานดูไบ เจ้าหญิงดูไบ Dubai Princess Silk Kaftan',
+    arabicTitle: 'กัฟตาน อัลอามีระฮ์ ดูไบ',
+    category: 'kaftan',
+    description: 'ชุดคัฟทานสุดหรูดีไซน์สไตล์เจ้าหญิงดูไบ งานผ้าซาตินพรีเมียมตกแต่งคริสตัลสีทองระยิบระยับ สวมใส่ง่าย สง่างามสะกดทุกสายตา',
+    fabric: 'Silk Satin & Dubai Crystal',
+    origin: 'เมืองดูไบ, UAE',
+    images: ['https://images.unsplash.com/photo-1563178406-4cdc2923acbc?q=80&w=1000&auto=format&fit=crop'],
+    colors: ['สีทองราชวงศ์ (Royal Gold)'],
+    variants: [
+      { id: 'var-kaf-free', name: 'Free Size (ขนาดมาตรฐานอก 36"-44")', sku: 'HD-KAF-FREE', price: 3490, costPrice: 1750, stockQuantity: 10, color: 'สีทองราชวงศ์ (Royal Gold)' },
+    ],
+    rating: 4.9,
+    reviewsCount: 12,
+    isNew: true,
+    updatedAt: Date.now(),
+  },
+  {
+    id: 'huda-prod-perfume-01',
+    title: 'น้ำหอมดูไบ Royal Oud Amber Dubai 100ml',
+    arabicTitle: 'عطر عود العنبر الملكي دبي',
+    category: 'perfume',
+    description: 'น้ำหอมดูไบแท้เกรดพรีเมียม กลิ่นไม้หอมอูดผสมอัมเบอร์ทองคำ กลิ่นหอมหรูหรา มีเสน่ห์ ติดทนนาน 24 ชั่วโมง',
+    fabric: 'Pure Oud & Amber Dubai',
+    origin: 'เมืองดูไบ, UAE',
+    images: ['https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop'],
+    colors: ['กลิ่นอัมเบอร์ทอง (Royal Amber)'],
+    variants: [
+      { id: 'var-prf-50', name: 'ขวดสเปรย์ 50 ml (EDP Spray)', sku: 'HD-PRF-50ML', price: 1590, costPrice: 790, stockQuantity: 15, color: 'กลิ่นอัมเบอร์ทอง (Royal Amber)' },
+      { id: 'var-prf-100', name: 'ขวดสเปรย์ 100 ml (EDP Premium Spray)', sku: 'HD-PRF-100ML', price: 2490, costPrice: 1190, stockQuantity: 10, color: 'กลิ่นอัมเบอร์ทอง (Royal Amber)' },
+      { id: 'var-prf-12', name: 'Attar Pure Oil 12 ml (หัวน้ำหอมบริสุทธิ์)', sku: 'HD-PRF-12ML', price: 1290, costPrice: 590, stockQuantity: 20, color: 'กลิ่นอัมเบอร์ทอง (Royal Amber)' },
+    ],
+    rating: 5.0,
+    reviewsCount: 25,
+    isNew: true,
+    updatedAt: Date.now(),
+  },
+  {
+    id: 'huda-prod-incense-01',
+    title: 'เครื่องหอมไม้หอมดูไบ Bukhoor Royal Wood & Incense Set',
+    arabicTitle: 'بخور دبي الملكي مع المبخرة',
+    category: 'incense',
+    description: 'เซ็ตไม้หอมดูไบบูคูร์ ปรุงด้วยน้ำมันหอมธรรมชาติจากอาระเบีย มาพร้อมเตาเผาหอมสีทองทรงพระราชวัง เพิ่มความหอมสดชื่นสร้างบรรยากาศหรูหราภายในบ้าน',
+    fabric: 'Bukhoor Wood & Arabian Perfume Oils',
+    origin: 'เมืองดูไบ, UAE',
+    images: ['https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?q=80&w=1000&auto=format&fit=crop'],
+    colors: ['กลิ่นไม้หอมดูไบออริจินัล'],
+    variants: [
+      { id: 'var-inc-50g', name: 'กระปุกไม้หอม 50g (Standard Bukhoor)', sku: 'HD-INC-50G', price: 890, costPrice: 390, stockQuantity: 15, color: 'กลิ่นไม้หอมดูไบออริจินัล' },
+      { id: 'var-inc-set', name: 'เซ็ตเตาเผาหอมสีทอง + ถ่านหอมดูไบ', sku: 'HD-INC-SET', price: 1890, costPrice: 890, stockQuantity: 8, color: 'กลิ่นไม้หอมดูไบออริจินัล' },
+    ],
+    rating: 4.9,
+    reviewsCount: 14,
+    isNew: true,
+    updatedAt: Date.now(),
+  },
+];
 
 export const INITIAL_COUPONS: Coupon[] = [
   {
