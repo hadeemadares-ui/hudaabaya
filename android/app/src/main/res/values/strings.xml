@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">HUDA ABAYA DUBAI</string>
+    <string name="title_activity_main">HUDA ABAYA DUBAI</string>
+    <string name="package_name">com.hudaabaya.app</string>
+    <string name="custom_url_scheme">com.hudaabaya.app</string>
+</resources>

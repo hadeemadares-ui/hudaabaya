@@ -1,0 +1,19 @@
+{
+  "appId": "com.hudaabaya.app",
+  "appName": "HUDA ABAYA DUBAI",
+  "webDir": "out",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://hudaabaya.vercel.app",
+    "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
+      "backgroundColor": "#0B0C10",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP"
+    }
+  }
+}
