@@ -232,18 +232,6 @@ export const AdminDashboard: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab('reports')}
-            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md ${
-              activeTab === 'reports'
-                ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-dubai-black font-extrabold shadow-gold-glow scale-102 border-2 border-emerald-300'
-                : 'bg-emerald-950/80 text-emerald-300 hover:text-white border-2 border-emerald-500/60 shadow-md'
-            }`}
-          >
-            <TrendingUp className="w-4.5 h-4.5 text-emerald-400" />
-            <span>📊 รายงานยอดขาย & กำไร</span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('pos')}
             className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md ${
               activeTab === 'pos'
@@ -252,7 +240,19 @@ export const AdminDashboard: React.FC = () => {
             }`}
           >
             <Store className="w-4.5 h-4.5 text-gold-400" />
-            <span>🛒 คิดเงินหน้าร้าน (POS)</span>
+            <span>🛒 คิดเงินหน้าร้าน (POS Cashier)</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('reports')}
+            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md ${
+              activeTab === 'reports'
+                ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-dubai-black font-extrabold shadow-gold-glow scale-102 border-2 border-emerald-300'
+                : 'bg-emerald-950/80 text-emerald-300 hover:text-white border-2 border-emerald-500/60 shadow-md'
+            }`}
+          >
+            <TrendingUp className="w-4.5 h-4.5 text-emerald-400" />
+            <span>📊 เปิดรายงานยอดขาย & กำไรสุทธิ</span>
           </button>
 
           <button
