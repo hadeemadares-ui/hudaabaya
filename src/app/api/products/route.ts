@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { Product } from '../../../types';
+import { INITIAL_PRODUCTS } from '../../../data/mockProducts';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-let globalProductsStoreMap = new Map<string, Product>();
+let globalProductsStoreMap = new Map<string, Product>(
+  INITIAL_PRODUCTS.map((p) => [p.id, p])
+);
 let globalDeletedProductIds = new Set<string>();
 
 const noCacheHeaders = {

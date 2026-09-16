@@ -273,8 +273,12 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 parsedProds.forEach((p) => mergedMap.set(p.id, p));
                 return Array.from(mergedMap.values());
               });
+            } else if (Array.isArray(parsedProds) && parsedProds.length === 0) {
+              localStorage.removeItem('huda_products');
             }
-          } catch (e) {}
+          } catch (e) {
+            localStorage.removeItem('huda_products');
+          }
         }
 
         const savedLogo = localStorage.getItem('huda_saved_logo_image') || '';
