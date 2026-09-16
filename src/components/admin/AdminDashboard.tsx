@@ -109,7 +109,16 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <button
+              onClick={() => setActiveTab('reports')}
+              className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-gold-glow cursor-pointer border border-emerald-400/40"
+              title="เปิดดูรายงานวิเคราะห์ต้นทุน กำไรสุทธิ และสรุปคลังสินค้า"
+            >
+              <TrendingUp className="w-4 h-4 text-emerald-300" />
+              <span>📊 ดูรายงานต้นทุน & กำไร</span>
+            </button>
+
             <button
               onClick={() => {
                 if (confirm('คุณต้องการล้างแคชเบราว์เซอร์เครื่องนี้และรีโหลดเวอร์ชันใหม่ล่าสุด 100% ใช่หรือไม่?')) {

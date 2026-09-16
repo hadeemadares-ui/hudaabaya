@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Plus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CategoryType } from '../../types';
 
@@ -268,7 +268,20 @@ export const AdminProductManager: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+          <button
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('switch_admin_tab_reports'));
+              }
+            }}
+            className="px-3.5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 border border-emerald-400/50 hover:border-emerald-300 text-white font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+            title="เปิดดูสรุปต้นทุนสินค้า และกำไรคาดการณ์ในคลัง"
+          >
+            <TrendingUp className="w-4 h-4 text-emerald-300" />
+            <span>📊 ดูสรุปต้นทุน & กำไรคลัง</span>
+          </button>
+
           <button
             onClick={handleForceSync}
             className="px-3.5 py-2.5 bg-dubai-card border border-gold-400/40 hover:border-gold-400 text-gold-300 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm"
