@@ -179,7 +179,9 @@ export const AdminProductManager: React.FC = () => {
       alert(`อัปเดตข้อมูลสินค้า "${title}" เรียบร้อยแล้ว!`);
     } else {
       addProduct(newProductObj);
-      alert(`เพิ่มสินค้าใหม่ "${title}" เข้าสู่ระบบและแสดงผลหน้าร้านเรียบร้อยแล้ว!`);
+      setSelectedCategory('all');
+      setAdminSearch('');
+      alert(`เพิ่มสินค้าใหม่ "${title}" เข้าสู่ระบบเรียบร้อยแล้ว! แสดงผลหน้าร้านทันที`);
     }
 
     setIsAddModalOpen(false);
