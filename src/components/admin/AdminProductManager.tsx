@@ -31,30 +31,30 @@ export const AdminProductManager: React.FC = () => {
 
   // Standard Dubai Abaya Default Sizes
   const DEFAULT_DUBAI_SIZES = [
-    { name: 'Size 52 (ส่วนสูง ~150-155 ซม. / ยาว 52")', sku: 'HD-ABY-52', price: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
-    { name: 'Size 54 (ส่วนสูง ~155-160 ซม. / ยาว 54")', sku: 'HD-ABY-54', price: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
-    { name: 'Size 56 (ส่วนสูง ~160-165 ซม. / ยาว 56")', sku: 'HD-ABY-56', price: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
-    { name: 'Size 58 (ส่วนสูง ~165-170 ซม. / ยาว 58")', sku: 'HD-ABY-58', price: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
+    { name: 'Size 52 (ส่วนสูง ~150-155 ซม. / ยาว 52")', sku: 'HD-ABY-52', price: 0, costPrice: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
+    { name: 'Size 54 (ส่วนสูง ~155-160 ซม. / ยาว 54")', sku: 'HD-ABY-54', price: 0, costPrice: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
+    { name: 'Size 56 (ส่วนสูง ~160-165 ซม. / ยาว 56")', sku: 'HD-ABY-56', price: 0, costPrice: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
+    { name: 'Size 58 (ส่วนสูง ~165-170 ซม. / ยาว 58")', sku: 'HD-ABY-58', price: 0, costPrice: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
   ];
 
   // Standard Dubai Perfume Default Volumes/Sizes
   const DEFAULT_PERFUME_SIZES = [
-    { name: 'ขวดสเปรย์ 50 ml (EDP Spray)', sku: 'HD-PRF-50ML', price: 0, stockQuantity: 0, color: 'กลิ่นดูไบออริจินัล' },
-    { name: 'ขวดสเปรย์ 100 ml (EDP Premium Spray)', sku: 'HD-PRF-100ML', price: 0, stockQuantity: 0, color: 'กลิ่นดูไบออริจินัล' },
-    { name: 'ขวดแก้วคริสตัล 12 ml (Attar Pure Oil)', sku: 'HD-PRF-12ML', price: 0, stockQuantity: 0, color: 'กลิ่นดูไบออริจินัล' },
+    { name: 'ขวดสเปรย์ 50 ml (EDP Spray)', sku: 'HD-PRF-50ML', price: 0, costPrice: 0, stockQuantity: 0, color: 'กลิ่นดูไบออริจินัล' },
+    { name: 'ขวดสเปรย์ 100 ml (EDP Premium Spray)', sku: 'HD-PRF-100ML', price: 0, costPrice: 0, stockQuantity: 0, color: 'กลิ่นดูไบออริจินัล' },
+    { name: 'ขวดแก้วคริสตัล 12 ml (Attar Pure Oil)', sku: 'HD-PRF-12ML', price: 0, costPrice: 0, stockQuantity: 0, color: 'กลิ่นดูไบออริจินัล' },
   ];
 
   // Standard Dubai Incense Default Variants
   const DEFAULT_INCENSE_SIZES = [
-    { name: 'ขวด/กระปุก 50g (Standard Bukhoor)', sku: 'HD-INC-50G', price: 0, stockQuantity: 0, color: 'ไม้หอมอูดออริจินัล' },
-    { name: 'ขวด/กระปุก 100g (Premium Bukhoor)', sku: 'HD-INC-100G', price: 0, stockQuantity: 0, color: 'ไม้หอมอูดออริจินัล' },
-    { name: 'เซ็ตเตาเผาหอม + ถ่านหอมดูไบ', sku: 'HD-INC-SET', price: 0, stockQuantity: 0, color: 'สีทอง (Royal Gold)' },
+    { name: 'ขวด/กระปุก 50g (Standard Bukhoor)', sku: 'HD-INC-50G', price: 0, costPrice: 0, stockQuantity: 0, color: 'ไม้หอมอูดออริจินัล' },
+    { name: 'ขวด/กระปุก 100g (Premium Bukhoor)', sku: 'HD-INC-100G', price: 0, costPrice: 0, stockQuantity: 0, color: 'ไม้หอมอูดออริจินัล' },
+    { name: 'เซ็ตเตาเผาหอม + ถ่านหอมดูไบ', sku: 'HD-INC-SET', price: 0, costPrice: 0, stockQuantity: 0, color: 'สีทอง (Royal Gold)' },
   ];
 
   // Standard Other Items Default Variants
   const DEFAULT_OTHER_SIZES = [
-    { name: 'ชิ้น/กล่อง (Standard)', sku: 'HD-OTH-STD', price: 0, stockQuantity: 0, color: 'มาตรฐาน' },
-    { name: 'แพ็กสุดคุ้ม (Pack)', sku: 'HD-OTH-PACK', price: 0, stockQuantity: 0, color: 'มาตรฐาน' },
+    { name: 'ชิ้น/กล่อง (Standard)', sku: 'HD-OTH-STD', price: 0, costPrice: 0, stockQuantity: 0, color: 'มาตรฐาน' },
+    { name: 'แพ็กสุดคุ้ม (Pack)', sku: 'HD-OTH-PACK', price: 0, costPrice: 0, stockQuantity: 0, color: 'มาตรฐาน' },
   ];
 
   // Size & Color Variants State
@@ -207,6 +207,7 @@ export const AdminProductManager: React.FC = () => {
         name: sizeName,
         sku: skuCode,
         price: 0,
+        costPrice: 0,
         stockQuantity: 0,
         color: category === 'perfume' ? 'กลิ่นดูไบออริจินัล' : category === 'incense' ? 'ไม้หอมอูดออริจินัล' : category === 'other' ? 'มาตรฐาน' : 'สีดำ (Black)',
       },
@@ -220,6 +221,7 @@ export const AdminProductManager: React.FC = () => {
         name: category === 'perfume' ? 'ขวดสเปรย์ 50 ml' : category === 'incense' ? 'กระปุก 50g' : category === 'other' ? 'ชิ้น/กล่อง (Standard)' : 'Size 52 (ส่วนสูง ~150-155 ซม.)', 
         sku: `SKU-${variants.length + 1}`, 
         price: 0, 
+        costPrice: 0,
         stockQuantity: 0, 
         color: category === 'perfume' ? 'กลิ่นดูไบออริจินัล' : category === 'incense' ? 'ไม้หอมอูดออริจินัล' : category === 'other' ? 'มาตรฐาน' : 'สีดำ (Black)' 
       },
@@ -675,14 +677,38 @@ export const AdminProductManager: React.FC = () => {
                     ))}
                   </div>
 
+                  {/* Explicit Owner Cost Notice Banner */}
+                  <div className="bg-amber-950/80 border-2 border-amber-500/80 rounded-xl p-3 text-xs text-amber-200 shadow-md space-y-1">
+                    <div className="font-extrabold text-amber-300 text-xs sm:text-sm flex items-center gap-1.5">
+                      <span>🟧 คำแนะนำสำหรับเจ้าของร้าน: กรอกราคาต้นทุนสินค้า</span>
+                    </div>
+                    <p className="text-[11px] text-amber-200/90 leading-relaxed">
+                      โปรดกรอกราคาต้นทุนสินค้าจริงในช่อง <strong>[ 🟧 ต้นทุน (บาท) ]</strong> สีส้มสดของแต่ละไซส์ด้านล่างได้เลยครับ ระบบจะนำราคาต้นทุนนี้ไปคำนวณกำไรสุทธิให้อัตโนมัติในหน้ารายงานยอดขาย
+                    </p>
+                  </div>
+
                   <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1 no-scrollbar">
                     {variants.map((v, idx) => (
-                      <div key={idx} className="bg-dubai-black p-3.5 rounded-xl border border-gold-400/40 shadow-md space-y-2">
-                        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
+                      <div key={idx} className="bg-dubai-black p-3.5 rounded-xl border-2 border-gold-400/40 shadow-md space-y-2.5">
+                        <div className="flex items-center justify-between border-b border-gold-400/20 pb-1.5">
+                          <span className="text-[11px] font-bold text-gold-300 font-serif">
+                            รายการที่ {idx + 1}: {v.name || 'ไซส์/รายการใหม่'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveVariantField(idx)}
+                            className="px-2.5 py-1 text-red-300 hover:text-white bg-red-950/80 hover:bg-red-900 border border-red-700/50 rounded-lg text-[10px] font-bold transition flex items-center gap-1"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>ลบรายการนี้</span>
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
                           
                           {/* Color / Scent Choice Field */}
-                          <div className="col-span-2 sm:w-36">
-                            <label className="text-[10px] text-amber-400 font-bold block mb-0.5">
+                          <div className="sm:col-span-3">
+                            <label className="text-[10px] text-amber-400 font-bold block mb-1">
                               {category === 'perfume' ? '💧 ตัวเลือกกลิ่น / สี' : '🎨 สีสินค้า (Color)'}
                             </label>
                             <input
@@ -699,8 +725,8 @@ export const AdminProductManager: React.FC = () => {
                           </div>
 
                           {/* Size / Volume Name Field */}
-                          <div className="col-span-2 sm:flex-1">
-                            <label className="text-[10px] text-gray-400 block mb-0.5 font-bold">
+                          <div className="sm:col-span-3">
+                            <label className="text-[10px] text-gray-300 block mb-1 font-bold">
                               {category === 'perfume' ? 'ขนาดปริมาณ (ml / ขวด)' : 'ชื่อไซส์ / ความยาว'}
                             </label>
                             <input
@@ -716,74 +742,65 @@ export const AdminProductManager: React.FC = () => {
                             />
                           </div>
 
-                          {/* Price Field */}
-                          <div className="col-span-1 sm:w-28">
-                            <label className="text-[10px] text-gold-400 block mb-0.5 font-extrabold flex items-center gap-0.5">
-                              <span>💰 ราคาขาย (บาท)</span>
-                            </label>
-                            <input
-                              type="number"
-                              placeholder="0"
-                              value={v.price}
-                              onChange={(e) => {
-                                const updated = [...variants];
-                                const newPrice = Number(e.target.value);
-                                updated[idx].price = newPrice;
-                                if (updated[idx].costPrice === undefined || updated[idx].costPrice === 0) {
-                                  updated[idx].costPrice = Math.round(newPrice * 0.5);
-                                }
-                                setVariants(updated);
-                              }}
-                              className="w-full bg-dubai-dark border-2 border-gold-400/50 rounded p-2 text-gold-300 font-extrabold font-mono text-xs sm:text-sm text-right"
-                            />
-                          </div>
+                          {/* 3 Numeric Inputs Grid (Price, Cost Price, Stock) */}
+                          <div className="sm:col-span-6 grid grid-cols-3 gap-2">
+                            {/* Price Field */}
+                            <div>
+                              <label className="text-[10px] text-gold-400 block mb-1 font-extrabold truncate">
+                                💰 ราคาขาย
+                              </label>
+                              <input
+                                type="number"
+                                placeholder="0"
+                                value={v.price}
+                                onChange={(e) => {
+                                  const updated = [...variants];
+                                  const newPrice = Number(e.target.value);
+                                  updated[idx].price = newPrice;
+                                  if (updated[idx].costPrice === undefined || updated[idx].costPrice === 0) {
+                                    updated[idx].costPrice = Math.round(newPrice * 0.5);
+                                  }
+                                  setVariants(updated);
+                                }}
+                                className="w-full bg-dubai-dark border-2 border-gold-400/60 rounded p-1.5 text-gold-300 font-extrabold font-mono text-xs sm:text-sm text-right"
+                              />
+                            </div>
 
-                          {/* Cost Price Field - High Visibility Orange Badge */}
-                          <div className="col-span-1 sm:w-28">
-                            <label className="text-[10px] text-amber-300 block mb-0.5 font-extrabold bg-amber-950/90 border border-amber-500/60 px-1 py-0.5 rounded text-center">
-                              <span>🟧 ต้นทุน (บาท)</span>
-                            </label>
-                            <input
-                              type="number"
-                              placeholder="0"
-                              value={v.costPrice ?? Math.round(v.price * 0.5)}
-                              onChange={(e) => {
-                                const updated = [...variants];
-                                updated[idx].costPrice = Number(e.target.value);
-                                setVariants(updated);
-                              }}
-                              className="w-full bg-amber-950/40 border-2 border-amber-500/80 rounded p-2 text-amber-300 font-extrabold font-mono text-xs sm:text-sm text-right shadow-inner"
-                            />
-                          </div>
+                            {/* Cost Price Field - High Visibility Orange Badge Box */}
+                            <div className="bg-amber-950/80 p-1 rounded-lg border-2 border-amber-500 shadow-md">
+                              <label className="text-[10px] text-amber-300 block mb-0.5 font-extrabold text-center bg-amber-500/20 rounded py-0.5 border border-amber-500/40 truncate">
+                                🟧 ต้นทุน (บาท)
+                              </label>
+                              <input
+                                type="number"
+                                placeholder="0"
+                                value={v.costPrice ?? (v.price ? Math.round(v.price * 0.5) : 0)}
+                                onChange={(e) => {
+                                  const updated = [...variants];
+                                  updated[idx].costPrice = Number(e.target.value);
+                                  setVariants(updated);
+                                }}
+                                className="w-full bg-amber-950 border-2 border-amber-400 rounded p-1.5 text-amber-200 font-extrabold font-mono text-xs sm:text-sm text-right shadow-inner focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                              />
+                            </div>
 
-                          {/* Stock Field */}
-                          <div className="col-span-1 sm:w-28">
-                            <label className="text-[10px] text-emerald-400 block mb-0.5 font-extrabold">
-                              <span>📦 จำนวนสต๊อก</span>
-                            </label>
-                            <input
-                              type="number"
-                              placeholder="0"
-                              value={v.stockQuantity}
-                              onChange={(e) => {
-                                const updated = [...variants];
-                                updated[idx].stockQuantity = Number(e.target.value);
-                                setVariants(updated);
-                              }}
-                              className="w-full bg-dubai-dark border-2 border-emerald-500/50 rounded p-2 text-emerald-300 font-extrabold font-mono text-xs sm:text-sm text-right"
-                            />
-                          </div>
-
-                          {/* Delete Button */}
-                          <div className="col-span-1 sm:w-auto flex items-end justify-end">
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveVariantField(idx)}
-                              className="p-2 text-red-400 hover:text-white bg-red-950/60 hover:bg-red-900 border border-red-700/50 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 w-full sm:w-auto"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              <span className="sm:hidden">ลบ</span>
-                            </button>
+                            {/* Stock Field */}
+                            <div>
+                              <label className="text-[10px] text-emerald-400 block mb-1 font-extrabold truncate">
+                                📦 สต๊อก (ชิ้น)
+                              </label>
+                              <input
+                                type="number"
+                                placeholder="0"
+                                value={v.stockQuantity}
+                                onChange={(e) => {
+                                  const updated = [...variants];
+                                  updated[idx].stockQuantity = Number(e.target.value);
+                                  setVariants(updated);
+                                }}
+                                className="w-full bg-dubai-dark border-2 border-emerald-500/60 rounded p-1.5 text-emerald-300 font-extrabold font-mono text-xs sm:text-sm text-right"
+                              />
+                            </div>
                           </div>
 
                         </div>
