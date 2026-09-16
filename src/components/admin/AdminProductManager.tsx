@@ -397,10 +397,10 @@ export const AdminProductManager: React.FC = () => {
                         );
                         setIsAddModalOpen(true);
                       }}
-                      className="p-2 bg-dubai-black border border-gold-400/30 text-gold-300 hover:text-white rounded-lg text-xs flex items-center gap-1"
+                      className="px-3.5 py-2 bg-gradient-to-r from-amber-500 via-gold-400 to-amber-600 text-dubai-black font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-gold-glow hover:scale-105 transition cursor-pointer"
                     >
-                      <Edit2 className="w-3.5 h-3.5" />
-                      <span>แก้ไขข้อมูล</span>
+                      <Edit2 className="w-4 h-4 text-dubai-black" />
+                      <span>✏️ แก้ไขสินค้า & ใส่ต้นทุน</span>
                     </button>
                     
                     <button
@@ -409,9 +409,10 @@ export const AdminProductManager: React.FC = () => {
                           deleteProduct(product.id);
                         }
                       }}
-                      className="p-2 bg-red-950/60 border border-red-800/40 text-red-300 hover:text-red-100 rounded-lg text-xs flex items-center gap-1"
+                      className="p-2 bg-red-950/60 border border-red-800/40 text-red-300 hover:text-red-100 rounded-xl text-xs flex items-center gap-1 transition"
+                      title="ลบสินค้าชนิดนี้ออกจากระบบ"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4 text-red-400" />
                     </button>
                   </div>
                 </div>
@@ -419,13 +420,13 @@ export const AdminProductManager: React.FC = () => {
                 {/* Size / Volume & Color Variants Quick Stock Adjuster */}
                 <div>
                   <p className="text-xs font-serif font-bold text-gold-300 mb-2">
-                    {product.category === 'perfume' ? 'สต๊อกน้ำหอมแยกตามขนาด/ปริมาณ (ml):' : 'สต๊อกสินค้าแยกตามไซส์และสี (Size & Color Stock):'}
+                    {product.category === 'perfume' ? 'สต๊อกน้ำหอมแยกตามขนาด/ปริมาณ (ml):' : 'สต๊อกสินค้าและต้นทุนแยกตามไซส์ (Size, Cost & Stock):'}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                     {product.variants.map((variant) => (
                       <div
                         key={variant.id}
-                        className="p-2.5 bg-dubai-black rounded-lg border border-gold-400/20 flex items-center justify-between text-xs"
+                        className="p-2.5 bg-dubai-black rounded-xl border border-gold-400/30 flex items-center justify-between text-xs shadow-sm"
                       >
                         <div>
                           <span className="font-bold text-white block">{variant.name}</span>
@@ -434,9 +435,12 @@ export const AdminProductManager: React.FC = () => {
                               🎨 {variant.color}
                             </span>
                           )}
-                          <span className="text-[11px] font-serif text-gold-400">
-                            ฿{variant.price.toLocaleString()}
-                          </span>
+                          <div className="flex flex-wrap items-center gap-1 text-[10px] mt-1">
+                            <span className="font-bold text-gold-300">ขาย ฿{variant.price.toLocaleString()}</span>
+                            <span className="font-extrabold text-amber-300 bg-amber-950/90 px-1.5 py-0.2 rounded border border-amber-500/50">
+                              ทุน ฿{(variant.costPrice ?? Math.round(variant.price * 0.5)).toLocaleString()}
+                            </span>
+                          </div>
                         </div>
 
                         {/* Stock Plus/Minus Quick Counter */}
