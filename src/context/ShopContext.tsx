@@ -289,11 +289,15 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const validPass = storeSettings.adminPasscode || '1077';
         const isUrlAuth = urlPass === validPass || urlPass === '1077';
 
-        const savedAuth = sessionStorage.getItem('huda_admin_authenticated') === 'true' || isUrlAuth;
+        const savedAuth =
+          localStorage.getItem('huda_admin_authenticated') === 'true' ||
+          sessionStorage.getItem('huda_admin_authenticated') === 'true' ||
+          isUrlAuth;
 
         if (savedAuth) {
           setIsAdminAuthenticated(true);
           sessionStorage.setItem('huda_admin_authenticated', 'true');
+          localStorage.setItem('huda_admin_authenticated', 'true');
         }
 
         const isAdminQuery = params.get('admin') === 'true' || params.get('mode') === 'admin' || params.get('backoffice') === 'true' || isUrlAuth;
@@ -402,6 +406,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAdminMode(true);
       setIsAdminLoginModalOpen(false);
       sessionStorage.setItem('huda_admin_authenticated', 'true');
+      localStorage.setItem('huda_admin_authenticated', 'true');
       return true;
     }
     return false;
@@ -411,6 +416,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsAdminAuthenticated(false);
     setIsAdminMode(false);
     sessionStorage.removeItem('huda_admin_authenticated');
+    localStorage.removeItem('huda_admin_authenticated');
   };
 
   useEffect(() => {
