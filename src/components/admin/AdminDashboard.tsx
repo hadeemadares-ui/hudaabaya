@@ -134,26 +134,34 @@ export const AdminDashboard: React.FC = () => {
 
         {/* Dynamic Stats Metrics Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 bg-dubai-card border border-gold-400/30 rounded-xl space-y-1 shadow-md">
-            <div className="flex items-center justify-between text-xs text-gold-400">
+          <div
+            onClick={() => setActiveTab('reports')}
+            className="p-4 bg-dubai-card hover:bg-gold-500/10 border-2 border-gold-400/40 hover:border-gold-400 rounded-xl space-y-1 shadow-md cursor-pointer transition group"
+            title="กดที่นี่เพื่อเปิดดูรายงานยอดขาย ต้นทุน และกำไรสุทธิ"
+          >
+            <div className="flex items-center justify-between text-xs text-gold-400 font-bold">
               <span>ยอดขายสะสมสุทธิ</span>
-              <DollarSign className="w-4 h-4" />
+              <DollarSign className="w-4 h-4 text-gold-400 group-hover:scale-110 transition" />
             </div>
             <p className="text-xl sm:text-2xl font-serif font-extrabold text-gold-300">
               ฿{totalRevenue.toLocaleString()}
             </p>
-            <p className="text-[10px] text-gray-400">คำนวณจากออเดอร์ที่ชำระเงิน</p>
+            <p className="text-[10px] text-emerald-400 font-bold">👉 กดเพื่อดูรายงานต้นทุน & กำไร</p>
           </div>
 
-          <div className="p-4 bg-dubai-card border border-gold-400/30 rounded-xl space-y-1 shadow-md">
-            <div className="flex items-center justify-between text-xs text-gold-400">
+          <div
+            onClick={() => setActiveTab('reports')}
+            className="p-4 bg-dubai-card hover:bg-gold-500/10 border-2 border-gold-400/40 hover:border-gold-400 rounded-xl space-y-1 shadow-md cursor-pointer transition group"
+            title="กดที่นี่เพื่อเปิดดูรายงานยอดขาย ต้นทุน และกำไรสุทธิ"
+          >
+            <div className="flex items-center justify-between text-xs text-gold-400 font-bold">
               <span>คำสั่งซื้อทั้งหมด</span>
-              <ShoppingBag className="w-4 h-4" />
+              <ShoppingBag className="w-4 h-4 text-gold-400 group-hover:scale-110 transition" />
             </div>
             <p className="text-xl sm:text-2xl font-serif font-extrabold text-white">
               {totalOrdersCount} <span className="text-xs font-sans font-normal text-gray-400">รายการ</span>
             </p>
-            <p className="text-[10px] text-emerald-400 font-bold">อัปเดตเรียลไทม์ Firebase</p>
+            <p className="text-[10px] text-emerald-400 font-bold">👉 กดเพื่อดูตารางขายสินค้า</p>
           </div>
 
           <div className="p-4 bg-dubai-card border border-gold-400/30 rounded-xl space-y-1 shadow-md">
