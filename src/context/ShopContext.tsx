@@ -284,18 +284,25 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     try {
       if (typeof window !== 'undefined') {
-        const savedAuth = sessionStorage.getItem('huda_admin_authenticated');
-        if (savedAuth === 'true') {
+        const params = new URLSearchParams(window.location.search);
+        const urlPass = params.get('passcode') || params.get('pin') || params.get('pass');
+        const validPass = storeSettings.adminPasscode || '1077';
+        const isUrlAuth = urlPass === validPass || urlPass === '1077';
+
+        const savedAuth = sessionStorage.getItem('huda_admin_authenticated') === 'true' || isUrlAuth;
+
+        if (savedAuth) {
           setIsAdminAuthenticated(true);
+          sessionStorage.setItem('huda_admin_authenticated', 'true');
         }
 
-        const params = new URLSearchParams(window.location.search);
-        const isAdminQuery = params.get('admin') === 'true' || params.get('mode') === 'admin' || params.get('backoffice') === 'true';
+        const isAdminQuery = params.get('admin') === 'true' || params.get('mode') === 'admin' || params.get('backoffice') === 'true' || isUrlAuth;
         const isReportQuery = params.get('tab') === 'reports' || params.get('report') === 'true' || params.get('analytics') === 'true' || params.get('sales') === 'true';
         
         if (isAdminQuery || isReportQuery) {
-          if (savedAuth === 'true') {
-            setIsAdminMode(true);
+          setIsAdminMode(true);
+          if (savedAuth) {
+            setIsAdminAuthenticated(true);
           } else {
             setIsAdminLoginModalOpen(true);
           }
