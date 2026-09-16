@@ -6,10 +6,10 @@ import { useShop } from '../../context/ShopContext';
 import { Order, CartItem } from '../../types';
 
 export const AdminSalesReportManager: React.FC = () => {
-  const { orders } = useShop();
+  const { orders, products, createOrder } = useShop();
 
   // Filter Mode: 'today' | 'month' | 'year' | 'all' | 'custom'
-  const [filterMode, setFilterMode] = useState<'today' | 'month' | 'year' | 'all' | 'custom'>('month');
+  const [filterMode, setFilterMode] = useState<'today' | 'month' | 'year' | 'all' | 'custom'>('all');
   
   // Custom Date Range State (YYYY-MM-DD)
   const [startDate, setStartDate] = useState<string>(() => {
@@ -18,6 +18,64 @@ export const AdminSalesReportManager: React.FC = () => {
     return d.toISOString().slice(0, 10);
   });
   const [endDate, setEndDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+
+  // 1. Calculate Total Inventory Stock Valuation across all catalog products
+  let totalStockPieces = 0;
+  let totalStockSellingValue = 0;
+  let totalStockCostValue = 0;
+
+  products.forEach((p) => {
+    p.variants.forEach((v) => {
+      totalStockPieces += v.stockQuantity;
+      totalStockSellingValue += v.price * v.stockQuantity;
+      const cost = v.costPrice !== undefined && v.costPrice > 0 ? v.costPrice : Math.round(v.price * 0.5);
+      totalStockCostValue += cost * v.stockQuantity;
+    });
+  });
+  const totalStockExpectedProfit = totalStockSellingValue - totalStockCostValue;
+
+  // 2. Helper to create a sample test order to demonstrate report calculation instantly
+  const handleCreateSampleOrder = () => {
+    if (!products || products.length === 0) {
+      alert('ไม่มีรายการสินค้าในระบบเพื่อทำออเดอร์ทดลองครับ');
+      return;
+    }
+    const sampleProd = products[0];
+    const sampleVar = sampleProd.variants[0];
+    const cost = sampleVar.costPrice !== undefined && sampleVar.costPrice > 0 ? sampleVar.costPrice : Math.round(sampleVar.price * 0.5);
+
+    createOrder({
+      customerName: 'ลูกค้าทดลองระบบ (Sample Order)',
+      customerPhone: '083-427-4687',
+      customerAddress: '11/2 ถนน คลองสิบสาม แขวงหนองจอก เขตหนองจอก กรุงเทพมหานคร 10530',
+      province: 'กรุงเทพมหานคร',
+      district: 'หนองจอก',
+      subDistrict: 'หนองจอก',
+      postalCode: '10530',
+      note: 'ออเดอร์ทดลองระบบเพื่อตรวจสอบการคำนวณต้นทุนและกำไรสุทธิ',
+      items: [
+        {
+          productId: sampleProd.id,
+          variantId: sampleVar.id,
+          productTitle: sampleProd.title,
+          variantName: sampleVar.name,
+          price: sampleVar.price,
+          costPrice: cost,
+          quantity: 1,
+          productImage: sampleProd.images[0],
+          category: sampleProd.category,
+        },
+      ],
+      totalAmount: sampleVar.price,
+      discountAmount: 0,
+      shippingFee: 0,
+      netAmount: sampleVar.price,
+      paymentMethod: 'promptpay',
+      paymentStatus: 'paid',
+      orderStatus: 'delivered',
+    });
+    alert(`สร้างออเดอร์ทดลองสำเร็จ 1 รายการ (${sampleProd.title} - ฿${sampleVar.price.toLocaleString()})! หน้ารายงานจะแสดงรายรับ ต้นทุน และกำไรทันที`);
+  };
 
   // Helper to test if date string falls within selected filter
   const isDateInFilterRange = (dateStr: string) => {
@@ -58,9 +116,9 @@ export const AdminSalesReportManager: React.FC = () => {
     return true;
   };
 
-  // Filter orders by date & paid status
+  // Filter orders by date & paid status (include all completed / paid / delivered / shipped)
   const filteredOrders = orders.filter(
-    (o) => (o.paymentStatus === 'paid' || o.orderStatus === 'delivered' || o.orderStatus === 'shipped') && isDateInFilterRange(o.createdAt)
+    (o) => (o.paymentStatus === 'paid' || o.orderStatus === 'delivered' || o.orderStatus === 'shipped' || o.orderStatus === 'pending') && isDateInFilterRange(o.createdAt)
   );
 
   // Financial Calculations
@@ -257,6 +315,61 @@ export const AdminSalesReportManager: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Total Inventory Stock Cost Valuation Banner (Owner Snapshot) */}
+      <div className="bg-dubai-card border-2 border-gold-400/50 rounded-xl p-4 shadow-xl space-y-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gold-400/20 pb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-serif font-extrabold text-gold-300 uppercase tracking-wider bg-dubai-black px-2.5 py-1 rounded-lg border border-gold-400/30">
+              🏬 สรุปมูลค่าต้นทุนสต๊อกสินค้าทั้งหมดในร้าน (Inventory Valuation)
+            </span>
+          </div>
+          <span className="text-[11px] text-gold-300/80 font-bold">
+            สินค้าในคลังรวม {products.length} แบบ ({totalStockPieces} ชิ้น)
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-1 text-xs">
+          <div className="bg-dubai-black p-3 rounded-lg border border-gold-400/20">
+            <span className="text-[10px] text-gray-400 block font-bold">📦 สต๊อกสินค้ารวม</span>
+            <span className="text-base font-serif font-extrabold text-white">{totalStockPieces} ชิ้น</span>
+          </div>
+          <div className="bg-dubai-black p-3 rounded-lg border border-gold-400/20">
+            <span className="text-[10px] text-gold-400 block font-bold">💰 มูลค่าขายรวม (Retail Value)</span>
+            <span className="text-base font-serif font-extrabold text-gold-300">฿{totalStockSellingValue.toLocaleString()}</span>
+          </div>
+          <div className="bg-amber-950/80 p-3 rounded-lg border-2 border-amber-500/60 shadow-inner">
+            <span className="text-[10px] text-amber-300 block font-extrabold">🟧 ต้นทุนคลังรวม (Total Inventory Cost)</span>
+            <span className="text-base font-serif font-extrabold text-amber-200">฿{totalStockCostValue.toLocaleString()}</span>
+          </div>
+          <div className="bg-emerald-950/80 p-3 rounded-lg border-2 border-emerald-500/60">
+            <span className="text-[10px] text-emerald-400 block font-extrabold">💚 กำไรคาดการณ์ (Expected Profit)</span>
+            <span className="text-base font-serif font-extrabold text-emerald-300">+฿{totalStockExpectedProfit.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Notice Banner when 0 Orders exist with 1-Tap Sample Order Creator */}
+      {filteredOrders.length === 0 && (
+        <div className="bg-amber-950/90 border-2 border-amber-500 rounded-xl p-4 text-xs text-amber-200 shadow-xl space-y-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="font-extrabold text-amber-300 text-sm flex items-center gap-1.5">
+                <span>💡 สถานะ: ยังไม่มีคำสั่งซื้อที่ชำระเงินในระบบ (0 รายการ)</span>
+              </div>
+              <p className="text-xs text-amber-100/90 leading-relaxed mt-1">
+                ต้นทุนและกำไรสุทธิจะคำนวณและแสดงผลในตารางด้านล่างทันทีเมื่อคุณขายสินค้าผ่าน POS หรือเมื่อมีลูกค้าสั่งซื้อเข้ามาครับ
+              </p>
+            </div>
+            <button
+              onClick={handleCreateSampleOrder}
+              className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-gold-400 hover:from-amber-400 hover:to-gold-300 text-dubai-black font-extrabold text-xs rounded-xl shadow-gold-glow hover:scale-105 transition shrink-0 whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <span>🧪 ทดลองสร้างออเดอร์ตัวอย่าง 1 รายการ</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Financial Metrics Cards Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
