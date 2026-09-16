@@ -1,11 +1,11 @@
 {
   "appId": "com.hudaabaya.app",
   "appName": "HUDA ABAYA DUBAI",
-  "webDir": "out",
+  "webDir": "public",
   "bundledWebRuntime": false,
   "server": {
     "url": "https://hudaabaya.vercel.app",
-    "cleartext": true
+    "cleartext": false
   },
   "plugins": {
     "SplashScreen": {
