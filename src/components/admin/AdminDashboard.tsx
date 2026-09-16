@@ -96,15 +96,19 @@ export const AdminDashboard: React.FC = () => {
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="font-serif font-bold text-xl text-white tracking-wide flex flex-wrap items-center gap-2">
-                <span>ระบบผู้ดูแลร้านค้า & POS หน้าร้าน — {storeSettings.storeName} (Backoffice)</span>
-                <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/50 px-2.5 py-0.5 rounded font-bold font-sans flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-emerald-400" />
-                  <span>เวลาแก้ไขเรียลไทม์ล่าสุด: {storeSettings.lastUpdated || 'กำลังอัปเดต...'}</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="font-serif font-extrabold text-xl text-white tracking-wide">
+                  HUDA ABAYA Backoffice (ระบบผู้ดูแลร้านค้า)
+                </h2>
+                <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/50 px-2.5 py-0.5 rounded-full font-bold font-sans flex items-center gap-1">
+                  ● เชื่อมต่อระบบเรียลไทม์ 100%
                 </span>
-              </h2>
-              <p className="text-xs text-gold-300/80">
-                จัดการสต๊อกสินค้าเสื้อผ้าแยกตามแบบและไซส์ คิดเงินหน้าร้าน POS ตรวจสอบออเดอร์ และดูประวัติทำรายการตามเครื่อง
+                <span className="text-[10px] bg-gold-500/20 text-gold-300 border border-gold-400/40 px-2 py-0.5 rounded-full font-bold font-sans">
+                  ✓ เวอร์ชันใหม่ v1.0.6
+                </span>
+              </div>
+              <p className="text-xs text-gold-300/80 mt-1">
+                จัดการสต๊อกสินค้าเสื้อผ้าและน้ำหอมดูไบ คิดเงิน POS ตรวจสอบออเดอร์ และดูรายงานวิเคราะห์ต้นทุน/กำไร
               </p>
             </div>
           </div>
@@ -125,11 +129,12 @@ export const AdminDashboard: React.FC = () => {
                   clearBrowserCacheAndReload();
                 }
               }}
-              className="px-3 py-2 bg-amber-950/80 border border-amber-600/50 hover:bg-amber-900 text-amber-200 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-md"
+              className="px-3 py-2 bg-amber-950/80 border border-amber-600/50 hover:bg-amber-900 text-amber-200 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-md relative"
               title="ล้างไฟล์ค้างแคชในมือถือ/คอมพิวเตอร์นี้และดึงเวอร์ชันล่าสุด"
             >
+              <span className="animate-pulse bg-gold-500 text-dubai-black text-[9px] px-1.5 py-0.2 rounded font-extrabold mr-0.5">NEW</span>
               <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-              <span>🧹 ล้างแคชเบราว์เซอร์</span>
+              <span>🧹 ล้างแคช</span>
             </button>
             <button
               onClick={logoutAdmin}
