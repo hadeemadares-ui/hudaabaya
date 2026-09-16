@@ -5,8 +5,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #0D0D0D;
-  --foreground: #FAF8F5;
+  --background: #04162B;
+  --foreground: #F0F9FF;
 }
 
 body {
@@ -16,23 +16,23 @@ body {
   overflow-x: hidden;
 }
 
-/* Custom Scrollbar for Luxury Bright Gold Aesthetic */
+/* Custom Scrollbar for Bright Sky Blue Aesthetic */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0D0D0D;
+  background: #04162B;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #FFC800;
+  background: #38BDF8;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #FFD700;
+  background: #7DD3FC;
 }
 
 .no-scrollbar::-webkit-scrollbar {

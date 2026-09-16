@@ -9,25 +9,25 @@ module.exports = {
     extend: {
       colors: {
         gold: {
-          50: '#FFFDF0',
-          100: '#FFF8CC',
-          200: '#FFE885',
-          300: '#FFD700', // Pure 24K Bright Golden Yellow
-          400: '#FFC800', // Ultra Vibrant Royal Dubai Gold
-          500: '#FFB700', // Vibrant Deep Amber Gold
-          600: '#E69A00', // Rich Golden Honey
-          700: '#C77E00', // Warm Royal Amber
-          800: '#995C00', // Deep Metallic Gold
-          900: '#663C00', // Dark Gold Accent
+          50: '#F0F9FF',  // Lightest Sky Tint
+          100: '#E0F2FE',
+          200: '#BAE6FD', // Soft Sky Blue
+          300: '#7DD3FC', // Bright Cyan Blue
+          400: '#38BDF8', // Electric Sky Blue
+          500: '#0EA5E9', // Vivid Royal Blue
+          600: '#0284C7', // Deep Sky Blue
+          700: '#0369A1', // Ocean Blue
+          800: '#075985', // Dark Sky Blue Accent
+          900: '#0C4A6E', // Night Sky Blue
         },
         dubai: {
-          black: '#0D0D0D',
-          dark: '#161616',
-          card: '#1C1C1E',
-          sand: '#FAF8F5',
-          cream: '#F4EFEA',
-          emerald: '#0B2B26',
-          navy: '#0A192F',
+          black: '#04162B', // Deep Sky Night Background
+          dark: '#072242',  // Dark Sky Ocean Container
+          card: '#0E315C',  // Sky Blue Card Backdrop
+          sand: '#F0F9FF',
+          cream: '#E0F2FE',
+          emerald: '#0284C7',
+          navy: '#0369A1',
         }
       },
       fontFamily: {
@@ -35,8 +35,8 @@ module.exports = {
         sans: ['Prompt', 'sans-serif'],
       },
       boxShadow: {
-        'gold-glow': '0 0 25px rgba(255, 215, 0, 0.45)',
-        'gold-strong': '0 0 45px rgba(255, 200, 0, 0.65)',
+        'gold-glow': '0 0 25px rgba(56, 189, 248, 0.65)',
+        'gold-strong': '0 0 45px rgba(14, 165, 233, 0.85)',
       }
     },
   },
