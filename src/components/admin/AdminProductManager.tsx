@@ -450,10 +450,35 @@ export const AdminProductManager: React.FC = () => {
                               🎨 {variant.color}
                             </span>
                           )}
-                          <div className="flex flex-wrap items-center gap-1 text-[10px] mt-1">
-                            <span className="font-bold text-gold-300">ขาย ฿{variant.price.toLocaleString()}</span>
-                            <span className="font-extrabold text-amber-300 bg-amber-950/90 px-1.5 py-0.2 rounded border border-amber-500/50">
-                              ทุน ฿{(variant.costPrice ?? Math.round(variant.price * 0.5)).toLocaleString()}
+                          <div className="flex flex-wrap items-center gap-1.5 text-[10px] mt-1">
+                            <span className="font-bold text-gold-300 bg-dubai-dark px-1.5 py-0.5 rounded border border-gold-400/20">
+                              💰 ขาย ฿{variant.price.toLocaleString()}
+                            </span>
+                            
+                            {/* Inlined Bright Orange Cost Price Box */}
+                            <div className="bg-amber-950/90 px-1.5 py-0.5 rounded-lg border-2 border-amber-500 flex items-center gap-1 shadow-md">
+                              <span className="text-[9px] text-amber-300 font-extrabold shrink-0">🟧 ต้นทุน</span>
+                              <input
+                                type="number"
+                                placeholder="0"
+                                value={variant.costPrice ?? Math.round(variant.price * 0.5)}
+                                onChange={(e) => {
+                                  const newCost = Number(e.target.value);
+                                  const updatedVariants = product.variants.map((v) =>
+                                    v.id === variant.id ? { ...v, costPrice: newCost } : v
+                                  );
+                                  updateProduct({
+                                    ...product,
+                                    variants: updatedVariants,
+                                    updatedAt: Date.now(),
+                                  });
+                                }}
+                                className="w-16 bg-amber-950 border border-amber-400/80 rounded px-1 py-0.5 text-amber-200 font-extrabold font-mono text-xs text-right shadow-inner focus:ring-1 focus:ring-amber-400 focus:outline-none"
+                              />
+                            </div>
+
+                            <span className="font-bold text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/40">
+                              กำไร +฿{(variant.price - (variant.costPrice ?? Math.round(variant.price * 0.5))).toLocaleString()}
                             </span>
                           </div>
                         </div>
