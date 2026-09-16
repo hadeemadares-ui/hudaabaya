@@ -218,10 +218,10 @@ export const AdminSalesReportManager: React.FC = () => {
         <div>
           <h3 className="font-serif font-bold text-lg text-white flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-gold-400" />
-            <span>รายงานวิเคราะห์ยอดขาย ต้นทุน และกำไรสุทธิ (Financial & Profit Report)</span>
+            <span>📊 แดชบอร์ดสรุปรายรับ - รายจ่าย/ต้นทุน - ยอดขาย & กำไร (Financial Dashboard)</span>
           </h3>
           <p className="text-xs text-gold-300/80">
-            เรียกดูสถิติรายได้ ต้นทุน กำไรสุทธิ และสินค้าขายดี เลือกดูตามวัน เดือน ปี หรือช่วงเวลาที่กำหนดได้ 100%
+            วิเคราะห์สรุปรายรับสุทธิ รายจ่ายต้นทุนสินค้า กำไรสุทธิ และสินค้าขายดี เลือกดูตามวัน เดือน ปี หรือช่วงเวลาที่ต้องการได้ 100%
           </p>
         </div>
 
