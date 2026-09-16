@@ -45,6 +45,23 @@ export const AdminDashboard: React.FC = () => {
         ) {
           setActiveTab('reports');
           sessionStorage.removeItem('huda_target_tab');
+        } else if (
+          targetTab === 'products' ||
+          params.get('tab') === 'products' ||
+          params.get('tab') === 'stock' ||
+          params.get('tab') === 'inventory' ||
+          params.get('products') === 'true'
+        ) {
+          setActiveTab('products');
+          sessionStorage.removeItem('huda_target_tab');
+        } else if (
+          params.get('tab') === 'orders'
+        ) {
+          setActiveTab('orders');
+        } else if (
+          params.get('tab') === 'settings'
+        ) {
+          setActiveTab('settings');
         }
       };
 
@@ -151,76 +168,78 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex gap-3 border-b border-gold-400/20 pb-1 flex-wrap">
+        {/* Tab Switcher Bar */}
+        <div className="flex flex-wrap gap-2.5 border-b border-gold-400/20 pb-3">
           <button
-            onClick={() => setActiveTab('pos')}
-            className={`px-5 py-2.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 ${
-              activeTab === 'pos'
-                ? 'bg-gold-500 text-dubai-black shadow-gold-glow scale-105'
-                : 'bg-dubai-card text-gold-300/70 hover:text-white border border-gold-400/20'
+            onClick={() => setActiveTab('products')}
+            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md ${
+              activeTab === 'products'
+                ? 'bg-gradient-to-r from-amber-500 via-gold-400 to-amber-600 text-dubai-black shadow-gold-glow scale-102 border-2 border-amber-300 font-sans'
+                : 'bg-dubai-card text-gold-300 hover:text-white border-2 border-gold-400/40'
             }`}
           >
-            <Store className="w-4 h-4" />
-            <span>ระบบขายหน้าร้าน (POS Cashier)</span>
+            <Layers className="w-4.5 h-4.5 text-gold-400" />
+            <span>👗 จัดการสต๊อกเสื้อผ้า & ใส่ต้นทุน ({products.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('reports')}
-            className={`px-5 py-2.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 ${
+            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md ${
               activeTab === 'reports'
-                ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-dubai-black font-extrabold shadow-gold-glow scale-105'
-                : 'bg-emerald-950/80 text-emerald-300 hover:text-white border-2 border-emerald-500/60 shadow-md animate-pulse'
+                ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-dubai-black font-extrabold shadow-gold-glow scale-102 border-2 border-emerald-300'
+                : 'bg-emerald-950/80 text-emerald-300 hover:text-white border-2 border-emerald-500/60 shadow-md'
             }`}
           >
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
-            <span>📊 รายงานยอดขาย & กำไรสุทธิ (Financial Analytics)</span>
+            <TrendingUp className="w-4.5 h-4.5 text-emerald-400" />
+            <span>📊 รายงานยอดขาย & กำไร</span>
           </button>
 
           <button
-            onClick={() => setActiveTab('products')}
-            className={`px-5 py-2.5 rounded-xl font-bold text-xs transition ${
-              activeTab === 'products'
-                ? 'bg-gold-500 text-dubai-black shadow-gold-glow'
-                : 'bg-dubai-card text-gold-300/70 hover:text-white border border-gold-400/20'
+            onClick={() => setActiveTab('pos')}
+            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md ${
+              activeTab === 'pos'
+                ? 'bg-gold-500 text-dubai-black shadow-gold-glow scale-102 border-2 border-gold-300'
+                : 'bg-dubai-card text-gold-300/80 hover:text-white border border-gold-400/30'
             }`}
           >
-            จัดการสต๊อกเสื้อผ้า ({products.length})
+            <Store className="w-4.5 h-4.5 text-gold-400" />
+            <span>🛒 คิดเงินหน้าร้าน (POS)</span>
           </button>
 
           <button
             onClick={() => setActiveTab('orders')}
-            className={`px-5 py-2.5 rounded-xl font-bold text-xs transition ${
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 ${
               activeTab === 'orders'
-                ? 'bg-gold-500 text-dubai-black shadow-gold-glow'
+                ? 'bg-gold-500 text-dubai-black shadow-gold-glow font-extrabold'
                 : 'bg-dubai-card text-gold-300/70 hover:text-white border border-gold-400/20'
             }`}
           >
-            จัดการรายการสั่งซื้อ ({orders.length})
+            <ShoppingBag className="w-4 h-4 text-gold-400" />
+            <span>ออเดอร์ ({orders.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('settings')}
-            className={`px-5 py-2.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 ${
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 ${
               activeTab === 'settings'
-                ? 'bg-gold-500 text-dubai-black shadow-gold-glow'
+                ? 'bg-gold-500 text-dubai-black shadow-gold-glow font-extrabold'
                 : 'bg-dubai-card text-gold-300/70 hover:text-white border border-gold-400/20'
             }`}
           >
-            <Settings className="w-4 h-4" />
-            <span>ตั้งค่าข้อมูลร้านค้า & โลโก้ & รหัสผ่าน</span>
+            <Settings className="w-4 h-4 text-gold-400" />
+            <span>ตั้งค่าร้านค้า</span>
           </button>
 
           <button
             onClick={() => setActiveTab('logs')}
-            className={`px-5 py-2.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 ${
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 ${
               activeTab === 'logs'
-                ? 'bg-gold-500 text-dubai-black shadow-gold-glow'
+                ? 'bg-gold-500 text-dubai-black shadow-gold-glow font-extrabold'
                 : 'bg-dubai-card text-gold-300/70 hover:text-white border border-gold-400/20'
             }`}
           >
-            <History className="w-4 h-4" />
-            <span>ประวัติทำรายการตามอุปกรณ์ (Audit Logs)</span>
+            <History className="w-4 h-4 text-gold-400" />
+            <span>ประวัติเครื่อง</span>
           </button>
         </div>
 
