@@ -316,42 +316,43 @@ export const AdminSalesReportManager: React.FC = () => {
         )}
       </div>
 
-      {/* Total Inventory Stock Cost Valuation Banner (Owner Snapshot) */}
-      <div className="bg-dubai-card border-2 border-gold-400/50 rounded-xl p-4 shadow-xl space-y-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gold-400/20 pb-2">
+      {/* Total Inventory Stock Cost Valuation Banner (Owner Executive Snapshot) */}
+      <div className="bg-gradient-to-r from-dubai-card via-dubai-black to-dubai-card border-2 border-gold-400/60 rounded-2xl p-5 shadow-gold-strong space-y-3 relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gold-400/25 pb-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-serif font-extrabold text-gold-300 uppercase tracking-wider bg-dubai-black px-2.5 py-1 rounded-lg border border-gold-400/30">
+            <span className="text-xs font-serif font-extrabold text-gold-300 uppercase tracking-wider bg-dubai-black/80 px-3 py-1 rounded-xl border border-gold-400/40 shadow-sm flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-gold-400 animate-pulse" />
               🏬 สรุปมูลค่าต้นทุนสต๊อกสินค้าทั้งหมดในร้าน (Inventory Valuation)
             </span>
           </div>
-          <span className="text-[11px] text-gold-300/80 font-bold">
+          <span className="text-xs text-gold-300 font-extrabold bg-gold-500/20 px-3 py-1 rounded-full border border-gold-400/40">
             สินค้าในคลังรวม {products.length} แบบ ({totalStockPieces} ชิ้น)
           </span>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-1 text-xs">
-          <div className="bg-dubai-black p-3 rounded-lg border border-gold-400/20">
-            <span className="text-[10px] text-gray-400 block font-bold">📦 สต๊อกสินค้ารวม</span>
-            <span className="text-base font-serif font-extrabold text-white">{totalStockPieces} ชิ้น</span>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 pt-1 text-xs">
+          <div className="bg-dubai-black/80 p-3.5 rounded-xl border border-gold-400/30 shadow-inner">
+            <span className="text-[10px] text-gray-300 block font-bold mb-0.5">📦 สต๊อกสินค้ารวม</span>
+            <span className="text-lg font-serif font-extrabold text-white">{totalStockPieces.toLocaleString()} ชิ้น</span>
           </div>
-          <div className="bg-dubai-black p-3 rounded-lg border border-gold-400/20">
-            <span className="text-[10px] text-gold-400 block font-bold">💰 มูลค่าขายรวม (Retail Value)</span>
-            <span className="text-base font-serif font-extrabold text-gold-300">฿{totalStockSellingValue.toLocaleString()}</span>
+          <div className="bg-dubai-black/80 p-3.5 rounded-xl border border-gold-400/30 shadow-inner">
+            <span className="text-[10px] text-gold-400 block font-bold mb-0.5">💰 มูลค่าขายรวม (Retail Value)</span>
+            <span className="text-lg font-serif font-extrabold text-gold-300">฿{totalStockSellingValue.toLocaleString()}</span>
           </div>
-          <div className="bg-amber-950/80 p-3 rounded-lg border-2 border-amber-500/60 shadow-inner">
-            <span className="text-[10px] text-amber-300 block font-extrabold">🟧 ต้นทุนคลังรวม (Total Inventory Cost)</span>
-            <span className="text-base font-serif font-extrabold text-amber-200">฿{totalStockCostValue.toLocaleString()}</span>
+          <div className="bg-gradient-to-br from-amber-950 via-dubai-card to-amber-900/60 p-3.5 rounded-xl border-2 border-amber-500/80 shadow-md">
+            <span className="text-[10px] text-amber-300 block font-extrabold mb-0.5">🟧 ต้นทุนคลังรวม (Total Inventory Cost)</span>
+            <span className="text-lg font-serif font-extrabold text-amber-200">฿{totalStockCostValue.toLocaleString()}</span>
           </div>
-          <div className="bg-emerald-950/80 p-3 rounded-lg border-2 border-emerald-500/60">
-            <span className="text-[10px] text-emerald-400 block font-extrabold">💚 กำไรคาดการณ์ (Expected Profit)</span>
-            <span className="text-base font-serif font-extrabold text-emerald-300">+฿{totalStockExpectedProfit.toLocaleString()}</span>
+          <div className="bg-gradient-to-br from-emerald-950 via-dubai-card to-emerald-900/60 p-3.5 rounded-xl border-2 border-emerald-500/80 shadow-md">
+            <span className="text-[10px] text-emerald-400 block font-extrabold mb-0.5">💚 กำไรคาดการณ์ (Expected Profit)</span>
+            <span className="text-lg font-serif font-extrabold text-emerald-300">+฿{totalStockExpectedProfit.toLocaleString()}</span>
           </div>
         </div>
       </div>
 
       {/* Notice Banner when 0 Orders exist with 1-Tap Sample Order Creator */}
       {filteredOrders.length === 0 && (
-        <div className="bg-amber-950/90 border-2 border-amber-500 rounded-xl p-4 text-xs text-amber-200 shadow-xl space-y-2">
+        <div className="bg-gradient-to-r from-amber-950 via-dubai-card to-amber-950 border-2 border-amber-500 rounded-2xl p-4 text-xs text-amber-200 shadow-2xl space-y-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="font-extrabold text-amber-300 text-sm flex items-center gap-1.5">
@@ -363,7 +364,7 @@ export const AdminSalesReportManager: React.FC = () => {
             </div>
             <button
               onClick={handleCreateSampleOrder}
-              className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-gold-400 hover:from-amber-400 hover:to-gold-300 text-dubai-black font-extrabold text-xs rounded-xl shadow-gold-glow hover:scale-105 transition shrink-0 whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5"
+              className="px-4 py-2.5 bg-gradient-to-r from-amber-500 via-gold-400 to-amber-600 hover:from-amber-400 hover:to-gold-300 text-dubai-black font-extrabold text-xs rounded-xl shadow-gold-glow hover:scale-105 transition shrink-0 whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5"
             >
               <span>🧪 ทดลองสร้างออเดอร์ตัวอย่าง 1 รายการ</span>
             </button>
@@ -372,66 +373,76 @@ export const AdminSalesReportManager: React.FC = () => {
       )}
 
       {/* Financial Metrics Cards Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
         
         {/* Total Revenue Card */}
-        <div className="p-4 bg-dubai-card border border-gold-400/40 rounded-xl space-y-1 shadow-lg">
-          <div className="flex items-center justify-between text-xs text-gold-400 font-bold">
+        <div className="p-4 bg-gradient-to-br from-dubai-card to-dubai-black border-2 border-gold-400/50 rounded-2xl space-y-1.5 shadow-gold-glow hover:scale-102 transition">
+          <div className="flex items-center justify-between text-xs text-gold-400 font-extrabold">
             <span>รายรับรวม (Revenue)</span>
-            <DollarSign className="w-4 h-4 text-gold-400" />
+            <div className="w-7 h-7 rounded-full bg-gold-500/20 border border-gold-400 flex items-center justify-center">
+              <DollarSign className="w-4 h-4 text-gold-400" />
+            </div>
           </div>
-          <p className="text-xl sm:text-2xl font-serif font-extrabold text-gold-300">
+          <p className="text-2xl sm:text-3xl font-serif font-extrabold text-gold-300 drop-shadow">
             ฿{totalRevenue.toLocaleString()}
           </p>
-          <p className="text-[10px] text-gray-400">จากออเดอร์ที่ชำระเงินแล้ว</p>
+          <p className="text-[10px] text-gold-200/70 font-bold">จากออเดอร์ที่ชำระเงินแล้ว</p>
         </div>
 
         {/* Total Cost Card */}
-        <div className="p-4 bg-dubai-card border border-gold-400/20 rounded-xl space-y-1 shadow-lg">
-          <div className="flex items-center justify-between text-xs text-amber-400 font-bold">
+        <div className="p-4 bg-gradient-to-br from-amber-950/60 to-dubai-card border-2 border-amber-500/50 rounded-2xl space-y-1.5 shadow-lg hover:scale-102 transition">
+          <div className="flex items-center justify-between text-xs text-amber-400 font-extrabold">
             <span>ต้นทุนรวม (Total Cost)</span>
-            <Package className="w-4 h-4 text-amber-400" />
+            <div className="w-7 h-7 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center">
+              <Package className="w-4 h-4 text-amber-400" />
+            </div>
           </div>
-          <p className="text-xl sm:text-2xl font-serif font-extrabold text-amber-300">
+          <p className="text-2xl sm:text-3xl font-serif font-extrabold text-amber-300 drop-shadow">
             ฿{totalCost.toLocaleString()}
           </p>
-          <p className="text-[10px] text-gray-400">ต้นทุนสินค้าทั้งหมด</p>
+          <p className="text-[10px] text-amber-200/70 font-bold">ต้นทุนสินค้าที่ขายออกไป</p>
         </div>
 
         {/* Net Profit Card */}
-        <div className="p-4 bg-gradient-to-br from-emerald-950/80 to-dubai-card border-2 border-emerald-500/50 rounded-xl space-y-1 shadow-xl">
-          <div className="flex items-center justify-between text-xs text-emerald-400 font-bold">
+        <div className="p-4 bg-gradient-to-br from-emerald-950 via-dubai-card to-teal-950 border-2 border-emerald-400 rounded-2xl space-y-1.5 shadow-2xl hover:scale-102 transition">
+          <div className="flex items-center justify-between text-xs text-emerald-400 font-extrabold">
             <span>กำไรสุทธิ (Net Profit)</span>
-            <ArrowUpRight className="w-4 h-4 text-emerald-400" />
+            <div className="w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center">
+              <ArrowUpRight className="w-4 h-4 text-emerald-400" />
+            </div>
           </div>
-          <p className="text-xl sm:text-2xl font-serif font-extrabold text-emerald-300">
-            ฿{netProfit.toLocaleString()}
+          <p className="text-2xl sm:text-3xl font-serif font-extrabold text-emerald-300 drop-shadow">
+            +฿{netProfit.toLocaleString()}
           </p>
-          <p className="text-[10px] text-emerald-400 font-bold">รายรับ หัก ต้นทุนสินค้า</p>
+          <p className="text-[10px] text-emerald-400 font-extrabold">รายรับ หัก ต้นทุนสินค้า</p>
         </div>
 
         {/* Profit Margin Card */}
-        <div className="p-4 bg-dubai-card border border-gold-400/30 rounded-xl space-y-1 shadow-lg">
-          <div className="flex items-center justify-between text-xs text-teal-400 font-bold">
-            <span>อัตรากำไร (Margin)</span>
-            <PieChart className="w-4 h-4 text-teal-400" />
+        <div className="p-4 bg-gradient-to-br from-dubai-card to-dubai-black border-2 border-teal-400/50 rounded-2xl space-y-1.5 shadow-lg hover:scale-102 transition">
+          <div className="flex items-center justify-between text-xs text-teal-400 font-extrabold">
+            <span>อัตรากำไร (Margin %)</span>
+            <div className="w-7 h-7 rounded-full bg-teal-500/20 border border-teal-400 flex items-center justify-center">
+              <PieChart className="w-4 h-4 text-teal-400" />
+            </div>
           </div>
-          <p className="text-xl sm:text-2xl font-serif font-extrabold text-teal-300">
+          <p className="text-2xl sm:text-3xl font-serif font-extrabold text-teal-300 drop-shadow">
             {profitMarginPercent}%
           </p>
-          <p className="text-[10px] text-gray-400">สัดส่วนกำไรต่อรายรับ</p>
+          <p className="text-[10px] text-teal-300/80 font-bold">สัดส่วนกำไรต่อรายรับ</p>
         </div>
 
         {/* Items Sold Count Card */}
-        <div className="p-4 bg-dubai-card border border-gold-400/30 rounded-xl space-y-1 shadow-lg col-span-2 lg:col-span-1">
-          <div className="flex items-center justify-between text-xs text-purple-400 font-bold">
+        <div className="p-4 bg-gradient-to-br from-dubai-card to-dubai-black border-2 border-purple-400/50 rounded-2xl space-y-1.5 shadow-lg col-span-2 lg:col-span-1 hover:scale-102 transition">
+          <div className="flex items-center justify-between text-xs text-purple-400 font-extrabold">
             <span>จำนวนขายได้ทั้งหมด</span>
-            <Layers className="w-4 h-4 text-purple-400" />
+            <div className="w-7 h-7 rounded-full bg-purple-500/20 border border-purple-400 flex items-center justify-center">
+              <Layers className="w-4 h-4 text-purple-400" />
+            </div>
           </div>
-          <p className="text-xl sm:text-2xl font-serif font-extrabold text-white">
+          <p className="text-2xl sm:text-3xl font-serif font-extrabold text-white drop-shadow">
             {totalItemsSold} <span className="text-xs font-sans font-normal text-gray-400">ชิ้น</span>
           </p>
-          <p className="text-[10px] text-gray-400">รวม {filteredOrders.length} คำสั่งซื้อ</p>
+          <p className="text-[10px] text-purple-300/80 font-bold">รวม {filteredOrders.length} คำสั่งซื้อ</p>
         </div>
 
       </div>
