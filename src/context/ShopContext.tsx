@@ -128,28 +128,17 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         setProducts((prev) => {
-          const firestoreMap = new Map<string, Product>();
-          firestoreProds.forEach((p) => firestoreMap.set(p.id, p));
-
           const mergedMap = new Map<string, Product>();
           
-          // Add all active products from Firestore with robust timestamp guard
+          // Always preserve existing/initial products so catalog is never wiped out
+          prev.forEach((p) => mergedMap.set(p.id, p));
+
+          // Merge active products from Firestore with robust timestamp guard
           firestoreProds.forEach((p) => {
-            const existing = prev.find((item) => item.id === p.id);
+            const existing = mergedMap.get(p.id);
             const pTime = getTimestampMs(p.updatedAt);
             const existingTime = getTimestampMs(existing?.updatedAt);
             if (!existing || pTime >= existingTime) {
-              mergedMap.set(p.id, p);
-            } else {
-              mergedMap.set(p.id, existing);
-            }
-          });
-
-          // Keep recently added local products (created within last 10s) that haven't hit Firestore snapshot yet
-          const now = Date.now();
-          prev.forEach((p) => {
-            const pTime = getTimestampMs(p.updatedAt);
-            if (!firestoreMap.has(p.id) && (now - pTime < 10000)) {
               mergedMap.set(p.id, p);
             }
           });
@@ -415,23 +404,15 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setProducts((prev) => {
         const mergedMap = new Map<string, Product>();
         
-        // Add all active products from cloud with timestamp guard
+        // Always preserve existing/initial products so catalog is never wiped out
+        prev.forEach((p) => mergedMap.set(p.id, p));
+
+        // Merge active products from cloud with timestamp guard
         cloudProds.forEach((p) => {
-          const existing = prev.find((item) => item.id === p.id);
+          const existing = mergedMap.get(p.id);
           const pTime = getTimestampMs(p.updatedAt);
           const existingTime = getTimestampMs(existing?.updatedAt);
           if (!existing || pTime >= existingTime) {
-            mergedMap.set(p.id, p);
-          } else {
-            mergedMap.set(p.id, existing);
-          }
-        });
-
-        // Keep local products created within last 10s that haven't hit cloud snapshot yet
-        const now = Date.now();
-        prev.forEach((p) => {
-          const pTime = getTimestampMs(p.updatedAt);
-          if (!cloudMap.has(p.id) && (now - pTime < 10000)) {
             mergedMap.set(p.id, p);
           }
         });
@@ -447,6 +428,10 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'sync_all_products', products: merged }),
           }).catch(() => {});
+
+          merged.forEach((p) => {
+            setDoc(doc(db, 'products', p.id), p, { merge: true }).catch(() => {});
+          });
         }
 
         return merged;
