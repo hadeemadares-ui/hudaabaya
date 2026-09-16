@@ -7,6 +7,9 @@ import { CartDrawer } from '../components/cart/CartDrawer';
 import { OrderTrackingModal } from '../components/orders/OrderTrackingModal';
 import { PWAInstallPrompt } from '../components/common/PWAInstallPrompt';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: 'HUDA ABAYA DUBAI — ร้านจำหน่ายชุดอาบายะห์และน้ำหอมแท้ส่งตรงจากดูไบ',
   description: 'นำเข้าชุดอาบายะห์ดูไบ ชุดคัฟทาน เดรสอาหรับปักดิ้นทอง และน้ำหอมดูไบแท้ 100% สั่งซื้อง่าย คิดเงินครบทุกช่องทาง พร้อมเพย์ QR, บัตรเครดิต, โอนแนบสลิป, COD',
