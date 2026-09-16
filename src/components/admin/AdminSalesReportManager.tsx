@@ -436,6 +436,149 @@ export const AdminSalesReportManager: React.FC = () => {
 
       </div>
 
+      {/* Visual Charts & Analytics Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        
+        {/* Chart 1: Visual Financial Overview Bar Chart */}
+        <div className="bg-dubai-card border-2 border-gold-400/40 rounded-xl p-4 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-gold-400/20 pb-2">
+            <h4 className="font-serif font-bold text-sm text-gold-300 flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-gold-400" />
+              <span>📊 กราฟสรุปสัดส่วน รายรับ - ต้นทุน - กำไรสุทธิ</span>
+            </h4>
+            <span className="text-[10px] bg-gold-500/20 text-gold-300 px-2 py-0.5 rounded-full font-bold">
+              อัตรากำไร {profitMarginPercent}%
+            </span>
+          </div>
+
+          <div className="space-y-3 text-xs">
+            {/* 1. Revenue Bar */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-[11px] font-bold">
+                <span className="text-gold-300 flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-gold-400 inline-block"></span>
+                  💰 ยอดขายสุทธิ (Revenue)
+                </span>
+                <span className="text-gold-300 font-serif font-extrabold">฿{totalRevenue.toLocaleString()}</span>
+              </div>
+              <div className="w-full bg-dubai-black h-4 rounded-full overflow-hidden border border-gold-400/30 p-0.5">
+                <div
+                  className="bg-gradient-to-r from-amber-500 via-gold-400 to-amber-300 h-full rounded-full transition-all duration-500 shadow-gold-glow"
+                  style={{ width: totalRevenue > 0 ? '100%' : '0%' }}
+                ></div>
+              </div>
+            </div>
+
+            {/* 2. Total Cost Bar */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-[11px] font-bold">
+                <span className="text-amber-400 flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
+                  🟧 ต้นทุนสินค้าที่ขาย (Cost)
+                </span>
+                <span className="text-amber-300 font-serif font-extrabold">
+                  ฿{totalCost.toLocaleString()} ({totalRevenue > 0 ? Math.round((totalCost / totalRevenue) * 100) : 0}%)
+                </span>
+              </div>
+              <div className="w-full bg-dubai-black h-4 rounded-full overflow-hidden border border-amber-500/30 p-0.5">
+                <div
+                  className="bg-gradient-to-r from-amber-600 via-amber-500 to-orange-400 h-full rounded-full transition-all duration-500"
+                  style={{ width: `${totalRevenue > 0 ? Math.min(100, Math.round((totalCost / totalRevenue) * 100)) : 0}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* 3. Net Profit Bar */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-[11px] font-bold">
+                <span className="text-emerald-400 flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span>
+                  💚 กำไรสุทธิจากการขาย (Net Profit)
+                </span>
+                <span className="text-emerald-300 font-serif font-extrabold">
+                  +฿{netProfit.toLocaleString()} ({profitMarginPercent}%)
+                </span>
+              </div>
+              <div className="w-full bg-dubai-black h-4 rounded-full overflow-hidden border border-emerald-500/30 p-0.5">
+                <div
+                  className="bg-gradient-to-r from-emerald-600 via-emerald-400 to-teal-300 h-full rounded-full transition-all duration-500 shadow-md"
+                  style={{ width: `${totalRevenue > 0 ? Math.max(0, Math.min(100, Math.round((netProfit / totalRevenue) * 100))) : 0}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* 4. Total Inventory Valuation Cost Bar */}
+            <div className="space-y-1 pt-1 border-t border-gold-400/10">
+              <div className="flex justify-between text-[11px] font-bold">
+                <span className="text-gray-300 flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span>
+                  🏬 ต้นทุนสต๊อกคลังรวมทั้งหมด
+                </span>
+                <span className="text-amber-200 font-serif font-bold">฿{totalStockCostValue.toLocaleString()}</span>
+              </div>
+              <div className="w-full bg-dubai-black h-3 rounded-full overflow-hidden border border-gold-400/20 p-0.5">
+                <div
+                  className="bg-gradient-to-r from-amber-700 to-amber-500 h-full rounded-full transition-all duration-500"
+                  style={{ width: `${totalStockSellingValue > 0 ? Math.round((totalStockCostValue / totalStockSellingValue) * 100) : 50}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Chart 2: Top Selling Products Progress Bar Visual Chart */}
+        <div className="bg-dubai-card border-2 border-gold-400/40 rounded-xl p-4 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-gold-400/20 pb-2">
+            <h4 className="font-serif font-bold text-sm text-gold-300 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-gold-400" />
+              <span>📈 กราฟเปรียบเทียบ 5 อันดับสินค้าขายดี (Top Best Sellers)</span>
+            </h4>
+            <span className="text-[10px] text-gray-400">เรียงตามยอดขาย</span>
+          </div>
+
+          <div className="space-y-3 text-xs">
+            {productSalesList.length === 0 ? (
+              <div className="py-10 text-center text-gray-400 space-y-2">
+                <p>ยังไม่มีข้อมูลสถิติมียอดขายสินค้า</p>
+                <button
+                  onClick={handleCreateSampleOrder}
+                  className="px-3 py-1.5 bg-amber-500 text-dubai-black font-extrabold rounded-lg text-xs"
+                >
+                  🧪 กดทดลองสร้างออเดอร์ตัวอย่าง
+                </button>
+              </div>
+            ) : (
+              productSalesList.slice(0, 5).map((item, idx) => {
+                const maxRevenue = productSalesList[0].revenue || 1;
+                const percentOfMax = Math.round((item.revenue / maxRevenue) * 100);
+                return (
+                  <div key={idx} className="space-y-1 bg-dubai-black/60 p-2.5 rounded-lg border border-gold-400/15">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-bold text-white truncate max-w-[200px]">
+                        #{idx + 1} {item.productTitle} ({item.variantName})
+                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-gray-400">{item.quantity} ชิ้น</span>
+                        <span className="font-serif font-bold text-gold-300">฿{item.revenue.toLocaleString()}</span>
+                        <span className="font-serif font-extrabold text-emerald-400">+฿{item.profit.toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="w-full bg-dubai-dark h-2.5 rounded-full overflow-hidden border border-gold-400/20">
+                      <div
+                        className="bg-gradient-to-r from-emerald-500 via-gold-400 to-amber-500 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${percentOfMax}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+      </div>
+
       {/* Product-by-Product Sales Performance Table */}
       <div className="bg-dubai-card border border-gold-400/30 rounded-xl overflow-hidden shadow-xl space-y-3 p-4">
         <div className="flex items-center justify-between border-b border-gold-400/20 pb-2">
