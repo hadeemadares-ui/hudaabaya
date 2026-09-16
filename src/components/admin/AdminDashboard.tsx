@@ -19,7 +19,25 @@ export const AdminDashboard: React.FC = () => {
     clearBrowserCacheAndReload,
   } = useShop();
 
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'settings' | 'pos' | 'logs' | 'reports'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'settings' | 'pos' | 'logs' | 'reports'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const targetTab = sessionStorage.getItem('huda_target_tab');
+      if (
+        targetTab === 'reports' ||
+        params.get('tab') === 'reports' ||
+        params.get('report') === 'true' ||
+        params.get('analytics') === 'true' ||
+        params.get('sales') === 'true'
+      ) {
+        return 'reports';
+      }
+      if (params.get('tab') === 'pos' || params.get('tab') === 'cashier') return 'pos';
+      if (params.get('tab') === 'orders') return 'orders';
+      if (params.get('tab') === 'settings') return 'settings';
+    }
+    return 'products';
+  });
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
   // Dynamic Metrics Calculation
@@ -59,8 +77,6 @@ export const AdminDashboard: React.FC = () => {
           params.get('tab') === 'settings'
         ) {
           setActiveTab('settings');
-        } else {
-          setActiveTab('products');
         }
       };
 
