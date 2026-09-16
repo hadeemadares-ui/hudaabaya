@@ -59,6 +59,9 @@ export default function RootLayout({
   return (
     <html lang="th">
       <head>
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
         <link rel="icon" type="image/jpeg" href="/logo.jpg" />
         <link rel="apple-touch-icon" href="/logo.jpg" />
         <link rel="shortcut icon" href="/logo.jpg" />

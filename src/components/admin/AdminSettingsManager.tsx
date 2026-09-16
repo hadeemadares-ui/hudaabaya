@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Store, CreditCard, MapPin, Megaphone, CheckCircle2, Save, AlertTriangle, QrCode, Building, Truck, Wallet, Lock, Camera, Image as ImageIcon, Link as LinkIcon, Trash2 } from 'lucide-react';
+import { Store, CreditCard, MapPin, Megaphone, CheckCircle2, Save, AlertTriangle, QrCode, Building, Truck, Wallet, Lock, Camera, Image as ImageIcon, Link as LinkIcon, Trash2, RotateCcw } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 
 export const AdminSettingsManager: React.FC = () => {
-  const { storeSettings, updateStoreSettings } = useShop();
+  const { storeSettings, updateStoreSettings, clearBrowserCacheAndReload } = useShop();
 
   const [form, setForm] = useState({
     ...storeSettings,
@@ -451,6 +451,36 @@ export const AdminSettingsManager: React.FC = () => {
                 onChange={(e) => setForm({ ...form, topAnnouncement: e.target.value })}
                 className="w-full bg-dubai-black border border-gold-400/30 rounded p-2 text-white"
               />
+            </div>
+          </div>
+
+          {/* Section 7: Clear Browser Cache & Purge Stale Storage */}
+          <div className="space-y-3 p-4 bg-dubai-dark rounded-xl border border-amber-500/30">
+            <h4 className="font-serif font-bold text-amber-300 text-sm flex items-center gap-2">
+              <RotateCcw className="w-4 h-4 text-amber-400" />
+              <span>ล้างแคชเบราว์เซอร์เครื่องนี้ (Clear Local Browser Cache)</span>
+            </h4>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-dubai-black p-3 rounded-lg border border-amber-500/20">
+              <div className="space-y-0.5">
+                <p className="text-xs font-bold text-white">เครื่องติดจำแคชเวอร์ชันเก่าในมือถือ/คอมพิวเตอร์?</p>
+                <p className="text-[11px] text-gray-400">
+                  กดปุ่มนี้เพื่อล้างไฟล์ค้างแคช ServiceWorker / Web Caches ในอุปกรณ์นี้ และบังคับดึงโค้ดล่าสุดจาก Vercel 100%
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm('คุณต้องการล้างแคชเบราว์เซอร์เครื่องนี้และรีโหลดเวอร์ชันใหม่ล่าสุด 100% ใช่หรือไม่?')) {
+                    clearBrowserCacheAndReload();
+                  }
+                }}
+                className="px-4 py-2 bg-amber-950 hover:bg-amber-900 border border-amber-600/50 text-amber-200 font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-md"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                <span>🧹 กดล้างแคชเครื่องนี้ทันที</span>
+              </button>
             </div>
           </div>
 

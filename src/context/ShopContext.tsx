@@ -80,6 +80,7 @@ interface ShopContextType {
   syncStoreSettings: () => Promise<void>;
   syncOrders: () => Promise<void>;
   syncProducts: () => Promise<void>;
+  clearBrowserCacheAndReload: () => Promise<void>;
 }
 
 const getTimestampMs = (val: any): number => {
@@ -115,6 +116,45 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currency, setCurrency] = useState<CurrencyType>('THB');
   const [isAIConciergeOpen, setIsAIConciergeOpen] = useState<boolean>(false);
   const [active3DProduct, setActive3DProduct] = useState<Product | null>(null);
+
+  // 0. Auto-purge stale Service Workers and CacheStorage on initial load
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (const registration of registrations) {
+            registration.unregister();
+          }
+        }).catch(() => {});
+      }
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => caches.delete(name));
+        }).catch(() => {});
+      }
+    }
+  }, []);
+
+  const clearBrowserCacheAndReload = async () => {
+    if (typeof window !== 'undefined') {
+      try {
+        if ('caches' in window) {
+          const names = await caches.keys();
+          await Promise.all(names.map((name) => caches.delete(name)));
+        }
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const reg of registrations) {
+            await reg.unregister();
+          }
+        }
+        sessionStorage.clear();
+      } catch (err) {
+        console.warn('Auto cache clear notice:', err);
+      }
+      window.location.reload();
+    }
+  };
 
   // 1. Firebase Firestore Instant Sockets for Products with Pruning & Timestamp Guard
   useEffect(() => {
@@ -991,6 +1031,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         syncStoreSettings,
         syncOrders,
         syncProducts,
+        clearBrowserCacheAndReload,
       }}
     >
       {children}

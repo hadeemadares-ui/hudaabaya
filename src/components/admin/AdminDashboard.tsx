@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { DollarSign, ShoppingBag, Layers, AlertCircle, LogOut, ShieldCheck, Settings, Store, Sparkles, Clock, History, Smartphone, Monitor, TrendingUp } from 'lucide-react';
+import { DollarSign, ShoppingBag, Layers, AlertCircle, LogOut, ShieldCheck, Settings, Store, Sparkles, Clock, History, Smartphone, Monitor, TrendingUp, RotateCcw } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { AdminProductManager } from './AdminProductManager';
 import { AdminOrderManager } from './AdminOrderManager';
@@ -16,6 +16,7 @@ export const AdminDashboard: React.FC = () => {
     orders,
     logoutAdmin,
     storeSettings,
+    clearBrowserCacheAndReload,
   } = useShop();
 
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'settings' | 'pos' | 'logs' | 'reports'>('products');
@@ -109,6 +110,18 @@ export const AdminDashboard: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                if (confirm('คุณต้องการล้างแคชเบราว์เซอร์เครื่องนี้และรีโหลดเวอร์ชันใหม่ล่าสุด 100% ใช่หรือไม่?')) {
+                  clearBrowserCacheAndReload();
+                }
+              }}
+              className="px-3 py-2 bg-amber-950/80 border border-amber-600/50 hover:bg-amber-900 text-amber-200 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-md"
+              title="ล้างไฟล์ค้างแคชในมือถือ/คอมพิวเตอร์นี้และดึงเวอร์ชันล่าสุด"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+              <span>🧹 ล้างแคชเบราว์เซอร์</span>
+            </button>
             <button
               onClick={logoutAdmin}
               className="px-4 py-2 bg-red-950/80 border border-red-700/50 hover:bg-red-900 text-red-200 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shrink-0"
