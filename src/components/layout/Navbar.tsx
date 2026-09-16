@@ -258,6 +258,25 @@ export const Navbar: React.FC = () => {
             <Search className="absolute left-3 top-2 w-3.5 h-3.5 text-gold-400" />
           </div>
 
+          {/* Mobile Prominent Sales & Profit Report Banner Button */}
+          <button
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                sessionStorage.setItem('huda_target_tab', 'reports');
+                window.dispatchEvent(new CustomEvent('switch_admin_tab_reports'));
+              }
+              if (isAdminAuthenticated) {
+                setIsAdminMode(true);
+              } else {
+                setIsAdminLoginModalOpen(true);
+              }
+            }}
+            className="w-full py-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl border-2 border-emerald-400/80 shadow-gold-glow flex items-center justify-center gap-2 cursor-pointer font-sans"
+          >
+            <TrendingUp className="w-4 h-4 text-emerald-200 animate-pulse shrink-0" />
+            <span>📊 เปิดรายงานยอดขาย & กำไรสุทธิ</span>
+          </button>
+
           <div className="flex items-center justify-between text-[11px]">
             <a
               href={storeSettings.mapUrl || defaultMapUrl}

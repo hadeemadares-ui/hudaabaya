@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Star, ShieldCheck, Sparkles, PackageSearch } from 'lucide-react';
+import { Star, ShieldCheck, Sparkles, PackageSearch, TrendingUp } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { HeroBanner } from '../components/home/HeroBanner';
 import { PromotionSection } from '../components/home/PromotionSection';
@@ -13,7 +13,7 @@ import { Hologram3DViewerModal } from '../components/common/Hologram3DViewerModa
 import { MOCK_REVIEWS } from '../data/mockProducts';
 
 export default function HomePageClient() {
-  const { products, selectedCategory, searchQuery, isAdminMode, isAdminAuthenticated } = useShop();
+  const { products, selectedCategory, searchQuery, isAdminMode, setIsAdminMode, isAdminAuthenticated, setIsAdminLoginModalOpen } = useShop();
 
   // Filter products by category & search query
   const filteredProducts = products.filter((product) => {
@@ -31,7 +31,7 @@ export default function HomePageClient() {
   });
 
   return (
-    <div className="space-y-0">
+    <div className="space-y-0 relative">
       
       {/* If Admin Mode & Authenticated is ON -> Display Backoffice Management */}
       {isAdminMode && isAdminAuthenticated ? (
@@ -149,6 +149,28 @@ export default function HomePageClient() {
           </section>
         </>
       )}
+
+      {/* Permanent Fixed Floating Action Button for Sales & Profit Report (Always visible on mobile & desktop) */}
+      <div className="fixed bottom-5 right-4 sm:right-6 z-50 pointer-events-auto">
+        <button
+          onClick={() => {
+            if (typeof window !== 'undefined') {
+              sessionStorage.setItem('huda_target_tab', 'reports');
+              window.dispatchEvent(new CustomEvent('switch_admin_tab_reports'));
+            }
+            if (isAdminAuthenticated) {
+              setIsAdminMode(true);
+            } else {
+              setIsAdminLoginModalOpen(true);
+            }
+          }}
+          className="px-4 py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs sm:text-sm rounded-full shadow-2xl border-2 border-emerald-300 flex items-center gap-2 scale-100 hover:scale-105 active:scale-95 transition cursor-pointer font-sans shadow-gold-strong"
+          title="เปิดรายงานยอดขาย & กำไรสุทธิ"
+        >
+          <TrendingUp className="w-5 h-5 text-emerald-200 animate-pulse shrink-0" />
+          <span className="font-extrabold font-sans">📊 รายงานยอดขาย & กำไร</span>
+        </button>
+      </div>
 
       {/* Global Modals */}
       <AdminLoginModal />
