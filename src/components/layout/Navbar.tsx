@@ -74,19 +74,19 @@ export const Navbar: React.FC = () => {
     <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-xl border-b border-amber-400/30 text-white shadow-tritone-glow transition-all">
       {/* Top Announcement Banner */}
       <div className="bg-gradient-to-r from-amber-500 via-sky-400 to-amber-500 text-slate-950 text-xs font-extrabold py-1.5 px-3 text-center tracking-wide flex items-center justify-between shadow-sm">
-        <div className="hidden md:flex items-center gap-1.5 text-[11px]">
+        <div className="hidden md:flex items-center gap-1.5 text-[11px] shrink-0">
           <Globe className="w-3.5 h-3.5 shrink-0" />
           <span>สั่งซื้อตรงจากดูไบ UAE — สินค้าแท้ 100%</span>
         </div>
 
-        <div className="flex items-center justify-center gap-2 mx-auto md:mx-0 truncate text-[11px] sm:text-xs">
+        <div className="flex items-center justify-center gap-2 mx-auto md:mx-0 text-[11px] sm:text-xs">
           <Sparkles className="w-3.5 h-3.5 animate-pulse shrink-0 text-slate-950" />
-          <span className="truncate">{storeSettings.topAnnouncement}</span>
+          <span className="font-bold">{storeSettings.topAnnouncement}</span>
           <Sparkles className="w-3.5 h-3.5 animate-pulse shrink-0 text-slate-950" />
         </div>
 
         {/* Currency Switcher */}
-        <div className="hidden md:flex items-center gap-1 bg-slate-950/40 px-2 py-0.5 rounded-full border border-amber-300/40">
+        <div className="hidden md:flex items-center gap-1 bg-slate-950/40 px-2 py-0.5 rounded-full border border-amber-300/40 shrink-0">
           {currencies.map((c) => (
             <button
               key={c.id}
@@ -103,13 +103,13 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 sm:h-24 md:h-28 gap-2">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-20 sm:h-24 md:h-28 gap-1.5 sm:gap-3">
           
-          {/* Main Logo & Store Name Display */}
-          <div className="flex items-center gap-2.5 sm:gap-3.5 cursor-pointer group shrink min-w-0" onClick={() => handleCategoryClick('all')}>
-            <div className="flex items-center gap-2 sm:gap-3.5 min-w-0">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full p-0.5 sm:p-1 bg-gradient-to-tr from-amber-400 via-sky-300 to-amber-200 shadow-gold-glow flex items-center justify-center shrink-0 group-hover:scale-105 transition duration-300">
+          {/* Main Logo & Store Name Display (Ensuring full text HUDA ABAYA DUBAI is visible on all screens) */}
+          <div className="flex items-center gap-2 sm:gap-3.5 cursor-pointer group shrink-0" onClick={() => handleCategoryClick('all')}>
+            <div className="flex items-center gap-2 sm:gap-3.5">
+              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full p-0.5 sm:p-1 bg-gradient-to-tr from-amber-400 via-sky-300 to-amber-200 shadow-gold-glow flex items-center justify-center shrink-0 group-hover:scale-105 transition duration-300">
                 <img
                   src={storeSettings.logoImageUrl || DEFAULT_LOGO_BASE64}
                   onError={(e) => {
@@ -120,11 +120,11 @@ export const Navbar: React.FC = () => {
                   className="w-full h-full rounded-full object-contain bg-slate-900 p-0.5 border border-amber-400/50 sm:border-2 shadow-inner"
                 />
               </div>
-              <div className="min-w-0">
-                <h1 className="font-serif text-sm sm:text-xl md:text-2xl lg:text-3xl font-extrabold tracking-tight sm:tracking-wider bg-gradient-to-r from-amber-200 via-sky-300 to-amber-300 bg-clip-text text-transparent drop-shadow-md truncate">
+              <div className="flex flex-col justify-center">
+                <h1 className="font-serif text-xs xs:text-sm sm:text-lg md:text-2xl lg:text-3xl font-extrabold tracking-normal sm:tracking-wider bg-gradient-to-r from-amber-200 via-sky-300 to-amber-300 bg-clip-text text-transparent drop-shadow-md whitespace-nowrap leading-tight">
                   {storeSettings.storeName}
                 </h1>
-                <p className="text-[9px] sm:text-xs text-amber-300/90 tracking-wider uppercase font-sans font-semibold mt-0.5 truncate hidden xs:block">
+                <p className="text-[8px] xs:text-[10px] sm:text-xs text-amber-300/90 tracking-wider uppercase font-sans font-semibold mt-0.5 whitespace-nowrap">
                   {storeSettings.storeTagline}
                 </p>
               </div>
@@ -152,7 +152,7 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Action Navigation Buttons */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             
             {/* Google Maps Button */}
             <a
@@ -169,20 +169,20 @@ export const Navbar: React.FC = () => {
             {/* Install App / QR Code Button */}
             <button
               onClick={triggerQRModal}
-              className="flex items-center gap-1 text-xs text-sky-300 hover:text-amber-300 transition bg-slate-800 px-2.5 sm:px-3 py-1.5 rounded-full border border-slate-700 hover:border-amber-400/60 shadow-sm"
+              className="flex items-center gap-1 text-xs text-sky-300 hover:text-amber-300 transition bg-slate-800 px-2 sm:px-3 py-1.5 rounded-full border border-slate-700 hover:border-amber-400/60 shadow-sm"
               title="ติดตั้งแอปพลิเคชันหรือสแกน QR Code เพื่อดาวน์โหลดลงมือถือ"
             >
-              <QrCode className="w-4 h-4 text-amber-400" />
+              <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
               <span className="hidden xl:inline font-bold">ติดตั้งแอป</span>
             </button>
 
             {/* AI Stylist Button */}
             <button
               onClick={() => setIsAIConciergeOpen(true)}
-              className="flex items-center gap-1 text-xs text-sky-200 hover:text-amber-200 transition bg-gradient-to-r from-slate-800 to-slate-900 px-2.5 sm:px-3 py-1.5 rounded-full border border-sky-400/40 hover:border-amber-400 shadow-sm animate-pulse"
+              className="flex items-center gap-1 text-xs text-sky-200 hover:text-amber-200 transition bg-gradient-to-r from-slate-800 to-slate-900 px-2 sm:px-3 py-1.5 rounded-full border border-sky-400/40 hover:border-amber-400 shadow-sm animate-pulse"
               title="ผู้ช่วยสไตลิสต์ดูไบ AI ช่วยเลือกไซส์"
             >
-              <Bot className="w-4 h-4 text-sky-400" />
+              <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400" />
               <span className="hidden sm:inline font-bold">AI Stylist</span>
             </button>
 
@@ -198,14 +198,14 @@ export const Navbar: React.FC = () => {
             {/* Password-Protected Admin Button */}
             <button
               onClick={handleAdminBtnClick}
-              className={`flex items-center gap-1 text-xs px-2.5 sm:px-3 py-1.5 rounded-full transition border ${
+              className={`flex items-center gap-1 text-xs px-2 sm:px-3 py-1.5 rounded-full transition border ${
                 isAdminMode
                   ? 'bg-amber-400 text-slate-950 font-extrabold border-amber-300 shadow-gold-glow'
                   : 'bg-slate-800 text-amber-300/90 border-slate-700 hover:border-amber-400/60'
               }`}
               title="เข้าสู่ระบบผู้ดูแลร้านค้า (ต้องใส่รหัสผ่าน)"
             >
-              {isAdminAuthenticated ? <User className="w-4 h-4" /> : <Lock className="w-4 h-4 text-amber-400" />}
+              {isAdminAuthenticated ? <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />}
               <span className="hidden sm:inline">{isAdminMode ? 'โหมดหลังบ้าน' : 'หลังบ้าน'}</span>
             </button>
 
@@ -222,11 +222,12 @@ export const Navbar: React.FC = () => {
                   setIsAdminLoginModalOpen(true);
                 }
               }}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold border border-emerald-400/80 shadow-md scale-100 hover:scale-105"
+              className="flex items-center gap-1 sm:gap-1.5 text-xs px-2 sm:px-3 py-1.5 rounded-full transition bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold border border-emerald-400/80 shadow-md scale-100 hover:scale-105"
               title="เปิดรายงานยอดขาย & กำไรสุทธิ"
             >
-              <TrendingUp className="w-4 h-4 text-emerald-200 animate-pulse shrink-0" />
-              <span className="font-extrabold font-sans">📊 รายงานยอดขาย & กำไร</span>
+              <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-200 animate-pulse shrink-0" />
+              <span className="font-extrabold font-sans hidden md:inline">📊 รายงานยอดขาย & กำไร</span>
+              <span className="font-extrabold font-sans md:hidden">📊 รายงาน</span>
             </button>
 
             {/* Cart Button with Count Badge */}

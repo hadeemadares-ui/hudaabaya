@@ -66,7 +66,7 @@ export const HeroBanner: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-serif font-extrabold text-white tracking-tight leading-tight">
+              <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-extrabold text-white tracking-normal sm:tracking-tight leading-snug sm:leading-tight break-words">
                 <span className="block bg-gradient-to-r from-amber-200 via-sky-300 to-amber-400 bg-clip-text text-transparent">
                   {active.title}
                 </span>
