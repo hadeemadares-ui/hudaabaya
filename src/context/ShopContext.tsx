@@ -478,7 +478,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         syncProducts();
         syncOrders();
         syncStoreSettings();
-      }, 2000);
+      }, 1500);
 
       const handleWindowFocus = () => {
         syncProducts();
@@ -574,15 +574,16 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         deletedProductIds.forEach((id) => deletedSet.add(id));
 
         const mergedMap = new Map<string, Product>();
+        const nowMs = Date.now();
 
-        // 1. Keep active local products from prev (excluding deletedSet)
+        // 1. Keep transient local items created/modified in the last 10 seconds for seamless UI feedback
         prev.forEach((p) => {
-          if (!deletedSet.has(p.id)) {
+          if (!deletedSet.has(p.id) && (nowMs - getTimestampMs(p.updatedAt) < 10000)) {
             mergedMap.set(p.id, p);
           }
         });
 
-        // 2. Merge with authoritative master product list from Cloud
+        // 2. Sync with master Cloud Registry product list to align all devices 100%
         cloudProds.forEach((p) => {
           if (deletedSet.has(p.id)) return;
           const existing = mergedMap.get(p.id);
