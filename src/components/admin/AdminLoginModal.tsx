@@ -74,28 +74,12 @@ export const AdminLoginModal: React.FC = () => {
             </div>
           )}
 
-          {/* Quick Auto Login Button for Passcode 1077 */}
-          <button
-            type="button"
-            onClick={() => {
-              verifyAdminPasscode('1077');
-            }}
-            className="w-full py-3 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-dubai-black font-extrabold text-xs sm:text-sm rounded-xl shadow-gold-strong hover:scale-102 transition flex items-center justify-center gap-2 cursor-pointer font-sans"
-          >
-            <ShieldCheck className="w-5 h-5 text-dubai-black" />
-            <span>⚡ กดครั้งเดียวเข้าสู่ระบบหลังบ้าน (รหัส 1077)</span>
-          </button>
-
-          <div className="p-3 bg-dubai-black/60 rounded-xl border border-gold-400/20 text-[11px] text-gray-400 leading-relaxed flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-gold-400 shrink-0" />
-            <span>รหัสผ่านเริ่มต้นสำหรับเจ้าของร้าน: <strong>1077</strong> (กดปุ่มสีเขียวด้านบนเพื่อเข้าทันที)</span>
-          </div>
-
           <button
             type="submit"
-            className="w-full py-3 bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-dubai-black font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-gold-glow hover:scale-102 transition flex items-center justify-center gap-2"
+            className="w-full py-3 bg-gradient-to-r from-amber-400 via-yellow-500 to-gold-500 text-dubai-black font-extrabold text-sm tracking-wider rounded-xl shadow-gold-glow hover:scale-102 transition flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>ปลดล็อกด้วยรหัสผ่านอื่น</span>
+            <ShieldCheck className="w-5 h-5 text-dubai-black" />
+            <span>เข้าสู่ระบบหลังบ้าน (Admin Login)</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
