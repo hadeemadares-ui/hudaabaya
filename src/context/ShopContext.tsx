@@ -573,17 +573,31 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         deletedProductIdsRef.current.forEach((id) => deletedSet.add(id));
         deletedProductIds.forEach((id) => deletedSet.add(id));
 
-        const mergedMap = new Map<string, Product>();
-        const nowMs = Date.now();
+        // SELF-HEALING ZERO-WIPE GUARD:
+        // If Cloud returns 0 products AND prev has valid products, NEVER clear to 0!
+        if (cloudProds.length === 0 && prev.length > 0) {
+          const validPrev = prev.filter((p) => !deletedSet.has(p.id));
+          if (validPrev.length > 0) {
+            // Self-heal by re-syncing valid products back to cloud
+            fetch('/api/products', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'sync_all_products', products: validPrev }),
+            }).catch(() => {});
+            return validPrev;
+          }
+        }
 
-        // 1. Keep transient local items created/modified in the last 10 seconds for seamless UI feedback
+        const mergedMap = new Map<string, Product>();
+
+        // 1. Keep active local products from prev (excluding deletedSet)
         prev.forEach((p) => {
-          if (!deletedSet.has(p.id) && (nowMs - getTimestampMs(p.updatedAt) < 10000)) {
+          if (!deletedSet.has(p.id)) {
             mergedMap.set(p.id, p);
           }
         });
 
-        // 2. Sync with master Cloud Registry product list to align all devices 100%
+        // 2. Merge with authoritative master product list from Cloud
         cloudProds.forEach((p) => {
           if (deletedSet.has(p.id)) return;
           const existing = mergedMap.get(p.id);
@@ -1060,7 +1074,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'add_product', product: timestamped }),
+        body: JSON.stringify({ action: 'sync_all_products', products: updated }),
       }).catch(() => {});
 
       return updated;
