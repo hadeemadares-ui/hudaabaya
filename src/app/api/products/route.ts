@@ -28,8 +28,7 @@ async function syncWithCloudStore() {
     }
     if (prodRes.ok) {
       const prodData = await prodRes.json();
-      if (Array.isArray(prodData?.data?.products)) {
-        globalProductsStoreMap.clear();
+      if (Array.isArray(prodData?.data?.products) && prodData.data.products.length > 0) {
         prodData.data.products.forEach((p: Product) => {
           if (!globalDeletedProductIds.has(p.id)) {
             globalProductsStoreMap.set(p.id, p);
@@ -56,12 +55,23 @@ async function saveCloudDeletedIds() {
 async function saveCloudProducts() {
   try {
     const active = Array.from(globalProductsStoreMap.values()).filter((p) => !globalDeletedProductIds.has(p.id));
+    // Sanitize products array to prevent 413 Payload Too Large on public REST API
+    const sanitizedActive = active.map((p) => {
+      const sanitizedImages = (p.images || []).map((img) => {
+        if (typeof img === 'string' && img.length > 50000) {
+          return p.images[0] && !p.images[0].startsWith('data:image') ? p.images[0] : 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop';
+        }
+        return img;
+      });
+      return { ...p, images: sanitizedImages };
+    });
+
     await fetch(`https://api.restful-api.dev/objects/${CLOUD_PRODUCTS_ID}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: 'huda_active_products_registry_v1',
-        data: { products: active }
+        data: { products: sanitizedActive }
       })
     });
   } catch (e) {}
