@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Product, ProductVariant, CartItem, Order, CategoryType, Coupon, StoreSettings, CurrencyType } from '../types';
 import { INITIAL_PRODUCTS, INITIAL_COUPONS, INITIAL_ORDERS } from '../data/mockProducts';
 import { DEFAULT_LOGO_BASE64 } from '../data/logoData';
@@ -100,28 +100,32 @@ const getTimestampMs = (val: any): number => {
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
 export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const deletedProductIdsRef = useRef<Set<string>>(new Set());
+
   const [deletedProductIds, setDeletedProductIds] = useState<Set<string>>(() => {
+    const initialSet = new Set<string>();
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('huda_deleted_product_ids');
       if (saved) {
         try {
           const arr = JSON.parse(saved);
-          if (Array.isArray(arr)) return new Set(arr);
+          if (Array.isArray(arr)) arr.forEach((id) => initialSet.add(id));
         } catch (e) {}
       }
     }
-    return new Set<string>();
+    deletedProductIdsRef.current = new Set(initialSet);
+    return initialSet;
   });
 
   const [products, setProducts] = useState<Product[]>(() => {
     if (typeof window !== 'undefined') {
       const savedProds = localStorage.getItem('huda_products');
       const savedDeleted = localStorage.getItem('huda_deleted_product_ids');
-      let deletedSet = new Set<string>();
+      let deletedSet = new Set<string>(deletedProductIdsRef.current);
       if (savedDeleted) {
         try {
           const arr = JSON.parse(savedDeleted);
-          if (Array.isArray(arr)) deletedSet = new Set(arr);
+          if (Array.isArray(arr)) arr.forEach((id) => deletedSet.add(id));
         } catch (e) {}
       }
       if (savedProds) {
@@ -142,7 +146,8 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (docSnap.exists()) {
           const data = docSnap.data();
           if (Array.isArray(data?.ids)) {
-            const newSet = new Set<string>(data.ids);
+            data.ids.forEach((id: string) => deletedProductIdsRef.current.add(id));
+            const newSet = new Set<string>(deletedProductIdsRef.current);
             setDeletedProductIds(newSet);
             if (typeof window !== 'undefined') {
               localStorage.setItem('huda_deleted_product_ids', JSON.stringify(Array.from(newSet)));
@@ -256,15 +261,16 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         setProducts(() => {
-          const deletedArr = typeof window !== 'undefined' ? localStorage.getItem('huda_deleted_product_ids') : null;
-          const deletedSet = new Set<string>();
-          if (deletedArr) {
-            try {
-              const parsed = JSON.parse(deletedArr);
-              if (Array.isArray(parsed)) parsed.forEach((id) => deletedSet.add(id));
-            } catch (e) {}
+          const deletedSet = new Set<string>(deletedProductIdsRef.current);
+          if (typeof window !== 'undefined') {
+            const deletedArr = localStorage.getItem('huda_deleted_product_ids');
+            if (deletedArr) {
+              try {
+                const parsed = JSON.parse(deletedArr);
+                if (Array.isArray(parsed)) parsed.forEach((id) => deletedSet.add(id));
+              } catch (e) {}
+            }
           }
-          deletedProductIds.forEach((id) => deletedSet.add(id));
 
           let merged = firestoreProds.filter((p) => !deletedSet.has(p.id));
           merged.sort((a, b) => getTimestampMs(b.updatedAt) - getTimestampMs(a.updatedAt));
@@ -1086,10 +1092,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const deleteProduct = (productId: string) => {
-    const newDeletedSet = new Set(deletedProductIds);
-    newDeletedSet.add(productId);
-    setDeletedProductIds(newDeletedSet);
-    const deletedArr = Array.from(newDeletedSet);
+    deletedProductIdsRef.current.add(productId);
+    const deletedArr = Array.from(deletedProductIdsRef.current);
+    setDeletedProductIds(new Set(deletedProductIdsRef.current));
 
     if (typeof window !== 'undefined') {
       localStorage.setItem('huda_deleted_product_ids', JSON.stringify(deletedArr));
@@ -1111,12 +1116,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'delete_product', productId }),
-      }).catch(() => {});
-
-      fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sync_all_products', products: updated, replace_all: true }),
       }).catch(() => {});
 
       return updated;
