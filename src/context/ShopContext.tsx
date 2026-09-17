@@ -1059,7 +1059,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sync_all_products', products: updated }),
+        body: JSON.stringify({ action: 'add_product', product: timestamped }),
       }).catch(() => {});
 
       return updated;
@@ -1083,7 +1083,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sync_all_products', products: updated }),
+        body: JSON.stringify({ action: 'update_product', product: timestamped }),
       }).catch(() => {});
 
       return updated;
