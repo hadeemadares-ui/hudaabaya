@@ -115,7 +115,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [products, setProducts] = useState<Product[]>(() => {
     if (typeof window !== 'undefined') {
-      const isCleared = localStorage.getItem('huda_products_cleared') === 'true';
       const savedProds = localStorage.getItem('huda_products');
       const savedDeleted = localStorage.getItem('huda_deleted_product_ids');
       let deletedSet = new Set<string>();
@@ -131,10 +130,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (Array.isArray(parsed)) return parsed.filter((p: Product) => !deletedSet.has(p.id));
         } catch (e) {}
       }
-      if (isCleared) return [];
-      return INITIAL_PRODUCTS.filter((p) => !deletedSet.has(p.id));
+      return [];
     }
-    return INITIAL_PRODUCTS;
+    return [];
   });
 
   // Sync deleted product IDs from Firestore doc 'settings/deleted_products'
