@@ -65,6 +65,7 @@ export default function RootLayout({
         <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />
+        <meta name="build-version" content="2026-09-17-skyblue-v2" />
         <link rel="icon" type="image/jpeg" href="/logo.jpg" />
         <link rel="apple-touch-icon" href="/logo.jpg" />
         <link rel="shortcut icon" href="/logo.jpg" />
