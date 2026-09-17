@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ShoppingBag, Search, Sparkles, User, PackageSearch, Bot, Globe, Lock, QrCode, Compass, TrendingUp } from 'lucide-react';
+import { ShoppingBag, Search, Sparkles, User, PackageSearch, Bot, Globe, Lock, QrCode, Compass } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { CategoryType, CurrencyType } from '../../types';
 import { DEFAULT_LOGO_BASE64 } from '../../data/logoData';
@@ -209,26 +209,7 @@ export const Navbar: React.FC = () => {
               <span className="hidden sm:inline">{isAdminMode ? 'โหมดหลังบ้าน' : 'หลังบ้าน'}</span>
             </button>
 
-            {/* Prominent Green Sales & Profit Report Button */}
-            <button
-              onClick={() => {
-                if (typeof window !== 'undefined') {
-                  sessionStorage.setItem('huda_target_tab', 'reports');
-                  window.dispatchEvent(new CustomEvent('switch_admin_tab_reports'));
-                }
-                if (isAdminAuthenticated) {
-                  setIsAdminMode(true);
-                } else {
-                  setIsAdminLoginModalOpen(true);
-                }
-              }}
-              className="flex items-center gap-1 sm:gap-1.5 text-xs px-2 sm:px-3 py-1.5 rounded-full transition bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold border border-emerald-400/80 shadow-md scale-100 hover:scale-105"
-              title="เปิดรายงานยอดขาย & กำไรสุทธิ"
-            >
-              <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-200 animate-pulse shrink-0" />
-              <span className="font-extrabold font-sans hidden md:inline">📊 รายงานยอดขาย & กำไร</span>
-              <span className="font-extrabold font-sans md:hidden">📊 รายงาน</span>
-            </button>
+
 
             {/* Cart Button with Count Badge */}
             <button
@@ -259,24 +240,7 @@ export const Navbar: React.FC = () => {
             <Search className="absolute left-3 top-2 w-3.5 h-3.5 text-sky-400" />
           </div>
 
-          {/* Mobile Prominent Sales & Profit Report Banner Button */}
-          <button
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                sessionStorage.setItem('huda_target_tab', 'reports');
-                window.dispatchEvent(new CustomEvent('switch_admin_tab_reports'));
-              }
-              if (isAdminAuthenticated) {
-                setIsAdminMode(true);
-              } else {
-                setIsAdminLoginModalOpen(true);
-              }
-            }}
-            className="w-full py-2 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl border border-emerald-400/80 shadow-md flex items-center justify-center gap-2 cursor-pointer font-sans"
-          >
-            <TrendingUp className="w-4 h-4 text-emerald-200 animate-pulse shrink-0" />
-            <span>📊 เปิดรายงานยอดขาย & กำไรสุทธิ</span>
-          </button>
+
 
           <div className="flex items-center justify-between text-[11px]">
             <a
