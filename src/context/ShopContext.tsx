@@ -6,6 +6,16 @@ import { INITIAL_PRODUCTS, INITIAL_COUPONS, INITIAL_ORDERS } from '../data/mockP
 import { DEFAULT_LOGO_BASE64 } from '../data/logoData';
 import { db } from '../lib/firebase';
 import { collection, doc, onSnapshot, setDoc, deleteDoc, getDocs } from 'firebase/firestore';
+import {
+  fetchCloudProducts,
+  saveCloudProducts,
+  fetchCloudDeletedIds,
+  saveCloudDeletedIds,
+  fetchCloudOrders,
+  saveCloudOrders,
+  fetchCloudSettings,
+  saveCloudSettings
+} from '../lib/cloudStorage';
 
 const DEFAULT_SETTINGS: StoreSettings = {
   storeName: 'HUDA ABAYA DUBAI',
@@ -528,28 +538,21 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const syncProducts = async () => {
     try {
-      let apiProds: Product[] = [];
-      try {
-        const res = await fetch(`/api/products?_t=${Date.now()}`, { cache: 'no-store' });
-        const data = await res.json();
-        if (data.success && Array.isArray(data.data)) {
-          apiProds = data.data;
-        }
-      } catch (e) {}
+      const [cloudProds, cloudDeletedArr, snapshot] = await Promise.all([
+        fetchCloudProducts(),
+        fetchCloudDeletedIds(),
+        getDocs(collection(db, 'products')).catch(() => null)
+      ]);
 
-      let firestoreProds: Product[] = [];
-      try {
-        const snapshot = await getDocs(collection(db, 'products'));
+      const firestoreProds: Product[] = [];
+      if (snapshot) {
         snapshot.forEach((docSnap) => {
-          if (docSnap.exists()) {
-            firestoreProds.push(docSnap.data() as Product);
-          }
+          if (docSnap.exists()) firestoreProds.push(docSnap.data() as Product);
         });
-      } catch (err) {}
+      }
 
-      // Combine Firestore and Vercel API products for complete multi-device sync
       const cloudMap = new Map<string, Product>();
-      apiProds.forEach((p) => cloudMap.set(p.id, p));
+      cloudProds.forEach((p) => cloudMap.set(p.id, p));
       firestoreProds.forEach((p) => {
         const existing = cloudMap.get(p.id);
         const pTime = getTimestampMs(p.updatedAt);
@@ -559,7 +562,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
-      const cloudProds = Array.from(cloudMap.values());
+      const masterCloudProds = Array.from(cloudMap.values());
 
       setProducts((prev) => {
         const deletedArr = typeof window !== 'undefined' ? localStorage.getItem('huda_deleted_product_ids') : null;
@@ -570,20 +573,17 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (Array.isArray(parsed)) parsed.forEach((id) => deletedSet.add(id));
           } catch (e) {}
         }
+        if (Array.isArray(cloudDeletedArr)) {
+          cloudDeletedArr.forEach((id) => deletedSet.add(id));
+        }
         deletedProductIdsRef.current.forEach((id) => deletedSet.add(id));
         deletedProductIds.forEach((id) => deletedSet.add(id));
 
         // SELF-HEALING ZERO-WIPE GUARD:
-        // If Cloud returns 0 products AND prev has valid products, NEVER clear to 0!
-        if (cloudProds.length === 0 && prev.length > 0) {
+        if (masterCloudProds.length === 0 && prev.length > 0) {
           const validPrev = prev.filter((p) => !deletedSet.has(p.id));
           if (validPrev.length > 0) {
-            // Self-heal by re-syncing valid products back to cloud
-            fetch('/api/products', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'sync_all_products', products: validPrev }),
-            }).catch(() => {});
+            saveCloudProducts(validPrev);
             return validPrev;
           }
         }
@@ -598,7 +598,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         // 2. Merge with authoritative master product list from Cloud
-        cloudProds.forEach((p) => {
+        masterCloudProds.forEach((p) => {
           if (deletedSet.has(p.id)) return;
           const existing = mergedMap.get(p.id);
           const pTime = getTimestampMs(p.updatedAt);
@@ -624,16 +624,13 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const syncOrders = async () => {
     try {
-      const [res, snapshot] = await Promise.all([
-        fetch(`/api/orders?_t=${Date.now()}`, { cache: 'no-store' }).then((r) => r.json()).catch(() => ({ success: false })),
+      const [cloudOrders, snapshot] = await Promise.all([
+        fetchCloudOrders(),
         getDocs(collection(db, 'orders')).catch(() => null)
       ]);
 
       const cloudOrdersMap = new Map<string, Order>();
-
-      if (res.success && Array.isArray(res.orders)) {
-        res.orders.forEach((o: Order) => cloudOrdersMap.set(o.id, o));
-      }
+      cloudOrders.forEach((o) => cloudOrdersMap.set(o.id, o));
 
       if (snapshot) {
         snapshot.forEach((docSnap) => {
@@ -644,8 +641,8 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       }
 
-      const cloudOrders = Array.from(cloudOrdersMap.values());
-      if (cloudOrders.length > 0) {
+      const allOrders = Array.from(cloudOrdersMap.values());
+      if (allOrders.length > 0) {
         setOrders((prev) => {
           const mergedMap = new Map<string, Order>();
           const nowMs = Date.now();
@@ -655,7 +652,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
               mergedMap.set(o.id, o);
             }
           });
-          cloudOrders.forEach((o) => mergedMap.set(o.id, o));
+          allOrders.forEach((o) => mergedMap.set(o.id, o));
 
           const merged = Array.from(mergedMap.values());
           merged.sort((a, b) => getTimestampMs(b.createdAt) - getTimestampMs(a.createdAt));
@@ -673,22 +670,21 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const syncStoreSettings = async () => {
     try {
-      const res = await fetch(`/api/settings?_t=${Date.now()}`, { cache: 'no-store' });
-      const data = await res.json();
+      const cloudSettings = await fetchCloudSettings();
       const savedLogo = typeof window !== 'undefined' ? localStorage.getItem('huda_saved_logo_image') : '';
 
-      if (data.success && data.data) {
+      if (cloudSettings) {
         const localSettingsRaw = localStorage.getItem('huda_store_settings');
         let localSettings = localSettingsRaw ? JSON.parse(localSettingsRaw) : null;
 
-        const effectiveLogo = data.data.logoImageUrl || localSettings?.logoImageUrl || savedLogo || '';
+        const effectiveLogo = cloudSettings.logoImageUrl || localSettings?.logoImageUrl || savedLogo || '';
 
         setStoreSettings((prev) => {
           const merged = {
             ...DEFAULT_SETTINGS,
             ...localSettings,
-            ...data.data,
-            lastUpdated: prev.lastUpdated || data.data.lastUpdated || localSettings?.lastUpdated,
+            ...cloudSettings,
+            lastUpdated: prev.lastUpdated || cloudSettings.lastUpdated || localSettings?.lastUpdated,
             logoImageUrl: effectiveLogo,
           };
           if (typeof window !== 'undefined') {
@@ -722,15 +718,11 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
+      saveCloudSettings(updated);
+
       try {
         setDoc(doc(db, 'settings', 'store'), updated, { merge: true }).catch(() => {});
       } catch (e) {}
-
-      fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated),
-      }).catch(() => {});
 
       return updated;
     });
@@ -862,27 +854,25 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('huda_products', JSON.stringify(updatedProductsList));
       }
 
-      fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sync_all_products', products: updatedProductsList }),
-      }).catch(() => {});
+      saveCloudProducts(updatedProductsList);
 
       return updatedProductsList;
     });
 
-    setOrders((prev) => [newOrder, ...prev]);
+    setOrders((prev) => {
+      const updated = [newOrder, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_orders', JSON.stringify(updated));
+      }
+      saveCloudOrders(updated);
+      return updated;
+    });
+
     clearCart();
 
     try {
       setDoc(doc(db, 'orders', newOrder.id), newOrder).catch(() => {});
     } catch (e) {}
-
-    fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newOrder),
-    }).catch(() => {});
 
     return newOrder;
   };
@@ -893,84 +883,75 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     trackingNumber?: string,
     courier?: string
   ) => {
-    setOrders((prev) =>
-      prev.map((order) => {
+    setOrders((prev) => {
+      const updated = prev.map((order) => {
         if (order.id === orderId) {
-          const updated = {
+          const item = {
             ...order,
             orderStatus,
             trackingNumber: trackingNumber || order.trackingNumber,
             courier: courier || order.courier,
           };
           try {
-            setDoc(doc(db, 'orders', orderId), updated, { merge: true }).catch(() => {});
+            setDoc(doc(db, 'orders', orderId), item, { merge: true }).catch(() => {});
           } catch (e) {}
-          return updated;
+          return item;
         }
         return order;
-      })
-    );
+      });
 
-    fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'update_status',
-        orderId,
-        orderStatus,
-        trackingNumber,
-        courier,
-      }),
-    }).catch(() => {});
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_orders', JSON.stringify(updated));
+      }
+      saveCloudOrders(updated);
+      return updated;
+    });
   };
 
   const updateOrderPaymentStatus = (orderId: string, paymentStatus: Order['paymentStatus']) => {
-    setOrders((prev) =>
-      prev.map((order) => {
+    setOrders((prev) => {
+      const updated = prev.map((order) => {
         if (order.id === orderId) {
-          const updated = { ...order, paymentStatus };
+          const item = { ...order, paymentStatus };
           try {
-            setDoc(doc(db, 'orders', orderId), updated, { merge: true }).catch(() => {});
+            setDoc(doc(db, 'orders', orderId), item, { merge: true }).catch(() => {});
           } catch (e) {}
-          return updated;
+          return item;
         }
         return order;
-      })
-    );
+      });
 
-    fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'update_payment',
-        orderId,
-        paymentStatus,
-      }),
-    }).catch(() => {});
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_orders', JSON.stringify(updated));
+      }
+      saveCloudOrders(updated);
+      return updated;
+    });
   };
 
   const deleteOrder = (orderId: string) => {
-    setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    setOrders((prev) => {
+      const updated = prev.filter((o) => o.id !== orderId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_orders', JSON.stringify(updated));
+      }
+      saveCloudOrders(updated);
+      return updated;
+    });
     try {
       deleteDoc(doc(db, 'orders', orderId)).catch(() => {});
     } catch (e) {}
-
-    fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'delete_order',
-        orderId,
-      }),
-    }).catch(() => {});
   };
 
   const clearSampleOrders = async () => {
-    setOrders((prev) => prev.filter((o) => !o.isSample));
-    if (typeof window !== 'undefined') {
-      const remaining = orders.filter((o) => !o.isSample);
-      localStorage.setItem('huda_orders', JSON.stringify(remaining));
-    }
+    setOrders((prev) => {
+      const remaining = prev.filter((o) => !o.isSample);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_orders', JSON.stringify(remaining));
+      }
+      saveCloudOrders(remaining);
+      return remaining;
+    });
 
     try {
       const snapshot = await getDocs(collection(db, 'orders'));
@@ -981,14 +962,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
     } catch (e) {}
-
-    fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'clear_sample_orders',
-      }),
-    }).catch(() => {});
   };
 
   const clearAllOrders = async () => {
@@ -996,6 +969,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (typeof window !== 'undefined') {
       localStorage.removeItem('huda_orders');
     }
+    saveCloudOrders([]);
 
     try {
       const snapshot = await getDocs(collection(db, 'orders'));
@@ -1003,14 +977,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         deleteDoc(doc(db, 'orders', docSnap.id)).catch(() => {});
       });
     } catch (e) {}
-
-    fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'clear_all_orders',
-      }),
-    }).catch(() => {});
   };
 
   const clearAllProducts = async () => {
@@ -1027,6 +993,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('huda_products');
     }
 
+    saveCloudDeletedIds(deletedArr);
+    saveCloudProducts([]);
+
     try {
       setDoc(doc(db, 'settings', 'deleted_products'), { ids: deletedArr }, { merge: true }).catch(() => {});
       const snapshot = await getDocs(collection(db, 'products'));
@@ -1036,14 +1005,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {}
 
     setProducts([]);
-
-    fetch('/api/products', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'clear_all_products',
-      }),
-    }).catch(() => {});
   };
 
   const addProduct = (newProduct: Product) => {
@@ -1057,7 +1018,10 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (typeof window !== 'undefined') {
         localStorage.setItem('huda_deleted_product_ids', JSON.stringify(arr));
       }
-      setDoc(doc(db, 'settings', 'deleted_products'), { ids: arr }, { merge: true }).catch(() => {});
+      saveCloudDeletedIds(arr);
+      try {
+        setDoc(doc(db, 'settings', 'deleted_products'), { ids: arr }, { merge: true }).catch(() => {});
+      } catch (e) {}
     }
 
     setProducts((prev) => {
@@ -1067,15 +1031,11 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('huda_products', JSON.stringify(updated));
       }
 
+      saveCloudProducts(updated);
+
       try {
         setDoc(doc(db, 'products', timestamped.id), timestamped).catch(() => {});
       } catch (e) {}
-
-      fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sync_all_products', products: updated }),
-      }).catch(() => {});
 
       return updated;
     });
@@ -1091,15 +1051,11 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('huda_products', JSON.stringify(updated));
       }
 
+      saveCloudProducts(updated);
+
       try {
         setDoc(doc(db, 'products', timestamped.id), timestamped).catch(() => {});
       } catch (e) {}
-
-      fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update_product', product: timestamped }),
-      }).catch(() => {});
 
       return updated;
     });
@@ -1130,11 +1086,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('huda_products', JSON.stringify(updated));
       }
 
-      fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'sync_all_products', products: updated }),
-      }).catch(() => {});
+      saveCloudProducts(updated);
 
       return updated;
     });
@@ -1149,6 +1101,8 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('huda_deleted_product_ids', JSON.stringify(deletedArr));
     }
 
+    saveCloudDeletedIds(deletedArr);
+
     try {
       setDoc(doc(db, 'settings', 'deleted_products'), { ids: deletedArr }, { merge: true }).catch(() => {});
       deleteDoc(doc(db, 'products', productId)).catch(() => {});
@@ -1161,11 +1115,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('huda_products', JSON.stringify(updated));
       }
 
-      fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete_product', productId }),
-      }).catch(() => {});
+      saveCloudProducts(updated);
 
       return updated;
     });
