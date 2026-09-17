@@ -12,6 +12,7 @@ export const AdminProductManager: React.FC = () => {
     updateProduct,
     updateVariantStock,
     deleteProduct,
+    clearAllProducts,
     selectedCategory,
     setSelectedCategory,
     syncProducts,
@@ -286,11 +287,25 @@ export const AdminProductManager: React.FC = () => {
 
           <button
             onClick={handleForceSync}
-            className="px-3.5 py-2.5 bg-dubai-card border border-gold-400/40 hover:border-gold-400 text-gold-300 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm"
+            className="px-3.5 py-2.5 bg-dubai-card border border-gold-400/40 hover:border-gold-400 text-gold-300 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
             title="ดึงข้อมูลสินค้าล่าสุดจากทุกเครื่องให้ตรงกัน 100%"
           >
             <RotateCcw className="w-4 h-4 text-gold-400 animate-spin-slow" />
             <span>ซิงก์ดึงข้อมูลสินค้าด่วน</span>
+          </button>
+
+          <button
+            onClick={async () => {
+              if (confirm('คุณต้องการลบรายการสินค้าทั้งหมดออกจากระบบเพื่อเริ่มเปิดร้านใส่สินค้าของคุณเองใช่หรือไม่?')) {
+                await clearAllProducts();
+                alert('ลบรายการสินค้าทั้งหมดออกจากระบบและฐานข้อมูลเรียบร้อยแล้ว!');
+              }
+            }}
+            className="px-3.5 py-2.5 bg-red-950/70 border border-red-800/50 hover:border-red-500 text-red-300 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+            title="ลบสินค้าตัวอย่างทั้งหมดออกจากระบบเพื่อเริ่มขายจริง"
+          >
+            <Trash2 className="w-4 h-4 text-red-400" />
+            <span>🧹 ล้างสินค้าตัวอย่างทั้งหมด</span>
           </button>
 
           <button

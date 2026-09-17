@@ -114,8 +114,8 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [products, setProducts] = useState<Product[]>(() => {
-    let base = INITIAL_PRODUCTS;
     if (typeof window !== 'undefined') {
+      const isCleared = localStorage.getItem('huda_products_cleared') === 'true';
       const savedProds = localStorage.getItem('huda_products');
       const savedDeleted = localStorage.getItem('huda_deleted_product_ids');
       let deletedSet = new Set<string>();
@@ -128,10 +128,11 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (savedProds) {
         try {
           const parsed = JSON.parse(savedProds);
-          if (Array.isArray(parsed)) base = parsed;
+          if (Array.isArray(parsed)) return parsed.filter((p: Product) => !deletedSet.has(p.id));
         } catch (e) {}
       }
-      return base.filter((p) => !deletedSet.has(p.id));
+      if (isCleared) return [];
+      return INITIAL_PRODUCTS.filter((p) => !deletedSet.has(p.id));
     }
     return INITIAL_PRODUCTS;
   });
