@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Calendar, TrendingUp, DollarSign, Package, PieChart, Download, ArrowUpRight, ArrowDownRight, Layers, FileSpreadsheet, RefreshCw, Sparkles, Filter } from 'lucide-react';
+import { Calendar, TrendingUp, DollarSign, Package, PieChart, Download, ArrowUpRight, ArrowDownRight, Layers, FileSpreadsheet, RefreshCw, Sparkles, Filter, Edit2, Trash2, X, Save } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
-import { Order, CartItem } from '../../types';
+import { Order, CartItem, CategoryType } from '../../types';
 
 export const AdminSalesReportManager: React.FC = () => {
-  const { orders, products, createOrder } = useShop();
+  const { orders, products, createOrder, deleteProduct, updateProduct } = useShop();
 
   // Filter Mode: 'today' | 'month' | 'year' | 'all' | 'custom'
   const [filterMode, setFilterMode] = useState<'today' | 'month' | 'year' | 'all' | 'custom'>('all');
@@ -121,6 +121,18 @@ export const AdminSalesReportManager: React.FC = () => {
     (o) => (o.paymentStatus === 'paid' || o.orderStatus === 'delivered' || o.orderStatus === 'shipped' || o.orderStatus === 'pending') && isDateInFilterRange(o.createdAt)
   );
 
+  // Modal state for editing product details directly from Sales Report table
+  const [editingProduct, setEditingProduct] = useState<{
+    productId: string;
+    variantId: string;
+    title: string;
+    category: CategoryType;
+    variantName: string;
+    price: number;
+    costPrice: number;
+    stockQuantity: number;
+  } | null>(null);
+
   // Financial Calculations
   let totalRevenue = 0;
   let totalCost = 0;
@@ -130,6 +142,8 @@ export const AdminSalesReportManager: React.FC = () => {
   const productSalesMap = new Map<
     string,
     {
+      productId: string;
+      variantId: string;
       productTitle: string;
       variantName: string;
       category: string;
@@ -155,7 +169,13 @@ export const AdminSalesReportManager: React.FC = () => {
       const itemTotalRevenue = item.price * item.quantity;
       totalCost += itemTotalCost;
 
-      const key = `${item.productTitle}___${item.variantName}`;
+      const matchedProd = products.find((p) => p.id === item.productId || p.title === item.productTitle);
+      const matchedVar = matchedProd?.variants.find((v) => v.id === item.variantId || v.name === item.variantName);
+
+      const resolvedProductId = item.productId || matchedProd?.id || '';
+      const resolvedVariantId = item.variantId || matchedVar?.id || '';
+
+      const key = `${resolvedProductId || item.productTitle}___${resolvedVariantId || item.variantName}`;
       const existing = productSalesMap.get(key);
 
       if (existing) {
@@ -165,9 +185,11 @@ export const AdminSalesReportManager: React.FC = () => {
         existing.profit += itemTotalRevenue - itemTotalCost;
       } else {
         productSalesMap.set(key, {
+          productId: resolvedProductId,
+          variantId: resolvedVariantId,
           productTitle: item.productTitle,
           variantName: item.variantName,
-          category: item.category,
+          category: item.category || matchedProd?.category || 'all',
           quantity: item.quantity,
           revenue: itemTotalRevenue,
           cost: itemTotalCost,
@@ -180,6 +202,90 @@ export const AdminSalesReportManager: React.FC = () => {
   const netProfit = totalRevenue - totalCost;
   const profitMarginPercent = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0.0';
   const productSalesList = Array.from(productSalesMap.values()).sort((a, b) => b.revenue - a.revenue);
+
+  // Delete product handler from Sales Report table
+  const handleDeleteProduct = (item: { productId: string; productTitle: string; variantName: string }) => {
+    const targetProd = products.find((p) => p.id === item.productId || p.title === item.productTitle);
+    const idToDelete = item.productId || targetProd?.id;
+
+    if (!idToDelete) {
+      alert(`ไม่พบรหัสสินค้า "${item.productTitle}" ในระบบคลังสินค้าครับ`);
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `คุณต้องการลบสินค้า "${item.productTitle}" (${item.variantName}) ออกจากคลังสินค้าอย่างถาวรใช่หรือไม่?\n\n*ระบบจะทำการลบสินค้านี้ออกในทุกอุปกรณ์ real-time`
+    );
+
+    if (confirmed) {
+      deleteProduct(idToDelete);
+      alert(`ลบสินค้า "${item.productTitle}" ออกจากระบบเรียบร้อยแล้วครับ!`);
+    }
+  };
+
+  // Open Edit Product Modal from Sales Report table
+  const handleOpenEditModal = (item: {
+    productId: string;
+    variantId: string;
+    productTitle: string;
+    variantName: string;
+    category: string;
+  }) => {
+    const targetProd = products.find((p) => p.id === item.productId || p.title === item.productTitle);
+    if (!targetProd) {
+      alert(`ไม่พบข้อมูลสินค้า "${item.productTitle}" ในคลังระบบเพื่อแก้ไขครับ`);
+      return;
+    }
+
+    const targetVar = targetProd.variants.find((v) => v.id === item.variantId || v.name === item.variantName) || targetProd.variants[0];
+
+    setEditingProduct({
+      productId: targetProd.id,
+      variantId: targetVar?.id || '',
+      title: targetProd.title,
+      category: targetProd.category || 'all',
+      variantName: targetVar?.name || item.variantName,
+      price: targetVar?.price || 0,
+      costPrice: targetVar?.costPrice !== undefined ? targetVar.costPrice : Math.round((targetVar?.price || 0) * 0.5),
+      stockQuantity: targetVar?.stockQuantity || 0,
+    });
+  };
+
+  // Save changes from Edit Product Modal
+  const handleSaveEditProduct = () => {
+    if (!editingProduct) return;
+
+    const target = products.find((p) => p.id === editingProduct.productId || p.title === editingProduct.title);
+    if (!target) {
+      alert('ไม่พบข้อมูลสินค้าชิ้นนี้ในคลังระบบครับ');
+      return;
+    }
+
+    const updatedVariants = target.variants.map((v) => {
+      if (v.id === editingProduct.variantId || v.name === editingProduct.variantName) {
+        return {
+          ...v,
+          price: Number(editingProduct.price),
+          costPrice: Number(editingProduct.costPrice),
+          stockQuantity: Number(editingProduct.stockQuantity),
+          updatedAt: Date.now(),
+        };
+      }
+      return v;
+    });
+
+    const updatedProduct = {
+      ...target,
+      title: editingProduct.title,
+      category: editingProduct.category,
+      variants: updatedVariants,
+      updatedAt: Date.now(),
+    };
+
+    updateProduct(updatedProduct);
+    setEditingProduct(null);
+    alert(`บันทึกการแก้ไขสินค้า "${editingProduct.title}" สำเร็จเรียบร้อยแล้ว!`);
+  };
 
   // CSV Export Handler with Thai UTF-8 BOM
   const handleExportCSV = () => {
@@ -613,12 +719,13 @@ export const AdminSalesReportManager: React.FC = () => {
                 <th className="p-3 text-right">ยอดขายรวม (บาท)</th>
                 <th className="p-3 text-right">ต้นทุนรวม (บาท)</th>
                 <th className="p-3 text-right">กำไรสุทธิ (บาท)</th>
+                <th className="p-3 text-center">จัดการ (Actions)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gold-400/10">
               {productSalesList.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-gray-400">
+                  <td colSpan={8} className="p-8 text-center text-gray-400">
                     ยังไม่มีข้อมูลยอดขายในช่วงเวลาที่เลือก
                   </td>
                 </tr>
@@ -644,6 +751,27 @@ export const AdminSalesReportManager: React.FC = () => {
                     <td className="p-3 text-right font-serif font-extrabold text-emerald-400 text-sm">
                       +฿{item.profit.toLocaleString()}
                     </td>
+                    <td className="p-3 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          onClick={() => handleOpenEditModal(item)}
+                          className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition shadow-sm cursor-pointer"
+                          title="แก้ไขข้อมูลสินค้า / ต้นทุน / สต๊อก"
+                        >
+                          <Edit2 className="w-3.5 h-3.5 text-amber-300" />
+                          <span>แก้ไข</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteProduct(item)}
+                          className="px-2.5 py-1 bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-500/40 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition shadow-sm cursor-pointer"
+                          title="ลบสินค้าออกจากระบบอย่างถาวร"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                          <span>ลบ</span>
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
@@ -651,6 +779,117 @@ export const AdminSalesReportManager: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Edit Product Modal for Sales Report Table */}
+      {editingProduct && (
+        <div className="fixed inset-0 z-50 bg-dubai-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-dubai-card border-2 border-gold-400/60 rounded-2xl max-w-md w-full p-6 space-y-4 text-white shadow-2xl animate-scale-up">
+            <div className="flex items-center justify-between border-b border-gold-400/30 pb-3">
+              <h3 className="font-serif font-bold text-base text-gold-300 flex items-center gap-2">
+                <Edit2 className="w-5 h-5 text-gold-400" />
+                <span>แก้ไขข้อมูลสินค้า & ต้นทุน</span>
+              </h3>
+              <button
+                onClick={() => setEditingProduct(null)}
+                className="text-gray-400 hover:text-white p-1 rounded-full border border-gold-400/20"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-gray-300 mb-1 font-bold">ชื่อสินค้า / แบบ</label>
+                <input
+                  type="text"
+                  value={editingProduct.title}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, title: e.target.value })}
+                  className="w-full bg-dubai-black border border-gold-400/30 rounded-xl p-2.5 text-white font-bold focus:border-gold-400 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-gray-300 mb-1 font-bold">หมวดหมู่</label>
+                  <select
+                    value={editingProduct.category}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value as CategoryType })}
+                    className="w-full bg-dubai-black border border-gold-400/30 rounded-xl p-2.5 text-gold-300 font-bold focus:border-gold-400 focus:outline-none"
+                  >
+                    <option value="abaya">ชุดอาบายะห์ (Abaya)</option>
+                    <option value="kaftan">ชุดคัฟทาน (Kaftan)</option>
+                    <option value="perfume">น้ำหอมดูไบ (Perfume)</option>
+                    <option value="incense">ไม้หอม & บุคคูร์ (Oud)</option>
+                    <option value="combo">เซตสุดคุ้ม (Combo)</option>
+                    <option value="other">สินค้าอื่นๆ</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-1 font-bold">ไซส์ / ตัวเลือก</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={editingProduct.variantName}
+                    className="w-full bg-dubai-black/60 border border-gray-700 rounded-xl p-2.5 text-gray-400 font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-gray-300 mb-1 font-bold">ราคาขาย (บาท)</label>
+                  <input
+                    type="number"
+                    value={editingProduct.price}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, price: Number(e.target.value) })}
+                    className="w-full bg-dubai-black border border-gold-400/30 rounded-xl p-2.5 text-gold-300 font-mono font-bold focus:border-gold-400 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-amber-300 mb-1 font-bold">ต้นทุน (บาท)</label>
+                  <input
+                    type="number"
+                    value={editingProduct.costPrice}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, costPrice: Number(e.target.value) })}
+                    className="w-full bg-dubai-black border border-amber-500/40 rounded-xl p-2.5 text-amber-300 font-mono font-bold focus:border-amber-400 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-emerald-300 mb-1 font-bold">สต๊อกคงเหลือ</label>
+                  <input
+                    type="number"
+                    value={editingProduct.stockQuantity}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, stockQuantity: Number(e.target.value) })}
+                    className="w-full bg-dubai-black border border-emerald-500/40 rounded-xl p-2.5 text-emerald-300 font-mono font-bold focus:border-emerald-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-gold-400/20">
+              <button
+                type="button"
+                onClick={() => setEditingProduct(null)}
+                className="px-4 py-2 bg-slate-800 text-gray-300 rounded-xl text-xs font-bold hover:bg-slate-700 transition"
+              >
+                ยกเลิก
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveEditProduct}
+                className="px-5 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-dubai-black rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-gold-glow hover:scale-105 transition cursor-pointer"
+              >
+                <Save className="w-4 h-4" />
+                <span>บันทึกการแก้ไข</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
