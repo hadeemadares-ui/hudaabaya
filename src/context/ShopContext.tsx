@@ -257,19 +257,17 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         setProducts((prev) => {
-          const mergedMap = new Map<string, Product>();
-          const savedDeleted = typeof window !== 'undefined' ? localStorage.getItem('huda_deleted_product_ids') : null;
-          let deletedSet = deletedProductIds;
-          if (savedDeleted) {
+          const deletedArr = typeof window !== 'undefined' ? localStorage.getItem('huda_deleted_product_ids') : null;
+          const deletedSet = new Set<string>();
+          if (deletedArr) {
             try {
-              const arr = JSON.parse(savedDeleted);
-              if (Array.isArray(arr)) deletedSet = new Set([...Array.from(deletedSet), ...arr]);
+              const parsed = JSON.parse(deletedArr);
+              if (Array.isArray(parsed)) parsed.forEach((id) => deletedSet.add(id));
             } catch (e) {}
           }
-          
-          INITIAL_PRODUCTS.forEach((p) => {
-            if (!deletedSet.has(p.id)) mergedMap.set(p.id, p);
-          });
+          deletedProductIds.forEach((id) => deletedSet.add(id));
+
+          const mergedMap = new Map<string, Product>();
           prev.forEach((p) => {
             if (!deletedSet.has(p.id)) mergedMap.set(p.id, p);
           });
@@ -574,19 +572,17 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const cloudProds = Array.from(cloudMap.values());
 
       setProducts((prev) => {
-        const mergedMap = new Map<string, Product>();
-        const savedDeleted = typeof window !== 'undefined' ? localStorage.getItem('huda_deleted_product_ids') : null;
-        let deletedSet = deletedProductIds;
-        if (savedDeleted) {
+        const deletedArr = typeof window !== 'undefined' ? localStorage.getItem('huda_deleted_product_ids') : null;
+        const deletedSet = new Set<string>();
+        if (deletedArr) {
           try {
-            const arr = JSON.parse(savedDeleted);
-            if (Array.isArray(arr)) deletedSet = new Set([...Array.from(deletedSet), ...arr]);
+            const parsed = JSON.parse(deletedArr);
+            if (Array.isArray(parsed)) parsed.forEach((id) => deletedSet.add(id));
           } catch (e) {}
         }
-        
-        INITIAL_PRODUCTS.forEach((p) => {
-          if (!deletedSet.has(p.id)) mergedMap.set(p.id, p);
-        });
+        deletedProductIds.forEach((id) => deletedSet.add(id));
+
+        const mergedMap = new Map<string, Product>();
         prev.forEach((p) => {
           if (!deletedSet.has(p.id)) mergedMap.set(p.id, p);
         });
@@ -606,18 +602,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (typeof window !== 'undefined') {
           localStorage.setItem('huda_products', JSON.stringify(merged));
-        }
-
-        if (merged.length > 0) {
-          fetch('/api/products', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'sync_all_products', products: merged }),
-          }).catch(() => {});
-
-          merged.forEach((p) => {
-            setDoc(doc(db, 'products', p.id), p, { merge: true }).catch(() => {});
-          });
         }
 
         return merged;
