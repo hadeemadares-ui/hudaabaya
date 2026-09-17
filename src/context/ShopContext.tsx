@@ -205,7 +205,8 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProducts((prev) => {
           const mergedMap = new Map<string, Product>();
           
-          // Always preserve existing/initial products so catalog is never wiped out
+          // Always preserve initial products so catalog is never wiped out
+          INITIAL_PRODUCTS.forEach((p) => mergedMap.set(p.id, p));
           prev.forEach((p) => mergedMap.set(p.id, p));
 
           // Merge active products from Firestore with robust timestamp guard
@@ -218,7 +219,12 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           });
 
-          const merged = Array.from(mergedMap.values()).sort((a, b) => getTimestampMs(b.updatedAt) - getTimestampMs(a.updatedAt));
+          let merged = Array.from(mergedMap.values());
+          if (merged.length === 0) {
+            merged = [...INITIAL_PRODUCTS];
+          }
+          merged.sort((a, b) => getTimestampMs(b.updatedAt) - getTimestampMs(a.updatedAt));
+
           if (typeof window !== 'undefined') {
             localStorage.setItem('huda_products', JSON.stringify(merged));
           }
@@ -496,7 +502,8 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setProducts((prev) => {
         const mergedMap = new Map<string, Product>();
         
-        // Always preserve existing/initial products so catalog is never wiped out
+        // Always preserve initial products so catalog is never wiped out
+        INITIAL_PRODUCTS.forEach((p) => mergedMap.set(p.id, p));
         prev.forEach((p) => mergedMap.set(p.id, p));
 
         // Merge active products from cloud with timestamp guard
@@ -509,7 +516,12 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         });
 
-        const merged = Array.from(mergedMap.values()).sort((a, b) => getTimestampMs(b.updatedAt) - getTimestampMs(a.updatedAt));
+        let merged = Array.from(mergedMap.values());
+        if (merged.length === 0) {
+          merged = [...INITIAL_PRODUCTS];
+        }
+        merged.sort((a, b) => getTimestampMs(b.updatedAt) - getTimestampMs(a.updatedAt));
+
         if (typeof window !== 'undefined') {
           localStorage.setItem('huda_products', JSON.stringify(merged));
         }
