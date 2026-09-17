@@ -10,6 +10,15 @@ interface ProductCardProps {
   product: Product;
 }
 
+const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
+  abaya: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop',
+  kaftan: 'https://images.unsplash.com/photo-1563178406-4cdc2923acbc?q=80&w=1000&auto=format&fit=crop',
+  perfume: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop',
+  incense: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?q=80&w=1000&auto=format&fit=crop',
+  combo: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?q=80&w=1000&auto=format&fit=crop',
+  other: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop',
+};
+
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { formatPrice, setActive3DProduct } = useShop();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -20,6 +29,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const maxPrice = Math.max(...prices);
   const totalStock = product.variants.reduce((sum, v) => sum + v.stockQuantity, 0);
 
+  const defaultImg = DEFAULT_CATEGORY_IMAGES[product.category] || DEFAULT_CATEGORY_IMAGES.abaya;
+  const initialImg = (product.images && product.images.length > 0 && product.images[0] && typeof product.images[0] === 'string' && product.images[0].trim() !== '')
+    ? product.images[0]
+    : defaultImg;
+
+  const [imgSrc, setImgSrc] = useState<string>(initialImg);
+
   return (
     <>
       <div className="group bg-slate-800/90 backdrop-blur-md border border-slate-700/80 rounded-2xl overflow-hidden hover:border-amber-400/70 shadow-md hover:shadow-sky-500/20 transition-all duration-500 flex flex-col justify-between hover:-translate-y-1">
@@ -27,8 +43,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* Image Container */}
         <div className="relative aspect-[4/5] overflow-hidden bg-slate-950 cursor-pointer" onClick={() => setIsModalOpen(true)}>
           <img
-            src={product.images[0]}
+            src={imgSrc}
             alt={product.title}
+            onError={() => {
+              if (imgSrc !== defaultImg) {
+                setImgSrc(defaultImg);
+              }
+            }}
             className="w-full h-full object-cover object-center transform transition duration-700 group-hover:scale-108"
           />
           

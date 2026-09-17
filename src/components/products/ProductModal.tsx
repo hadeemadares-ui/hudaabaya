@@ -10,11 +10,25 @@ interface ProductModalProps {
   onClose: () => void;
 }
 
+const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
+  abaya: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop',
+  kaftan: 'https://images.unsplash.com/photo-1563178406-4cdc2923acbc?q=80&w=1000&auto=format&fit=crop',
+  perfume: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop',
+  incense: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?q=80&w=1000&auto=format&fit=crop',
+  combo: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?q=80&w=1000&auto=format&fit=crop',
+  other: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop',
+};
+
 export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) => {
   const { addToCart } = useShop();
 
+  const defaultImg = DEFAULT_CATEGORY_IMAGES[product.category] || DEFAULT_CATEGORY_IMAGES.abaya;
+  const initialImg = (product.images && product.images.length > 0 && product.images[0] && typeof product.images[0] === 'string' && product.images[0].trim() !== '')
+    ? product.images[0]
+    : defaultImg;
+
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(product.variants[0]);
-  const [selectedImage, setSelectedImage] = useState<string>(product.images[0]);
+  const [selectedImage, setSelectedImage] = useState<string>(initialImg);
   const [quantity, setQuantity] = useState<number>(1);
   const [showSizeGuide, setShowSizeGuide] = useState<boolean>(false);
   const [addedSuccess, setAddedSuccess] = useState<boolean>(false);
@@ -53,6 +67,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
               <img
                 src={selectedImage}
                 alt={product.title}
+                onError={() => {
+                  if (selectedImage !== defaultImg) {
+                    setSelectedImage(defaultImg);
+                  }
+                }}
                 className="w-full h-full object-cover object-center"
               />
               {product.onSale && (
