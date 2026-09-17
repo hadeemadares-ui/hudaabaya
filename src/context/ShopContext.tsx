@@ -478,7 +478,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         syncProducts();
         syncOrders();
         syncStoreSettings();
-      }, 5000);
+      }, 2000);
 
       const handleWindowFocus = () => {
         syncProducts();
@@ -573,10 +573,16 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         deletedProductIds.forEach((id) => deletedSet.add(id));
 
         const mergedMap = new Map<string, Product>();
+        const nowMs = Date.now();
+
+        // 1. Keep recently added/modified local items (within last 15 seconds) for smooth UI without flickering
         prev.forEach((p) => {
-          if (!deletedSet.has(p.id)) mergedMap.set(p.id, p);
+          if (!deletedSet.has(p.id) && (nowMs - getTimestampMs(p.updatedAt) < 15000)) {
+            mergedMap.set(p.id, p);
+          }
         });
 
+        // 2. Overwrite / merge with authoritative master product list from Cloud
         cloudProds.forEach((p) => {
           if (deletedSet.has(p.id)) return;
           const existing = mergedMap.get(p.id);
@@ -603,14 +609,42 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const syncOrders = async () => {
     try {
-      const res = await fetch(`/api/orders?_t=${Date.now()}`, { cache: 'no-store' });
-      const data = await res.json();
-      if (data.success && Array.isArray(data.orders) && data.orders.length > 0) {
+      const [res, snapshot] = await Promise.all([
+        fetch(`/api/orders?_t=${Date.now()}`, { cache: 'no-store' }).then((r) => r.json()).catch(() => ({ success: false })),
+        getDocs(collection(db, 'orders')).catch(() => null)
+      ]);
+
+      const cloudOrdersMap = new Map<string, Order>();
+
+      if (res.success && Array.isArray(res.orders)) {
+        res.orders.forEach((o: Order) => cloudOrdersMap.set(o.id, o));
+      }
+
+      if (snapshot) {
+        snapshot.forEach((docSnap) => {
+          if (docSnap.exists()) {
+            const o = docSnap.data() as Order;
+            cloudOrdersMap.set(o.id, o);
+          }
+        });
+      }
+
+      const cloudOrders = Array.from(cloudOrdersMap.values());
+      if (cloudOrders.length > 0) {
         setOrders((prev) => {
           const mergedMap = new Map<string, Order>();
-          prev.forEach((o) => mergedMap.set(o.id, o));
-          data.orders.forEach((o: Order) => mergedMap.set(o.id, o));
+          const nowMs = Date.now();
+          prev.forEach((o) => {
+            const createdMs = getTimestampMs(o.createdAt);
+            if (nowMs - createdMs < 15000) {
+              mergedMap.set(o.id, o);
+            }
+          });
+          cloudOrders.forEach((o) => mergedMap.set(o.id, o));
+
           const merged = Array.from(mergedMap.values());
+          merged.sort((a, b) => getTimestampMs(b.createdAt) - getTimestampMs(a.createdAt));
+
           if (typeof window !== 'undefined') {
             localStorage.setItem('huda_orders', JSON.stringify(merged));
           }

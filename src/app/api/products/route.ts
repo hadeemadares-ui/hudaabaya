@@ -29,6 +29,7 @@ async function syncWithCloudStore() {
     if (prodRes.ok) {
       const prodData = await prodRes.json();
       if (Array.isArray(prodData?.data?.products)) {
+        globalProductsStoreMap.clear();
         prodData.data.products.forEach((p: Product) => {
           if (!globalDeletedProductIds.has(p.id)) {
             globalProductsStoreMap.set(p.id, p);
