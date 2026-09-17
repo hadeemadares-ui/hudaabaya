@@ -21,13 +21,13 @@ module.exports = {
           900: '#0C4A6E', // Night Sky Blue
         },
         dubai: {
-          black: '#04162B', // Deep Sky Night Background
-          dark: '#072242',  // Dark Sky Ocean Container
-          card: '#0E315C',  // Sky Blue Card Backdrop
+          black: '#034E7B', // Bright Vibrant Sky Blue Background
+          dark: '#0267A0',  // Rich Sky Blue Container
+          card: '#0284C7',  // Vivid Electric Sky Blue Card
           sand: '#F0F9FF',
           cream: '#E0F2FE',
-          emerald: '#0284C7',
-          navy: '#0369A1',
+          emerald: '#0EA5E9',
+          navy: '#38BDF8',
         }
       },
       fontFamily: {
