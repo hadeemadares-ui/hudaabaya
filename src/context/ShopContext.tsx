@@ -100,7 +100,61 @@ const getTimestampMs = (val: any): number => {
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
 export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [deletedProductIds, setDeletedProductIds] = useState<Set<string>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('huda_deleted_product_ids');
+      if (saved) {
+        try {
+          const arr = JSON.parse(saved);
+          if (Array.isArray(arr)) return new Set(arr);
+        } catch (e) {}
+      }
+    }
+    return new Set<string>();
+  });
+
+  const [products, setProducts] = useState<Product[]>(() => {
+    let base = INITIAL_PRODUCTS;
+    if (typeof window !== 'undefined') {
+      const savedProds = localStorage.getItem('huda_products');
+      const savedDeleted = localStorage.getItem('huda_deleted_product_ids');
+      let deletedSet = new Set<string>();
+      if (savedDeleted) {
+        try {
+          const arr = JSON.parse(savedDeleted);
+          if (Array.isArray(arr)) deletedSet = new Set(arr);
+        } catch (e) {}
+      }
+      if (savedProds) {
+        try {
+          const parsed = JSON.parse(savedProds);
+          if (Array.isArray(parsed)) base = parsed;
+        } catch (e) {}
+      }
+      return base.filter((p) => !deletedSet.has(p.id));
+    }
+    return INITIAL_PRODUCTS;
+  });
+
+  // Sync deleted product IDs from Firestore doc 'settings/deleted_products'
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(doc(db, 'settings', 'deleted_products'), (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (Array.isArray(data?.ids)) {
+            const newSet = new Set<string>(data.ids);
+            setDeletedProductIds(newSet);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('huda_deleted_product_ids', JSON.stringify(Array.from(newSet)));
+            }
+            setProducts((prev) => prev.filter((p) => !newSet.has(p.id)));
+          }
+        }
+      });
+      return () => unsub();
+    } catch (e) {}
+  }, []);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>(() => {
     if (typeof window !== 'undefined') {
@@ -204,13 +258,24 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setProducts((prev) => {
           const mergedMap = new Map<string, Product>();
+          const savedDeleted = typeof window !== 'undefined' ? localStorage.getItem('huda_deleted_product_ids') : null;
+          let deletedSet = deletedProductIds;
+          if (savedDeleted) {
+            try {
+              const arr = JSON.parse(savedDeleted);
+              if (Array.isArray(arr)) deletedSet = new Set([...Array.from(deletedSet), ...arr]);
+            } catch (e) {}
+          }
           
-          // Always preserve initial products so catalog is never wiped out
-          INITIAL_PRODUCTS.forEach((p) => mergedMap.set(p.id, p));
-          prev.forEach((p) => mergedMap.set(p.id, p));
+          INITIAL_PRODUCTS.forEach((p) => {
+            if (!deletedSet.has(p.id)) mergedMap.set(p.id, p);
+          });
+          prev.forEach((p) => {
+            if (!deletedSet.has(p.id)) mergedMap.set(p.id, p);
+          });
 
-          // Merge active products from Firestore with robust timestamp guard
           firestoreProds.forEach((p) => {
+            if (deletedSet.has(p.id)) return;
             const existing = mergedMap.get(p.id);
             const pTime = getTimestampMs(p.updatedAt);
             const existingTime = getTimestampMs(existing?.updatedAt);
@@ -219,10 +284,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           });
 
-          let merged = Array.from(mergedMap.values());
-          if (merged.length === 0) {
-            merged = [...INITIAL_PRODUCTS];
-          }
+          let merged = Array.from(mergedMap.values()).filter((p) => !deletedSet.has(p.id));
           merged.sort((a, b) => getTimestampMs(b.updatedAt) - getTimestampMs(a.updatedAt));
 
           if (typeof window !== 'undefined') {
@@ -501,13 +563,24 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setProducts((prev) => {
         const mergedMap = new Map<string, Product>();
+        const savedDeleted = typeof window !== 'undefined' ? localStorage.getItem('huda_deleted_product_ids') : null;
+        let deletedSet = deletedProductIds;
+        if (savedDeleted) {
+          try {
+            const arr = JSON.parse(savedDeleted);
+            if (Array.isArray(arr)) deletedSet = new Set([...Array.from(deletedSet), ...arr]);
+          } catch (e) {}
+        }
         
-        // Always preserve initial products so catalog is never wiped out
-        INITIAL_PRODUCTS.forEach((p) => mergedMap.set(p.id, p));
-        prev.forEach((p) => mergedMap.set(p.id, p));
+        INITIAL_PRODUCTS.forEach((p) => {
+          if (!deletedSet.has(p.id)) mergedMap.set(p.id, p);
+        });
+        prev.forEach((p) => {
+          if (!deletedSet.has(p.id)) mergedMap.set(p.id, p);
+        });
 
-        // Merge active products from cloud with timestamp guard
         cloudProds.forEach((p) => {
+          if (deletedSet.has(p.id)) return;
           const existing = mergedMap.get(p.id);
           const pTime = getTimestampMs(p.updatedAt);
           const existingTime = getTimestampMs(existing?.updatedAt);
@@ -516,10 +589,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         });
 
-        let merged = Array.from(mergedMap.values());
-        if (merged.length === 0) {
-          merged = [...INITIAL_PRODUCTS];
-        }
+        let merged = Array.from(mergedMap.values()).filter((p) => !deletedSet.has(p.id));
         merged.sort((a, b) => getTimestampMs(b.updatedAt) - getTimestampMs(a.updatedAt));
 
         if (typeof window !== 'undefined') {
@@ -909,16 +979,28 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const clearAllProducts = async () => {
-    setProducts([]);
+    const allIds = new Set<string>([
+      ...products.map((p) => p.id),
+      ...INITIAL_PRODUCTS.map((p) => p.id),
+      ...Array.from(deletedProductIds),
+    ]);
+    setDeletedProductIds(allIds);
+    const deletedArr = Array.from(allIds);
+
     if (typeof window !== 'undefined') {
+      localStorage.setItem('huda_deleted_product_ids', JSON.stringify(deletedArr));
       localStorage.removeItem('huda_products');
     }
+
     try {
+      setDoc(doc(db, 'settings', 'deleted_products'), { ids: deletedArr }, { merge: true }).catch(() => {});
       const snapshot = await getDocs(collection(db, 'products'));
       snapshot.forEach((docSnap) => {
         deleteDoc(doc(db, 'products', docSnap.id)).catch(() => {});
       });
     } catch (e) {}
+
+    setProducts([]);
 
     fetch('/api/products', {
       method: 'POST',
@@ -931,6 +1013,17 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addProduct = (newProduct: Product) => {
     const timestamped = { ...newProduct, updatedAt: Date.now() };
+
+    if (deletedProductIds.has(timestamped.id)) {
+      const newDeleted = new Set(deletedProductIds);
+      newDeleted.delete(timestamped.id);
+      setDeletedProductIds(newDeleted);
+      const arr = Array.from(newDeleted);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_deleted_product_ids', JSON.stringify(arr));
+      }
+      setDoc(doc(db, 'settings', 'deleted_products'), { ids: arr }, { merge: true }).catch(() => {});
+    }
 
     setProducts((prev) => {
       const updated = [timestamped, ...prev.filter((p) => p.id !== timestamped.id)];
@@ -1013,16 +1106,26 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const deleteProduct = (productId: string) => {
+    const newDeletedSet = new Set(deletedProductIds);
+    newDeletedSet.add(productId);
+    setDeletedProductIds(newDeletedSet);
+    const deletedArr = Array.from(newDeletedSet);
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('huda_deleted_product_ids', JSON.stringify(deletedArr));
+    }
+
+    try {
+      setDoc(doc(db, 'settings', 'deleted_products'), { ids: deletedArr }, { merge: true }).catch(() => {});
+      deleteDoc(doc(db, 'products', productId)).catch(() => {});
+    } catch (e) {}
+
     setProducts((prev) => {
       const updated = prev.filter((p) => p.id !== productId);
 
       if (typeof window !== 'undefined') {
         localStorage.setItem('huda_products', JSON.stringify(updated));
       }
-
-      try {
-        deleteDoc(doc(db, 'products', productId)).catch(() => {});
-      } catch (e) {}
 
       fetch('/api/products', {
         method: 'POST',

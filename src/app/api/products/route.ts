@@ -65,6 +65,8 @@ export async function POST(request: Request) {
       };
       globalProductsStoreMap.set(product.id, versioned);
     } else if (action === 'clear_all_products') {
+      globalProductsStoreMap.forEach((_, id) => globalDeletedProductIds.add(id));
+      INITIAL_PRODUCTS.forEach((p) => globalDeletedProductIds.add(p.id));
       globalProductsStoreMap.clear();
     }
 
