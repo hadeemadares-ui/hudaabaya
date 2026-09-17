@@ -423,9 +423,21 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (Array.isArray(parsedProds) && parsedProds.length > 0) {
               setProducts((prev) => {
                 const mergedMap = new Map<string, Product>();
-                prev.forEach((p) => mergedMap.set(p.id, p));
-                parsedProds.forEach((p) => mergedMap.set(p.id, p));
-                return Array.from(mergedMap.values());
+                const savedDeleted = localStorage.getItem('huda_deleted_product_ids');
+                let deletedSet = deletedProductIds;
+                if (savedDeleted) {
+                  try {
+                    const arr = JSON.parse(savedDeleted);
+                    if (Array.isArray(arr)) deletedSet = new Set([...Array.from(deletedSet), ...arr]);
+                  } catch (e) {}
+                }
+                prev.forEach((p) => {
+                  if (!deletedSet.has(p.id)) mergedMap.set(p.id, p);
+                });
+                parsedProds.forEach((p) => {
+                  if (!deletedSet.has(p.id)) mergedMap.set(p.id, p);
+                });
+                return Array.from(mergedMap.values()).filter((p) => !deletedSet.has(p.id));
               });
             } else if (Array.isArray(parsedProds) && parsedProds.length === 0) {
               localStorage.removeItem('huda_products');
