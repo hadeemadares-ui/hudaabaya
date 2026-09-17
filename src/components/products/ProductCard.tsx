@@ -22,10 +22,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   return (
     <>
-      <div className="group bg-dubai-card/90 backdrop-blur-md border border-gold-400/30 rounded-2xl overflow-hidden hover:border-gold-400 shadow-gold-strong transition-all duration-500 flex flex-col justify-between hover:-translate-y-1">
+      <div className="group bg-slate-800/90 backdrop-blur-md border border-slate-700/80 rounded-2xl overflow-hidden hover:border-amber-400/70 shadow-md hover:shadow-sky-500/20 transition-all duration-500 flex flex-col justify-between hover:-translate-y-1">
         
         {/* Image Container */}
-        <div className="relative aspect-[4/5] overflow-hidden bg-dubai-black cursor-pointer" onClick={() => setIsModalOpen(true)}>
+        <div className="relative aspect-[4/5] overflow-hidden bg-slate-950 cursor-pointer" onClick={() => setIsModalOpen(true)}>
           <img
             src={product.images[0]}
             alt={product.title}
@@ -33,17 +33,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           />
           
           {/* Dark Overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-dubai-black/90 via-transparent to-black/20 opacity-70 group-hover:opacity-40 transition" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-black/20 opacity-70 group-hover:opacity-40 transition" />
 
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
             {product.onSale && product.discountPercent && (
-              <span className="bg-gradient-to-r from-sky-500 to-blue-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md">
+              <span className="bg-gradient-to-r from-sky-500 to-cyan-500 text-slate-950 text-[11px] font-extrabold px-2.5 py-1 rounded-full shadow-md">
                 ลด {product.discountPercent}%
               </span>
             )}
             {product.isNew && (
-              <span className="bg-gold-500 text-dubai-black text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow">
+              <span className="bg-amber-400 text-slate-950 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow">
                 HAUTE COUTURE
               </span>
             )}
@@ -52,7 +52,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {/* Stock & 3D Badges */}
           <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1.5">
             {totalStock > 0 ? (
-              <span className="bg-dubai-black/80 backdrop-blur-md border border-gold-400/40 text-gold-300 text-[10px] font-medium px-2 py-0.5 rounded-full">
+              <span className="bg-slate-900/90 backdrop-blur-md border border-amber-400/40 text-amber-300 text-[10px] font-medium px-2 py-0.5 rounded-full">
                 พร้อมส่ง (สต๊อก {totalStock})
               </span>
             ) : (
@@ -66,10 +66,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 e.stopPropagation();
                 setActive3DProduct(product);
               }}
-              className="bg-dubai-black/90 hover:bg-gold-500 hover:text-dubai-black border border-gold-400/50 text-gold-400 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md transition"
+              className="bg-slate-900/90 hover:bg-amber-400 hover:text-slate-950 border border-sky-400/50 text-sky-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md transition"
               title="ดูมุมมอง 3 มิติ 360°"
             >
-              <Box className="w-3 h-3 animate-spin" />
+              <Box className="w-3 h-3 animate-spin text-amber-400" />
               <span>3D Hologram</span>
             </button>
           </div>
@@ -81,7 +81,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 e.stopPropagation();
                 setIsModalOpen(true);
               }}
-              className="bg-gold-500 hover:bg-gold-400 text-dubai-black font-extrabold text-xs px-4 py-2.5 rounded-full shadow-gold-strong flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition duration-300"
+              className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-full shadow-gold-glow flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition duration-300"
             >
               <Eye className="w-4 h-4" />
               <span>ดูรายละเอียด & เลือกไซส์</span>
@@ -93,7 +93,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
           <div>
             {/* Category / Rating */}
-            <div className="flex items-center justify-between text-[11px] text-gold-400/80 mb-1">
+            <div className="flex items-center justify-between text-[11px] text-sky-400 mb-1">
               <span className="uppercase font-medium tracking-wider">
                 {product.category === 'abaya' && 'ชุดอาบายะห์ดูไบ'}
                 {product.category === 'kaftan' && 'ชุดคัฟทาน'}
@@ -102,32 +102,32 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 {product.category === 'combo' && 'เซ็ตของขวัญพิเศษ'}
                 {product.category === 'other' && 'สินค้าอื่นๆ'}
               </span>
-              <div className="flex items-center gap-1 text-gold-400">
-                <Star className="w-3 h-3 fill-gold-400 text-gold-400" />
+              <div className="flex items-center gap-1 text-amber-400">
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                 <span>{product.rating}</span>
-                <span className="text-gray-400 text-[10px]">({product.reviewsCount})</span>
+                <span className="text-slate-400 text-[10px]">({product.reviewsCount})</span>
               </div>
             </div>
 
             {/* Title */}
             <h3
               onClick={() => setIsModalOpen(true)}
-              className="text-sm font-serif font-semibold text-white group-hover:text-gold-300 transition line-clamp-2 cursor-pointer leading-snug"
+              className="text-sm font-serif font-semibold text-white group-hover:text-amber-300 transition line-clamp-2 cursor-pointer leading-snug"
             >
               {product.title}
             </h3>
 
             {/* Arabic Title */}
             {product.arabicTitle && (
-              <p className="text-[11px] font-serif text-gold-400/70 dir-rtl mt-0.5">
+              <p className="text-[11px] font-serif text-amber-300/70 dir-rtl mt-0.5">
                 {product.arabicTitle}
               </p>
             )}
 
             {/* Available Sizes / Variants Pill */}
             <div className="mt-2.5 flex items-center gap-1 flex-wrap">
-              <span className="text-[10px] text-gray-400 font-medium mr-1 flex items-center gap-0.5">
-                <Layers className="w-3 h-3 text-gold-400" />
+              <span className="text-[10px] text-slate-400 font-medium mr-1 flex items-center gap-0.5">
+                <Layers className="w-3 h-3 text-sky-400" />
                 <span>ไซส์:</span>
               </span>
               {product.variants.map((v) => (
@@ -135,8 +135,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   key={v.id}
                   className={`text-[10px] px-2 py-0.5 rounded border ${
                     v.stockQuantity > 0
-                      ? 'bg-dubai-black/60 border-gold-400/40 text-gold-200'
-                      : 'bg-red-950/40 border-red-800/40 text-gray-400 line-through'
+                      ? 'bg-slate-900/80 border-slate-700 text-slate-200'
+                      : 'bg-red-950/40 border-red-800/40 text-slate-500 line-through'
                   }`}
                   title={`${v.name} (สต๊อก ${v.stockQuantity})`}
                 >
@@ -147,14 +147,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
 
           {/* Pricing & Add Action */}
-          <div className="pt-3 border-t border-gold-400/20 flex items-center justify-between">
+          <div className="pt-3 border-t border-slate-700/70 flex items-center justify-between">
             <div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-base font-serif font-bold text-gold-300">
+                <span className="text-base font-serif font-extrabold text-amber-300">
                   {formatPrice(minPrice)}
                 </span>
                 {maxPrice > minPrice && (
-                  <span className="text-xs text-gold-300/70 font-serif">
+                  <span className="text-xs text-slate-400 font-serif">
                     - {formatPrice(maxPrice)}
                   </span>
                 )}
@@ -163,7 +163,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-dubai-black hover:bg-gold-500 hover:text-dubai-black border border-gold-400/50 text-gold-300 text-xs px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5 shadow"
+              className="bg-gradient-to-r from-sky-500 to-cyan-600 hover:from-amber-400 hover:to-amber-500 text-white hover:text-slate-950 border border-sky-400/40 text-xs px-3 py-1.5 rounded-lg transition font-bold flex items-center gap-1.5 shadow"
             >
               <ShoppingBag className="w-3.5 h-3.5" />
               <span>เลือกไซส์</span>

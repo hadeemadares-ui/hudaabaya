@@ -31,7 +31,7 @@ export default function HomePageClient() {
   });
 
   return (
-    <div className="space-y-0 relative">
+    <div className="space-y-0 relative bg-slate-900 text-slate-100">
       
       {/* If Admin Mode & Authenticated is ON -> Display Backoffice Management */}
       {isAdminMode && isAdminAuthenticated ? (
@@ -45,14 +45,14 @@ export default function HomePageClient() {
           <PromotionSection />
 
           {/* Product Catalog Section */}
-          <section id="catalog-section" className="py-12 bg-dubai-black scroll-mt-24">
+          <section id="catalog-section" className="py-12 bg-slate-900 scroll-mt-24">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               
               {/* Section Title */}
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 border-b border-gold-400/20 pb-4">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 border-b border-slate-800 pb-4">
                 <div>
-                  <div className="flex items-center gap-2 text-gold-400 text-xs font-serif font-bold tracking-wider uppercase mb-1">
-                    <Sparkles className="w-4 h-4" />
+                  <div className="flex items-center gap-2 text-amber-400 text-xs font-serif font-bold tracking-wider uppercase mb-1">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
                     <span>HUDA ABAYA DUBAI CATALOG 2076</span>
                   </div>
                   <h2 className="text-2xl sm:text-4xl font-serif font-extrabold text-white tracking-wide">
@@ -66,19 +66,19 @@ export default function HomePageClient() {
                   </h2>
                 </div>
 
-                <div className="text-xs text-gold-300/80 bg-dubai-card px-4 py-2 rounded-full border border-gold-400/30 font-medium">
-                  แสดงทั้งหมด <strong className="text-gold-400 font-bold">{filteredProducts.length}</strong> รายการสินค้า
+                <div className="text-xs text-sky-300 bg-slate-800 px-4 py-2 rounded-full border border-slate-700 font-medium">
+                  แสดงทั้งหมด <strong className="text-amber-400 font-bold">{filteredProducts.length}</strong> รายการสินค้า
                 </div>
               </div>
 
               {/* Products Grid */}
               {filteredProducts.length === 0 ? (
-                <div className="text-center py-16 bg-dubai-dark rounded-2xl border border-gold-400/20 space-y-3">
-                  <PackageSearch className="w-12 h-12 text-gold-400/40 mx-auto" />
+                <div className="text-center py-16 bg-slate-850 rounded-2xl border border-slate-800 space-y-3">
+                  <PackageSearch className="w-12 h-12 text-sky-400/50 mx-auto" />
                   <p className="font-serif text-lg font-bold text-white">
                     ไม่พบรายการสินค้าตรงตามหมวดหมู่ที่เลือก
                   </p>
-                  <p className="text-xs text-gold-300/60 max-w-sm mx-auto">
+                  <p className="text-xs text-slate-400 max-w-sm mx-auto">
                     ลองเปลี่ยนไปเลือกหมวด "ทั้งหมด (All)" หรือกดซิงก์สินค้าเพิ่มจาก Google Sheet นะคะ
                   </p>
                 </div>
@@ -94,18 +94,18 @@ export default function HomePageClient() {
           </section>
 
           {/* Customer Reviews Section */}
-          <section className="py-12 bg-dubai-dark border-t border-gold-400/20">
+          <section className="py-12 bg-slate-950 border-t border-slate-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
               
               <div className="text-center space-y-2 max-w-xl mx-auto">
-                <div className="inline-flex items-center gap-1 bg-gold-500/20 border border-gold-400 px-3 py-1 rounded-full text-gold-300 text-xs font-bold">
-                  <Star className="w-3.5 h-3.5 fill-gold-400 text-gold-400" />
+                <div className="inline-flex items-center gap-1 bg-amber-400/20 border border-amber-400/40 px-3 py-1 rounded-full text-amber-300 text-xs font-bold">
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   <span>4.9 / 5.0 คะแนนการรีวิวจากลูกค้าจริง</span>
                 </div>
                 <h3 className="text-2xl sm:text-3xl font-serif font-extrabold text-white">
                   ความประทับใจจากลูกค้า HUDA ABAYA DUBAI
                 </h3>
-                <p className="text-xs text-gold-300/70">
+                <p className="text-xs text-sky-300">
                   การันตีคุณภาพผ้า ดีไซน์ที่ทรงเสน่ห์ และน้ำหอมดูไบแท้หอมติดทนนาน
                 </p>
               </div>
@@ -114,27 +114,27 @@ export default function HomePageClient() {
                 {MOCK_REVIEWS.map((rev) => (
                   <div
                     key={rev.id}
-                    className="p-5 bg-dubai-card border border-gold-400/30 rounded-2xl space-y-3 shadow-lg flex flex-col justify-between"
+                    className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3 shadow-md flex flex-col justify-between"
                   >
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-serif font-bold text-sm text-gold-300">
+                        <span className="font-serif font-bold text-sm text-amber-300">
                           {rev.userName}
                         </span>
-                        <div className="flex text-sky-400">
+                        <div className="flex text-amber-400">
                           {[...Array(rev.rating)].map((_, i) => (
-                            <Star key={i} className="w-3.5 h-3.5 fill-sky-400 text-sky-400" />
+                            <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                           ))}
                         </div>
                       </div>
 
-                      <p className="text-xs text-gray-200 leading-relaxed italic">
+                      <p className="text-xs text-slate-300 leading-relaxed italic">
                         "{rev.comment}"
                       </p>
                     </div>
 
-                    <div className="pt-3 border-t border-gold-400/10 flex items-center justify-between text-[10px] text-gray-400">
-                      <span className="text-gold-400/80 truncate max-w-[180px] font-mono">
+                    <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
+                      <span className="text-sky-400 truncate max-w-[180px] font-mono">
                         {rev.productName}
                       </span>
                       <span className="text-emerald-400 font-bold flex items-center gap-0.5">
@@ -164,7 +164,7 @@ export default function HomePageClient() {
               setIsAdminLoginModalOpen(true);
             }
           }}
-          className="px-4 py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs sm:text-sm rounded-full shadow-2xl border-2 border-emerald-300 flex items-center gap-2 scale-100 hover:scale-105 active:scale-95 transition cursor-pointer font-sans shadow-gold-strong"
+          className="px-4 py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs sm:text-sm rounded-full shadow-2xl border-2 border-emerald-300 flex items-center gap-2 scale-100 hover:scale-105 active:scale-95 transition cursor-pointer font-sans shadow-tritone-glow"
           title="เปิดรายงานยอดขาย & กำไรสุทธิ"
         >
           <TrendingUp className="w-5 h-5 text-emerald-200 animate-pulse shrink-0" />

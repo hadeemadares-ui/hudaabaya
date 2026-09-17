@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF3C4" />
+      <stop offset="35%" stop-color="#F59E0B" />
+      <stop offset="70%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#78350F" />
+    </linearGradient>
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1E1B18" />
+      <stop offset="100%" stop-color="#09090B" />
+    </radialGradient>
+  </defs>
+
+  <!-- Base Card -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGlow)" />
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="none" stroke="url(#goldGrad)" stroke-width="8" opacity="0.8" />
+  <rect x="28" y="28" width="456" height="456" rx="84" fill="none" stroke="url(#goldGrad)" stroke-width="2" opacity="0.4" stroke-dasharray="8 6" />
+
+  <!-- Outer Ornament Circle -->
+  <circle cx="256" cy="230" r="140" fill="none" stroke="url(#goldGrad)" stroke-width="3" opacity="0.5" />
+  <circle cx="256" cy="230" r="132" fill="none" stroke="url(#goldGrad)" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.7" />
+
+  <!-- Monogram Letter H -->
+  <text x="256" y="285" font-family="'Cinzel', 'Times New Roman', serif" font-weight="900" font-size="190" fill="url(#goldGrad)" text-anchor="middle">H</text>
+
+  <!-- Subtitle Text -->
+  <text x="256" y="420" font-family="'Cinzel', 'Trajan Pro', serif" font-weight="700" font-size="28" fill="url(#goldGrad)" letter-spacing="4" text-anchor="middle">HUDA ABAYA</text>
+  <text x="256" y="450" font-family="'Cinzel', 'Trajan Pro', serif" font-weight="600" font-size="16" fill="#F59E0B" letter-spacing="8" opacity="0.8" text-anchor="middle">DUBAI</text>
+</svg>

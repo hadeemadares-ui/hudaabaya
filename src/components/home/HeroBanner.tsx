@@ -49,44 +49,44 @@ export const HeroBanner: React.FC = () => {
   const active = slides[currentSlide];
 
   return (
-    <div className="relative bg-dubai-black overflow-hidden border-b border-gold-400/30">
+    <div className="relative bg-slate-900 overflow-hidden border-b border-amber-400/25">
       
-      {/* Background Glow Elements */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-gold-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-10 w-96 h-96 bg-emerald-900/20 rounded-full blur-3xl pointer-events-none" />
+      {/* Soft Tri-tone Background Glow Elements */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-10 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           
           {/* Text Content */}
           <div className="lg:col-span-7 space-y-6 z-10">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-dubai-card border border-gold-400/40 text-gold-300 text-xs font-semibold tracking-wider uppercase shadow-gold-glow">
-              <Sparkles className="w-3.5 h-3.5 text-gold-400" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-800/90 border border-amber-400/40 text-amber-300 text-xs font-semibold tracking-wider uppercase shadow-gold-glow">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               <span>{active.badge}</span>
             </div>
 
             <div className="space-y-2">
               <h2 className="text-3xl sm:text-5xl lg:text-6xl font-serif font-extrabold text-white tracking-tight leading-tight">
-                <span className="block bg-gradient-to-r from-sky-100 via-cyan-300 to-sky-400 bg-clip-text text-transparent">
+                <span className="block bg-gradient-to-r from-amber-200 via-sky-300 to-amber-400 bg-clip-text text-transparent">
                   {active.title}
                 </span>
               </h2>
-              <p className="text-lg sm:text-xl font-serif text-gold-300 font-medium">
+              <p className="text-lg sm:text-xl font-serif text-sky-300 font-medium">
                 {active.subtitle}
               </p>
             </div>
 
-            <p className="text-sm sm:text-base text-gray-300 max-w-2xl leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed">
               {active.description}
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <button
                 onClick={() => setSelectedCategory(active.category)}
-                className="px-6 py-3.5 rounded-full bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-dubai-black font-bold text-sm tracking-wider uppercase hover:shadow-gold-strong transition transform hover:-translate-y-0.5 flex items-center gap-2"
+                className="px-6 py-3.5 rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-sky-500 text-slate-950 font-extrabold text-sm tracking-wider uppercase hover:shadow-gold-strong transition transform hover:-translate-y-0.5 flex items-center gap-2"
               >
                 <span>เลือกซื้อสินค้าคอลเลกชันนี้</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 text-slate-950" />
               </button>
             </div>
 
@@ -97,7 +97,7 @@ export const HeroBanner: React.FC = () => {
                   key={idx}
                   onClick={() => setCurrentSlide(idx)}
                   className={`h-2 rounded-full transition-all duration-300 ${
-                    currentSlide === idx ? 'w-8 bg-gold-400' : 'w-2 bg-gold-500/30'
+                    currentSlide === idx ? 'w-8 bg-amber-400' : 'w-2 bg-slate-700'
                   }`}
                   aria-label={`Slide ${idx + 1}`}
                 />
@@ -107,21 +107,21 @@ export const HeroBanner: React.FC = () => {
 
           {/* Image Feature Showcase */}
           <div className="lg:col-span-5 relative">
-            <div className="relative mx-auto max-w-md lg:max-w-none rounded-2xl overflow-hidden border-2 border-gold-400/40 shadow-2xl shadow-gold-900/30 group">
+            <div className="relative mx-auto max-w-md lg:max-w-none rounded-2xl overflow-hidden border-2 border-amber-400/40 shadow-2xl shadow-sky-950/50 group">
               <img
                 src={active.image}
                 alt={active.title}
                 className="w-full h-[380px] sm:h-[450px] object-cover object-center transform transition duration-700 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-dubai-black via-transparent to-transparent opacity-80" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
               
-              <div className="absolute bottom-4 left-4 right-4 p-4 rounded-xl bg-dubai-black/80 backdrop-blur-md border border-gold-400/30 flex items-center justify-between">
+              <div className="absolute bottom-4 left-4 right-4 p-4 rounded-xl bg-slate-900/90 backdrop-blur-md border border-amber-400/30 flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-gold-300/80 font-serif">HUDA ABAYA DUBAI</p>
+                  <p className="text-xs text-amber-300/80 font-serif">HUDA ABAYA DUBAI</p>
                   <p className="text-sm font-semibold text-white">รับประกันผ้าและกลิ่นตรงปก 100%</p>
                 </div>
-                <div className="flex items-center gap-1 bg-gold-500/20 px-2.5 py-1 rounded-full border border-gold-400/40 text-gold-300 text-xs font-bold">
-                  <Star className="w-3.5 h-3.5 fill-gold-400 text-gold-400" />
+                <div className="flex items-center gap-1 bg-amber-400/20 px-2.5 py-1 rounded-full border border-amber-400/40 text-amber-300 text-xs font-bold">
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   <span>4.9 / 5.0</span>
                 </div>
               </div>

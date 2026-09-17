@@ -20,30 +20,30 @@ export const Footer: React.FC = () => {
   const mapUrl = storeSettings.mapUrl || defaultMapUrl;
 
   return (
-    <footer className="bg-dubai-black text-sky-100/90 border-t border-gold-400/30 pt-12 pb-8">
+    <footer className="bg-slate-950 text-slate-200 border-t border-slate-800 pt-12 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Value Proposition Badges */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pb-12 border-b border-gold-400/20 text-center">
-          <div className="flex flex-col items-center space-y-2 p-4 rounded-xl bg-dubai-card/40 border border-gold-400/20">
-            <Award className="w-8 h-8 text-gold-400" />
-            <h4 className="font-serif font-semibold text-sm text-gold-200">100% Authentic Dubai Import</h4>
-            <p className="text-xs text-gold-300/70">นำเข้าตรงจากดูไบ สหรัฐอาหรับเอมิเรตส์</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pb-12 border-b border-slate-800 text-center">
+          <div className="flex flex-col items-center space-y-2 p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+            <Award className="w-8 h-8 text-amber-400" />
+            <h4 className="font-serif font-semibold text-sm text-amber-200">100% Authentic Dubai Import</h4>
+            <p className="text-xs text-slate-400">นำเข้าตรงจากดูไบ สหรัฐอาหรับเอมิเรตส์</p>
           </div>
-          <div className="flex flex-col items-center space-y-2 p-4 rounded-xl bg-dubai-card/40 border border-gold-400/20">
-            <Truck className="w-8 h-8 text-gold-400" />
-            <h4 className="font-serif font-semibold text-sm text-gold-200">Fast Express Shipping</h4>
-            <p className="text-xs text-gold-300/70">ส่งฟรีเมื่อช็อปครบ 2,000.- ทั่วประเทศ</p>
+          <div className="flex flex-col items-center space-y-2 p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+            <Truck className="w-8 h-8 text-amber-400" />
+            <h4 className="font-serif font-semibold text-sm text-amber-200">Fast Express Shipping</h4>
+            <p className="text-xs text-slate-400">ส่งฟรีเมื่อช็อปครบ 2,000.- ทั่วประเทศ</p>
           </div>
-          <div className="flex flex-col items-center space-y-2 p-4 rounded-xl bg-dubai-card/40 border border-gold-400/20">
-            <CreditCard className="w-8 h-8 text-gold-400" />
-            <h4 className="font-serif font-semibold text-sm text-gold-200">All Payment Methods</h4>
-            <p className="text-xs text-gold-300/70">พร้อมเพย์ QR ({storeSettings.promptPayNumber}), โอนผ่านธนาคาร</p>
+          <div className="flex flex-col items-center space-y-2 p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+            <CreditCard className="w-8 h-8 text-amber-400" />
+            <h4 className="font-serif font-semibold text-sm text-amber-200">All Payment Methods</h4>
+            <p className="text-xs text-slate-400">พร้อมเพย์ QR ({storeSettings.promptPayNumber}), โอนผ่านธนาคาร</p>
           </div>
-          <div className="flex flex-col items-center space-y-2 p-4 rounded-xl bg-dubai-card/40 border border-gold-400/20">
-            <ShieldCheck className="w-8 h-8 text-gold-400" />
-            <h4 className="font-serif font-semibold text-sm text-gold-200">Size & Quality Guaranteed</h4>
-            <p className="text-xs text-gold-300/70">รับประกันผ้าและไซส์ สต๊อกอัปเดตแม่นยำ</p>
+          <div className="flex flex-col items-center space-y-2 p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+            <ShieldCheck className="w-8 h-8 text-amber-400" />
+            <h4 className="font-serif font-semibold text-sm text-amber-200">Size & Quality Guaranteed</h4>
+            <p className="text-xs text-slate-400">รับประกันผ้าและไซส์ สต๊อกอัปเดตแม่นยำ</p>
           </div>
         </div>
 
@@ -53,14 +53,14 @@ export const Footer: React.FC = () => {
           {/* Brand Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <span className="font-serif text-2xl font-bold bg-gradient-to-r from-sky-200 via-cyan-300 to-sky-100 bg-clip-text text-transparent">
+              <span className="font-serif text-2xl font-bold bg-gradient-to-r from-amber-200 via-sky-300 to-amber-300 bg-clip-text text-transparent">
                 {storeSettings.storeName}
               </span>
             </div>
-            <p className="text-xs text-gold-300/70 leading-relaxed">
+            <p className="text-xs text-slate-300 leading-relaxed">
               ร้านจำหน่ายชุดอาบายะห์ ชุดคัฟทาน เดรสอาหรับ และน้ำหอมดูไบเกรดพรีเมียม (Oud & Attar) นำเข้าจาก UAE โดยตรง มุ่งมั่นมอบความสง่างามตามแบบฉบับดูไบให้แก่คุณ
             </p>
-            <div className="flex items-center gap-2 text-xs text-gold-400">
+            <div className="flex items-center gap-2 text-xs text-amber-400">
               <Sparkles className="w-4 h-4" />
               <span>ความหรูหราส่งตรงถึงบ้านคุณ</span>
             </div>
@@ -68,24 +68,24 @@ export const Footer: React.FC = () => {
 
           {/* Contact & Location */}
           <div className="space-y-3">
-            <h4 className="font-serif font-semibold text-gold-300 text-sm tracking-wider uppercase flex items-center gap-1.5">
-              <Compass className="w-4 h-4 text-gold-400" />
+            <h4 className="font-serif font-semibold text-amber-300 text-sm tracking-wider uppercase flex items-center gap-1.5">
+              <Compass className="w-4 h-4 text-amber-400" />
               <span>ที่ตั้งร้านค้า & นำทาง GPS (Location)</span>
             </h4>
-            <ul className="space-y-2.5 text-xs text-gold-200/80">
+            <ul className="space-y-2.5 text-xs text-slate-300">
               <li className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-gold-400 shrink-0 mt-0.5" />
+                <MapPin className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 <span className="leading-relaxed">{addressText}</span>
               </li>
               <li className="flex items-center gap-2">
-                <PhoneCall className="w-4 h-4 text-gold-400 shrink-0" />
+                <PhoneCall className="w-4 h-4 text-amber-400 shrink-0" />
                 <span>
                   {phoneText ? `โทรศัพท์: ${phoneText}` : ''}
                   {lineText && lineText !== '-' ? ` | LINE ID: ${lineText}` : ''}
                 </span>
               </li>
               <li className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-gold-400 shrink-0" />
+                <Clock className="w-4 h-4 text-amber-400 shrink-0" />
                 <span>เวลาทำการ: เปิดบริการทุกวัน 09:00 - 21:00 น.</span>
               </li>
             </ul>
@@ -96,46 +96,46 @@ export const Footer: React.FC = () => {
                 href={mapUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-dubai-black font-extrabold text-xs rounded-xl shadow-gold-glow hover:scale-105 transition border border-gold-300/40 group"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-400 via-amber-500 to-sky-500 text-slate-950 font-extrabold text-xs rounded-xl shadow-gold-glow hover:scale-105 transition border border-amber-300/40 group"
               >
-                <Navigation className="w-4 h-4 text-dubai-black fill-dubai-black group-hover:rotate-45 transition-transform" />
+                <Navigation className="w-4 h-4 text-slate-950 fill-slate-950 group-hover:rotate-45 transition-transform" />
                 <span>เปิดแผนที่นำทาง GPS (Google Maps)</span>
-                <ExternalLink className="w-3.5 h-3.5 text-dubai-black" />
+                <ExternalLink className="w-3.5 h-3.5 text-slate-950" />
               </a>
             </div>
           </div>
 
           {/* Accepted Payment Channels */}
           <div className="space-y-3">
-            <h4 className="font-serif font-semibold text-gold-300 text-sm tracking-wider uppercase">
+            <h4 className="font-serif font-semibold text-amber-300 text-sm tracking-wider uppercase">
               ช่องทางชำระเงินที่รองรับ
             </h4>
-            <p className="text-xs text-gold-300/70">
+            <p className="text-xs text-slate-400">
               เราเปิดรับการชำระเงินอย่างปลอดภัย
             </p>
             <div className="flex flex-wrap gap-2 pt-2">
               {enablePromptPay && (
-                <span className="px-3 py-1 bg-dubai-card border border-gold-400/30 rounded text-xs text-gold-300 font-semibold flex items-center gap-1">
-                  <QrCode className="w-3.5 h-3.5 text-gold-400" /> PromptPay QR ({storeSettings.promptPayNumber})
+                <span className="px-3 py-1 bg-slate-900 border border-amber-400/30 rounded text-xs text-amber-300 font-semibold flex items-center gap-1">
+                  <QrCode className="w-3.5 h-3.5 text-amber-400" /> PromptPay QR ({storeSettings.promptPayNumber})
                 </span>
               )}
               {enableBankTransfer && storeSettings.bankName !== '-' && (
-                <span className="px-3 py-1 bg-dubai-card border border-gold-400/30 rounded text-xs text-gold-300 font-semibold flex items-center gap-1">
-                  <Building className="w-3.5 h-3.5 text-gold-400" /> {storeSettings.bankName} ({storeSettings.bankAccountNo})
+                <span className="px-3 py-1 bg-slate-900 border border-amber-400/30 rounded text-xs text-amber-300 font-semibold flex items-center gap-1">
+                  <Building className="w-3.5 h-3.5 text-amber-400" /> {storeSettings.bankName} ({storeSettings.bankAccountNo})
                 </span>
               )}
               {enableCreditCard && (
-                <span className="px-3 py-1 bg-dubai-card border border-gold-400/30 rounded text-xs text-gold-300 font-semibold">
+                <span className="px-3 py-1 bg-slate-900 border border-slate-700 rounded text-xs text-amber-300 font-semibold">
                   Visa / Mastercard / JCB
                 </span>
               )}
               {enableCOD && (
-                <span className="px-3 py-1 bg-dubai-card border border-gold-400/30 rounded text-xs text-gold-300 font-semibold">
+                <span className="px-3 py-1 bg-slate-900 border border-slate-700 rounded text-xs text-amber-300 font-semibold">
                   ชำระปลายทาง (COD)
                 </span>
               )}
               {enableTrueMoney && (
-                <span className="px-3 py-1 bg-dubai-card border border-gold-400/30 rounded text-xs text-gold-300 font-semibold">
+                <span className="px-3 py-1 bg-slate-900 border border-slate-700 rounded text-xs text-amber-300 font-semibold">
                   TrueMoney Wallet / LINE Pay
                 </span>
               )}
@@ -145,7 +145,7 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Copyright */}
-        <div className="pt-8 border-t border-gold-400/20 text-center text-xs text-gold-400/60">
+        <div className="pt-8 border-t border-slate-800 text-center text-xs text-slate-400">
           © {new Date().getFullYear()} {storeSettings.storeName}. All Rights Reserved. นำเข้าชุดและน้ำหอมอาหรับแท้จากดูไบ
         </div>
 

@@ -7,9 +7,6 @@ import { CartDrawer } from '../components/cart/CartDrawer';
 import { OrderTrackingModal } from '../components/orders/OrderTrackingModal';
 import { PWAInstallPrompt } from '../components/common/PWAInstallPrompt';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 export const metadata: Metadata = {
   title: 'HUDA ABAYA DUBAI — ร้านจำหน่ายชุดอาบายะห์และน้ำหอมแท้ส่งตรงจากดูไบ',
   description: 'นำเข้าชุดอาบายะห์ดูไบ ชุดคัฟทาน เดรสอาหรับปักดิ้นทอง และน้ำหอมดูไบแท้ 100% สั่งซื้อง่าย คิดเงินครบทุกช่องทาง พร้อมเพย์ QR, บัตรเครดิต, โอนแนบสลิป, COD',
@@ -75,7 +72,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="theme-color" content="#0EA5E9" />
       </head>
-      <body className="bg-dubai-black text-sky-100 min-h-screen flex flex-col justify-between antialiased selection:bg-gold-500 selection:text-dubai-black">
+      <body className="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between antialiased selection:bg-sky-500 selection:text-white">
         <ShopProvider>
           <Navbar />
           <main className="flex-1">{children}</main>

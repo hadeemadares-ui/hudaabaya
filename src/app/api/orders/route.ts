@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import { Order, AuditLog } from '../../../types';
 import { INITIAL_ORDERS } from '../../../data/mockProducts';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 // Central Database Store for Orders & Audit Logs
 let globalOrders: Order[] = [...INITIAL_ORDERS];
