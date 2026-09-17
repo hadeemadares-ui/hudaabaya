@@ -570,19 +570,19 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (Array.isArray(parsed)) parsed.forEach((id) => deletedSet.add(id));
           } catch (e) {}
         }
+        deletedProductIdsRef.current.forEach((id) => deletedSet.add(id));
         deletedProductIds.forEach((id) => deletedSet.add(id));
 
         const mergedMap = new Map<string, Product>();
-        const nowMs = Date.now();
 
-        // 1. Keep recently added/modified local items (within last 15 seconds) for smooth UI without flickering
+        // 1. Keep active local products from prev (excluding deletedSet)
         prev.forEach((p) => {
-          if (!deletedSet.has(p.id) && (nowMs - getTimestampMs(p.updatedAt) < 15000)) {
+          if (!deletedSet.has(p.id)) {
             mergedMap.set(p.id, p);
           }
         });
 
-        // 2. Overwrite / merge with authoritative master product list from Cloud
+        // 2. Merge with authoritative master product list from Cloud
         cloudProds.forEach((p) => {
           if (deletedSet.has(p.id)) return;
           const existing = mergedMap.get(p.id);
@@ -1034,9 +1034,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addProduct = (newProduct: Product) => {
     const timestamped = { ...newProduct, updatedAt: Date.now() };
 
+    deletedProductIdsRef.current.delete(timestamped.id);
     if (deletedProductIds.has(timestamped.id)) {
-      const newDeleted = new Set(deletedProductIds);
-      newDeleted.delete(timestamped.id);
+      const newDeleted = new Set(deletedProductIdsRef.current);
       setDeletedProductIds(newDeleted);
       const arr = Array.from(newDeleted);
       if (typeof window !== 'undefined') {
