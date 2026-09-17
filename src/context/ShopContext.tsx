@@ -257,7 +257,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         });
 
-        setProducts((prev) => {
+        setProducts(() => {
           const deletedArr = typeof window !== 'undefined' ? localStorage.getItem('huda_deleted_product_ids') : null;
           const deletedSet = new Set<string>();
           if (deletedArr) {
@@ -268,22 +268,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           deletedProductIds.forEach((id) => deletedSet.add(id));
 
-          const mergedMap = new Map<string, Product>();
-          prev.forEach((p) => {
-            if (!deletedSet.has(p.id)) mergedMap.set(p.id, p);
-          });
-
-          firestoreProds.forEach((p) => {
-            if (deletedSet.has(p.id)) return;
-            const existing = mergedMap.get(p.id);
-            const pTime = getTimestampMs(p.updatedAt);
-            const existingTime = getTimestampMs(existing?.updatedAt);
-            if (!existing || pTime >= existingTime) {
-              mergedMap.set(p.id, p);
-            }
-          });
-
-          let merged = Array.from(mergedMap.values()).filter((p) => !deletedSet.has(p.id));
+          let merged = firestoreProds.filter((p) => !deletedSet.has(p.id));
           merged.sort((a, b) => getTimestampMs(b.updatedAt) - getTimestampMs(a.updatedAt));
 
           if (typeof window !== 'undefined') {
