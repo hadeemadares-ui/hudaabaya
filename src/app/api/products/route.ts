@@ -3,9 +3,7 @@ import { Product } from '../../../types';
 import { INITIAL_PRODUCTS } from '../../../data/mockProducts';
 
 
-let globalProductsStoreMap = new Map<string, Product>(
-  INITIAL_PRODUCTS.map((p) => [p.id, p])
-);
+let globalProductsStoreMap = new Map<string, Product>();
 let globalDeletedProductIds = new Set<string>();
 
 const noCacheHeaders = {
