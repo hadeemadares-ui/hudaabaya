@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { Product } from '../../../types';
 import { INITIAL_PRODUCTS } from '../../../data/mockProducts';
 
-const CLOUD_DELETED_ID = 'ff808181a09d98f701a0adba989222db';
-const CLOUD_PRODUCTS_ID = 'ff808181a09d98f701a0adba991822dc';
+const CLOUD_DELETED_ID = 'ff808181a09d98f701a0ae89e6f72509';
+const CLOUD_PRODUCTS_ID = 'ff808181a09d98f701a0ae89e765250a';
 
 let globalProductsStoreMap = new Map<string, Product>();
 let globalDeletedProductIds = new Set<string>();
