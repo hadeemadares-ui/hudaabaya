@@ -38,7 +38,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
             {product.onSale && product.discountPercent && (
-              <span className="bg-gradient-to-r from-red-600 to-amber-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md">
+              <span className="bg-gradient-to-r from-sky-500 to-blue-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md">
                 ลด {product.discountPercent}%
               </span>
             )}

@@ -67,7 +67,7 @@ export const HeroBanner: React.FC = () => {
 
             <div className="space-y-2">
               <h2 className="text-3xl sm:text-5xl lg:text-6xl font-serif font-extrabold text-white tracking-tight leading-tight">
-                <span className="block bg-gradient-to-r from-amber-100 via-gold-300 to-gold-500 bg-clip-text text-transparent">
+                <span className="block bg-gradient-to-r from-sky-100 via-cyan-300 to-sky-400 bg-clip-text text-transparent">
                   {active.title}
                 </span>
               </h2>
@@ -83,7 +83,7 @@ export const HeroBanner: React.FC = () => {
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <button
                 onClick={() => setSelectedCategory(active.category)}
-                className="px-6 py-3.5 rounded-full bg-gradient-to-r from-gold-500 via-gold-400 to-amber-600 text-dubai-black font-bold text-sm tracking-wider uppercase hover:shadow-gold-strong transition transform hover:-translate-y-0.5 flex items-center gap-2"
+                className="px-6 py-3.5 rounded-full bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-dubai-black font-bold text-sm tracking-wider uppercase hover:shadow-gold-strong transition transform hover:-translate-y-0.5 flex items-center gap-2"
               >
                 <span>เลือกซื้อสินค้าคอลเลกชันนี้</span>
                 <ArrowRight className="w-4 h-4" />

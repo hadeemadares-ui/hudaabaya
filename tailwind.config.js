@@ -20,6 +20,19 @@ module.exports = {
           800: '#075985', // Dark Sky Blue Accent
           900: '#0C4A6E', // Night Sky Blue
         },
+        amber: {
+          50: '#F0F9FF',  // Lightest Sky Tint
+          100: '#E0F2FE',
+          200: '#BAE6FD', // Soft Sky Blue
+          300: '#7DD3FC', // Bright Cyan Blue
+          400: '#38BDF8', // Electric Sky Blue
+          500: '#0EA5E9', // Vivid Royal Blue
+          600: '#0284C7', // Deep Sky Blue
+          700: '#0369A1', // Ocean Blue
+          800: '#075985', // Dark Sky Blue Accent
+          900: '#0C4A6E', // Night Sky Blue
+          950: '#032C45',
+        },
         dubai: {
           black: '#034E7B', // Bright Vibrant Sky Blue Background
           dark: '#0267A0',  // Rich Sky Blue Container

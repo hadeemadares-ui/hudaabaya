@@ -23,7 +23,7 @@ export const PromotionSection: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gold-500/20 border border-gold-400 flex items-center justify-center text-gold-400">
-              <Flame className="w-5 h-5 text-amber-400 fill-amber-400 animate-pulse" />
+              <Flame className="w-5 h-5 text-sky-400 fill-sky-400 animate-pulse" />
             </div>
             <div>
               <h3 className="text-xl font-serif font-bold text-white tracking-wide">

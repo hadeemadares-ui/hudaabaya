@@ -20,7 +20,7 @@ export const Footer: React.FC = () => {
   const mapUrl = storeSettings.mapUrl || defaultMapUrl;
 
   return (
-    <footer className="bg-dubai-black text-amber-100/90 border-t border-gold-400/30 pt-12 pb-8">
+    <footer className="bg-dubai-black text-sky-100/90 border-t border-gold-400/30 pt-12 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Value Proposition Badges */}
@@ -53,7 +53,7 @@ export const Footer: React.FC = () => {
           {/* Brand Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <span className="font-serif text-2xl font-bold bg-gradient-to-r from-gold-200 via-gold-400 to-amber-200 bg-clip-text text-transparent">
+              <span className="font-serif text-2xl font-bold bg-gradient-to-r from-sky-200 via-cyan-300 to-sky-100 bg-clip-text text-transparent">
                 {storeSettings.storeName}
               </span>
             </div>
@@ -96,7 +96,7 @@ export const Footer: React.FC = () => {
                 href={mapUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-gold-500 via-gold-400 to-amber-600 text-dubai-black font-extrabold text-xs rounded-xl shadow-gold-glow hover:scale-105 transition border border-gold-300/40 group"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-dubai-black font-extrabold text-xs rounded-xl shadow-gold-glow hover:scale-105 transition border border-gold-300/40 group"
               >
                 <Navigation className="w-4 h-4 text-dubai-black fill-dubai-black group-hover:rotate-45 transition-transform" />
                 <span>เปิดแผนที่นำทาง GPS (Google Maps)</span>

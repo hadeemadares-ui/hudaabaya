@@ -97,7 +97,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
               </div>
 
               {/* Title & Arabic */}
-              <h2 className="text-xl sm:text-2xl font-serif font-bold text-amber-100 leading-tight">
+              <h2 className="text-xl sm:text-2xl font-serif font-bold text-sky-100 leading-tight">
                 {product.title}
               </h2>
               {product.arabicTitle && (
@@ -109,7 +109,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
               {/* Colors Available Badge */}
               {product.colors && product.colors.length > 0 && (
                 <div className="flex items-center gap-1.5 pt-1">
-                  <span className="text-xs text-amber-300 font-bold flex items-center gap-1 bg-dubai-black px-2.5 py-1 rounded-full border border-gold-400/30">
+                  <span className="text-xs text-sky-300 font-bold flex items-center gap-1 bg-dubai-black px-2.5 py-1 rounded-full border border-gold-400/30">
                     <Palette className="w-3.5 h-3.5 text-gold-400" />
                     <span>ตัวเลือกสี: {product.colors.join(', ')}</span>
                   </span>
@@ -186,7 +186,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                         </div>
                         
                         {v.color && (
-                          <span className="text-[10px] text-amber-300 block font-serif mt-0.5">
+                          <span className="text-[10px] text-sky-300 block font-serif mt-0.5">
                             🎨 {v.color}
                           </span>
                         )}
@@ -200,7 +200,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                               isOutOfStock
                                 ? 'bg-red-950 text-red-400'
                                 : v.stockQuantity <= 3
-                                ? 'bg-amber-950 text-amber-300'
+                                ? 'bg-sky-950 text-sky-300'
                                 : 'bg-emerald-950 text-emerald-300'
                             }`}
                           >
@@ -261,7 +261,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                   addedSuccess
                     ? 'bg-emerald-600 text-white'
                     : selectedVariant.stockQuantity > 0
-                    ? 'bg-gradient-to-r from-gold-500 via-gold-400 to-amber-600 text-dubai-black hover:shadow-gold-strong shadow-gold-glow'
+                    ? 'bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-dubai-black hover:shadow-gold-strong shadow-gold-glow'
                     : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                 }`}
               >

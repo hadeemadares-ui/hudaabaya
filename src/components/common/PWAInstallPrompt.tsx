@@ -92,7 +92,7 @@ export const PWAInstallPrompt: React.FC = () => {
             </button>
 
             <div className="flex items-center gap-3 pr-6">
-              <div className="w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-gold-600 via-gold-400 to-amber-200 shadow-gold-glow flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-sky-600 via-cyan-400 to-sky-200 shadow-gold-glow flex items-center justify-center shrink-0">
                 <img
                   src={storeSettings.logoImageUrl || DEFAULT_LOGO_BASE64}
                   onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_LOGO_BASE64; }}
@@ -115,7 +115,7 @@ export const PWAInstallPrompt: React.FC = () => {
             {isDesktop ? (
               <button
                 onClick={() => setShowQRCodeModal(true)}
-                className="w-full py-2.5 bg-gradient-to-r from-gold-500 via-gold-400 to-amber-600 text-dubai-black font-extrabold text-xs rounded-xl shadow-gold-glow flex items-center justify-center gap-2 hover:scale-102 transition"
+                className="w-full py-2.5 bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-dubai-black font-extrabold text-xs rounded-xl shadow-gold-glow flex items-center justify-center gap-2 hover:scale-102 transition"
               >
                 <QrCode className="w-4 h-4" />
                 <span>สแกน QR Code ติดตั้งแอปบนมือถือทันที</span>
@@ -124,7 +124,7 @@ export const PWAInstallPrompt: React.FC = () => {
               /* Android / Chrome Native PWA Button */
               <button
                 onClick={handleInstallClick}
-                className="w-full py-2.5 bg-gradient-to-r from-gold-500 via-gold-400 to-amber-600 text-dubai-black font-extrabold text-xs rounded-xl shadow-gold-glow flex items-center justify-center gap-2 hover:scale-102 transition"
+                className="w-full py-2.5 bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-dubai-black font-extrabold text-xs rounded-xl shadow-gold-glow flex items-center justify-center gap-2 hover:scale-102 transition"
               >
                 <Download className="w-4 h-4" />
                 <span>กดติดตั้งแอปพลิเคชันลงบนมือถือทันที</span>
@@ -169,7 +169,7 @@ export const PWAInstallPrompt: React.FC = () => {
 
             {/* Header */}
             <div className="space-y-1 pt-2">
-              <div className="w-14 h-14 mx-auto rounded-full p-0.5 bg-gradient-to-tr from-gold-600 via-gold-400 to-amber-200 shadow-gold-glow flex items-center justify-center">
+              <div className="w-14 h-14 mx-auto rounded-full p-0.5 bg-gradient-to-tr from-sky-600 via-cyan-400 to-sky-200 shadow-gold-glow flex items-center justify-center">
                 <img
                   src={storeSettings.logoImageUrl || DEFAULT_LOGO_BASE64}
                   onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_LOGO_BASE64; }}

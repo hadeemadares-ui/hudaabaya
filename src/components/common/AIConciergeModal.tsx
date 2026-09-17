@@ -66,7 +66,7 @@ export const AIConciergeModal: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gold-400/30 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-gold-500 via-amber-300 to-gold-600 p-0.5 shadow-gold-glow flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-sky-500 via-cyan-300 to-sky-600 p-0.5 shadow-gold-glow flex items-center justify-center">
               <div className="w-full h-full bg-dubai-black rounded-full flex items-center justify-center">
                 <Bot className="w-5 h-5 text-gold-400 animate-pulse" />
               </div>
@@ -143,7 +143,7 @@ export const AIConciergeModal: React.FC = () => {
           <button
             type="submit"
             disabled={isAnalyzing}
-            className="w-full py-3 bg-gradient-to-r from-gold-500 via-amber-400 to-gold-600 text-dubai-black font-extrabold text-xs rounded-xl shadow-gold-glow hover:scale-102 transition flex items-center justify-center gap-2"
+            className="w-full py-3 bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-dubai-black font-extrabold text-xs rounded-xl shadow-gold-glow hover:scale-102 transition flex items-center justify-center gap-2"
           >
             {isAnalyzing ? (
               <span className="flex items-center gap-2">

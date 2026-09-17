@@ -29,7 +29,7 @@ export const OrderTrackingModal: React.FC = () => {
   const getStatusBadge = (status: Order['orderStatus']) => {
     switch (status) {
       case 'pending':
-        return <span className="bg-amber-950/80 border border-amber-500/50 text-amber-300 text-xs px-2.5 py-0.5 rounded-full font-bold">ได้รับคำสั่งซื้อแล้ว</span>;
+        return <span className="bg-sky-950/80 border border-sky-500/50 text-sky-300 text-xs px-2.5 py-0.5 rounded-full font-bold">ได้รับคำสั่งซื้อแล้ว</span>;
       case 'confirmed':
         return <span className="bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 text-xs px-2.5 py-0.5 rounded-full font-bold">ยืนยันออเดอร์แล้ว</span>;
       case 'processing':

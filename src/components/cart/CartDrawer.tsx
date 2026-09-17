@@ -100,7 +100,7 @@ export const CartDrawer: React.FC = () => {
               </div>
               <div className="w-full h-1.5 bg-dubai-dark rounded-full overflow-hidden border border-gold-400/20">
                 <div
-                  className="h-full bg-gradient-to-r from-gold-600 via-gold-400 to-amber-300 transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-sky-500 via-cyan-400 to-sky-300 transition-all duration-500"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -139,7 +139,7 @@ export const CartDrawer: React.FC = () => {
                     />
 
                     <div className="flex-1 min-w-0 space-y-1">
-                      <h4 className="text-xs font-serif font-bold text-amber-100 truncate">
+                      <h4 className="text-xs font-serif font-bold text-sky-100 truncate">
                         {item.productTitle}
                       </h4>
                       <div className="flex items-center gap-2">
@@ -257,7 +257,7 @@ export const CartDrawer: React.FC = () => {
                 {/* Checkout Trigger Button */}
                 <button
                   onClick={() => setIsCheckoutOpen(true)}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-gold-500 via-gold-400 to-amber-600 text-dubai-black font-extrabold text-sm uppercase tracking-wider shadow-gold-glow hover:shadow-gold-strong transition flex items-center justify-center gap-2"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-dubai-black font-extrabold text-sm uppercase tracking-wider shadow-gold-glow hover:shadow-gold-strong transition flex items-center justify-center gap-2"
                 >
                   <span>ดำเนินการสั่งซื้อ & ชำระเงิน</span>
                   <ArrowRight className="w-4 h-4" />

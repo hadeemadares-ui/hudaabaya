@@ -73,7 +73,7 @@ export const Navbar: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 bg-dubai-black/95 backdrop-blur-xl border-b border-gold-400/30 text-white shadow-gold-strong transition-all">
       {/* Top Announcement Banner */}
-      <div className="bg-gradient-to-r from-gold-700 via-gold-400 to-gold-700 text-dubai-black text-xs font-bold py-1.5 px-3 text-center tracking-wide flex items-center justify-between">
+      <div className="bg-gradient-to-r from-sky-700 via-cyan-400 to-sky-700 text-dubai-black text-xs font-bold py-1.5 px-3 text-center tracking-wide flex items-center justify-between">
         <div className="hidden md:flex items-center gap-1.5 text-[11px]">
           <Globe className="w-3.5 h-3.5 shrink-0" />
           <span>สั่งซื้อตรงจากดูไบ UAE — สินค้าแท้ 100%</span>
@@ -109,7 +109,7 @@ export const Navbar: React.FC = () => {
           {/* Main Logo & Store Name Display */}
           <div className="flex items-center gap-2.5 sm:gap-3.5 cursor-pointer group shrink min-w-0" onClick={() => handleCategoryClick('all')}>
             <div className="flex items-center gap-2 sm:gap-3.5 min-w-0">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full p-0.5 sm:p-1 bg-gradient-to-tr from-gold-600 via-gold-400 to-amber-200 shadow-gold-strong flex items-center justify-center shrink-0 group-hover:scale-105 transition duration-300">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full p-0.5 sm:p-1 bg-gradient-to-tr from-sky-600 via-cyan-400 to-sky-200 shadow-gold-strong flex items-center justify-center shrink-0 group-hover:scale-105 transition duration-300">
                 <img
                   src={storeSettings.logoImageUrl || DEFAULT_LOGO_BASE64}
                   onError={(e) => {
@@ -121,7 +121,7 @@ export const Navbar: React.FC = () => {
                 />
               </div>
               <div className="min-w-0">
-                <h1 className="font-serif text-sm sm:text-xl md:text-2xl lg:text-3xl font-extrabold tracking-tight sm:tracking-wider bg-gradient-to-r from-gold-200 via-gold-400 to-amber-100 bg-clip-text text-transparent drop-shadow-md truncate">
+                <h1 className="font-serif text-sm sm:text-xl md:text-2xl lg:text-3xl font-extrabold tracking-tight sm:tracking-wider bg-gradient-to-r from-sky-200 via-cyan-300 to-sky-100 bg-clip-text text-transparent drop-shadow-md truncate">
                   {storeSettings.storeName}
                 </h1>
                 <p className="text-[9px] sm:text-xs text-gold-300/90 tracking-wider uppercase font-sans font-semibold mt-0.5 truncate hidden xs:block">
@@ -138,7 +138,7 @@ export const Navbar: React.FC = () => {
               placeholder="ค้นหาชุดอาบายะห์, เดรส, น้ำหอมดูไบ..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-dubai-dark/80 border border-gold-400/40 rounded-full py-2 pl-10 pr-4 text-xs text-amber-100 placeholder-gold-500/50 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 transition backdrop-blur-md"
+              className="w-full bg-dubai-dark/80 border border-gold-400/40 rounded-full py-2 pl-10 pr-4 text-xs text-sky-100 placeholder-gold-500/50 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 transition backdrop-blur-md"
             />
             <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-gold-400" />
             {searchQuery && (
@@ -237,7 +237,7 @@ export const Navbar: React.FC = () => {
             >
               <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-gold-400" />
               {totalCartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-600 to-amber-600 text-white text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center shadow-md animate-bounce">
+                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-sky-500 to-blue-600 text-white text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center shadow-md animate-bounce">
                   {totalCartCount}
                 </span>
               )}
@@ -253,7 +253,7 @@ export const Navbar: React.FC = () => {
               placeholder="ค้นหาชุดอาบายะห์, เดรส, น้ำหอมดูไบ..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-dubai-dark border border-gold-400/40 rounded-full py-1.5 pl-9 pr-4 text-xs text-amber-100 placeholder-gold-500/50 focus:outline-none focus:border-gold-400"
+              className="w-full bg-dubai-dark border border-gold-400/40 rounded-full py-1.5 pl-9 pr-4 text-xs text-sky-100 placeholder-gold-500/50 focus:outline-none focus:border-gold-400"
             />
             <Search className="absolute left-3 top-2 w-3.5 h-3.5 text-gold-400" />
           </div>
@@ -315,7 +315,7 @@ export const Navbar: React.FC = () => {
               onClick={() => handleCategoryClick(cat.id)}
               className={`px-3.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
                 selectedCategory === cat.id
-                  ? 'bg-gradient-to-r from-gold-500 to-amber-600 text-dubai-black font-bold shadow-gold-glow scale-105'
+                  ? 'bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-dubai-black font-bold shadow-gold-glow scale-105'
                   : 'bg-dubai-card/70 text-gold-200/80 hover:text-gold-300 border border-gold-400/20 hover:border-gold-400/50'
               }`}
             >

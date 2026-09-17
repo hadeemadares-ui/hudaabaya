@@ -47,7 +47,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#D4AF37',
+  themeColor: '#0EA5E9',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -72,9 +72,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="HUDA ABAYA" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="theme-color" content="#D4AF37" />
+        <meta name="theme-color" content="#0EA5E9" />
       </head>
-      <body className="bg-dubai-black text-amber-100 min-h-screen flex flex-col justify-between antialiased selection:bg-gold-500 selection:text-dubai-black">
+      <body className="bg-dubai-black text-sky-100 min-h-screen flex flex-col justify-between antialiased selection:bg-gold-500 selection:text-dubai-black">
         <ShopProvider>
           <Navbar />
           <main className="flex-1">{children}</main>

@@ -493,9 +493,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onSuccess
 
                 {/* COD */}
                 {paymentMethod === 'cod' && enableCOD && (
-                  <div className="p-3 bg-amber-950/40 border border-amber-500/40 rounded-lg text-amber-200">
+                  <div className="p-3 bg-sky-950/40 border border-sky-500/40 rounded-lg text-sky-200">
                     <p className="font-bold text-sm mb-1 flex items-center gap-1">
-                      <AlertCircle className="w-4 h-4 text-amber-400" />
+                      <AlertCircle className="w-4 h-4 text-sky-400" />
                       ชำระเงินปลายทาง (Cash on Delivery)
                     </p>
                     <p className="text-xs">
@@ -532,7 +532,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onSuccess
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-gold-500 via-gold-400 to-amber-600 text-dubai-black font-extrabold text-sm uppercase tracking-wider shadow-gold-strong hover:scale-105 transition flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-dubai-black font-extrabold text-sm uppercase tracking-wider shadow-gold-strong hover:scale-105 transition flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <span>กำลังดำเนินการ...</span>

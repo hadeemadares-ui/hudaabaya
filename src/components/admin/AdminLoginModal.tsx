@@ -93,7 +93,7 @@ export const AdminLoginModal: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full py-3 bg-gradient-to-r from-gold-500 via-gold-400 to-amber-600 text-dubai-black font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-gold-glow hover:scale-102 transition flex items-center justify-center gap-2"
+            className="w-full py-3 bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-dubai-black font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-gold-glow hover:scale-102 transition flex items-center justify-center gap-2"
           >
             <span>ปลดล็อกด้วยรหัสผ่านอื่น</span>
             <ArrowRight className="w-4 h-4" />

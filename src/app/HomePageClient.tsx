@@ -121,9 +121,9 @@ export default function HomePageClient() {
                         <span className="font-serif font-bold text-sm text-gold-300">
                           {rev.userName}
                         </span>
-                        <div className="flex text-amber-400">
+                        <div className="flex text-sky-400">
                           {[...Array(rev.rating)].map((_, i) => (
-                            <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                            <Star key={i} className="w-3.5 h-3.5 fill-sky-400 text-sky-400" />
                           ))}
                         </div>
                       </div>
