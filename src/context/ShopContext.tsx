@@ -615,6 +615,11 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.setItem('huda_products', JSON.stringify(merged));
         }
 
+        // Auto-push merged products to Cloud Registry if local has products missing from Cloud
+        if (merged.length > 0 && merged.length >= masterCloudProds.length) {
+          saveCloudProducts(merged);
+        }
+
         return merged;
       });
     } catch (e) {
