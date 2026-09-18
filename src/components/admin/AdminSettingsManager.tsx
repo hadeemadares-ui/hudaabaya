@@ -33,8 +33,9 @@ export const AdminSettingsManager: React.FC = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         if (typeof reader.result === 'string') {
+          const rawBase64 = reader.result;
           const img = new Image();
-          img.src = reader.result;
+          img.src = rawBase64;
           img.onload = () => {
             const canvas = document.createElement('canvas');
             const maxDim = 400; // Compress logo images to max 400px for instant loading
@@ -53,7 +54,7 @@ export const AdminSettingsManager: React.FC = () => {
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx?.drawImage(img, 0, 0, width, height);
-            const compressed = canvas.toDataURL('image/jpeg', 0.85);
+            const compressed = canvas.toDataURL('image/jpeg', 0.8);
 
             // Set state and IMMEDIATELY auto-save logo to Firebase & LocalStorage
             setForm((prev) => ({ ...prev, logoImageUrl: compressed }));
@@ -64,10 +65,15 @@ export const AdminSettingsManager: React.FC = () => {
               localStorage.setItem('huda_saved_logo_image', compressed);
             }
           };
+          img.onerror = () => {
+            setForm((prev) => ({ ...prev, logoImageUrl: rawBase64 }));
+            updateStoreSettings({ logoImageUrl: rawBase64 });
+          };
         }
       };
       reader.readAsDataURL(file);
     }
+    e.target.value = '';
   };
 
   const handleClearLogo = () => {

@@ -3,10 +3,17 @@ import { Product, Order, StoreSettings } from '../types';
 function sanitizeImages(images: string[]): string[] {
   if (!Array.isArray(images)) return [];
   return images.map((img) => {
-    if (typeof img === 'string' && (img.startsWith('data:image') || img.length > 2000)) {
+    if (!img || typeof img !== 'string') {
       return 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop';
     }
-    return img || 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop';
+    // Allow uploaded base64 image data URLs (up to 1MB)
+    if (img.startsWith('data:image/')) {
+      if (img.length > 1000000) {
+        return 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop';
+      }
+      return img;
+    }
+    return img;
   });
 }
 

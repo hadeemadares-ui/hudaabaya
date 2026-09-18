@@ -92,10 +92,39 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onSuccess
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setSlipImage(reader.result as string);
+        if (typeof reader.result === 'string') {
+          const rawBase64 = reader.result;
+          const img = new Image();
+          img.src = rawBase64;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxDim = 600;
+            let width = img.width;
+            let height = img.height;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.75);
+            setSlipImage(compressed);
+          };
+          img.onerror = () => {
+            setSlipImage(rawBase64);
+          };
+        }
       };
       reader.readAsDataURL(file);
     }
+    e.target.value = '';
   };
 
   const handleSubmitOrder = (e: React.FormEvent) => {
