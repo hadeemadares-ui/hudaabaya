@@ -10,10 +10,10 @@ const BASE_URL = 'https://api.restful-api.dev/objects';
 function sanitizeImages(images: string[]): string[] {
   if (!Array.isArray(images)) return [];
   return images.map((img) => {
-    if (typeof img === 'string' && img.length > 50000) {
+    if (typeof img === 'string' && (img.startsWith('data:image') || img.length > 2000)) {
       return 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop';
     }
-    return img;
+    return img || 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop';
   });
 }
 
