@@ -1,0 +1,7 @@
+name = "hudaabaya"
+pages_build_output_dir = "out"
+compatibility_date = "2024-09-01"
+
+[[kv_namespaces]]
+binding = "HUDA_KV"
+id = "fca4baa2f4b44ace9bc404df8161c7c3"

@@ -1,6 +1,6 @@
 // Cloudflare Pages Function for /api/products
-let globalProducts: any[] = [];
-let globalDeletedIds: string[] = [];
+let memoryProducts: any[] = [];
+let memoryDeletedIds: string[] = [];
 
 const corsHeaders = {
   'Content-Type': 'application/json',
@@ -14,12 +14,41 @@ export async function onRequestOptions() {
   return new Response(null, { headers: corsHeaders });
 }
 
-export async function onRequestGet() {
+async function getProductsFromKVOrMemory(env: any) {
+  if (env?.HUDA_KV) {
+    try {
+      const rawProds = await env.HUDA_KV.get('huda_products');
+      const rawDeleted = await env.HUDA_KV.get('huda_deleted_ids');
+      const prods = rawProds ? JSON.parse(rawProds) : memoryProducts;
+      const delIds = rawDeleted ? JSON.parse(rawDeleted) : memoryDeletedIds;
+      memoryProducts = prods;
+      memoryDeletedIds = delIds;
+      return { prods, delIds };
+    } catch (e) {}
+  }
+  return { prods: memoryProducts, delIds: memoryDeletedIds };
+}
+
+async function saveProductsToKV(env: any, prods: any[], delIds: any[]) {
+  memoryProducts = prods;
+  memoryDeletedIds = delIds;
+  if (env?.HUDA_KV) {
+    try {
+      await Promise.all([
+        env.HUDA_KV.put('huda_products', JSON.stringify(prods)),
+        env.HUDA_KV.put('huda_deleted_ids', JSON.stringify(delIds))
+      ]);
+    } catch (e) {}
+  }
+}
+
+export async function onRequestGet(context: any) {
+  const { prods, delIds } = await getProductsFromKVOrMemory(context.env);
   return new Response(
     JSON.stringify({
       success: true,
-      data: globalProducts,
-      deletedIds: globalDeletedIds,
+      data: prods,
+      deletedIds: delIds,
       serverTimeUTC: new Date().toISOString(),
     }),
     { headers: corsHeaders }
@@ -28,6 +57,10 @@ export async function onRequestGet() {
 
 export async function onRequestPost(context: any) {
   try {
+    const { prods: currentProds, delIds: currentDeletedIds } = await getProductsFromKVOrMemory(context.env);
+    let globalProducts = [...currentProds];
+    let globalDeletedIds = [...currentDeletedIds];
+
     const body = await context.request.json();
     const { action, product, products, productId, deletedIds } = body;
 
@@ -47,6 +80,8 @@ export async function onRequestPost(context: any) {
     } else if (action === 'clear_all_products') {
       globalProducts = [];
     }
+
+    await saveProductsToKV(context.env, globalProducts, globalDeletedIds);
 
     return new Response(
       JSON.stringify({

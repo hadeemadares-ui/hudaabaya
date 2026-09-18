@@ -1,5 +1,5 @@
 // Cloudflare Pages Function for /api/orders
-let globalOrders: any[] = [];
+let memoryOrders: any[] = [];
 
 const corsHeaders = {
   'Content-Type': 'application/json',
@@ -13,11 +13,37 @@ export async function onRequestOptions() {
   return new Response(null, { headers: corsHeaders });
 }
 
-export async function onRequestGet() {
+async function getOrdersFromKV(env: any) {
+  if (env?.HUDA_KV) {
+    try {
+      const raw = await env.HUDA_KV.get('huda_orders');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          memoryOrders = parsed;
+          return parsed;
+        }
+      }
+    } catch (e) {}
+  }
+  return memoryOrders;
+}
+
+async function saveOrdersToKV(env: any, orders: any[]) {
+  memoryOrders = orders;
+  if (env?.HUDA_KV) {
+    try {
+      await env.HUDA_KV.put('huda_orders', JSON.stringify(orders));
+    } catch (e) {}
+  }
+}
+
+export async function onRequestGet(context: any) {
+  const orders = await getOrdersFromKV(context.env);
   return new Response(
     JSON.stringify({
       success: true,
-      orders: globalOrders,
+      orders,
       serverTimeUTC: new Date().toISOString(),
     }),
     { headers: corsHeaders }
@@ -26,10 +52,13 @@ export async function onRequestGet() {
 
 export async function onRequestPost(context: any) {
   try {
+    let globalOrders = await getOrdersFromKV(context.env);
     const body = await context.request.json();
-    const { action, orderId, orderStatus, paymentStatus } = body;
+    const { action, orderId, orderStatus, paymentStatus, orders } = body;
 
-    if (body.id && body.items) {
+    if (action === 'sync_all_orders' && Array.isArray(orders)) {
+      globalOrders = orders;
+    } else if (body.id && body.items) {
       // New Order creation
       globalOrders = [body, ...globalOrders.filter((o: any) => o.id !== body.id)];
     } else if (action === 'update_status' && orderId) {
@@ -45,6 +74,8 @@ export async function onRequestPost(context: any) {
     } else if (action === 'clear_all_orders') {
       globalOrders = [];
     }
+
+    await saveOrdersToKV(context.env, globalOrders);
 
     return new Response(
       JSON.stringify({
