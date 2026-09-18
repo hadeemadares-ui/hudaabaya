@@ -112,42 +112,8 @@ const ShopContext = createContext<ShopContextType | undefined>(undefined);
 export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const deletedProductIdsRef = useRef<Set<string>>(new Set());
 
-  const [deletedProductIds, setDeletedProductIds] = useState<Set<string>>(() => {
-    const initialSet = new Set<string>();
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('huda_deleted_product_ids');
-      if (saved) {
-        try {
-          const arr = JSON.parse(saved);
-          if (Array.isArray(arr)) arr.forEach((id) => initialSet.add(id));
-        } catch (e) {}
-      }
-    }
-    deletedProductIdsRef.current = new Set(initialSet);
-    return initialSet;
-  });
-
-  const [products, setProducts] = useState<Product[]>(() => {
-    if (typeof window !== 'undefined') {
-      const savedProds = localStorage.getItem('huda_products');
-      const savedDeleted = localStorage.getItem('huda_deleted_product_ids');
-      let deletedSet = new Set<string>(deletedProductIdsRef.current);
-      if (savedDeleted) {
-        try {
-          const arr = JSON.parse(savedDeleted);
-          if (Array.isArray(arr)) arr.forEach((id) => deletedSet.add(id));
-        } catch (e) {}
-      }
-      if (savedProds) {
-        try {
-          const parsed = JSON.parse(savedProds);
-          if (Array.isArray(parsed)) return parsed.filter((p: Product) => !deletedSet.has(p.id));
-        } catch (e) {}
-      }
-      return [];
-    }
-    return [];
-  });
+  const [deletedProductIds, setDeletedProductIds] = useState<Set<string>>(new Set());
+  const [products, setProducts] = useState<Product[]>([]);
 
   // Sync deleted product IDs from Firestore doc 'settings/deleted_products'
   useEffect(() => {
@@ -169,47 +135,14 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return () => unsub();
     } catch (e) {}
   }, []);
+
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [orders, setOrders] = useState<Order[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('huda_orders');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        } catch (e) {}
-      }
-    }
-    return INITIAL_ORDERS;
-  });
+  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState<boolean>(false);
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const urlPass = params.get('passcode') || params.get('pin') || params.get('pass');
-      const isUrlAuth = urlPass === '1077';
-      return (
-        localStorage.getItem('huda_admin_authenticated') === 'true' ||
-        sessionStorage.getItem('huda_admin_authenticated') === 'true' ||
-        isUrlAuth
-      );
-    }
-    return false;
-  });
-
-  const [isAdminMode, setIsAdminMode] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const urlPass = params.get('passcode') || params.get('pin') || params.get('pass');
-      const isUrlAuth = urlPass === '1077';
-      const isAdminQuery = params.get('admin') === 'true' || params.get('mode') === 'admin' || params.get('backoffice') === 'true' || isUrlAuth;
-      const isReportQuery = params.get('tab') === 'reports' || params.get('report') === 'true' || params.get('analytics') === 'true' || params.get('sales') === 'true';
-      return isAdminQuery || isReportQuery;
-    }
-    return false;
-  });
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
+  const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
 
   const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState<boolean>(false);
 
