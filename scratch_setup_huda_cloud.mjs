@@ -1,32 +1,28 @@
-async function setupHudaCloud() {
-  console.log("Setting up fixed Cloud Storage for HUDA ABAYA...");
-  try {
-    // 1. Create Deleted Products Cloud Object
-    const delRes = await fetch('https://api.restful-api.dev/objects', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: 'huda_deleted_products_registry_v1',
-        data: { ids: [] }
-      })
-    });
-    const delData = await delRes.json();
-    console.log("Deleted Registry Cloud ID:", delData.id);
+const BASE_URL = 'https://api.restful-api.dev/objects';
 
-    // 2. Create Active Products Cloud Object
-    const prodRes = await fetch('https://api.restful-api.dev/objects', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: 'huda_active_products_registry_v1',
-        data: { products: [] }
-      })
-    });
-    const prodData = await prodRes.json();
-    console.log("Active Products Cloud ID:", prodData.id);
-  } catch (err) {
-    console.error("Setup Error:", err);
-  }
+async function createFreshObject(name, initialData) {
+  console.log(`Creating fresh cloud object: ${name}...`);
+  const res = await fetch(BASE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, data: initialData })
+  });
+  const data = await res.json();
+  console.log(`Created ${name} -> ID: ${data.id}`);
+  return data.id;
 }
 
-setupHudaCloud();
+async function testAutoRefresh() {
+  const prodId = await createFreshObject('huda_products_v4', { products: [] });
+  const delId = await createFreshObject('huda_deleted_v4', { ids: [] });
+  const ordId = await createFreshObject('huda_orders_v4', { orders: [] });
+  const setId = await createFreshObject('huda_settings_v4', { settings: {} });
+
+  console.log('\n--- NEW ACTIVE CLOUD IDs ---');
+  console.log('Products:', prodId);
+  console.log('Deleted IDs:', delId);
+  console.log('Orders:', ordId);
+  console.log('Settings:', setId);
+}
+
+testAutoRefresh();

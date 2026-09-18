@@ -1,33 +1,35 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, collection, getDocs } from 'firebase/firestore';
+async function testFirebaseREST() {
+  console.log('Testing Firebase Realtime Database REST API...');
+  
+  const urls = [
+    'https://huda-abaya-default-rtdb.firebaseio.com/products.json',
+    'https://huda-abaya-default-rtdb.asia-southeast1.firebasedatabase.app/products.json',
+    'https://huda-abaya.firebaseio.com/products.json'
+  ];
 
-const firebaseConfig = {
-  apiKey: "AIzaSyC_HudaAbayaRealtimeFirestoreKey2026",
-  authDomain: "huda-abaya.firebaseapp.com",
-  projectId: "huda-abaya",
-  storageBucket: "huda-abaya.appspot.com",
-  messagingSenderId: "108823456789",
-  appId: "1:108823456789:web:hudaabayadubaiapp2026"
-};
+  for (const url of urls) {
+    try {
+      console.log('\nFetching:', url);
+      const getRes = await fetch(url);
+      console.log('GET status:', getRes.status, getRes.statusText);
+      const text = await getRes.text();
+      console.log('GET response:', text.slice(0, 150));
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-async function check() {
-  console.log('Fetching Firestore settings/deleted_products...');
-  const delSnap = await getDoc(doc(db, 'settings', 'deleted_products'));
-  if (delSnap.exists()) {
-    console.log('DELETED_PRODUCTS DOC:', JSON.stringify(delSnap.data()));
-  } else {
-    console.log('DELETED_PRODUCTS DOC does not exist');
+      if (getRes.ok) {
+        console.log('Testing PUT to:', url);
+        const putRes = await fetch(url, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify([{ id: 'test-p1', title: 'ชุดอาบายะห์ดูไบ' }])
+        });
+        console.log('PUT status:', putRes.status, putRes.statusText);
+        const putText = await putRes.text();
+        console.log('PUT response:', putText.slice(0, 150));
+      }
+    } catch (e) {
+      console.error('Error fetching', url, e.message);
+    }
   }
-
-  console.log('Fetching Firestore products collection...');
-  const prodSnap = await getDocs(collection(db, 'products'));
-  const prods = [];
-  prodSnap.forEach(d => prods.push({ id: d.id, ...d.data() }));
-  console.log(`Found ${prods.length} products in Firestore:`);
-  prods.forEach(p => console.log(' - PROD:', p.id, p.title));
 }
 
-check().catch(console.error);
+testFirebaseREST();
