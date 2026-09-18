@@ -478,10 +478,50 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const deletedSet = new Set<string>(cloudDeletedArr || []);
 
-      setProducts(() => {
+      setProducts((prev) => {
         let cleanCloudProds = (cloudProds || []).filter((p) => !deletedSet.has(p.id));
-        cleanCloudProds.sort((a, b) => getTimestampMs(b.updatedAt) - getTimestampMs(a.updatedAt));
-        return cleanCloudProds;
+
+        if (cleanCloudProds.length > 0) {
+          cleanCloudProds.sort((a, b) => getTimestampMs(b.updatedAt) - getTimestampMs(a.updatedAt));
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_products', JSON.stringify(cleanCloudProds));
+          }
+          return cleanCloudProds;
+        } else {
+          // Cloud worker memory was reset (e.g. after deployment)
+          // Fall back to local storage cache or prev state or INITIAL_PRODUCTS
+          let localBackup: Product[] = [];
+          if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('huda_products');
+            if (saved) {
+              try {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) localBackup = parsed;
+              } catch (e) {}
+            }
+          }
+
+          const candidate = localBackup.length > 0 ? localBackup : prev;
+          const fallbackProds = candidate.filter((p) => !deletedSet.has(p.id));
+
+          if (fallbackProds.length > 0) {
+            saveCloudProducts(fallbackProds);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('huda_products', JSON.stringify(fallbackProds));
+            }
+            return fallbackProds;
+          }
+
+          if (deletedSet.size === 0) {
+            saveCloudProducts(INITIAL_PRODUCTS);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('huda_products', JSON.stringify(INITIAL_PRODUCTS));
+            }
+            return INITIAL_PRODUCTS;
+          }
+
+          return [];
+        }
       });
     } catch (e) {
       console.warn('Sync products notice:', e);
@@ -493,6 +533,22 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const cloudOrders = await fetchCloudOrders();
       if (Array.isArray(cloudOrders) && cloudOrders.length > 0) {
         setOrders(cloudOrders);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('huda_orders', JSON.stringify(cloudOrders));
+        }
+      } else {
+        if (typeof window !== 'undefined') {
+          const saved = localStorage.getItem('huda_orders');
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setOrders(parsed);
+                saveCloudOrders(parsed);
+              }
+            } catch (e) {}
+          }
+        }
       }
     } catch (e) {
       console.warn('Orders sync notice', e);
@@ -502,12 +558,32 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const syncStoreSettings = async () => {
     try {
       const cloudSettings = await fetchCloudSettings();
-      if (cloudSettings) {
-        setStoreSettings((prev) => ({
-          ...DEFAULT_SETTINGS,
-          ...prev,
-          ...cloudSettings,
-        }));
+      if (cloudSettings && Object.keys(cloudSettings).length > 0) {
+        setStoreSettings((prev) => {
+          const updated = {
+            ...DEFAULT_SETTINGS,
+            ...prev,
+            ...cloudSettings,
+          };
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_store_settings', JSON.stringify(updated));
+          }
+          return updated;
+        });
+      } else {
+        if (typeof window !== 'undefined') {
+          const saved = localStorage.getItem('huda_store_settings');
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved);
+              if (parsed && typeof parsed === 'object') {
+                const updated = { ...DEFAULT_SETTINGS, ...parsed };
+                setStoreSettings(updated);
+                saveCloudSettings(updated);
+              }
+            } catch (e) {}
+          }
+        }
       }
     } catch (e) {
       console.warn('Store settings sync notice', e);
@@ -524,6 +600,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logoImageUrl: newSettings.logoImageUrl !== undefined ? newSettings.logoImageUrl : prev.logoImageUrl,
       };
 
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_store_settings', JSON.stringify(updated));
+      }
       saveCloudSettings(updated);
       return updated;
     });
@@ -645,12 +724,18 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { ...prod, variants: updatedVariants, updatedAt: now };
       });
 
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_products', JSON.stringify(updatedProductsList));
+      }
       saveCloudProducts(updatedProductsList);
       return updatedProductsList;
     });
 
     setOrders((prev) => {
       const updated = [newOrder, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_orders', JSON.stringify(updated));
+      }
       saveCloudOrders(updated);
       return updated;
     });
@@ -678,6 +763,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return order;
       });
 
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_orders', JSON.stringify(updated));
+      }
       saveCloudOrders(updated);
       return updated;
     });
@@ -692,6 +780,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return order;
       });
 
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_orders', JSON.stringify(updated));
+      }
       saveCloudOrders(updated);
       return updated;
     });
@@ -700,6 +791,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deleteOrder = (orderId: string) => {
     setOrders((prev) => {
       const updated = prev.filter((o) => o.id !== orderId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_orders', JSON.stringify(updated));
+      }
       saveCloudOrders(updated);
       return updated;
     });
@@ -708,6 +802,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearSampleOrders = async () => {
     setOrders((prev) => {
       const remaining = prev.filter((o) => !o.isSample);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_orders', JSON.stringify(remaining));
+      }
       saveCloudOrders(remaining);
       return remaining;
     });
@@ -715,11 +812,20 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearAllOrders = async () => {
     setOrders([]);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('huda_orders', JSON.stringify([]));
+    }
     saveCloudOrders([]);
   };
 
   const clearAllProducts = async () => {
     setProducts([]);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('huda_products', JSON.stringify([]));
+    }
+    const allIds = products.map((p) => p.id);
+    const deletedArr = Array.from(new Set([...Array.from(deletedProductIds), ...allIds]));
+    saveCloudDeletedIds(deletedArr);
     saveCloudProducts([]);
   };
 
@@ -728,6 +834,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setProducts((prev) => {
       const updated = [timestamped, ...prev.filter((p) => p.id !== timestamped.id)];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_products', JSON.stringify(updated));
+      }
       saveCloudProducts(updated);
       return updated;
     });
@@ -738,6 +847,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setProducts((prev) => {
       const updated = prev.map((p) => (p.id === timestamped.id ? timestamped : p));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_products', JSON.stringify(updated));
+      }
       saveCloudProducts(updated);
       return updated;
     });
@@ -758,6 +870,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return p;
       });
 
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_products', JSON.stringify(updated));
+      }
       saveCloudProducts(updated);
       return updated;
     });
@@ -766,6 +881,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deleteProduct = (productId: string) => {
     setProducts((prev) => {
       const updated = prev.filter((p) => p.id !== productId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_products', JSON.stringify(updated));
+      }
       saveCloudProducts(updated);
       return updated;
     });
