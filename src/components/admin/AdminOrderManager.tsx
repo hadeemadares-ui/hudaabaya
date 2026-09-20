@@ -192,34 +192,79 @@ export const AdminOrderManager: React.FC = () => {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-gray-400 mb-1">บริษัทขนส่ง</label>
+                  <label className="block text-gray-400 mb-1 font-bold">บริษัทขนส่ง</label>
                   <select
                     value={courierInput}
                     onChange={(e) => setCourierInput(e.target.value)}
-                    className="w-full bg-dubai-dark border border-gold-400/30 rounded p-2 text-white"
+                    className="w-full bg-dubai-dark border border-gold-400/30 rounded p-2 text-white font-bold"
                   >
-                    <option value="Flash Express">Flash Express</option>
-                    <option value="Kerry Express">Kerry Express</option>
-                    <option value="Thailand Post EMS">ไปรษณีย์ไทย EMS</option>
-                    <option value="J&T Express">J&T Express</option>
+                    <option value="Flash Express">⚡ Flash Express</option>
+                    <option value="Kerry Express">📦 Kerry Express</option>
+                    <option value="Thailand Post EMS">📮 ไปรษณีย์ไทย EMS</option>
+                    <option value="J&T Express">🚚 J&T Express</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-gray-400 mb-1">เลขพัสดุ (Tracking Number)</label>
+                  <label className="block text-gray-400 mb-1 font-bold">เลขพัสดุ (Tracking Number)</label>
                   <input
                     type="text"
-                    placeholder="เช่น FLTH9827162391"
+                    placeholder="เช่น TH0192837465"
                     value={trackingInput}
                     onChange={(e) => setTrackingInput(e.target.value)}
-                    className="w-full bg-dubai-dark border border-gold-400/30 rounded p-2 text-white font-mono"
+                    className="w-full bg-dubai-dark border border-gold-400/30 rounded p-2 text-gold-300 font-mono font-bold"
                   />
                 </div>
               </div>
 
+              {/* Quick Auto-Generate Tracking Helper */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] text-gray-400 font-bold">สุ่มสร้างเลขด่วน:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCourierInput('Flash Express');
+                    setTrackingInput(`TH${Math.floor(1000000000 + Math.random() * 9000000000)}`);
+                  }}
+                  className="px-2 py-1 bg-amber-950 text-amber-300 border border-amber-500/40 rounded text-[10px] font-bold hover:bg-amber-900 transition"
+                >
+                  ⚡ Flash (TH...)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCourierInput('Kerry Express');
+                    setTrackingInput(`KER${Math.floor(10000000 + Math.random() * 90000000)}`);
+                  }}
+                  className="px-2 py-1 bg-orange-950 text-orange-300 border border-orange-500/40 rounded text-[10px] font-bold hover:bg-orange-900 transition"
+                >
+                  📦 Kerry (KER...)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCourierInput('Thailand Post EMS');
+                    setTrackingInput(`EF${Math.floor(100000009 + Math.random() * 899999990)}TH`);
+                  }}
+                  className="px-2 py-1 bg-red-950 text-red-300 border border-red-500/40 rounded text-[10px] font-bold hover:bg-red-900 transition"
+                >
+                  📮 EMS (EF...TH)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCourierInput('J&T Express');
+                    setTrackingInput(`84${Math.floor(1000000000 + Math.random() * 9000000000)}`);
+                  }}
+                  className="px-2 py-1 bg-red-950 text-red-400 border border-red-500/40 rounded text-[10px] font-bold hover:bg-red-900 transition"
+                >
+                  🚚 J&T (84...)
+                </button>
+              </div>
+
               <button
                 onClick={() => handleUpdateTracking(selectedOrder.id)}
-                className="w-full py-2 bg-gradient-to-r from-gold-500 to-amber-600 text-dubai-black font-extrabold rounded text-xs shadow-gold-glow"
+                className="w-full py-2.5 bg-gradient-to-r from-gold-500 to-amber-600 text-dubai-black font-extrabold rounded-xl text-xs shadow-gold-glow hover:scale-102 transition"
               >
                 บันทึกเลขพัสดุ & เปลี่ยนสถานะเป็น "จัดส่งแล้ว"
               </button>
