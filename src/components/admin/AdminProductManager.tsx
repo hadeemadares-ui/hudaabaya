@@ -661,10 +661,18 @@ export const AdminProductManager: React.FC = () => {
                           alt="Preview"
                           loading="lazy"
                           decoding="async"
-                          className="w-16 h-20 object-cover rounded-lg border border-gold-400 shadow-md"
+                          className="w-16 h-20 object-cover rounded-lg border border-gold-400 shadow-md shrink-0"
                         />
-                        <div>
-                          <span className="text-emerald-400 font-bold block">✓ ภาพพร้อมใช้งานเรียบร้อย</span>
+                        <div className="space-y-1">
+                          <span className="text-emerald-400 font-bold block flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>ภาพถูกบีบอัดและพร้อมใช้งานทันที</span>
+                          </span>
+                          {imageUrl.startsWith('data:image') && (
+                            <span className="text-[10px] text-amber-300 font-mono bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/30 inline-block font-bold">
+                              ⚡ บีบอัดไฟล์เหลือเพียง ~{Math.round(((imageUrl.length * 3) / 4) / 1024)} KB (ย่อขนาด HD 600px โหลดเร็วสูงสุด)
+                            </span>
+                          )}
                           <span className="text-[10px] text-gray-400 truncate max-w-xs block font-mono">
                             {imageUrl.slice(0, 40)}...
                           </span>
