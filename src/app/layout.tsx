@@ -11,14 +11,25 @@ export const metadata: Metadata = {
   title: 'HUDA ABAYA DUBAI — ร้านจำหน่ายชุดอาบายะห์และน้ำหอมแท้ส่งตรงจากดูไบ',
   description: 'นำเข้าชุดอาบายะห์ดูไบ ชุดคัฟทาน เดรสอาหรับปักดิ้นทอง และน้ำหอมดูไบแท้ 100% สั่งซื้อง่าย คิดเงินครบทุกช่องทาง พร้อมเพย์ QR, บัตรเครดิต, โอนแนบสลิป, COD',
   manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/logo.png', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    shortcut: '/logo.png',
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-touch-icon-precomposed.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
   openGraph: {
     title: 'HUDA ABAYA DUBAI — ร้านจำหน่ายชุดอาบายะห์และน้ำหอมแท้ส่งตรงจากดูไบ',
     description: 'นำเข้าชุดอาบายะห์ดูไบ ชุดคัฟทาน เดรสอาหรับปักดิ้นทอง และน้ำหอมดูไบแท้ 100% สั่งซื้อง่าย ส่งฟรีทั่วไทย',
-    url: 'https://hudaabaya.vercel.app',
+    url: 'https://hudaabaya.pages.dev',
     siteName: 'HUDA ABAYA DUBAI',
     images: [
       {
-        url: 'https://hudaabaya.vercel.app/logo.jpg',
+        url: 'https://hudaabaya.pages.dev/logo.png',
         width: 800,
         height: 800,
         alt: 'HUDA ABAYA DUBAI Official Logo',
@@ -31,7 +42,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'HUDA ABAYA DUBAI',
     description: 'นำเข้าชุดอาบายะห์ดูไบ ชุดคัฟทาน และน้ำหอมดูไบแท้ 100%',
-    images: ['https://hudaabaya.vercel.app/logo.jpg'],
+    images: ['https://hudaabaya.pages.dev/logo.png'],
   },
   appleWebApp: {
     capable: true,
@@ -62,10 +73,12 @@ export default function RootLayout({
         <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />
-        <meta name="build-version" content="2026-09-17-skyblue-v2" />
+        <meta name="build-version" content="2026-09-21-logo-pwa-v1" />
+        <link rel="icon" type="image/png" href="/logo.png" />
         <link rel="icon" type="image/jpeg" href="/logo.jpg" />
-        <link rel="apple-touch-icon" href="/logo.jpg" />
-        <link rel="shortcut icon" href="/logo.jpg" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon-precomposed.png" />
+        <link rel="shortcut icon" href="/logo.png" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="HUDA ABAYA" />
