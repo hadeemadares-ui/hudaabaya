@@ -3,10 +3,10 @@
 import React, { useState } from 'react';
 import { Calendar, TrendingUp, DollarSign, Package, PieChart, Download, ArrowUpRight, ArrowDownRight, Layers, FileSpreadsheet, RefreshCw, Sparkles, Filter, Edit2, Trash2, X, Save } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
-import { Order, CartItem, CategoryType } from '../../types';
+import { Product, Order, CartItem, CategoryType } from '../../types';
 
 export const AdminSalesReportManager: React.FC = () => {
-  const { orders, products, createOrder, deleteProduct, updateProduct } = useShop();
+  const { orders, products, createOrder, deleteOrder, addProduct, deleteProduct, updateProduct } = useShop();
 
   // Filter Mode: 'today' | 'month' | 'year' | 'all' | 'custom'
   const [filterMode, setFilterMode] = useState<'today' | 'month' | 'year' | 'all' | 'custom'>('all');
@@ -204,22 +204,25 @@ export const AdminSalesReportManager: React.FC = () => {
   const productSalesList = Array.from(productSalesMap.values()).sort((a, b) => b.revenue - a.revenue);
 
   // Delete product handler from Sales Report table
-  const handleDeleteProduct = (item: { productId: string; productTitle: string; variantName: string }) => {
-    const targetProd = products.find((p) => p.id === item.productId || p.title === item.productTitle);
-    const idToDelete = item.productId || targetProd?.id;
-
-    if (!idToDelete) {
-      alert(`ไม่พบรหัสสินค้า "${item.productTitle}" ในระบบคลังสินค้าครับ`);
-      return;
-    }
+  const handleDeleteProduct = (item: { productId: string; variantId: string; productTitle: string; variantName: string }) => {
+    const targetProd = products.find((p) => (item.productId && p.id === item.productId) || p.title === item.productTitle);
 
     const confirmed = window.confirm(
-      `คุณต้องการลบสินค้า "${item.productTitle}" (${item.variantName}) ออกจากคลังสินค้าอย่างถาวรใช่หรือไม่?\n\n*ระบบจะทำการลบสินค้านี้ออกในทุกอุปกรณ์ real-time`
+      `คุณต้องการลบสินค้า/ประวัติรายการขาย "${item.productTitle}" (${item.variantName}) ใช่หรือไม่?\n\n*ระบบจะทำการลบรายการนี้ในทุกอุปกรณ์ real-time`
     );
 
     if (confirmed) {
-      deleteProduct(idToDelete);
-      alert(`ลบสินค้า "${item.productTitle}" ออกจากระบบเรียบร้อยแล้วครับ!`);
+      if (targetProd) {
+        deleteProduct(targetProd.id);
+      }
+
+      // Delete matching orders containing this test item title
+      const matchingOrders = orders.filter((o) =>
+        o.items.some((i) => (item.productId && i.productId === item.productId) || i.productTitle === item.productTitle)
+      );
+      matchingOrders.forEach((o) => deleteOrder(o.id));
+
+      alert(`ลบรายการ "${item.productTitle}" ออกจากระบบเรียบร้อยแล้วครับ!`);
     }
   };
 
@@ -230,25 +233,40 @@ export const AdminSalesReportManager: React.FC = () => {
     productTitle: string;
     variantName: string;
     category: string;
+    revenue: number;
+    cost: number;
+    quantity: number;
   }) => {
-    const targetProd = products.find((p) => p.id === item.productId || p.title === item.productTitle);
-    if (!targetProd) {
-      alert(`ไม่พบข้อมูลสินค้า "${item.productTitle}" ในคลังระบบเพื่อแก้ไขครับ`);
-      return;
+    const targetProd = products.find((p) => (item.productId && p.id === item.productId) || p.title === item.productTitle);
+
+    if (targetProd) {
+      const targetVar = targetProd.variants.find((v) => (item.variantId && v.id === item.variantId) || v.name === item.variantName) || targetProd.variants[0];
+      setEditingProduct({
+        productId: targetProd.id,
+        variantId: targetVar?.id || '',
+        title: targetProd.title,
+        category: targetProd.category || 'all',
+        variantName: targetVar?.name || item.variantName,
+        price: targetVar?.price || 0,
+        costPrice: targetVar?.costPrice !== undefined ? targetVar.costPrice : Math.round((targetVar?.price || 0) * 0.5),
+        stockQuantity: targetVar?.stockQuantity || 0,
+      });
+    } else {
+      // Product from test order: Create editable entry seamlessly
+      const calcPrice = item.quantity > 0 ? Math.round(item.revenue / item.quantity) : 0;
+      const calcCost = item.quantity > 0 ? Math.round(item.cost / item.quantity) : Math.round(calcPrice * 0.5);
+
+      setEditingProduct({
+        productId: item.productId || `huda-prod-${Date.now()}`,
+        variantId: item.variantId || `var-${Date.now()}`,
+        title: item.productTitle,
+        category: (item.category as CategoryType) || 'abaya',
+        variantName: item.variantName || 'Size 52',
+        price: calcPrice,
+        costPrice: calcCost,
+        stockQuantity: 10,
+      });
     }
-
-    const targetVar = targetProd.variants.find((v) => v.id === item.variantId || v.name === item.variantName) || targetProd.variants[0];
-
-    setEditingProduct({
-      productId: targetProd.id,
-      variantId: targetVar?.id || '',
-      title: targetProd.title,
-      category: targetProd.category || 'all',
-      variantName: targetVar?.name || item.variantName,
-      price: targetVar?.price || 0,
-      costPrice: targetVar?.costPrice !== undefined ? targetVar.costPrice : Math.round((targetVar?.price || 0) * 0.5),
-      stockQuantity: targetVar?.stockQuantity || 0,
-    });
   };
 
   // Save changes from Edit Product Modal
@@ -256,33 +274,66 @@ export const AdminSalesReportManager: React.FC = () => {
     if (!editingProduct) return;
 
     const target = products.find((p) => p.id === editingProduct.productId || p.title === editingProduct.title);
-    if (!target) {
-      alert('ไม่พบข้อมูลสินค้าชิ้นนี้ในคลังระบบครับ');
-      return;
+
+    if (target) {
+      const updatedVariants = target.variants.map((v) => {
+        if ((editingProduct.variantId && v.id === editingProduct.variantId) || v.name === editingProduct.variantName) {
+          return {
+            ...v,
+            price: Number(editingProduct.price),
+            costPrice: Number(editingProduct.costPrice),
+            stockQuantity: Number(editingProduct.stockQuantity),
+            updatedAt: Date.now(),
+          };
+        }
+        return v;
+      });
+
+      const updatedProduct = {
+        ...target,
+        title: editingProduct.title,
+        category: editingProduct.category,
+        variants: updatedVariants,
+        updatedAt: Date.now(),
+      };
+
+      updateProduct(updatedProduct);
+    } else {
+      // Add product into catalog if it was a test order item
+      const fallbackImage = editingProduct.category === 'perfume'
+        ? 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop'
+        : 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop';
+
+      const newProdObj: Product = {
+        id: editingProduct.productId || `huda-prod-${Date.now()}`,
+        title: editingProduct.title,
+        arabicTitle: editingProduct.title,
+        category: editingProduct.category || 'abaya',
+        description: 'สินค้าคุณภาพสูง นำเข้าจากเมืองดูไบ UAE แท้ 100%',
+        fabric: editingProduct.category === 'perfume' ? 'Oud Oil & Attar Perfume Dubai' : 'Nida Silk Dubai Original',
+        origin: 'เมืองดูไบ, UAE',
+        images: [fallbackImage],
+        colors: ['สีดำ (Black)'],
+        variants: [
+          {
+            id: editingProduct.variantId || `var-${Date.now()}`,
+            name: editingProduct.variantName,
+            sku: `HD-SKU-1`,
+            price: Number(editingProduct.price),
+            costPrice: Number(editingProduct.costPrice),
+            stockQuantity: Number(editingProduct.stockQuantity),
+            color: 'สีดำ (Black)',
+          },
+        ],
+        rating: 5.0,
+        reviewsCount: 1,
+        isNew: true,
+        updatedAt: Date.now(),
+      };
+
+      addProduct(newProdObj);
     }
 
-    const updatedVariants = target.variants.map((v) => {
-      if (v.id === editingProduct.variantId || v.name === editingProduct.variantName) {
-        return {
-          ...v,
-          price: Number(editingProduct.price),
-          costPrice: Number(editingProduct.costPrice),
-          stockQuantity: Number(editingProduct.stockQuantity),
-          updatedAt: Date.now(),
-        };
-      }
-      return v;
-    });
-
-    const updatedProduct = {
-      ...target,
-      title: editingProduct.title,
-      category: editingProduct.category,
-      variants: updatedVariants,
-      updatedAt: Date.now(),
-    };
-
-    updateProduct(updatedProduct);
     setEditingProduct(null);
     alert(`บันทึกการแก้ไขสินค้า "${editingProduct.title}" สำเร็จเรียบร้อยแล้ว!`);
   };
