@@ -114,28 +114,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [deletedProductIds, setDeletedProductIds] = useState<Set<string>>(new Set());
   const [products, setProducts] = useState<Product[]>([]);
-
-  // Sync deleted product IDs from Firestore doc 'settings/deleted_products'
-  useEffect(() => {
-    try {
-      const unsub = onSnapshot(doc(db, 'settings', 'deleted_products'), (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (Array.isArray(data?.ids)) {
-            data.ids.forEach((id: string) => deletedProductIdsRef.current.add(id));
-            const newSet = new Set<string>(deletedProductIdsRef.current);
-            setDeletedProductIds(newSet);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('huda_deleted_product_ids', JSON.stringify(Array.from(newSet)));
-            }
-            setProducts((prev) => prev.filter((p) => !newSet.has(p.id)));
-          }
-        }
-      });
-      return () => unsub();
-    } catch (e) {}
-  }, []);
-
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
@@ -143,33 +121,13 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState<boolean>(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
   const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
-
   const [isAdminLoginModalOpen, setIsAdminLoginModalOpen] = useState<boolean>(false);
-
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
   const [currency, setCurrency] = useState<CurrencyType>('THB');
   const [isAIConciergeOpen, setIsAIConciergeOpen] = useState<boolean>(false);
   const [active3DProduct, setActive3DProduct] = useState<Product | null>(null);
-
-  // 0. Auto-purge stale Service Workers and CacheStorage on initial load
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then((registrations) => {
-          for (const registration of registrations) {
-            registration.unregister();
-          }
-        }).catch(() => {});
-      }
-      if ('caches' in window) {
-        caches.keys().then((names) => {
-          names.forEach((name) => caches.delete(name));
-        }).catch(() => {});
-      }
-    }
-  }, []);
 
   const clearBrowserCacheAndReload = async () => {
     if (typeof window !== 'undefined') {
@@ -191,113 +149,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       window.location.reload();
     }
   };
-
-  // 1. Firebase Firestore Instant Sockets for Products with Pruning & Timestamp Guard
-  useEffect(() => {
-    try {
-      const unsub = onSnapshot(collection(db, 'products'), (snapshot) => {
-        const firestoreProds: Product[] = [];
-        snapshot.forEach((docSnap) => {
-          if (docSnap.exists()) {
-            firestoreProds.push(docSnap.data() as Product);
-          }
-        });
-
-        setProducts(() => {
-          const deletedSet = new Set<string>(deletedProductIdsRef.current);
-          if (typeof window !== 'undefined') {
-            const deletedArr = localStorage.getItem('huda_deleted_product_ids');
-            if (deletedArr) {
-              try {
-                const parsed = JSON.parse(deletedArr);
-                if (Array.isArray(parsed)) parsed.forEach((id) => deletedSet.add(id));
-              } catch (e) {}
-            }
-          }
-
-          let merged = firestoreProds.filter((p) => !deletedSet.has(p.id));
-          merged.sort((a, b) => getTimestampMs(b.updatedAt) - getTimestampMs(a.updatedAt));
-
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('huda_products', JSON.stringify(merged));
-          }
-          return merged;
-        });
-      }, (err) => {
-        console.warn('Firestore products notice:', err);
-      });
-
-      return () => unsub();
-    } catch (e) {
-      console.warn('Firebase products exception handled', e);
-    }
-  }, []);
-
-  // 2. Firebase Firestore Instant Sockets for Store Settings
-  useEffect(() => {
-    try {
-      const unsub = onSnapshot(doc(db, 'settings', 'store'), (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data() as StoreSettings;
-          setStoreSettings((prev) => {
-            const savedLogo = typeof window !== 'undefined' ? localStorage.getItem('huda_saved_logo_image') : '';
-            return {
-              ...DEFAULT_SETTINGS,
-              ...prev,
-              ...data,
-              contactAddress: data.contactAddress || '11/2 ถนน คลองสิบสาม แขวงหนองจอก เขตหนองจอก กรุงเทพมหานคร 10530',
-              contactPhone: data.contactPhone || '083-427-4687',
-              promptPayNumber: data.promptPayNumber || '0963452355',
-              bankName: data.bankName || 'ธนาคารกรุงไทย (Krungthai Bank)',
-              bankAccountNo: data.bankAccountNo || '460-0-87408-0',
-              bankAccountName: data.bankAccountName || 'น.ส. ฮูดา นิมา',
-              contactLine: data.contactLine !== undefined ? data.contactLine : '',
-              enablePromptPay: data.enablePromptPay ?? true,
-              enableBankTransfer: data.enableBankTransfer ?? true,
-              enableCreditCard: data.enableCreditCard ?? false,
-              enableCOD: data.enableCOD ?? false,
-              enableTrueMoney: data.enableTrueMoney ?? false,
-              logoImageUrl: data.logoImageUrl || prev.logoImageUrl || savedLogo || DEFAULT_LOGO_BASE64,
-            };
-          });
-        }
-      }, (err) => {
-        console.warn('Firestore settings notice:', err);
-      });
-
-      return () => unsub();
-    } catch (e) {
-      console.warn('Firebase settings exception handled', e);
-    }
-  }, []);
-
-  // 3. Firebase Firestore Instant Sockets for Orders with Merging
-  useEffect(() => {
-    try {
-      const unsub = onSnapshot(collection(db, 'orders'), (snapshot) => {
-        const ords: Order[] = [];
-        snapshot.forEach((docSnap) => {
-          if (docSnap.exists()) {
-            ords.push(docSnap.data() as Order);
-          }
-        });
-        if (ords.length > 0) {
-          setOrders((prev) => {
-            const mergedMap = new Map<string, Order>();
-            prev.forEach((o) => mergedMap.set(o.id, o));
-            ords.forEach((o) => mergedMap.set(o.id, o));
-            return Array.from(mergedMap.values());
-          });
-        }
-      }, (err) => {
-        console.warn('Firestore orders notice:', err);
-      });
-
-      return () => unsub();
-    } catch (e) {
-      console.warn('Firebase orders exception handled', e);
-    }
-  }, []);
 
   // Currency Converter & Formatter
   const formatPrice = (priceInTHB: number) => {
