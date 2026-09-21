@@ -84,6 +84,19 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="HUDA ABAYA" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="theme-color" content="#0EA5E9" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function(err) {
+                    console.log('SW reg error: ', err);
+                  });
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body className="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between antialiased selection:bg-sky-500 selection:text-white">
         <ShopProvider>
