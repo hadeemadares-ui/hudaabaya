@@ -821,9 +821,11 @@ export const AdminProductManager: React.FC = () => {
                                 type="number"
                                 placeholder="0"
                                 value={v.price}
+                                onFocus={(e) => e.target.select()}
                                 onChange={(e) => {
                                   const updated = [...variants];
-                                  const newPrice = Number(e.target.value);
+                                  const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
+                                  const newPrice = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
                                   updated[idx].price = newPrice;
                                   if (updated[idx].costPrice === undefined || updated[idx].costPrice === 0) {
                                     updated[idx].costPrice = Math.round(newPrice * 0.5);
@@ -843,9 +845,11 @@ export const AdminProductManager: React.FC = () => {
                                 type="number"
                                 placeholder="0"
                                 value={v.costPrice ?? (v.price ? Math.round(v.price * 0.5) : 0)}
+                                onFocus={(e) => e.target.select()}
                                 onChange={(e) => {
                                   const updated = [...variants];
-                                  updated[idx].costPrice = Number(e.target.value);
+                                  const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
+                                  updated[idx].costPrice = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
                                   setVariants(updated);
                                 }}
                                 className="w-full bg-amber-950 border-2 border-amber-400 rounded p-1.5 text-amber-200 font-extrabold font-mono text-xs sm:text-sm text-right shadow-inner focus:ring-2 focus:ring-amber-400 focus:outline-none"
@@ -861,9 +865,11 @@ export const AdminProductManager: React.FC = () => {
                                 type="number"
                                 placeholder="0"
                                 value={v.stockQuantity}
+                                onFocus={(e) => e.target.select()}
                                 onChange={(e) => {
                                   const updated = [...variants];
-                                  updated[idx].stockQuantity = Number(e.target.value);
+                                  const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
+                                  updated[idx].stockQuantity = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
                                   setVariants(updated);
                                 }}
                                 className="w-full bg-dubai-dark border-2 border-emerald-500/60 rounded p-1.5 text-emerald-300 font-extrabold font-mono text-xs sm:text-sm text-right"

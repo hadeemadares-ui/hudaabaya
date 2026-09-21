@@ -892,8 +892,14 @@ export const AdminSalesReportManager: React.FC = () => {
                   <label className="block text-gray-300 mb-1 font-bold">ราคาขาย (บาท)</label>
                   <input
                     type="number"
-                    value={editingProduct.price}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, price: Number(e.target.value) })}
+                    min={0}
+                    value={editingProduct.price === 0 ? '' : editingProduct.price}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
+                      setEditingProduct({ ...editingProduct, price: cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0) });
+                    }}
+                    placeholder="0"
                     className="w-full bg-dubai-black border border-gold-400/30 rounded-xl p-2.5 text-gold-300 font-mono font-bold focus:border-gold-400 focus:outline-none"
                   />
                 </div>
@@ -902,8 +908,14 @@ export const AdminSalesReportManager: React.FC = () => {
                   <label className="block text-amber-300 mb-1 font-bold">ต้นทุน (บาท)</label>
                   <input
                     type="number"
-                    value={editingProduct.costPrice}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, costPrice: Number(e.target.value) })}
+                    min={0}
+                    value={editingProduct.costPrice === 0 ? '' : editingProduct.costPrice}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
+                      setEditingProduct({ ...editingProduct, costPrice: cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0) });
+                    }}
+                    placeholder="0"
                     className="w-full bg-dubai-black border border-amber-500/40 rounded-xl p-2.5 text-amber-300 font-mono font-bold focus:border-amber-400 focus:outline-none"
                   />
                 </div>
@@ -912,8 +924,14 @@ export const AdminSalesReportManager: React.FC = () => {
                   <label className="block text-emerald-300 mb-1 font-bold">สต๊อกคงเหลือ</label>
                   <input
                     type="number"
-                    value={editingProduct.stockQuantity}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, stockQuantity: Number(e.target.value) })}
+                    min={0}
+                    value={editingProduct.stockQuantity === 0 ? '' : editingProduct.stockQuantity}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
+                      setEditingProduct({ ...editingProduct, stockQuantity: cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0) });
+                    }}
+                    placeholder="0"
                     className="w-full bg-dubai-black border border-emerald-500/40 rounded-xl p-2.5 text-emerald-300 font-mono font-bold focus:border-emerald-400 focus:outline-none"
                   />
                 </div>
