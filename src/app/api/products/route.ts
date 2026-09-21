@@ -58,8 +58,8 @@ async function saveCloudProducts() {
     // Sanitize products array to prevent 413 Payload Too Large on public REST API
     const sanitizedActive = active.map((p) => {
       const sanitizedImages = (p.images || []).map((img) => {
-        if (typeof img === 'string' && img.length > 50000) {
-          return p.images[0] && !p.images[0].startsWith('data:image') ? p.images[0] : 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop';
+        if (!img || typeof img !== 'string') {
+          return 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop';
         }
         return img;
       });

@@ -1,18 +1,14 @@
 import { Product, Order, StoreSettings } from '../types';
 
 function sanitizeImages(images: string[]): string[] {
-  if (!Array.isArray(images)) return [];
+  if (!Array.isArray(images) || images.length === 0) {
+    return ['https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop'];
+  }
   return images.map((img) => {
     if (!img || typeof img !== 'string') {
       return 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop';
     }
-    // Allow uploaded base64 image data URLs (up to 1MB)
-    if (img.startsWith('data:image/')) {
-      if (img.length > 1000000) {
-        return 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop';
-      }
-      return img;
-    }
+    // Always preserve user uploaded images 100%
     return img;
   });
 }
