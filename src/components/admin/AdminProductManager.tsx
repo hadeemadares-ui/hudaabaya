@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Plus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CategoryType } from '../../types';
+import { VoiceInputButton } from '../common/VoiceInputButton';
 
 export const AdminProductManager: React.FC = () => {
   const {
@@ -345,15 +346,21 @@ export const AdminProductManager: React.FC = () => {
           ))}
         </div>
 
-        <div className="relative w-full md:w-64">
-          <input
-            type="text"
-            placeholder="ค้นหาชื่อสินค้าในหลังบ้าน..."
-            value={adminSearch}
-            onChange={(e) => setAdminSearch(e.target.value)}
-            className="w-full bg-dubai-dark border border-gold-400/30 rounded-lg py-1.5 pl-8 pr-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
+        <div className="relative w-full md:w-72 flex items-center gap-1.5">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="ค้นหาชื่อสินค้าในหลังบ้าน..."
+              value={adminSearch}
+              onChange={(e) => setAdminSearch(e.target.value)}
+              className="w-full bg-dubai-dark border border-gold-400/30 rounded-lg py-1.5 pl-8 pr-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
+            />
+            <Search className="w-3.5 h-3.5 text-gold-400 absolute left-2.5 top-2.5" />
+          </div>
+          <VoiceInputButton
+            onTranscript={(text) => setAdminSearch(text)}
+            currentValue={adminSearch}
           />
-          <Search className="w-3.5 h-3.5 text-gold-400 absolute left-2.5 top-2.5" />
         </div>
       </div>
 
@@ -570,7 +577,13 @@ export const AdminProductManager: React.FC = () => {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="sm:col-span-2">
-                    <label className="block text-gray-300 mb-1 font-bold">ชื่อแบบสินค้า *</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-gray-300 font-bold">ชื่อแบบสินค้า *</label>
+                      <VoiceInputButton
+                        onTranscript={(text) => setTitle(text)}
+                        currentValue={title}
+                      />
+                    </div>
                     <input
                       type="text"
                       required
@@ -598,9 +611,15 @@ export const AdminProductManager: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-gray-300 mb-1">
-                      {category === 'perfume' ? 'ประเภทน้ำหอม / ส่วนผสม' : category === 'incense' ? 'ชนิดเครื่องหอม / ส่วนผสม' : category === 'other' ? 'ประเภทสินค้า / รายละเอียด' : 'ชนิดเนื้อผ้า (Fabric)'}
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-gray-300 font-bold">
+                        {category === 'perfume' ? 'ประเภทน้ำหอม / ส่วนผสม' : category === 'incense' ? 'ชนิดเครื่องหอม / ส่วนผสม' : category === 'other' ? 'ประเภทสินค้า / รายละเอียด' : 'ชนิดเนื้อผ้า (Fabric)'}
+                      </label>
+                      <VoiceInputButton
+                        onTranscript={(text) => setFabric(text)}
+                        currentValue={fabric}
+                      />
+                    </div>
                     <input
                       type="text"
                       value={fabric}
@@ -682,7 +701,14 @@ export const AdminProductManager: React.FC = () => {
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block text-gray-300 mb-1">รายละเอียดสินค้า (ถ้ามี / ไม่บังคับกรอก)</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-gray-300 font-bold">รายละเอียดสินค้า (ถ้ามี / ไม่บังคับกรอก)</label>
+                      <VoiceInputButton
+                        mode="append"
+                        onTranscript={(text) => setDescription(text)}
+                        currentValue={description}
+                      />
+                    </div>
                     <textarea
                       rows={3}
                       placeholder={category === 'perfume' ? 'เช่น กลิ่นหอมติดทนนาน 24 ชม. นำเข้าจากดูไบแท้' : 'กรอกหรือไม่กรอกก็ได้ (ไม่บังคับ)'}
@@ -776,9 +802,19 @@ export const AdminProductManager: React.FC = () => {
                           
                           {/* Color / Scent Choice Field */}
                           <div className="sm:col-span-3">
-                            <label className="text-[10px] text-amber-400 font-bold block mb-1">
-                              {category === 'perfume' ? '💧 ตัวเลือกกลิ่น / สี' : '🎨 สีสินค้า (Color)'}
-                            </label>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="text-[10px] text-amber-400 font-bold block">
+                                {category === 'perfume' ? '💧 ตัวเลือกกลิ่น / สี' : '🎨 สีสินค้า (Color)'}
+                              </label>
+                              <VoiceInputButton
+                                onTranscript={(text) => {
+                                  const updated = [...variants];
+                                  updated[idx].color = text;
+                                  setVariants(updated);
+                                }}
+                                currentValue={v.color || ''}
+                              />
+                            </div>
                             <input
                               type="text"
                               placeholder={category === 'perfume' ? 'เช่น กลิ่นอัมเบอร์ทอง' : 'เช่น สีดำ, สีทอง'}
@@ -794,9 +830,19 @@ export const AdminProductManager: React.FC = () => {
 
                           {/* Size / Volume Name Field */}
                           <div className="sm:col-span-3">
-                            <label className="text-[10px] text-gray-300 block mb-1 font-bold">
-                              {category === 'perfume' ? 'ขนาดปริมาณ (ml / ขวด)' : 'ชื่อไซส์ / ความยาว'}
-                            </label>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="text-[10px] text-gray-300 block font-bold">
+                                {category === 'perfume' ? 'ขนาดปริมาณ (ml / ขวด)' : 'ชื่อไซส์ / ความยาว'}
+                              </label>
+                              <VoiceInputButton
+                                onTranscript={(text) => {
+                                  const updated = [...variants];
+                                  updated[idx].name = text;
+                                  setVariants(updated);
+                                }}
+                                currentValue={v.name}
+                              />
+                            </div>
                             <input
                               type="text"
                               placeholder={category === 'perfume' ? 'เช่น ขวดสเปรย์ 50 ml' : 'เช่น Size 52 (ส่วนสูง ~150-155 ซม.)'}

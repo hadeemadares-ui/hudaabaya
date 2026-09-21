@@ -5,6 +5,7 @@ import { ShoppingBag, Search, Sparkles, User, PackageSearch, Bot, Globe, Lock, Q
 import { useShop } from '../../context/ShopContext';
 import { CategoryType, CurrencyType } from '../../types';
 import { DEFAULT_LOGO_BASE64 } from '../../data/logoData';
+import { VoiceInputButton } from '../common/VoiceInputButton';
 
 export const Navbar: React.FC = () => {
   const {
@@ -132,23 +133,29 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Desktop Search Bar */}
-          <div className="hidden lg:flex flex-1 max-w-md mx-4 relative">
-            <input
-              type="text"
-              placeholder="ค้นหาชุดอาบายะห์, เดรส, น้ำหอมดูไบ..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-800/90 border border-slate-700 focus:border-sky-400 focus:ring-1 focus:ring-amber-400 rounded-full py-2 pl-10 pr-4 text-xs text-slate-100 placeholder-slate-400 transition backdrop-blur-md"
+          <div className="hidden lg:flex flex-1 max-w-md mx-4 items-center gap-1.5">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="ค้นหาชุดอาบายะห์, เดรส, น้ำหอมดูไบ..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-slate-800/90 border border-slate-700 focus:border-sky-400 focus:ring-1 focus:ring-amber-400 rounded-full py-2 pl-10 pr-12 text-xs text-slate-100 placeholder-slate-400 transition backdrop-blur-md"
+              />
+              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-sky-400" />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-2.5 text-xs text-amber-400 hover:text-amber-300 font-bold"
+                >
+                  ล้าง
+                </button>
+              )}
+            </div>
+            <VoiceInputButton
+              onTranscript={(text) => setSearchQuery(text)}
+              currentValue={searchQuery}
             />
-            <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-sky-400" />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-2.5 text-xs text-amber-400 hover:text-amber-300"
-              >
-                ล้าง
-              </button>
-            )}
           </div>
 
           {/* Action Navigation Buttons */}
