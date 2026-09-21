@@ -4,8 +4,6 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { Product, ProductVariant, CartItem, Order, CategoryType, Coupon, StoreSettings, CurrencyType } from '../types';
 import { INITIAL_PRODUCTS, INITIAL_COUPONS, INITIAL_ORDERS } from '../data/mockProducts';
 import { DEFAULT_LOGO_BASE64 } from '../data/logoData';
-import { db } from '../lib/firebase';
-import { collection, doc, onSnapshot, setDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import {
   fetchCloudProducts,
   saveCloudProducts,
