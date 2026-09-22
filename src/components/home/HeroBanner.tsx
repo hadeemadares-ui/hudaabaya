@@ -4,8 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles, ArrowRight, Star, ShoppingBag, ShieldCheck } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 
+import { CategoryType } from '../../types';
+
 export const HeroBanner: React.FC = () => {
-  const { setSelectedCategory, setIsCartOpen } = useShop();
+  const { products, setSelectedCategory } = useShop();
 
   const slides = [
     {
@@ -14,7 +16,7 @@ export const HeroBanner: React.FC = () => {
       subtitle: 'ชุดอาบายะห์ดูไบ ปักเลื่อมทองคำแท้ เกรดพรีเมียม',
       description: 'สัมผัสความหรูหราสง่างามส่งตรงจากนครดูไบ UAE ผ้า Nida Silk ตัดเย็บประณีต พร้อมขนาดไซส์ S ถึง XXL',
       badge: 'คอลเลกชันใหม่ส่งตรงจากดูไบ',
-      category: 'abaya' as const,
+      category: 'abaya' as CategoryType,
       image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1200&auto=format&fit=crop',
     },
     {
@@ -23,7 +25,7 @@ export const HeroBanner: React.FC = () => {
       subtitle: 'น้ำหอมอาหรับหัวน้ำมันแท้ อูดดูไบ หอมทรงเสน่ห์ตลอด 24 ชม.',
       description: 'กลิ่นหอมสไตล์เจ้าหญิงและเจ้าชายแห่งดูไบ สกัดจากไม้กฤษณาธรรมชาติ (Royal Agarwood) และดอกกุหลาบดามาสค์',
       badge: 'สินค้านิยมขายดี Best Seller',
-      category: 'perfume' as const,
+      category: 'perfume' as CategoryType,
       image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=1200&auto=format&fit=crop',
     },
     {
@@ -32,7 +34,7 @@ export const HeroBanner: React.FC = () => {
       subtitle: 'จัดเซ็ตสุดคุ้ม: ชุดอาบายะห์ดูไบ + น้ำหอม Royal Oud',
       description: 'ต้อนรับเทศกาลและงานสำคัญ ซื้อเป็นเซ็ตของขวัญประทับใจผู้รับ บรรจุในกล่องกำมะหยี่สีทองหรูหรา',
       badge: 'โปรโมชันพิเศษลดสูงสุด 25%',
-      category: 'combo' as const,
+      category: 'combo' as CategoryType,
       image: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?q=80&w=1200&auto=format&fit=crop',
     },
   ];
@@ -47,6 +49,21 @@ export const HeroBanner: React.FC = () => {
   }, [slides.length]);
 
   const active = slides[currentSlide];
+
+  const getSlideImage = (cat: CategoryType, fallback: string) => {
+    const matched = products.find((p) => p.category === cat && p.images && p.images.length > 0);
+    return matched?.images[0] || fallback;
+  };
+
+  const handleSelectCategory = (cat: CategoryType) => {
+    setSelectedCategory(cat);
+    const catalogEl = document.getElementById('catalog-section');
+    if (catalogEl) {
+      catalogEl.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const realCount = products.filter((p) => p.category === active.category).length;
 
   return (
     <div className="relative bg-slate-900 overflow-hidden border-b border-amber-400/25">
@@ -63,6 +80,11 @@ export const HeroBanner: React.FC = () => {
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-800/90 border border-amber-400/40 text-amber-300 text-xs font-semibold tracking-wider uppercase shadow-gold-glow">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               <span>{active.badge}</span>
+              {realCount > 0 && (
+                <span className="ml-1 bg-amber-400 text-slate-950 font-bold px-2 py-0.5 rounded-full text-[10px]">
+                  พร้อมส่ง {realCount} รายการ
+                </span>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -82,8 +104,8 @@ export const HeroBanner: React.FC = () => {
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <button
-                onClick={() => setSelectedCategory(active.category)}
-                className="px-6 py-3.5 rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-sky-500 text-slate-950 font-extrabold text-sm tracking-wider uppercase hover:shadow-gold-strong transition transform hover:-translate-y-0.5 flex items-center gap-2"
+                onClick={() => handleSelectCategory(active.category)}
+                className="px-6 py-3.5 rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-sky-500 text-slate-950 font-extrabold text-sm tracking-wider uppercase hover:shadow-gold-strong transition transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
               >
                 <span>เลือกซื้อสินค้าคอลเลกชันนี้</span>
                 <ArrowRight className="w-4 h-4 text-slate-950" />
@@ -96,7 +118,7 @@ export const HeroBanner: React.FC = () => {
                 <button
                   key={idx}
                   onClick={() => setCurrentSlide(idx)}
-                  className={`h-2 rounded-full transition-all duration-300 ${
+                  className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
                     currentSlide === idx ? 'w-8 bg-amber-400' : 'w-2 bg-slate-700'
                   }`}
                   aria-label={`Slide ${idx + 1}`}
@@ -109,7 +131,7 @@ export const HeroBanner: React.FC = () => {
           <div className="lg:col-span-5 relative">
             <div className="relative mx-auto max-w-md lg:max-w-none rounded-2xl overflow-hidden border-2 border-amber-400/40 shadow-2xl shadow-sky-950/50 group">
               <img
-                src={active.image}
+                src={getSlideImage(active.category, active.image)}
                 alt={active.title}
                 className="w-full h-[380px] sm:h-[450px] object-cover object-center transform transition duration-700 group-hover:scale-105"
               />
