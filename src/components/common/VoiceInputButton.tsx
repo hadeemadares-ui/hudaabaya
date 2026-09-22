@@ -80,7 +80,7 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
       title={title}
     >
       <Mic className={`w-3.5 h-3.5 ${isListening ? 'animate-bounce text-white' : 'text-gold-400'}`} />
-      <span>{isListening ? '🎙️ กำลังฟัง...' : '🎤 พูดพิมพ์'}</span>
+      <span>{isListening ? 'กำลังฟัง...' : 'พูดพิมพ์'}</span>
     </button>
   );
 };

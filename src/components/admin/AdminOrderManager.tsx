@@ -198,10 +198,10 @@ export const AdminOrderManager: React.FC = () => {
                     onChange={(e) => setCourierInput(e.target.value)}
                     className="w-full bg-dubai-dark border border-gold-400/30 rounded p-2 text-white font-bold"
                   >
-                    <option value="Flash Express">⚡ Flash Express</option>
-                    <option value="Kerry Express">📦 Kerry Express</option>
-                    <option value="Thailand Post EMS">📮 ไปรษณีย์ไทย EMS</option>
-                    <option value="J&T Express">🚚 J&T Express</option>
+                    <option value="Flash Express">Flash Express</option>
+                    <option value="Kerry Express">Kerry Express</option>
+                    <option value="Thailand Post EMS">ไปรษณีย์ไทย EMS</option>
+                    <option value="J&T Express">J&T Express</option>
                   </select>
                 </div>
 
@@ -228,7 +228,7 @@ export const AdminOrderManager: React.FC = () => {
                   }}
                   className="px-2 py-1 bg-amber-950 text-amber-300 border border-amber-500/40 rounded text-[10px] font-bold hover:bg-amber-900 transition"
                 >
-                  ⚡ Flash (TH...)
+                  Flash (TH...)
                 </button>
                 <button
                   type="button"
@@ -238,7 +238,7 @@ export const AdminOrderManager: React.FC = () => {
                   }}
                   className="px-2 py-1 bg-orange-950 text-orange-300 border border-orange-500/40 rounded text-[10px] font-bold hover:bg-orange-900 transition"
                 >
-                  📦 Kerry (KER...)
+                  Kerry (KER...)
                 </button>
                 <button
                   type="button"
@@ -248,7 +248,7 @@ export const AdminOrderManager: React.FC = () => {
                   }}
                   className="px-2 py-1 bg-red-950 text-red-300 border border-red-500/40 rounded text-[10px] font-bold hover:bg-red-900 transition"
                 >
-                  📮 EMS (EF...TH)
+                  EMS (EF...TH)
                 </button>
                 <button
                   type="button"
@@ -258,7 +258,7 @@ export const AdminOrderManager: React.FC = () => {
                   }}
                   className="px-2 py-1 bg-red-950 text-red-400 border border-red-500/40 rounded text-[10px] font-bold hover:bg-red-900 transition"
                 >
-                  🚚 J&T (84...)
+                  J&T (84...)
                 </button>
               </div>
 

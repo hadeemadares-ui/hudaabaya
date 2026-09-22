@@ -20,7 +20,7 @@ const DEFAULT_SETTINGS: StoreSettings = {
   storeTagline: 'Haute Couture & Royal Dubai Oud',
   logoLetter: 'H',
   logoImageUrl: DEFAULT_LOGO_BASE64,
-  topAnnouncement: '✨ HUDA ABAYA DUBAI — สินค้าแท้นำเข้าจากเมืองดูไบ UAE | ส่งฟรีทั่วไทยเมื่อช็อปครบ 2,000.-',
+  topAnnouncement: 'HUDA ABAYA DUBAI — สินค้าแท้นำเข้าจากเมืองดูไบ UAE | ส่งฟรีทั่วไทยเมื่อช็อปครบ 2,000.-',
   contactPhone: '083-427-4687',
   contactLine: '',
   contactAddress: '11/2 ถนน คลองสิบสาม แขวงหนองจอก เขตหนองจอก กรุงเทพมหานคร 10530',

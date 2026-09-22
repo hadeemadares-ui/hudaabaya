@@ -206,7 +206,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                         
                         {v.color && (
                           <span className="text-[10px] text-sky-300 block font-serif mt-0.5">
-                            🎨 {v.color}
+                            {v.color}
                           </span>
                         )}
 

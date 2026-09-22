@@ -288,7 +288,7 @@ export const AdminProductManager: React.FC = () => {
             title="เปิดดูสรุปต้นทุนสินค้า และกำไรคาดการณ์ในคลัง"
           >
             <TrendingUp className="w-4 h-4 text-emerald-300" />
-            <span>📊 ดูสรุปต้นทุน & กำไรคลัง</span>
+            <span>ดูสรุปต้นทุน &amp; กำไรคลัง</span>
           </button>
 
           <button
@@ -311,7 +311,7 @@ export const AdminProductManager: React.FC = () => {
             title="ลบสินค้าตัวอย่างทั้งหมดออกจากระบบเพื่อเริ่มขายจริง"
           >
             <Trash2 className="w-4 h-4 text-red-400" />
-            <span>🧹 ล้างสินค้าตัวอย่างทั้งหมด</span>
+            <span>ล้างสินค้าตัวอย่างทั้งหมด</span>
           </button>
 
           <button
@@ -444,7 +444,7 @@ export const AdminProductManager: React.FC = () => {
                       className="px-3.5 py-2 bg-gradient-to-r from-amber-500 via-gold-400 to-amber-600 text-dubai-black font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-gold-glow hover:scale-105 transition cursor-pointer"
                     >
                       <Edit2 className="w-4 h-4 text-dubai-black" />
-                      <span>✏️ แก้ไขสินค้า & ใส่ต้นทุน</span>
+                      <span>แก้ไขสินค้า & ใส่ต้นทุน</span>
                     </button>
                     
                     <button
@@ -476,17 +476,17 @@ export const AdminProductManager: React.FC = () => {
                           <span className="font-bold text-white block">{variant.name}</span>
                           {variant.color && (
                             <span className="text-[10px] text-amber-300 block font-serif">
-                              🎨 {variant.color}
+                              {variant.color}
                             </span>
                           )}
                           <div className="flex flex-wrap items-center gap-1.5 text-[10px] mt-1">
                             <span className="font-bold text-gold-300 bg-dubai-dark px-1.5 py-0.5 rounded border border-gold-400/20">
-                              💰 ขาย ฿{variant.price.toLocaleString()}
+                              ขาย ฿{variant.price.toLocaleString()}
                             </span>
                             
                             {/* Inlined Bright Orange Cost Price Box */}
                             <div className="bg-amber-950/90 px-1.5 py-0.5 rounded-lg border-2 border-amber-500 flex items-center gap-1 shadow-md">
-                              <span className="text-[9px] text-amber-300 font-extrabold shrink-0">🟧 ต้นทุน</span>
+                              <span className="text-[9px] text-amber-300 font-extrabold shrink-0">ต้นทุน</span>
                               <input
                                 type="number"
                                 placeholder="0"
@@ -601,12 +601,12 @@ export const AdminProductManager: React.FC = () => {
                       onChange={(e) => handleCategoryChange(e.target.value as CategoryType)}
                       className="w-full bg-dubai-black border border-gold-400/50 rounded p-2 text-gold-300 font-bold focus:border-gold-400"
                     >
-                      <option value="abaya">👗 ชุดอาบายะห์ (Abaya)</option>
-                      <option value="kaftan">✨ ชุดคัฟทาน (Kaftan)</option>
-                      <option value="perfume">💎 น้ำหอมดูไบ (Dubai Perfume / Oud)</option>
-                      <option value="incense">🌿 เครื่องหอม / ไม้หอมดูไบ (Bukhoor / Incense)</option>
-                      <option value="combo">🎁 เซ็ตสุดคุ้ม (Combo Set)</option>
-                      <option value="other">🧸 อื่นๆ (ของเล่นเด็ก ขนม สินค้าทั่วไป)</option>
+                      <option value="abaya">ชุดอาบายะห์ (Abaya)</option>
+                      <option value="kaftan">ชุดคัฟทาน (Kaftan)</option>
+                      <option value="perfume">น้ำหอมดูไบ (Dubai Perfume / Oud)</option>
+                      <option value="incense">เครื่องหอม / ไม้หอมดูไบ (Bukhoor / Incense)</option>
+                      <option value="combo">เซ็ตสุดคุ้ม (Combo Set)</option>
+                      <option value="other">อื่นๆ (ของเล่นเด็ก ขนม สินค้าทั่วไป)</option>
                     </select>
                   </div>
 
@@ -689,7 +689,7 @@ export const AdminProductManager: React.FC = () => {
                           </span>
                           {imageUrl.startsWith('data:image') && (
                             <span className="text-[10px] text-amber-300 font-mono bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/30 inline-block font-bold">
-                              ⚡ บีบอัดไฟล์เหลือเพียง ~{Math.round(((imageUrl.length * 3) / 4) / 1024)} KB (ย่อขนาด HD 600px โหลดเร็วสูงสุด)
+                              บีบอัดไฟล์เหลือเพียง ~{Math.round(((imageUrl.length * 3) / 4) / 1024)} KB (ย่อขนาด HD 600px โหลดเร็วสูงสุด)
                             </span>
                           )}
                           <span className="text-[10px] text-gray-400 truncate max-w-xs block font-mono">
@@ -737,7 +737,7 @@ export const AdminProductManager: React.FC = () => {
                         onClick={handleApplyDefaultPreset}
                         className="px-2.5 py-1 bg-gold-500 text-dubai-black rounded text-[11px] font-extrabold shadow-sm hover:scale-102 transition"
                       >
-                        {category === 'perfume' ? '⚡ ปริมาณขวดมาตรฐานน้ำหอม' : '⚡ ไซส์มาตรฐานอาบายะห์ดูไบ'}
+                        {category === 'perfume' ? 'ปริมาณขวดมาตรฐานน้ำหอม' : 'ไซส์มาตรฐานอาบายะห์ดูไบ'}
                       </button>
                       <button
                         type="button"
@@ -774,10 +774,10 @@ export const AdminProductManager: React.FC = () => {
                   {/* Explicit Owner Cost Notice Banner */}
                   <div className="bg-amber-950/80 border-2 border-amber-500/80 rounded-xl p-3 text-xs text-amber-200 shadow-md space-y-1">
                     <div className="font-extrabold text-amber-300 text-xs sm:text-sm flex items-center gap-1.5">
-                      <span>🟧 คำแนะนำสำหรับเจ้าของร้าน: กรอกราคาต้นทุนสินค้า</span>
+                      <span>คำแนะนำสำหรับเจ้าของร้าน: กรอกราคาต้นทุนสินค้า</span>
                     </div>
                     <p className="text-[11px] text-amber-200/90 leading-relaxed">
-                      โปรดกรอกราคาต้นทุนสินค้าจริงในช่อง <strong>[ 🟧 ต้นทุน (บาท) ]</strong> สีส้มสดของแต่ละไซส์ด้านล่างได้เลยครับ ระบบจะนำราคาต้นทุนนี้ไปคำนวณกำไรสุทธิให้อัตโนมัติในหน้ารายงานยอดขาย
+                      โปรดกรอกราคาต้นทุนสินค้าจริงในช่อง <strong>[ ต้นทุน (บาท) ]</strong> สีส้มสดของแต่ละไซส์ด้านล่างได้เลยครับ ระบบจะนำราคาต้นทุนนี้ไปคำนวณกำไรสุทธิให้อัตโนมัติในหน้ารายงานยอดขาย
                     </p>
                   </div>
 
@@ -804,7 +804,7 @@ export const AdminProductManager: React.FC = () => {
                           <div className="sm:col-span-3">
                             <div className="flex items-center justify-between mb-1">
                               <label className="text-[10px] text-amber-400 font-bold block">
-                                {category === 'perfume' ? '💧 ตัวเลือกกลิ่น / สี' : '🎨 สีสินค้า (Color)'}
+                                {category === 'perfume' ? 'ตัวเลือกกลิ่น / สี' : 'สีสินค้า (Color)'}
                               </label>
                               <VoiceInputButton
                                 onTranscript={(text) => {
@@ -861,7 +861,7 @@ export const AdminProductManager: React.FC = () => {
                             {/* Price Field */}
                             <div>
                               <label className="text-[10px] text-gold-400 block mb-1 font-extrabold truncate">
-                                💰 ราคาขาย
+                                ราคาขาย
                               </label>
                               <input
                                 type="number"
@@ -885,7 +885,7 @@ export const AdminProductManager: React.FC = () => {
                             {/* Cost Price Field - High Visibility Orange Badge Box */}
                             <div className="bg-amber-950/80 p-1 rounded-lg border-2 border-amber-500 shadow-md">
                               <label className="text-[10px] text-amber-300 block mb-0.5 font-extrabold text-center bg-amber-500/20 rounded py-0.5 border border-amber-500/40 truncate">
-                                🟧 ต้นทุน (บาท)
+                                ต้นทุน (บาท)
                               </label>
                               <input
                                 type="number"
@@ -905,7 +905,7 @@ export const AdminProductManager: React.FC = () => {
                             {/* Stock Field */}
                             <div>
                               <label className="text-[10px] text-emerald-400 block mb-1 font-extrabold truncate">
-                                📦 สต๊อก (ชิ้น)
+                                สต๊อก (ชิ้น)
                               </label>
                               <input
                                 type="number"
@@ -933,7 +933,7 @@ export const AdminProductManager: React.FC = () => {
               {/* Sticky Bottom Footer */}
               <div className="sticky bottom-0 z-30 bg-dubai-black/95 backdrop-blur-md -mx-4 -mb-4 sm:-mx-6 sm:-mb-6 p-4 border-t-2 border-gold-400/50 flex items-center justify-between gap-3 shrink-0 shadow-2xl mt-4">
                 <span className="text-[11px] text-gold-300/80 font-bold hidden sm:block">
-                  ✨ ตรวจสอบความถูกต้อง แล้วกดปุ่มบันทึกสินค้า
+                  ตรวจสอบความถูกต้อง แล้วกดปุ่มบันทึกสินค้า
                 </span>
                 <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
                   <button
@@ -948,7 +948,7 @@ export const AdminProductManager: React.FC = () => {
                     className="px-6 py-3 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-dubai-black font-extrabold rounded-xl text-xs sm:text-sm shadow-gold-strong scale-100 hover:scale-105 transition flex items-center justify-center gap-2 cursor-pointer font-sans w-full sm:w-auto"
                   >
                     <CheckCircle2 className="w-5 h-5 text-dubai-black shrink-0" />
-                    <span>💾 บันทึกสินค้า (Save Product)</span>
+                    <span>บันทึกสินค้า (Save Product)</span>
                   </button>
                 </div>
               </div>

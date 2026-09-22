@@ -375,7 +375,7 @@ export const AdminSalesReportManager: React.FC = () => {
         <div>
           <h3 className="font-serif font-bold text-lg text-white flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-gold-400" />
-            <span>📊 แดชบอร์ดสรุปรายรับ - รายจ่าย/ต้นทุน - ยอดขาย & กำไร (Financial Dashboard)</span>
+            <span>แดชบอร์ดสรุปรายรับ - รายจ่าย/ต้นทุน - ยอดขาย &amp; กำไร (Financial Dashboard)</span>
           </h3>
           <p className="text-xs text-gold-300/80">
             วิเคราะห์สรุปรายรับสุทธิ รายจ่ายต้นทุนสินค้า กำไรสุทธิ และสินค้าขายดี เลือกดูตามวัน เดือน ปี หรือช่วงเวลาที่ต้องการได้ 100%
@@ -404,7 +404,7 @@ export const AdminSalesReportManager: React.FC = () => {
                 : 'bg-dubai-card text-gold-200/80 border border-gold-400/20'
             }`}
           >
-            📅 วันนี้ (Today)
+            วันนี้ (Today)
           </button>
 
           <button
@@ -415,7 +415,7 @@ export const AdminSalesReportManager: React.FC = () => {
                 : 'bg-dubai-card text-gold-200/80 border border-gold-400/20'
             }`}
           >
-            🗓️ เดือนนี้ (This Month)
+            เดือนนี้ (This Month)
           </button>
 
           <button
@@ -426,7 +426,7 @@ export const AdminSalesReportManager: React.FC = () => {
                 : 'bg-dubai-card text-gold-200/80 border border-gold-400/20'
             }`}
           >
-            🏆 ปีนี้ (This Year)
+            ปีนี้ (This Year)
           </button>
 
           <button
@@ -437,7 +437,7 @@ export const AdminSalesReportManager: React.FC = () => {
                 : 'bg-dubai-card text-gold-200/80 border border-gold-400/20'
             }`}
           >
-            ♾️ สะสมทั้งหมด (All Time)
+            สะสมทั้งหมด (All Time)
           </button>
 
           <button
@@ -448,7 +448,7 @@ export const AdminSalesReportManager: React.FC = () => {
                 : 'bg-dubai-card text-gold-200/80 border border-gold-400/20'
             }`}
           >
-            ⚙️ กำหนดช่วงวันที่เอง
+            กำหนดช่วงวันที่เอง
           </button>
         </div>
 
@@ -479,7 +479,7 @@ export const AdminSalesReportManager: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="text-xs font-serif font-extrabold text-gold-300 uppercase tracking-wider bg-dubai-black/80 px-3 py-1 rounded-xl border border-gold-400/40 shadow-sm flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-gold-400 animate-pulse" />
-              🏬 สรุปมูลค่าต้นทุนสต๊อกสินค้าทั้งหมดในร้าน (Inventory Valuation)
+              สรุปมูลค่าต้นทุนสต๊อกสินค้าทั้งหมดในร้าน (Inventory Valuation)
             </span>
           </div>
           <span className="text-xs text-gold-300 font-extrabold bg-gold-500/20 px-3 py-1 rounded-full border border-gold-400/40">
@@ -489,19 +489,19 @@ export const AdminSalesReportManager: React.FC = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 pt-1 text-xs">
           <div className="bg-dubai-black/80 p-3.5 rounded-xl border border-gold-400/30 shadow-inner">
-            <span className="text-[10px] text-gray-300 block font-bold mb-0.5">📦 สต๊อกสินค้ารวม</span>
+            <span className="text-[10px] text-gray-300 block font-bold mb-0.5">สต๊อกสินค้ารวม</span>
             <span className="text-lg font-serif font-extrabold text-white">{totalStockPieces.toLocaleString()} ชิ้น</span>
           </div>
           <div className="bg-dubai-black/80 p-3.5 rounded-xl border border-gold-400/30 shadow-inner">
-            <span className="text-[10px] text-gold-400 block font-bold mb-0.5">💰 มูลค่าขายรวม (Retail Value)</span>
+            <span className="text-[10px] text-gold-400 block font-bold mb-0.5">มูลค่าขายรวม (Retail Value)</span>
             <span className="text-lg font-serif font-extrabold text-gold-300">฿{totalStockSellingValue.toLocaleString()}</span>
           </div>
           <div className="bg-gradient-to-br from-amber-950 via-dubai-card to-amber-900/60 p-3.5 rounded-xl border-2 border-amber-500/80 shadow-md">
-            <span className="text-[10px] text-amber-300 block font-extrabold mb-0.5">🟧 ต้นทุนคลังรวม (Total Inventory Cost)</span>
+            <span className="text-[10px] text-amber-300 block font-extrabold mb-0.5">ต้นทุนคลังรวม (Total Inventory Cost)</span>
             <span className="text-lg font-serif font-extrabold text-amber-200">฿{totalStockCostValue.toLocaleString()}</span>
           </div>
           <div className="bg-gradient-to-br from-emerald-950 via-dubai-card to-emerald-900/60 p-3.5 rounded-xl border-2 border-emerald-500/80 shadow-md">
-            <span className="text-[10px] text-emerald-400 block font-extrabold mb-0.5">💚 กำไรคาดการณ์ (Expected Profit)</span>
+            <span className="text-[10px] text-emerald-400 block font-extrabold mb-0.5">กำไรคาดการณ์ (Expected Profit)</span>
             <span className="text-lg font-serif font-extrabold text-emerald-300">+฿{totalStockExpectedProfit.toLocaleString()}</span>
           </div>
         </div>
@@ -513,7 +513,7 @@ export const AdminSalesReportManager: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="font-extrabold text-amber-300 text-sm flex items-center gap-1.5">
-                <span>💡 สถานะ: ยังไม่มีคำสั่งซื้อที่ชำระเงินในระบบ (0 รายการ)</span>
+                <span>สถานะ: ยังไม่มีคำสั่งซื้อที่ชำระเงินในระบบ (0 รายการ)</span>
               </div>
               <p className="text-xs text-amber-100/90 leading-relaxed mt-1">
                 ต้นทุนและกำไรสุทธิจะคำนวณและแสดงผลในตารางด้านล่างทันทีเมื่อคุณขายสินค้าผ่าน POS หรือเมื่อมีลูกค้าสั่งซื้อเข้ามาครับ
@@ -523,7 +523,7 @@ export const AdminSalesReportManager: React.FC = () => {
               onClick={handleCreateSampleOrder}
               className="px-4 py-2.5 bg-gradient-to-r from-amber-500 via-gold-400 to-amber-600 hover:from-amber-400 hover:to-gold-300 text-dubai-black font-extrabold text-xs rounded-xl shadow-gold-glow hover:scale-105 transition shrink-0 whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5"
             >
-              <span>🧪 ทดลองสร้างออเดอร์ตัวอย่าง 1 รายการ</span>
+              <span>ทดลองสร้างออเดอร์ตัวอย่าง 1 รายการ</span>
             </button>
           </div>
         </div>
@@ -612,7 +612,7 @@ export const AdminSalesReportManager: React.FC = () => {
           <div className="flex items-center justify-between border-b border-gold-400/20 pb-2">
             <h4 className="font-serif font-bold text-sm text-gold-300 flex items-center gap-2">
               <PieChart className="w-4 h-4 text-gold-400" />
-              <span>📊 กราฟสรุปสัดส่วน รายรับ - ต้นทุน - กำไรสุทธิ</span>
+              <span>กราฟสรุปสัดส่วน รายรับ - ต้นทุน - กำไรสุทธิ</span>
             </h4>
             <span className="text-[10px] bg-gold-500/20 text-gold-300 px-2 py-0.5 rounded-full font-bold">
               อัตรากำไร {profitMarginPercent}%
@@ -625,7 +625,7 @@ export const AdminSalesReportManager: React.FC = () => {
               <div className="flex justify-between text-[11px] font-bold">
                 <span className="text-gold-300 flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-gold-400 inline-block"></span>
-                  💰 ยอดขายสุทธิ (Revenue)
+                  ยอดขายสุทธิ (Revenue)
                 </span>
                 <span className="text-gold-300 font-serif font-extrabold">฿{totalRevenue.toLocaleString()}</span>
               </div>
@@ -642,7 +642,7 @@ export const AdminSalesReportManager: React.FC = () => {
               <div className="flex justify-between text-[11px] font-bold">
                 <span className="text-amber-400 flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
-                  🟧 ต้นทุนสินค้าที่ขาย (Cost)
+                  ต้นทุนสินค้าที่ขาย (Cost)
                 </span>
                 <span className="text-amber-300 font-serif font-extrabold">
                   ฿{totalCost.toLocaleString()} ({totalRevenue > 0 ? Math.round((totalCost / totalRevenue) * 100) : 0}%)
@@ -661,7 +661,7 @@ export const AdminSalesReportManager: React.FC = () => {
               <div className="flex justify-between text-[11px] font-bold">
                 <span className="text-emerald-400 flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span>
-                  💚 กำไรสุทธิจากการขาย (Net Profit)
+                  กำไรสุทธิจากการขาย (Net Profit)
                 </span>
                 <span className="text-emerald-300 font-serif font-extrabold">
                   +฿{netProfit.toLocaleString()} ({profitMarginPercent}%)
@@ -680,7 +680,7 @@ export const AdminSalesReportManager: React.FC = () => {
               <div className="flex justify-between text-[11px] font-bold">
                 <span className="text-gray-300 flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span>
-                  🏬 ต้นทุนสต๊อกคลังรวมทั้งหมด
+                  ต้นทุนสต๊อกคลังรวมทั้งหมด
                 </span>
                 <span className="text-amber-200 font-serif font-bold">฿{totalStockCostValue.toLocaleString()}</span>
               </div>
@@ -699,7 +699,7 @@ export const AdminSalesReportManager: React.FC = () => {
           <div className="flex items-center justify-between border-b border-gold-400/20 pb-2">
             <h4 className="font-serif font-bold text-sm text-gold-300 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-gold-400" />
-              <span>📈 กราฟเปรียบเทียบ 5 อันดับสินค้าขายดี (Top Best Sellers)</span>
+              <span>กราฟเปรียบเทียบ 5 อันดับสินค้าขายดี (Top Best Sellers)</span>
             </h4>
             <span className="text-[10px] text-gray-400">เรียงตามยอดขาย</span>
           </div>
@@ -712,7 +712,7 @@ export const AdminSalesReportManager: React.FC = () => {
                   onClick={handleCreateSampleOrder}
                   className="px-3 py-1.5 bg-amber-500 text-dubai-black font-extrabold rounded-lg text-xs"
                 >
-                  🧪 กดทดลองสร้างออเดอร์ตัวอย่าง
+                  กดทดลองสร้างออเดอร์ตัวอย่าง
                 </button>
               </div>
             ) : (

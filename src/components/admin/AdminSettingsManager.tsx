@@ -256,7 +256,7 @@ export const AdminSettingsManager: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <span className="text-emerald-400 font-bold text-xs block">✓ ระบบจดจำโลโก้นี้อย่างถาวรแล้ว</span>
+                      <span className="text-emerald-400 font-bold text-xs block">ระบบจดจำโลโก้นี้อย่างถาวรแล้ว</span>
                       <p className="text-[11px] text-gray-300">
                         โลโก้นี้จะแสดงผลใน Header, ท้ายเว็บ และใบเสร็จรับเงิน POS โดยไม่ต้องเลือกใหม่เมื่อบันทึกข้อมูล
                       </p>
@@ -485,7 +485,7 @@ export const AdminSettingsManager: React.FC = () => {
                 className="px-4 py-2 bg-amber-950 hover:bg-amber-900 border border-amber-600/50 text-amber-200 font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-md"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-                <span>🧹 กดล้างแคชเครื่องนี้ทันที</span>
+                <span>กดล้างแคชเครื่องนี้ทันที</span>
               </button>
             </div>
           </div>

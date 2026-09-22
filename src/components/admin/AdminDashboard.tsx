@@ -120,7 +120,7 @@ export const AdminDashboard: React.FC = () => {
                   ● เชื่อมต่อระบบเรียลไทม์ 100%
                 </span>
                 <span className="text-[10px] bg-gold-500/20 text-gold-300 border border-gold-400/40 px-2 py-0.5 rounded-full font-bold font-sans">
-                  ✓ เวอร์ชันใหม่ v1.0.6
+                  เวอร์ชันใหม่ v1.0.6
                 </span>
               </div>
               <p className="text-xs text-gold-300/80 mt-1">
@@ -136,7 +136,7 @@ export const AdminDashboard: React.FC = () => {
               title="เปิดดูรายงานวิเคราะห์ต้นทุน กำไรสุทธิ และสรุปคลังสินค้า"
             >
               <TrendingUp className="w-4 h-4 text-emerald-300" />
-              <span>📊 ดูรายงานต้นทุน & กำไร</span>
+              <span>ดูรายงานต้นทุน & กำไร</span>
             </button>
 
             <button
@@ -150,7 +150,7 @@ export const AdminDashboard: React.FC = () => {
             >
               <span className="animate-pulse bg-gold-500 text-dubai-black text-[9px] px-1.5 py-0.2 rounded font-extrabold mr-0.5">NEW</span>
               <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-              <span>🧹 ล้างแคช</span>
+              <span>ล้างแคช</span>
             </button>
             <button
               onClick={logoutAdmin}
@@ -176,7 +176,7 @@ export const AdminDashboard: React.FC = () => {
             <p className="text-xl sm:text-2xl font-serif font-extrabold text-gold-300">
               ฿{totalRevenue.toLocaleString()}
             </p>
-            <p className="text-[10px] text-emerald-400 font-bold">👉 กดเพื่อดูรายงานต้นทุน & กำไร</p>
+            <p className="text-[10px] text-emerald-400 font-bold">กดเพื่อดูรายงานต้นทุน & กำไร</p>
           </div>
 
           <div
@@ -191,7 +191,7 @@ export const AdminDashboard: React.FC = () => {
             <p className="text-xl sm:text-2xl font-serif font-extrabold text-white">
               {totalOrdersCount} <span className="text-xs font-sans font-normal text-gray-400">รายการ</span>
             </p>
-            <p className="text-[10px] text-emerald-400 font-bold">👉 กดเพื่อดูตารางขายสินค้า</p>
+            <p className="text-[10px] text-emerald-400 font-bold">กดเพื่อดูตารางขายสินค้า</p>
           </div>
 
           <div className="p-4 bg-dubai-card border border-gold-400/30 rounded-xl space-y-1 shadow-md">
@@ -228,7 +228,7 @@ export const AdminDashboard: React.FC = () => {
             }`}
           >
             <Layers className="w-4.5 h-4.5 text-gold-400" />
-            <span>👗 จัดการสต๊อกเสื้อผ้า & ใส่ต้นทุน ({products.length})</span>
+            <span>จัดการสต๊อกสินค้า & ใส่ต้นทุน ({products.length})</span>
           </button>
 
           <button
@@ -240,7 +240,7 @@ export const AdminDashboard: React.FC = () => {
             }`}
           >
             <Store className="w-4.5 h-4.5 text-gold-400" />
-            <span>🛒 คิดเงินหน้าร้าน (POS Cashier)</span>
+            <span>คิดเงินหน้าร้าน (POS Cashier)</span>
           </button>
 
           <button
@@ -252,7 +252,7 @@ export const AdminDashboard: React.FC = () => {
             }`}
           >
             <TrendingUp className="w-4.5 h-4.5 text-emerald-400" />
-            <span>📊 เปิดรายงานยอดขาย & กำไรสุทธิ</span>
+            <span>เปิดรายงานยอดขาย & กำไรสุทธิ</span>
           </button>
 
           <button

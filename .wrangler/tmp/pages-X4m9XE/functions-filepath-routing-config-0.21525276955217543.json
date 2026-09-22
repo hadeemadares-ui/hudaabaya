@@ -1,0 +1,77 @@
+{
+  "routes": [
+    {
+      "routePath": "/api/orders",
+      "mountPath": "/api",
+      "method": "GET",
+      "module": [
+        "api/orders.ts:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/orders",
+      "mountPath": "/api",
+      "method": "OPTIONS",
+      "module": [
+        "api/orders.ts:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/orders",
+      "mountPath": "/api",
+      "method": "POST",
+      "module": [
+        "api/orders.ts:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/products",
+      "mountPath": "/api",
+      "method": "GET",
+      "module": [
+        "api/products.ts:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/products",
+      "mountPath": "/api",
+      "method": "OPTIONS",
+      "module": [
+        "api/products.ts:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/products",
+      "mountPath": "/api",
+      "method": "POST",
+      "module": [
+        "api/products.ts:onRequestPost"
+      ]
+    },
+    {
+      "routePath": "/api/settings",
+      "mountPath": "/api",
+      "method": "GET",
+      "module": [
+        "api/settings.ts:onRequestGet"
+      ]
+    },
+    {
+      "routePath": "/api/settings",
+      "mountPath": "/api",
+      "method": "OPTIONS",
+      "module": [
+        "api/settings.ts:onRequestOptions"
+      ]
+    },
+    {
+      "routePath": "/api/settings",
+      "mountPath": "/api",
+      "method": "POST",
+      "module": [
+        "api/settings.ts:onRequestPost"
+      ]
+    }
+  ],
+  "baseURL": "/"
+}

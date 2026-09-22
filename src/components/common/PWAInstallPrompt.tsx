@@ -133,7 +133,7 @@ export const PWAInstallPrompt: React.FC = () => {
               /* iOS Safari Step Guide */
               <div className="bg-dubai-dark p-2.5 rounded-xl border border-gold-400/30 text-[11px] text-gray-300 space-y-1">
                 <p className="font-bold text-gold-400 flex items-center gap-1">
-                  <span>📲 วิธีติดตั้งบน iPhone / iPad (Safari):</span>
+                  <span>วิธีติดตั้งบน iPhone / iPad (Safari):</span>
                 </p>
                 <p className="flex items-center gap-1.5">
                   1. แตะปุ่มแชร์ <Share className="w-3.5 h-3.5 text-gold-400 inline shrink-0" /> ท้ายเบราว์เซอร์

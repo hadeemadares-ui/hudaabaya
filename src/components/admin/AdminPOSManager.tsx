@@ -368,7 +368,7 @@ export const AdminPOSManager: React.FC = () => {
                     }}
                     className="mt-1 px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold text-[11px] rounded-full border border-emerald-300 shadow-md flex items-center gap-1.5 transition cursor-pointer"
                   >
-                    <span>📊 ดูรายงานยอดขาย & กำไรสุทธิ (Financial Analytics)</span>
+                    <span>ดูรายงานยอดขาย &amp; กำไรสุทธิ (Financial Analytics)</span>
                   </button>
                 </div>
               ) : (
@@ -490,7 +490,7 @@ export const AdminPOSManager: React.FC = () => {
                   }`}
                 >
                   <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
-                  <span className="text-[10px] font-bold">🏛️ โครงการรัฐบาล</span>
+                  <span className="text-[10px] font-bold">โครงการรัฐบาล</span>
                 </button>
               </div>
 
@@ -633,14 +633,14 @@ export const AdminPOSManager: React.FC = () => {
                   {/* Calculation Result Summary Box */}
                   <div className="space-y-1.5 pt-1 text-xs">
                     <div className="flex justify-between items-center text-amber-300/90 font-medium">
-                      <span>🏛️ รัฐบาล/โครงการจ่าย ({govPercent}%):</span>
+                      <span>รัฐบาล/โครงการจ่าย ({govPercent}%):</span>
                       <span className="font-mono font-bold text-amber-300">
                         ฿{govAmount.toLocaleString()}
                       </span>
                     </div>
 
                     <div className="flex justify-between items-center text-emerald-300 font-bold bg-emerald-950/60 p-2 rounded-lg border border-emerald-500/40">
-                      <span>👤 ยอดที่ลูกค้าชำระเพิ่ม ({customerPercent}%):</span>
+                      <span>ยอดที่ลูกค้าชำระเพิ่ม ({customerPercent}%):</span>
                       <span className="font-mono font-extrabold text-sm text-emerald-400">
                         ฿{customerPayAmount.toLocaleString()}
                       </span>
@@ -681,7 +681,7 @@ export const AdminPOSManager: React.FC = () => {
                 }`}
               >
                 <CheckCircle className="w-5 h-5 text-dubai-black" />
-                <span>🟢 ยืนยันการขาย & ออกใบเสร็จ (ชำระเงิน ฿{netAmount.toLocaleString()})</span>
+                <span>ยืนยันการขาย &amp; ออกใบเสร็จ (ชำระเงิน ฿{netAmount.toLocaleString()})</span>
               </button>
             </div>
 
@@ -761,7 +761,7 @@ export const AdminPOSManager: React.FC = () => {
               </div>
 
               <div className="text-center pt-3 border-t border-black/30 text-[10px] text-gray-600">
-                <p>✨ ขอบคุณที่อุดหนุน HUDA ABAYA DUBAI ✨</p>
+                <p>ขอบคุณที่อุดหนุน HUDA ABAYA DUBAI</p>
                 <p>ยินดีให้บริการในโอกาสถัดไปค่ะ</p>
               </div>
             </div>

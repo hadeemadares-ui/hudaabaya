@@ -173,7 +173,7 @@ export const AIConciergeModal: React.FC = () => {
             </div>
 
             <p className="text-gray-300 leading-relaxed">
-              💡 {recommendation.reason}
+              {recommendation.reason}
             </p>
 
             <div className="flex items-center gap-3 p-2 bg-dubai-dark rounded-xl border border-gold-400/30">
