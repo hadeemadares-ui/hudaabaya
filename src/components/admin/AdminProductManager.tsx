@@ -490,9 +490,11 @@ export const AdminProductManager: React.FC = () => {
                               <input
                                 type="number"
                                 placeholder="0"
-                                value={variant.costPrice ?? Math.round(variant.price * 0.5)}
+                                value={variant.costPrice === 0 ? '' : (variant.costPrice ?? Math.round(variant.price * 0.5))}
+                                onFocus={(e) => e.target.select()}
                                 onChange={(e) => {
-                                  const newCost = Number(e.target.value);
+                                  const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
+                                  const newCost = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
                                   const updatedVariants = product.variants.map((v) =>
                                     v.id === variant.id ? { ...v, costPrice: newCost } : v
                                   );
@@ -866,8 +868,9 @@ export const AdminProductManager: React.FC = () => {
                               <input
                                 type="number"
                                 placeholder="0"
-                                value={v.price}
+                                value={v.price === 0 ? '' : v.price}
                                 onFocus={(e) => e.target.select()}
+                                onClick={(e) => (e.target as HTMLInputElement).select()}
                                 onChange={(e) => {
                                   const updated = [...variants];
                                   const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
@@ -890,8 +893,9 @@ export const AdminProductManager: React.FC = () => {
                               <input
                                 type="number"
                                 placeholder="0"
-                                value={v.costPrice ?? (v.price ? Math.round(v.price * 0.5) : 0)}
+                                value={v.costPrice === 0 ? '' : (v.costPrice ?? (v.price ? Math.round(v.price * 0.5) : 0))}
                                 onFocus={(e) => e.target.select()}
+                                onClick={(e) => (e.target as HTMLInputElement).select()}
                                 onChange={(e) => {
                                   const updated = [...variants];
                                   const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
@@ -910,8 +914,9 @@ export const AdminProductManager: React.FC = () => {
                               <input
                                 type="number"
                                 placeholder="0"
-                                value={v.stockQuantity}
+                                value={v.stockQuantity === 0 ? '' : v.stockQuantity}
                                 onFocus={(e) => e.target.select()}
+                                onClick={(e) => (e.target as HTMLInputElement).select()}
                                 onChange={(e) => {
                                   const updated = [...variants];
                                   const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');

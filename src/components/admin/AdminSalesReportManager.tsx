@@ -895,6 +895,7 @@ export const AdminSalesReportManager: React.FC = () => {
                     min={0}
                     value={editingProduct.price === 0 ? '' : editingProduct.price}
                     onFocus={(e) => e.target.select()}
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
                     onChange={(e) => {
                       const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
                       setEditingProduct({ ...editingProduct, price: cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0) });
@@ -911,6 +912,7 @@ export const AdminSalesReportManager: React.FC = () => {
                     min={0}
                     value={editingProduct.costPrice === 0 ? '' : editingProduct.costPrice}
                     onFocus={(e) => e.target.select()}
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
                     onChange={(e) => {
                       const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
                       setEditingProduct({ ...editingProduct, costPrice: cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0) });
@@ -927,6 +929,7 @@ export const AdminSalesReportManager: React.FC = () => {
                     min={0}
                     value={editingProduct.stockQuantity === 0 ? '' : editingProduct.stockQuantity}
                     onFocus={(e) => e.target.select()}
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
                     onChange={(e) => {
                       const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
                       setEditingProduct({ ...editingProduct, stockQuantity: cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0) });

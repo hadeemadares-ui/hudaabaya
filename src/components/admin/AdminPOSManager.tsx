@@ -429,8 +429,14 @@ export const AdminPOSManager: React.FC = () => {
                 <input
                   type="number"
                   min={0}
-                  value={discountInput}
-                  onChange={(e) => setDiscountInput(Number(e.target.value))}
+                  placeholder="0"
+                  value={discountInput === 0 ? '' : discountInput}
+                  onFocus={(e) => e.target.select()}
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                  onChange={(e) => {
+                    const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
+                    setDiscountInput(cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0));
+                  }}
                   className="w-full bg-dubai-dark border border-gold-400/30 rounded p-1.5 text-gold-300 font-bold font-mono"
                 />
               </div>
@@ -524,8 +530,14 @@ export const AdminPOSManager: React.FC = () => {
                     <span className="text-gray-300 text-xs font-bold">รับเงินสดมา (บาท):</span>
                     <input
                       type="number"
+                      placeholder="0"
                       value={cashReceived}
-                      onChange={(e) => setCashReceived(e.target.value)}
+                      onFocus={(e) => e.target.select()}
+                      onClick={(e) => (e.target as HTMLInputElement).select()}
+                      onChange={(e) => {
+                        const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
+                        setCashReceived(cleanVal);
+                      }}
                       className="w-32 bg-dubai-black border border-gold-400/40 rounded p-1.5 text-right font-mono font-bold text-white text-sm"
                     />
                   </div>
@@ -551,65 +563,58 @@ export const AdminPOSManager: React.FC = () => {
                 </div>
               )}
 
-              {/* Government Co-Payment Calculator View (60/40, 50/50, 70/30, Custom) */}
+              {/* Payment Summary */}
               {paymentMethod === 'gov_copay' && (
-                <div className="p-3.5 bg-gradient-to-b from-dubai-dark to-dubai-black rounded-xl border border-amber-500/50 space-y-3 shadow-lg">
-                  <div className="flex items-center justify-between border-b border-amber-500/20 pb-2">
-                    <span className="text-amber-300 text-xs font-bold flex items-center gap-1">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                      <span>เลือกสัดส่วนโครงการรัฐบาล (Co-Payment Ratio):</span>
-                    </span>
-                  </div>
-
-                  {/* Ratio Selector Buttons */}
-                  <div className="grid grid-cols-4 gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setGovRatio('60_40')}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${
-                        govRatio === '60_40'
-                          ? 'bg-amber-400 text-dubai-black border-amber-300 shadow'
-                          : 'bg-dubai-black text-amber-200 border-amber-500/30'
-                      }`}
-                    >
-                      60 / 40
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setGovRatio('50_50')}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${
-                        govRatio === '50_50'
-                          ? 'bg-amber-400 text-dubai-black border-amber-300 shadow'
-                          : 'bg-dubai-black text-amber-200 border-amber-500/30'
-                      }`}
-                    >
-                      50 / 50 (คนละครึ่ง)
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setGovRatio('70_30')}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${
-                        govRatio === '70_30'
-                          ? 'bg-amber-400 text-dubai-black border-amber-300 shadow'
-                          : 'bg-dubai-black text-amber-200 border-amber-500/30'
-                      }`}
-                    >
-                      70 / 30
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setGovRatio('custom')}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-bold border transition ${
-                        govRatio === 'custom'
-                          ? 'bg-amber-400 text-dubai-black border-amber-300 shadow'
-                          : 'bg-dubai-black text-amber-200 border-amber-500/30'
-                      }`}
-                    >
-                      ระบุ % เอง
-                    </button>
+                <div className="p-3 bg-dubai-dark rounded-xl border border-amber-500/30 space-y-3">
+                  <div className="space-y-1.5">
+                    <span className="text-amber-300 font-bold text-xs block">สัดส่วนเงินสนับสนุนโครงการรัฐบาล:</span>
+                    
+                    <div className="grid grid-cols-4 gap-1.5 text-[11px] font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setGovRatio('60_40')}
+                        className={`py-1.5 rounded-lg border text-center transition ${
+                          govRatio === '60_40'
+                            ? 'bg-amber-400 text-dubai-black border-amber-300 font-extrabold'
+                            : 'bg-dubai-black text-amber-200 border-amber-500/30 hover:border-amber-400'
+                        }`}
+                      >
+                        60 / 40
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setGovRatio('50_50')}
+                        className={`py-1.5 rounded-lg border text-center transition ${
+                          govRatio === '50_50'
+                            ? 'bg-amber-400 text-dubai-black border-amber-300 font-extrabold'
+                            : 'bg-dubai-black text-amber-200 border-amber-500/30 hover:border-amber-400'
+                        }`}
+                      >
+                        50 / 50
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setGovRatio('70_30')}
+                        className={`py-1.5 rounded-lg border text-center transition ${
+                          govRatio === '70_30'
+                            ? 'bg-amber-400 text-dubai-black border-amber-300 font-extrabold'
+                            : 'bg-dubai-black text-amber-200 border-amber-500/30 hover:border-amber-400'
+                        }`}
+                      >
+                        70 / 30
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setGovRatio('custom')}
+                        className={`py-1.5 rounded-lg border text-center transition ${
+                          govRatio === 'custom'
+                            ? 'bg-amber-400 text-dubai-black border-amber-300 font-extrabold'
+                            : 'bg-dubai-black text-amber-200 border-amber-500/30 hover:border-amber-400'
+                        }`}
+                      >
+                        ระบุ % เอง
+                      </button>
+                    </div>
                   </div>
 
                   {/* Custom Percent Input */}
@@ -621,8 +626,14 @@ export const AdminPOSManager: React.FC = () => {
                           type="number"
                           min={0}
                           max={100}
-                          value={customGovPercent}
-                          onChange={(e) => setCustomGovPercent(Number(e.target.value))}
+                          placeholder="0"
+                          value={customGovPercent === 0 ? '' : customGovPercent}
+                          onFocus={(e) => e.target.select()}
+                          onClick={(e) => (e.target as HTMLInputElement).select()}
+                          onChange={(e) => {
+                            const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
+                            setCustomGovPercent(cleanVal === '' ? 0 : Math.min(100, Math.max(0, parseInt(cleanVal, 10) || 0)));
+                          }}
                           className="w-16 bg-dubai-dark border border-amber-500/50 rounded px-2 py-1 text-right text-amber-300 font-mono font-bold text-xs"
                         />
                         <span className="text-amber-400 font-bold">%</span>

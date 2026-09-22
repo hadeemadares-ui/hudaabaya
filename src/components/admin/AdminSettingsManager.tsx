@@ -436,8 +436,14 @@ export const AdminSettingsManager: React.FC = () => {
                 type="number"
                 min={1}
                 max={50}
-                value={form.lowStockThreshold || 3}
-                onChange={(e) => setForm({ ...form, lowStockThreshold: Number(e.target.value)} )}
+                placeholder="3"
+                value={form.lowStockThreshold === 0 ? '' : form.lowStockThreshold}
+                onFocus={(e) => e.target.select()}
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+                onChange={(e) => {
+                  const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
+                  setForm({ ...form, lowStockThreshold: cleanVal === '' ? 0 : Math.max(1, parseInt(cleanVal, 10) || 0) });
+                }}
                 className="w-full bg-dubai-black border border-amber-500/40 rounded p-2 text-amber-300 font-bold font-mono"
               />
             </div>
