@@ -49,13 +49,13 @@ export default function HomePageClient() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               
               {/* Section Header */}
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 border-b border-[#E8E3DA] pb-4">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 border-b border-stone-300 pb-4">
                 <div>
-                  <div className="flex items-center gap-2 text-[#B89352] text-xs font-serif font-medium tracking-widest uppercase mb-1">
-                    <Sparkles className="w-3.5 h-3.5 text-[#B89352]" />
+                  <div className="flex items-center gap-2 text-amber-900 text-xs font-serif font-extrabold tracking-widest uppercase mb-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-700" />
                     <span>COLLECTION CATALOG</span>
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#1C1917] tracking-tight">
+                  <h2 className="text-2xl sm:text-3xl font-serif font-extrabold text-[#0A0A0A] tracking-tight">
                     {selectedCategory === 'all' && 'สินค้าทั้งหมด (All Products)'}
                     {selectedCategory === 'abaya' && 'ชุดอาบายะห์ดูไบพรีเมียม (Abaya Dubai)'}
                     {selectedCategory === 'kaftan' && 'ชุดคัฟทานสไตล์ดูไบ (Dubai Kaftan)'}
@@ -66,19 +66,19 @@ export default function HomePageClient() {
                   </h2>
                 </div>
 
-                <div className="text-xs text-stone-600 bg-white px-3.5 py-1.5 rounded-full border border-[#E8E3DA] font-medium self-start md:self-auto">
-                  ทั้งหมด <span className="text-[#B89352] font-bold">{filteredProducts.length}</span> รายการ
+                <div className="text-xs text-stone-900 bg-white px-3.5 py-1.5 rounded-full border border-stone-300 font-bold self-start md:self-auto">
+                  ทั้งหมด <span className="text-amber-900 font-extrabold">{filteredProducts.length}</span> รายการ
                 </div>
               </div>
 
               {/* Products Grid */}
               {filteredProducts.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-lg border border-[#E8E3DA] space-y-3">
-                  <PackageSearch className="w-10 h-10 text-stone-300 mx-auto" />
-                  <p className="font-serif text-base font-bold text-[#1C1917]">
+                <div className="text-center py-16 bg-white rounded-lg border border-stone-300 space-y-3">
+                  <PackageSearch className="w-10 h-10 text-stone-400 mx-auto" />
+                  <p className="font-serif text-base font-extrabold text-[#0A0A0A]">
                     ไม่พบรายการสินค้าตรงตามหมวดหมู่ที่เลือก
                   </p>
-                  <p className="text-xs text-stone-500 max-w-sm mx-auto font-light">
+                  <p className="text-xs text-stone-800 max-w-sm mx-auto font-semibold">
                     ลองเปลี่ยนไปเลือกหมวด "ทั้งหมด (All)" หรือค้นหาคำอื่นนะคะ
                   </p>
                 </div>
@@ -94,18 +94,18 @@ export default function HomePageClient() {
           </section>
 
           {/* Customer Reviews Section */}
-          <section className="py-12 bg-[#F4ECE1]/50 border-t border-[#E8E3DA] text-[#1C1917]">
+          <section className="py-12 bg-[#F4ECE1]/60 border-t border-stone-300 text-[#0A0A0A]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
               
               <div className="text-center space-y-2 max-w-xl mx-auto">
-                <div className="inline-flex items-center gap-1.5 bg-white border border-[#DCC59F] px-3.5 py-1 rounded-full text-[#B89352] text-xs font-serif shadow-2xs">
-                  <Star className="w-3.5 h-3.5 fill-[#B89352] text-[#B89352]" />
-                  <span className="font-medium">4.9 / 5.0 จากรีวิวล่าสุด</span>
+                <div className="inline-flex items-center gap-1.5 bg-white border border-amber-300 px-3.5 py-1 rounded-full text-amber-950 text-xs font-serif font-bold shadow-xs">
+                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-600" />
+                  <span className="font-extrabold">4.9 / 5.0 จากรีวิวล่าสุด</span>
                 </div>
-                <h3 className="text-2xl sm:text-3xl font-serif font-bold text-[#1C1917]">
+                <h3 className="text-2xl sm:text-3xl font-serif font-extrabold text-[#0A0A0A]">
                   ความประทับใจจากลูกค้า HUDA ABAYA DUBAI
                 </h3>
-                <p className="text-xs text-stone-600 font-light">
+                <p className="text-xs text-stone-900 font-semibold">
                   การันตีคุณภาพผ้า ดีไซน์ที่ทรงเสน่ห์ และน้ำหอมดูไบแท้หอมติดทนนาน
                 </p>
               </div>
@@ -114,30 +114,30 @@ export default function HomePageClient() {
                 {MOCK_REVIEWS.map((rev) => (
                   <div
                     key={rev.id}
-                    className="p-5 bg-white border border-[#E8E3DA] rounded-lg space-y-3 shadow-2xs flex flex-col justify-between"
+                    className="p-5 bg-white border border-stone-300 rounded-lg space-y-3 shadow-xs flex flex-col justify-between"
                   >
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-serif font-bold text-sm text-[#1C1917]">
+                        <span className="font-serif font-extrabold text-sm text-[#0A0A0A]">
                           {rev.userName}
                         </span>
-                        <div className="flex text-[#B89352]">
+                        <div className="flex text-amber-500">
                           {[...Array(rev.rating)].map((_, i) => (
-                            <Star key={i} className="w-3.5 h-3.5 fill-[#B89352] text-[#B89352]" />
+                            <Star key={i} className="w-3.5 h-3.5 fill-amber-500 text-amber-600" />
                           ))}
                         </div>
                       </div>
 
-                      <p className="text-xs text-stone-600 leading-relaxed font-light italic">
+                      <p className="text-xs text-stone-900 leading-relaxed font-medium italic">
                         "{rev.comment}"
                       </p>
                     </div>
 
-                    <div className="pt-3 border-t border-stone-100 flex items-center justify-between text-[10px] text-stone-500">
-                      <span className="text-[#B89352] truncate max-w-[180px] font-medium">
+                    <div className="pt-3 border-t border-stone-200 flex items-center justify-between text-[10px] text-stone-700 font-semibold">
+                      <span className="text-amber-950 truncate max-w-[180px] font-bold">
                         {rev.productName}
                       </span>
-                      <span className="text-emerald-700 font-medium flex items-center gap-0.5">
+                      <span className="text-emerald-800 font-extrabold flex items-center gap-0.5">
                         <ShieldCheck className="w-3 h-3 text-emerald-600" /> ยืนยันผู้ซื้อจริง
                       </span>
                     </div>

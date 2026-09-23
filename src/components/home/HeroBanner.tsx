@@ -66,37 +66,37 @@ export const HeroBanner: React.FC = () => {
   const realCount = products.filter((p) => p.category === active.category).length;
 
   return (
-    <div className="relative bg-[#FAF9F6] text-[#1C1917] overflow-hidden border-b border-[#E8E3DA]">
+    <div className="relative bg-[#FAF9F6] text-[#0A0A0A] overflow-hidden border-b border-stone-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
           {/* Text Content */}
           <div className="lg:col-span-7 space-y-6 z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F4ECE1] border border-[#DCC59F] text-[#B89352] text-xs font-serif tracking-wider">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span className="font-medium">{active.badge}</span>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-100/90 border border-amber-300 text-amber-950 text-xs font-bold tracking-wider">
+              <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+              <span className="font-extrabold">{active.badge}</span>
               {realCount > 0 && (
-                <span className="ml-1 text-stone-600 text-[10px]">({realCount} รายการ)</span>
+                <span className="ml-1 text-stone-900 font-bold text-[10px]">({realCount} รายการ)</span>
               )}
             </div>
 
             <div className="space-y-3">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-[#1C1917] tracking-tight leading-tight">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-extrabold text-[#0A0A0A] tracking-tight leading-tight">
                 {active.title}
               </h2>
-              <p className="text-base sm:text-lg font-serif text-[#B89352] font-medium">
+              <p className="text-base sm:text-lg font-serif text-amber-900 font-bold">
                 {active.subtitle}
               </p>
             </div>
 
-            <p className="text-xs sm:text-sm text-stone-600 max-w-xl leading-relaxed font-light">
+            <p className="text-xs sm:text-sm text-stone-900 max-w-xl leading-relaxed font-semibold">
               {active.description}
             </p>
 
             <div className="flex items-center gap-4 pt-2">
               <button
                 onClick={() => handleSelectCategory(active.category)}
-                className="px-7 py-3.5 bg-[#1C1917] hover:bg-[#B89352] text-white font-medium text-xs tracking-widest uppercase transition-colors duration-300 flex items-center gap-2 cursor-pointer shadow-sm rounded-none border border-[#1C1917] hover:border-[#B89352]"
+                className="px-7 py-3.5 bg-[#0A0A0A] hover:bg-amber-800 text-white font-bold text-xs tracking-widest uppercase transition-colors duration-300 flex items-center gap-2 cursor-pointer shadow-xs rounded-none border border-[#0A0A0A]"
               >
                 <span>เลือกชมคอลเลกชัน</span>
                 <ArrowRight className="w-4 h-4" />
@@ -110,7 +110,7 @@ export const HeroBanner: React.FC = () => {
                   key={idx}
                   onClick={() => setCurrentSlide(idx)}
                   className={`h-1.5 transition-all duration-300 cursor-pointer ${
-                    currentSlide === idx ? 'w-8 bg-[#1C1917]' : 'w-3 bg-stone-300'
+                    currentSlide === idx ? 'w-8 bg-[#0A0A0A]' : 'w-3 bg-stone-400'
                   }`}
                   aria-label={`Slide ${idx + 1}`}
                 />
@@ -120,7 +120,7 @@ export const HeroBanner: React.FC = () => {
 
           {/* Image Feature Showcase */}
           <div className="lg:col-span-5 relative">
-            <div className="relative mx-auto max-w-md lg:max-w-none rounded-lg overflow-hidden border border-[#E8E3DA] shadow-md group bg-white p-2">
+            <div className="relative mx-auto max-w-md lg:max-w-none rounded-lg overflow-hidden border border-stone-300 shadow-sm group bg-white p-2">
               <div className="relative aspect-[4/5] overflow-hidden rounded">
                 <img
                   src={getSlideImage(active.category, active.image)}
@@ -130,13 +130,13 @@ export const HeroBanner: React.FC = () => {
                 <div className="absolute inset-0 bg-black/10 transition group-hover:bg-black/0" />
               </div>
               
-              <div className="p-3 bg-white flex items-center justify-between border-t border-stone-100">
+              <div className="p-3 bg-white flex items-center justify-between border-t border-stone-200">
                 <div>
-                  <p className="text-[10px] text-[#B89352] font-serif uppercase tracking-widest">HUDA ABAYA DUBAI</p>
-                  <p className="text-xs font-serif font-bold text-[#1C1917]">สินค้าแท้นำเข้าจากดูไบ 100%</p>
+                  <p className="text-[10px] text-amber-900 font-serif uppercase tracking-widest font-bold">HUDA ABAYA DUBAI</p>
+                  <p className="text-xs font-serif font-extrabold text-[#0A0A0A]">สินค้าแท้นำเข้าจากดูไบ 100%</p>
                 </div>
-                <div className="flex items-center gap-1 text-[#B89352] text-xs font-semibold">
-                  <Star className="w-3.5 h-3.5 fill-[#B89352]" />
+                <div className="flex items-center gap-1 text-amber-800 text-xs font-extrabold">
+                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-600" />
                   <span>4.9 / 5.0</span>
                 </div>
               </div>

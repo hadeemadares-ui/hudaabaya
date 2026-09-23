@@ -24,11 +24,11 @@ module.exports = {
         luxury: {
           bg: '#FAF9F6',      // Fine Warm Alabaster / Pearl White
           card: '#FFFFFF',    // Crisp Pure White Card
-          dark: '#1C1917',    // Obsidian Charcoal (Refined Black)
-          gold: '#B89352',    // Bespoke Metallic Warm Gold
+          dark: '#0A0A0A',    // Deep Rich Black Text
+          gold: '#997330',    // Rich Dark Antique Gold
           'gold-light': '#F4ECE1', // Soft Champagne Tint
-          border: '#E8E3DA',  // Subtle Warm Hairline Border
-          subtext: '#666666', // Muted Natural Body Text
+          border: '#DCD6CD',  // High-contrast Warm Border
+          subtext: '#262626', // Deep Charcoal Body Text (Very Dark)
         },
         slate: {
           50: '#F8FAFC',
