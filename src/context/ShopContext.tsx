@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { Product, ProductVariant, CartItem, Order, CategoryType, Coupon, StoreSettings, CurrencyType } from '../types';
+import { Product, ProductVariant, CartItem, Order, CategoryType, Coupon, StoreSettings, CurrencyType, StockMovement, SupplierSettlement } from '../types';
 import { INITIAL_PRODUCTS, INITIAL_COUPONS, INITIAL_ORDERS } from '../data/mockProducts';
 import { DEFAULT_LOGO_BASE64 } from '../data/logoData';
 import { soundFx } from '../lib/soundEffects';
@@ -43,6 +43,8 @@ interface ShopContextType {
   products: Product[];
   cart: CartItem[];
   orders: Order[];
+  stockMovements: StockMovement[];
+  supplierSettlements: SupplierSettlement[];
   appliedCoupon: Coupon | null;
   isCartOpen: boolean;
   isOrderTrackingOpen: boolean;
@@ -81,6 +83,8 @@ interface ShopContextType {
   updateProduct: (product: Product) => void;
   updateVariantStock: (productId: string, variantId: string, newStock: number) => void;
   deleteProduct: (productId: string) => void;
+  recordStockIn: (data: { productId: string; variantId: string; quantity: number; costPrice: number; supplierName: string; note?: string }) => void;
+  createSupplierSettlement: (data: { supplierName: string; periodStart: string; periodEnd: string; movementIds: string[]; paymentRef?: string; note?: string }) => SupplierSettlement;
   setIsCartOpen: (open: boolean) => void;
   setIsOrderTrackingOpen: (open: boolean) => void;
   setIsAdminMode: (admin: boolean) => void;
@@ -117,6 +121,24 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
+  const [stockMovements, setStockMovements] = useState<StockMovement[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('huda_stock_movements');
+      if (saved) {
+        try { return JSON.parse(saved); } catch (e) {}
+      }
+    }
+    return [];
+  });
+  const [supplierSettlements, setSupplierSettlements] = useState<SupplierSettlement[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('huda_supplier_settlements');
+      if (saved) {
+        try { return JSON.parse(saved); } catch (e) {}
+      }
+    }
+    return [];
+  });
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState<boolean>(false);
@@ -647,8 +669,138 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return updated;
     });
 
+    // Auto-record Stock OUT movement for sold items to enable Supplier Settlement
+    const newStockOutMovements: StockMovement[] = newOrder.items.map((item, idx) => {
+      const prod = products.find((p) => p.id === item.productId);
+      const variant = prod?.variants.find((v) => v.id === item.variantId);
+      const itemCost = item.costPrice ?? variant?.costPrice ?? Math.round(item.price * 0.5);
+      const supplier = prod?.category === 'perfume' || prod?.fabric?.includes('Oud')
+        ? 'ซัพพลายเออร์น้ำหอมดูไบ'
+        : 'โรงงานอาบายะห์ดูไบ';
+
+      return {
+        id: `MOV-OUT-${now}-${idx}-${Math.floor(Math.random() * 1000)}`,
+        type: 'OUT',
+        productId: item.productId,
+        productTitle: item.productTitle,
+        variantId: item.variantId,
+        variantName: item.variantName,
+        quantity: item.quantity,
+        costPrice: itemCost,
+        totalCost: itemCost * item.quantity,
+        supplierName: supplier,
+        referenceOrderNo: newId,
+        note: `ขายสินค้าออนไลน์/POS (Order #${newId})`,
+        performedBy: 'ระบบขายหน้าร้าน / POS',
+        createdAt: new Date().toISOString(),
+        isSettled: false,
+      };
+    });
+
+    setStockMovements((prev) => {
+      const updated = [...newStockOutMovements, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updated));
+      }
+      return updated;
+    });
+
     clearCart();
     return newOrder;
+  };
+
+  const recordStockIn = (data: {
+    productId: string;
+    variantId: string;
+    quantity: number;
+    costPrice: number;
+    supplierName: string;
+    note?: string;
+  }) => {
+    const prod = products.find((p) => p.id === data.productId);
+    const variant = prod?.variants.find((v) => v.id === data.variantId);
+
+    const newMovement: StockMovement = {
+      id: `MOV-IN-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      type: 'IN',
+      productId: data.productId,
+      productTitle: prod?.title || 'สินค้า',
+      variantId: data.variantId,
+      variantName: variant?.name || 'ไซส์/รายการ',
+      quantity: data.quantity,
+      costPrice: data.costPrice,
+      totalCost: data.costPrice * data.quantity,
+      supplierName: data.supplierName || 'โรงงานอาบายะห์ดูไบ',
+      note: data.note || 'บันทึกรับสินค้าเข้าสต๊อก (Stock In)',
+      performedBy: 'ผู้ดูแลระบบหลังบ้าน',
+      createdAt: new Date().toISOString(),
+      isSettled: true,
+    };
+
+    if (data.productId && data.variantId) {
+      updateVariantStock(
+        data.productId,
+        data.variantId,
+        (variant?.stockQuantity || 0) + data.quantity
+      );
+    }
+
+    setStockMovements((prev) => {
+      const updated = [newMovement, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updated));
+      }
+      return updated;
+    });
+  };
+
+  const createSupplierSettlement = (data: {
+    supplierName: string;
+    periodStart: string;
+    periodEnd: string;
+    movementIds: string[];
+    paymentRef?: string;
+    note?: string;
+  }): SupplierSettlement => {
+    const targetMovements = stockMovements.filter((m) => data.movementIds.includes(m.id));
+    const totalCostAmount = targetMovements.reduce((sum, m) => sum + m.totalCost, 0);
+    const totalItemsCount = targetMovements.reduce((sum, m) => sum + m.quantity, 0);
+
+    const settlementId = `SETTLE-${new Date().toISOString().slice(0, 7).replace('-', '')}-${Math.floor(100 + Math.random() * 900)}`;
+
+    const newSettlement: SupplierSettlement = {
+      id: settlementId,
+      supplierName: data.supplierName,
+      periodStart: data.periodStart,
+      periodEnd: data.periodEnd,
+      totalItemsCount,
+      totalCostAmount,
+      status: 'SETTLED',
+      settledAt: new Date().toISOString(),
+      paymentRef: data.paymentRef || 'โอนเงินบัญชีซัพพลายเออร์',
+      note: data.note || 'เคลียร์ยอดต้นทุนประจำรอบขายสำเร็จ',
+      movementIds: data.movementIds,
+    };
+
+    setStockMovements((prev) => {
+      const updated = prev.map((m) =>
+        data.movementIds.includes(m.id) ? { ...m, isSettled: true, settlementId } : m
+      );
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updated));
+      }
+      return updated;
+    });
+
+    setSupplierSettlements((prev) => {
+      const updated = [newSettlement, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_supplier_settlements', JSON.stringify(updated));
+      }
+      return updated;
+    });
+
+    return newSettlement;
   };
 
   const updateOrderStatus = (
@@ -805,6 +957,8 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         products,
         cart,
         orders,
+        stockMovements,
+        supplierSettlements,
         appliedCoupon,
         isCartOpen,
         isOrderTrackingOpen,
@@ -842,6 +996,8 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateProduct,
         updateVariantStock,
         deleteProduct,
+        recordStockIn,
+        createSupplierSettlement,
         setIsCartOpen,
         setIsOrderTrackingOpen,
         setIsAdminMode,

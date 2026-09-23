@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { DollarSign, ShoppingBag, Layers, AlertCircle, LogOut, ShieldCheck, Settings, Store, Sparkles, Clock, History, Smartphone, Monitor, TrendingUp, RotateCcw } from 'lucide-react';
+import { DollarSign, ShoppingBag, Layers, AlertCircle, LogOut, ShieldCheck, Settings, Store, Sparkles, Clock, History, Smartphone, Monitor, TrendingUp, RotateCcw, Truck } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { AdminProductManager } from './AdminProductManager';
 import { AdminOrderManager } from './AdminOrderManager';
 import { AdminSettingsManager } from './AdminSettingsManager';
 import { AdminPOSManager } from './AdminPOSManager';
 import { AdminSalesReportManager } from './AdminSalesReportManager';
+import { AdminSupplierSettlementManager } from './AdminSupplierSettlementManager';
 import { AuditLog } from '../../types';
 
 export const AdminDashboard: React.FC = () => {
@@ -19,7 +20,7 @@ export const AdminDashboard: React.FC = () => {
     clearBrowserCacheAndReload,
   } = useShop();
 
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'settings' | 'pos' | 'logs' | 'reports'>(() => {
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'settings' | 'pos' | 'logs' | 'reports' | 'suppliers'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const targetTab = sessionStorage.getItem('huda_target_tab');
@@ -32,6 +33,7 @@ export const AdminDashboard: React.FC = () => {
       ) {
         return 'reports';
       }
+      if (params.get('tab') === 'suppliers' || params.get('tab') === 'supplier') return 'suppliers';
       if (params.get('tab') === 'pos' || params.get('tab') === 'cashier') return 'pos';
       if (params.get('tab') === 'orders') return 'orders';
       if (params.get('tab') === 'settings') return 'settings';
@@ -256,6 +258,18 @@ export const AdminDashboard: React.FC = () => {
           </button>
 
           <button
+            onClick={() => setActiveTab('suppliers')}
+            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md cursor-pointer ${
+              activeTab === 'suppliers'
+                ? 'bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-500 text-stone-950 shadow-lg border-2 border-amber-300'
+                : 'bg-stone-900 text-amber-300 hover:text-white border-2 border-amber-400/50'
+            }`}
+          >
+            <Truck className="w-4.5 h-4.5" />
+            <span>สินค้าเข้า-ออก &amp; เคลียร์ Supplier</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('orders')}
             className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'orders'
@@ -295,6 +309,7 @@ export const AdminDashboard: React.FC = () => {
         {/* Tab Contents */}
         {activeTab === 'pos' && <AdminPOSManager />}
         {activeTab === 'reports' && <AdminSalesReportManager />}
+        {activeTab === 'suppliers' && <AdminSupplierSettlementManager />}
         {activeTab === 'products' && <AdminProductManager />}
         {activeTab === 'orders' && <AdminOrderManager />}
         {activeTab === 'settings' && <AdminSettingsManager />}

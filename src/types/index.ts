@@ -111,6 +111,39 @@ export interface AuditLog {
   meta?: any;
 }
 
+export interface StockMovement {
+  id: string;
+  type: 'IN' | 'OUT' | 'ADJUST';
+  productId: string;
+  productTitle: string;
+  variantId: string;
+  variantName: string;
+  quantity: number;
+  costPrice: number;
+  totalCost: number;
+  supplierName: string;
+  referenceOrderNo?: string;
+  note?: string;
+  performedBy: string;
+  createdAt: string; // ISO String
+  isSettled?: boolean; // True if cost paid to supplier
+  settlementId?: string; // Settlement Voucher ID
+}
+
+export interface SupplierSettlement {
+  id: string; // e.g. SETTLE-202609-001
+  supplierName: string;
+  periodStart: string;
+  periodEnd: string;
+  totalItemsCount: number;
+  totalCostAmount: number;
+  status: 'SETTLED' | 'PENDING';
+  settledAt: string;
+  paymentRef?: string;
+  note?: string;
+  movementIds: string[];
+}
+
 export interface StoreSettings {
   storeName: string;
   storeTagline: string;
