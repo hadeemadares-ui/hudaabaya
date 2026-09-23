@@ -760,7 +760,7 @@ export const AdminProductManager: React.FC = () => {
                       ? ['กระปุก 50g', 'กระปุก 100g', 'เซ็ตเตาเผา + ถ่านหอม', 'ขนาดมาตรฐาน (Free Size)']
                       : category === 'other'
                       ? ['ชิ้น/กล่อง (Standard)', 'แพ็กสุดคุ้ม (Pack)', 'ขนาดมาตรฐาน (Free Size)']
-                      : ['Size 52 (ส่วนสูง ~150-155 ซม.)', 'Size 54 (ส่วนสูง ~155-160 ซม.)', 'Size 56 (ส่วนสูง ~160-165 ซม.)', 'Size 58 (ส่วนสูง ~165-170 ซม.)', 'Size S', 'Size M', 'Size L', 'Free Size']
+                      : ['Size 52 (ส่วนสูง ~150-155 ซม.)', 'Size 54 (ส่วนสูง ~155-160 ซม.)', 'Size 56 (ส่วนสูง ~160-165 ซม.)', 'Size 58 (ส่วนสูง ~165-170 ซม.)']
                     ).map((sz) => (
                       <button
                         key={sz}
@@ -771,16 +771,6 @@ export const AdminProductManager: React.FC = () => {
                         + {sz}
                       </button>
                     ))}
-                  </div>
-
-                  {/* Explicit Owner Cost Notice Banner */}
-                  <div className="bg-amber-950/80 border-2 border-amber-500/80 rounded-xl p-3 text-xs text-amber-200 shadow-md space-y-1">
-                    <div className="font-extrabold text-amber-300 text-xs sm:text-sm flex items-center gap-1.5">
-                      <span>คำแนะนำสำหรับเจ้าของร้าน: กรอกราคาต้นทุนสินค้า</span>
-                    </div>
-                    <p className="text-[11px] text-amber-200/90 leading-relaxed">
-                      โปรดกรอกราคาต้นทุนสินค้าจริงในช่อง <strong>[ ต้นทุน (บาท) ]</strong> สีส้มสดของแต่ละไซส์ด้านล่างได้เลยครับ ระบบจะนำราคาต้นทุนนี้ไปคำนวณกำไรสุทธิให้อัตโนมัติในหน้ารายงานยอดขาย
-                    </p>
                   </div>
 
                   <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1 no-scrollbar">
