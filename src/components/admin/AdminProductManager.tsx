@@ -516,15 +516,15 @@ export const AdminProductManager: React.FC = () => {
                     {product.variants.map((variant) => (
                       <div
                         key={variant.id}
-                        className={`p-2.5 rounded-xl border-2 flex items-center justify-between text-xs shadow-md transition-all ${
+                        className={`p-2.5 rounded-xl border-2 flex flex-col justify-between text-xs shadow-md transition-all gap-1.5 ${
                           variant.stockQuantity > 0
                             ? 'bg-emerald-950/20 border-emerald-500 shadow-emerald-950/30'
                             : 'bg-red-950/25 border-red-600 shadow-red-950/30'
                         }`}
                       >
                         <div>
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="font-bold text-white block">{variant.name}</span>
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="font-extrabold text-white text-xs">{variant.name}</span>
                             <span
                               className={`px-1.5 py-0.5 text-[9px] font-extrabold rounded-full ${
                                 variant.stockQuantity > 0
@@ -532,72 +532,27 @@ export const AdminProductManager: React.FC = () => {
                                   : 'bg-red-600 text-white'
                               }`}
                             >
-                              {variant.stockQuantity > 0 ? `มีสินค้า (${variant.stockQuantity})` : 'หมด (0)'}
+                              {variant.stockQuantity > 0 ? `สต๊อก ${variant.stockQuantity} ชิ้น` : 'สต๊อกหมด (0)'}
                             </span>
                           </div>
-                            {variant.color && (
-                              <span className="text-[10px] text-amber-300 block font-serif">
-                                {variant.color}
-                              </span>
-                            )}
-                            <div className="flex flex-wrap items-center gap-1.5 text-[10px] mt-1">
-                              <span className="font-bold text-gold-300 bg-dubai-dark px-1.5 py-0.5 rounded border border-gold-400/20">
-                                ขาย ฿{variant.price.toLocaleString()}
-                              </span>
+                          {variant.color && (
+                            <span className="text-[10px] text-amber-300 block font-serif mb-1">
+                              {variant.color}
+                            </span>
+                          )}
+                          <div className="flex flex-wrap items-center gap-1.5 text-[10px] mt-1">
+                            <span className="font-extrabold text-gold-300 bg-dubai-dark px-1.5 py-0.5 rounded border border-gold-400/20">
+                              ขาย ฿{variant.price.toLocaleString()}
+                            </span>
                             
-                            {/* Inlined Bright Orange Cost Price Box */}
-                            <div className="bg-amber-950/90 px-1.5 py-0.5 rounded-lg border-2 border-amber-500 flex items-center gap-1 shadow-md">
-                              <span className="text-[9px] text-amber-300 font-extrabold shrink-0">ต้นทุน</span>
-                              <input
-                                type="number"
-                                placeholder="0"
-                                value={variant.costPrice === 0 ? '' : (variant.costPrice ?? Math.round(variant.price * 0.5))}
-                                onFocus={(e) => e.target.select()}
-                                onChange={(e) => {
-                                  const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
-                                  const newCost = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
-                                  const updatedVariants = product.variants.map((v) =>
-                                    v.id === variant.id ? { ...v, costPrice: newCost } : v
-                                  );
-                                  updateProduct({
-                                    ...product,
-                                    variants: updatedVariants,
-                                    updatedAt: Date.now(),
-                                  });
-                                }}
-                                className="w-16 bg-amber-950 border border-amber-400/80 rounded px-1 py-0.5 text-amber-200 font-extrabold font-mono text-xs text-right shadow-inner focus:ring-1 focus:ring-amber-400 focus:outline-none"
-                              />
-                            </div>
+                            <span className="font-extrabold text-amber-200 bg-amber-950/90 px-1.5 py-0.5 rounded-lg border-2 border-amber-500 shadow-sm">
+                              ต้นทุน ฿{(variant.costPrice ?? Math.round(variant.price * 0.5)).toLocaleString()}
+                            </span>
 
-                            <span className="font-bold text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/40">
+                            <span className="font-extrabold text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/40">
                               กำไร +฿{(variant.price - (variant.costPrice ?? Math.round(variant.price * 0.5))).toLocaleString()}
                             </span>
                           </div>
-                        </div>
-
-                        {/* Stock Plus/Minus Quick Counter */}
-                        <div className="flex items-center gap-1 bg-dubai-dark p-1 rounded border border-gold-400/30">
-                          <button
-                            onClick={() => updateVariantStock(product.id, variant.id, variant.stockQuantity - 1)}
-                            className="w-5 h-5 rounded bg-dubai-card text-gold-400 hover:bg-gold-500 hover:text-dubai-black font-bold flex items-center justify-center text-xs"
-                            title="ลดสต๊อก 1 ชิ้น"
-                          >
-                            -
-                          </button>
-                          <span
-                            className={`px-2 font-mono font-bold text-xs ${
-                              variant.stockQuantity === 0 ? 'text-red-400' : 'text-emerald-400'
-                            }`}
-                          >
-                            {variant.stockQuantity}
-                          </span>
-                          <button
-                            onClick={() => updateVariantStock(product.id, variant.id, variant.stockQuantity + 1)}
-                            className="w-5 h-5 rounded bg-dubai-card text-gold-400 hover:bg-gold-500 hover:text-dubai-black font-bold flex items-center justify-center text-xs"
-                            title="เพิ่มสต๊อก 1 ชิ้น"
-                          >
-                            +
-                          </button>
                         </div>
                       </div>
                     ))}
