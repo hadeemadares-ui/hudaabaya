@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ShoppingBag, Search, Sparkles, User, PackageSearch, Bot, Globe, Lock, QrCode, Compass } from 'lucide-react';
+import { ShoppingBag, Search, Sparkles, User, PackageSearch, Bot, Globe, Lock, QrCode, Compass, Volume2, VolumeX } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { CategoryType, CurrencyType } from '../../types';
 import { DEFAULT_LOGO_BASE64 } from '../../data/logoData';
@@ -24,6 +24,8 @@ export const Navbar: React.FC = () => {
     currency,
     setCurrency,
     setIsAIConciergeOpen,
+    isSoundMuted,
+    toggleSound,
   } = useShop();
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -86,9 +88,9 @@ export const Navbar: React.FC = () => {
           <Sparkles className="w-3.5 h-3.5 text-amber-400" />
         </div>
 
-        {/* Currency Switcher */}
-        <div className="hidden md:flex items-center gap-1.5 border-l border-stone-800 pl-3">
-          <span className="text-[10px] text-stone-300 font-serif uppercase tracking-widest mr-1 font-semibold">Currency:</span>
+        {/* Currency & Sound Switcher */}
+        <div className="hidden md:flex items-center gap-2 border-l border-stone-800 pl-3">
+          <span className="text-[10px] text-stone-300 font-serif uppercase tracking-widest font-semibold">Currency:</span>
           {currencies.map((c) => (
             <button
               key={c.id}
@@ -102,6 +104,20 @@ export const Navbar: React.FC = () => {
               {c.label}
             </button>
           ))}
+
+          {/* UI Sound FX Toggle */}
+          <button
+            onClick={toggleSound}
+            className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full transition border cursor-pointer ${
+              isSoundMuted
+                ? 'bg-stone-800 text-stone-400 border-stone-700'
+                : 'bg-amber-500 text-stone-950 border-amber-300 font-extrabold shadow-xs'
+            }`}
+            title={isSoundMuted ? 'เปิดเสียงเอฟเฟกต์การคลิกและพิมพ์ (Unmute UI Sound)' : 'เปิดใช้งานเสียงเอฟเฟกต์แล้ว (Mute Sound)'}
+          >
+            {isSoundMuted ? <VolumeX className="w-3 h-3 text-stone-400" /> : <Volume2 className="w-3 h-3 text-stone-950" />}
+            <span>{isSoundMuted ? 'ปิดเสียง' : 'มีเสียงพิมพ์/คลิก'}</span>
+          </button>
         </div>
       </div>
 

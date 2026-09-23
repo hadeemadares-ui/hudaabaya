@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { Product, ProductVariant, CartItem, Order, CategoryType, Coupon, StoreSettings, CurrencyType } from '../types';
 import { INITIAL_PRODUCTS, INITIAL_COUPONS, INITIAL_ORDERS } from '../data/mockProducts';
 import { DEFAULT_LOGO_BASE64 } from '../data/logoData';
+import { soundFx } from '../lib/soundEffects';
 import {
   fetchCloudProducts,
   saveCloudProducts,
@@ -55,6 +56,8 @@ interface ShopContextType {
   currency: CurrencyType;
   isAIConciergeOpen: boolean;
   active3DProduct: Product | null;
+  isSoundMuted: boolean;
+  toggleSound: () => boolean;
   setCurrency: (c: CurrencyType) => void;
   formatPrice: (priceInTHB: number) => string;
   setIsAIConciergeOpen: (open: boolean) => void;
@@ -126,6 +129,58 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currency, setCurrency] = useState<CurrencyType>('THB');
   const [isAIConciergeOpen, setIsAIConciergeOpen] = useState<boolean>(false);
   const [active3DProduct, setActive3DProduct] = useState<Product | null>(null);
+  const [isSoundMuted, setIsSoundMuted] = useState<boolean>(() => soundFx.getIsMuted());
+
+  const toggleSound = () => {
+    const muted = soundFx.toggleMute();
+    setIsSoundMuted(muted);
+    return muted;
+  };
+
+  // Global Sound Effects Listener for UI Clicks & Typing Keypresses
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      const interactive = target.closest(
+        'button, input, select, option, textarea, a, [role="button"], .cursor-pointer'
+      );
+      if (interactive) {
+        soundFx.playClick();
+      }
+    };
+
+    const handleGlobalKeydown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      const isTypingField =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable;
+
+      const isModifierKey = ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(e.key);
+
+      if (isTypingField && !isModifierKey) {
+        if (e.key === 'Backspace' || e.key === 'Delete') {
+          soundFx.playDelete();
+        } else {
+          soundFx.playKeypress();
+        }
+      }
+    };
+
+    document.addEventListener('click', handleGlobalClick, true);
+    document.addEventListener('keydown', handleGlobalKeydown, true);
+
+    return () => {
+      document.removeEventListener('click', handleGlobalClick, true);
+      document.removeEventListener('keydown', handleGlobalKeydown, true);
+    };
+  }, []);
 
   const clearBrowserCacheAndReload = async () => {
     if (typeof window !== 'undefined') {
@@ -463,6 +518,8 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    soundFx.playSuccess();
+
     setCart((prevCart) => {
       const existingIndex = prevCart.findIndex(
         (item) => item.productId === product.id && item.variantId === variant.id
@@ -499,6 +556,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const removeFromCart = (variantId: string) => {
+    soundFx.playDelete();
     setCart((prev) => prev.filter((item) => item.variantId !== variantId));
   };
 
@@ -679,6 +737,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addProduct = (newProduct: Product) => {
+    soundFx.playSuccess();
     const timestamped = { ...newProduct, updatedAt: Date.now() };
 
     setProducts((prev) => {
@@ -692,6 +751,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateProduct = (updatedProduct: Product) => {
+    soundFx.playSuccess();
     const timestamped = { ...updatedProduct, updatedAt: Date.now() };
 
     setProducts((prev) => {
@@ -728,6 +788,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const deleteProduct = (productId: string) => {
+    soundFx.playDelete();
     setProducts((prev) => {
       const updated = prev.filter((p) => p.id !== productId);
       if (typeof window !== 'undefined') {
@@ -756,6 +817,8 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currency,
         isAIConciergeOpen,
         active3DProduct,
+        isSoundMuted,
+        toggleSound,
         setCurrency,
         formatPrice,
         setIsAIConciergeOpen,
