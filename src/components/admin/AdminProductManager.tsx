@@ -567,36 +567,36 @@ export const AdminProductManager: React.FC = () => {
 
       {/* Add / Edit Product Modal with Sticky Header & Sticky Bottom Footer */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-dubai-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
-          <div className="relative bg-dubai-card border-2 border-gold-400/60 rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl text-white my-4 max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
+          <div className="relative bg-stone-950 border-2 border-amber-400 rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl text-white my-4 max-h-[90vh] flex flex-col">
             
             {/* Sticky Header */}
-            <div className="sticky top-0 z-30 bg-dubai-black/95 backdrop-blur-md px-5 py-4 border-b border-gold-400/40 flex justify-between items-center shrink-0">
-              <h3 className="font-serif font-bold text-base sm:text-lg text-gold-300 flex items-center gap-2">
-                <Palette className="w-5 h-5 text-gold-400" />
+            <div className="sticky top-0 z-30 bg-stone-900 px-5 py-4 border-b-2 border-amber-400/50 flex justify-between items-center shrink-0">
+              <h3 className="font-serif font-extrabold text-base sm:text-xl text-amber-300 flex items-center gap-2">
+                <Palette className="w-5 h-5 text-amber-400" />
                 <span>
                   {editingProduct 
-                    ? 'แก้ไขสินค้า & สต๊อก' 
+                    ? 'แก้ไขสินค้า & สต๊อก (Edit Product)' 
                     : category === 'perfume' 
                       ? 'เพิ่มสินค้าหมวดน้ำหอมดูไบ (Dubai Perfume)' 
-                      : 'เพิ่มสินค้าและกำหนดสต๊อกตามไซส์'}
+                      : 'เพิ่มสินค้าและกำหนดสต๊อกตามไซส์ (Add New Product)'}
                 </span>
               </h3>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-gold-400 hover:text-white p-1.5 rounded-full border border-gold-400/30 hover:border-gold-400 transition"
+                className="text-amber-300 hover:text-white p-1.5 rounded-full border-2 border-amber-400/50 hover:border-amber-300 bg-stone-800 transition"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Scrollable Form Body */}
-            <form onSubmit={handleSaveProduct} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs no-scrollbar flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <form onSubmit={handleSaveProduct} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 text-xs no-scrollbar flex flex-col justify-between">
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
                     <div className="flex items-center justify-between mb-1">
-                      <label className="block text-gray-300 font-bold">ชื่อแบบสินค้า *</label>
+                      <label className="block text-amber-200 font-extrabold text-xs sm:text-sm">ชื่อแบบสินค้า *</label>
                       <VoiceInputButton
                         onTranscript={(text) => setTitle(text)}
                         currentValue={title}
@@ -608,29 +608,29 @@ export const AdminProductManager: React.FC = () => {
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder={category === 'perfume' ? 'เช่น น้ำหอมดูไบ Royal Oud Amber Dubai 100ml' : 'เช่น ชุดอาบายะห์ดูไบปักลายทอง Royal Crystal Abaya'}
-                      className="w-full bg-dubai-black border border-gold-400/30 rounded p-2 text-white font-bold"
+                      className="w-full bg-stone-900 border-2 border-amber-400/60 focus:border-amber-400 rounded-xl p-3 text-white font-extrabold text-sm placeholder-stone-400 shadow-inner focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-gold-400 mb-1 font-bold">เลือกหมวดหมู่สินค้า *</label>
+                    <label className="block text-amber-300 mb-1 font-extrabold text-xs sm:text-sm">เลือกหมวดหมู่สินค้า *</label>
                     <select
                       value={category}
                       onChange={(e) => handleCategoryChange(e.target.value as CategoryType)}
-                      className="w-full bg-dubai-black border border-gold-400/50 rounded p-2 text-gold-300 font-bold focus:border-gold-400"
+                      className="w-full bg-stone-900 border-2 border-amber-400/70 rounded-xl p-3 text-amber-300 font-extrabold text-sm focus:border-amber-400 shadow-md cursor-pointer focus:outline-none"
                     >
-                      <option value="abaya">ชุดอาบายะห์ (Abaya)</option>
-                      <option value="kaftan">ชุดคัฟทาน (Kaftan)</option>
-                      <option value="perfume">น้ำหอมดูไบ (Dubai Perfume / Oud)</option>
-                      <option value="incense">เครื่องหอม / ไม้หอมดูไบ (Bukhoor / Incense)</option>
-                      <option value="combo">เซ็ตสุดคุ้ม (Combo Set)</option>
-                      <option value="other">อื่นๆ (ของเล่นเด็ก ขนม สินค้าทั่วไป)</option>
+                      <option value="abaya" className="bg-stone-900 text-white font-bold py-2">ชุดอาบายะห์ (Abaya)</option>
+                      <option value="kaftan" className="bg-stone-900 text-white font-bold py-2">ชุดคัฟทาน (Kaftan)</option>
+                      <option value="perfume" className="bg-stone-900 text-white font-bold py-2">น้ำหอมดูไบ (Dubai Perfume / Oud)</option>
+                      <option value="incense" className="bg-stone-900 text-white font-bold py-2">เครื่องหอม / ไม้หอมดูไบ (Bukhoor / Incense)</option>
+                      <option value="combo" className="bg-stone-900 text-white font-bold py-2">เซ็ตสุดคุ้ม (Combo Set)</option>
+                      <option value="other" className="bg-stone-900 text-white font-bold py-2">อื่นๆ (ของเล่นเด็ก ขนม สินค้าทั่วไป)</option>
                     </select>
                   </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="block text-gray-300 font-bold">
+                      <label className="block text-amber-200 font-extrabold text-xs sm:text-sm">
                         {category === 'perfume' ? 'ประเภทน้ำหอม / ส่วนผสม' : category === 'incense' ? 'ชนิดเครื่องหอม / ส่วนผสม' : category === 'other' ? 'ประเภทสินค้า / รายละเอียด' : 'ชนิดเนื้อผ้า (Fabric)'}
                       </label>
                       <VoiceInputButton
@@ -643,19 +643,19 @@ export const AdminProductManager: React.FC = () => {
                       value={fabric}
                       onChange={(e) => setFabric(e.target.value)}
                       placeholder={category === 'perfume' ? 'เช่น Oud Oil & Royal Amber' : 'เช่น Nida Silk Dubai Original'}
-                      className="w-full bg-dubai-black border border-gold-400/30 rounded p-2 text-white"
+                      className="w-full bg-stone-900 border-2 border-amber-400/60 focus:border-amber-400 rounded-xl p-3 text-white font-extrabold text-sm placeholder-stone-400 shadow-inner focus:outline-none"
                     />
                   </div>
 
                   {/* Upgraded Compressed Image Upload Section */}
-                  <div className="sm:col-span-2 space-y-2 p-3 bg-dubai-black rounded-xl border border-gold-400/30">
-                    <label className="block text-gold-300 font-bold">
+                  <div className="sm:col-span-2 space-y-2.5 p-3.5 bg-stone-900 rounded-2xl border-2 border-amber-400/50 shadow-md">
+                    <label className="block text-amber-300 font-extrabold text-xs sm:text-sm">
                       รูปภาพสินค้า (Smart Compressed Camera / Upload)
                     </label>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <label className="cursor-pointer px-3 py-2 bg-gradient-to-r from-gold-500 to-amber-600 text-dubai-black font-extrabold rounded-lg text-xs flex items-center gap-1.5 shadow hover:scale-102 transition">
-                        <Camera className="w-4 h-4" />
+                      <label className="cursor-pointer px-4 py-2.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-stone-950 font-extrabold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 shadow hover:scale-102 transition border border-amber-300">
+                        <Camera className="w-4 h-4 text-stone-950" />
                         <span>ถ่ายภาพจากกล้อง</span>
                         <input
                           type="file"
@@ -666,8 +666,8 @@ export const AdminProductManager: React.FC = () => {
                         />
                       </label>
 
-                      <label className="cursor-pointer px-3 py-2 bg-dubai-dark border border-gold-400/40 text-gold-300 hover:text-white font-bold rounded-lg text-xs flex items-center gap-1.5 transition">
-                        <ImageIcon className="w-4 h-4 text-gold-400" />
+                      <label className="cursor-pointer px-4 py-2.5 bg-stone-950 border-2 border-amber-400/50 text-amber-300 hover:text-white font-extrabold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 transition">
+                        <ImageIcon className="w-4 h-4 text-amber-400" />
                         <span>เลือกจากอัลบั้ม/คลังภาพ</span>
                         <input
                           type="file"
@@ -685,32 +685,32 @@ export const AdminProductManager: React.FC = () => {
                           value={imageUrl}
                           onChange={(e) => setImageUrl(e.target.value)}
                           placeholder="หรือวางลิงก์รูปภาพ Image URL (https://...)"
-                          className="w-full bg-dubai-dark border border-gold-400/30 rounded p-2 text-white text-xs pl-8 font-mono"
+                          className="w-full bg-stone-950 border-2 border-amber-400/40 rounded-xl p-2.5 text-white font-extrabold text-xs pl-8 font-mono placeholder-stone-500 focus:outline-none focus:border-amber-400"
                         />
-                        <LinkIcon className="w-3.5 h-3.5 text-gold-400 absolute left-2.5 top-2.5" />
+                        <LinkIcon className="w-4 h-4 text-amber-400 absolute left-2.5 top-3" />
                       </div>
                     </div>
 
                     {imageUrl && (
-                      <div className="flex items-center gap-3 pt-2 border-t border-gold-400/10">
+                      <div className="flex items-center gap-3 pt-2 border-t border-amber-400/20">
                         <img
                           src={imageUrl}
                           alt="Preview"
                           loading="lazy"
                           decoding="async"
-                          className="w-16 h-20 object-cover rounded-lg border border-gold-400 shadow-md shrink-0"
+                          className="w-16 h-20 object-cover rounded-xl border-2 border-amber-400 shadow-md shrink-0"
                         />
                         <div className="space-y-1">
-                          <span className="text-emerald-400 font-bold block flex items-center gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="text-emerald-400 font-extrabold block flex items-center gap-1 text-xs">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                             <span>ภาพถูกบีบอัดและพร้อมใช้งานทันที</span>
                           </span>
                           {imageUrl.startsWith('data:image') && (
-                            <span className="text-[10px] text-amber-300 font-mono bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/30 inline-block font-bold">
+                            <span className="text-[10px] text-amber-200 font-mono bg-amber-950 px-2 py-0.5 rounded-lg border border-amber-400 inline-block font-extrabold">
                               บีบอัดไฟล์เหลือเพียง ~{Math.round(((imageUrl.length * 3) / 4) / 1024)} KB (ย่อขนาด HD 600px โหลดเร็วสูงสุด)
                             </span>
                           )}
-                          <span className="text-[10px] text-gray-400 truncate max-w-xs block font-mono">
+                          <span className="text-[10px] text-stone-400 truncate max-w-xs block font-mono">
                             {imageUrl.slice(0, 40)}...
                           </span>
                         </div>
@@ -720,7 +720,7 @@ export const AdminProductManager: React.FC = () => {
 
                   <div className="sm:col-span-2">
                     <div className="flex items-center justify-between mb-1">
-                      <label className="block text-gray-300 font-bold">รายละเอียดสินค้า (ถ้ามี / ไม่บังคับกรอก)</label>
+                      <label className="block text-amber-200 font-extrabold text-xs sm:text-sm">รายละเอียดสินค้า (ถ้ามี / ไม่บังคับกรอก)</label>
                       <VoiceInputButton
                         mode="append"
                         onTranscript={(text) => setDescription(text)}
@@ -732,16 +732,16 @@ export const AdminProductManager: React.FC = () => {
                       placeholder={category === 'perfume' ? 'เช่น กลิ่นหอมติดทนนาน 24 ชม. นำเข้าจากดูไบแท้' : 'กรอกหรือไม่กรอกก็ได้ (ไม่บังคับ)'}
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="w-full bg-dubai-black border border-gold-400/30 rounded p-2 text-white placeholder-gray-500"
+                      className="w-full bg-stone-900 border-2 border-amber-400/60 rounded-xl p-3 text-white font-bold placeholder-stone-400 focus:outline-none focus:border-amber-400"
                     />
                   </div>
                 </div>
 
                 {/* Dynamic Size & Volume Variants Manager */}
-                <div className="pt-3 border-t border-gold-400/20 space-y-3">
+                <div className="pt-4 border-t-2 border-amber-400/30 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <label className="font-serif font-bold text-gold-300 flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4 text-gold-400" />
+                    <label className="font-serif font-extrabold text-amber-300 text-sm sm:text-base flex items-center gap-1.5">
+                      <Sparkles className="w-5 h-5 text-amber-400" />
                       <span>
                         {category === 'perfume'
                           ? 'กำหนดขนาดขวดน้ำหอม (ml), ราคา และสต๊อก:'
@@ -749,18 +749,18 @@ export const AdminProductManager: React.FC = () => {
                       </span>
                     </label>
                     
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={handleApplyDefaultPreset}
-                        className="px-2.5 py-1 bg-gold-500 text-dubai-black rounded text-[11px] font-extrabold shadow-sm hover:scale-102 transition"
+                        className="px-3 py-1.5 bg-amber-400 text-stone-950 rounded-xl text-xs font-extrabold shadow hover:bg-amber-300 transition"
                       >
                         {category === 'perfume' ? 'ปริมาณขวดมาตรฐานน้ำหอม' : 'ไซส์มาตรฐานอาบายะห์ดูไบ'}
                       </button>
                       <button
                         type="button"
                         onClick={handleAddVariantField}
-                        className="px-2.5 py-1 bg-dubai-dark text-gold-300 border border-gold-400/30 rounded text-[11px] font-bold"
+                        className="px-3 py-1.5 bg-stone-900 text-amber-300 border-2 border-amber-400/50 rounded-xl text-xs font-extrabold hover:bg-amber-400 hover:text-stone-950 transition"
                       >
                         {category === 'perfume' ? '+ เพิ่มขนาดขวดอื่น' : '+ เพิ่มไซส์/สีอื่น'}
                       </button>
@@ -768,8 +768,8 @@ export const AdminProductManager: React.FC = () => {
                   </div>
 
                   {/* Quick Add Buttons based on Category */}
-                  <div className="flex flex-wrap items-center gap-1.5 bg-dubai-black p-2.5 rounded-xl border border-gold-400/20">
-                    <span className="text-[11px] text-gray-400 font-bold mr-1">ปุ่มกดเพิ่มเร็ว:</span>
+                  <div className="flex flex-wrap items-center gap-2 bg-stone-900 p-3 rounded-2xl border-2 border-amber-400/30">
+                    <span className="text-xs text-amber-200 font-extrabold mr-1">ปุ่มกดเพิ่มเร็ว:</span>
                     {(category === 'perfume'
                       ? ['ขวดสเปรย์ 50 ml', 'ขวดสเปรย์ 100 ml', 'Attar Oil 12 ml', 'ขวดเทสเตอร์ 3 ml', 'ขนาดมาตรฐาน (Free Size)']
                       : category === 'incense'
@@ -782,54 +782,54 @@ export const AdminProductManager: React.FC = () => {
                         key={sz}
                         type="button"
                         onClick={() => handleAddSingleSize(sz)}
-                        className="px-2 py-1 bg-dubai-dark hover:bg-gold-500 hover:text-dubai-black text-gold-300 border border-gold-400/30 rounded text-[10px] font-mono font-bold transition"
+                        className="px-2.5 py-1 bg-stone-950 hover:bg-amber-400 hover:text-stone-950 text-amber-300 border border-amber-400/50 rounded-lg text-xs font-mono font-extrabold transition shadow-sm"
                       >
                         + {sz}
                       </button>
                     ))}
                   </div>
 
-                  <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1 no-scrollbar">
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1 no-scrollbar">
                     {variants.map((v, idx) => (
                       <div
                         key={idx}
-                        className={`p-3.5 rounded-xl border-2 shadow-md space-y-2.5 transition-all ${
+                        className={`p-4 rounded-2xl border-2 shadow-lg space-y-3 transition-all ${
                           v.stockQuantity > 0
-                            ? 'bg-dubai-black border-emerald-500 shadow-emerald-950/30'
-                            : 'bg-dubai-black border-red-600 shadow-red-950/30'
+                            ? 'bg-stone-900 border-emerald-500 shadow-emerald-950/30'
+                            : 'bg-stone-900 border-red-500 shadow-red-950/30'
                         }`}
                       >
-                          <div className="flex items-center justify-between border-b border-gold-400/20 pb-1.5">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[11px] font-bold text-gold-300 font-serif">
-                                รายการที่ {idx + 1}: {v.name || 'ไซส์/รายการใหม่'}
-                              </span>
-                              <span
-                                className={`px-2 py-0.5 text-[9px] font-extrabold rounded-full ${
-                                  v.stockQuantity > 0
-                                    ? 'bg-emerald-500 text-dubai-black'
-                                    : 'bg-red-600 text-white'
-                                }`}
-                              >
-                                {v.stockQuantity > 0 ? `มีสต๊อก (${v.stockQuantity} ชิ้น)` : 'ไม่มีสต๊อก (0 ชิ้น)'}
-                              </span>
-                            </div>
+                        <div className="flex items-center justify-between border-b-2 border-amber-400/30 pb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs sm:text-sm font-extrabold text-amber-300 font-serif">
+                              รายการที่ {idx + 1}: {v.name || 'ไซส์/รายการใหม่'}
+                            </span>
+                            <span
+                              className={`px-2.5 py-0.5 text-xs font-extrabold rounded-full ${
+                                v.stockQuantity > 0
+                                  ? 'bg-emerald-500 text-stone-950'
+                                  : 'bg-red-600 text-white'
+                              }`}
+                            >
+                              {v.stockQuantity > 0 ? `มีสต๊อก (${v.stockQuantity} ชิ้น)` : 'ไม่มีสต๊อก (0 ชิ้น)'}
+                            </span>
+                          </div>
                           <button
                             type="button"
                             onClick={() => handleRemoveVariantField(idx)}
-                            className="px-2.5 py-1 text-red-300 hover:text-white bg-red-950/80 hover:bg-red-900 border border-red-700/50 rounded-lg text-[10px] font-bold transition flex items-center gap-1"
+                            className="px-3 py-1 text-red-200 hover:text-white bg-red-950 border-2 border-red-600/70 rounded-xl text-xs font-extrabold transition flex items-center gap-1 shadow"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4 text-red-400" />
                             <span>ลบรายการนี้</span>
                           </button>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                           
                           {/* Color / Scent Choice Field */}
-                          <div className="sm:col-span-3">
-                            <div className="flex items-center justify-between mb-1">
-                              <label className="text-[10px] text-amber-400 font-bold block">
+                          <div className="sm:col-span-3 space-y-1">
+                            <div className="flex items-center justify-between mb-0.5">
+                              <label className="text-xs text-amber-300 font-extrabold block">
                                 {category === 'perfume' ? 'ตัวเลือกกลิ่น / สี' : 'สีสินค้า (Color)'}
                               </label>
                               <VoiceInputButton
@@ -841,46 +841,44 @@ export const AdminProductManager: React.FC = () => {
                                 currentValue={v.color || ''}
                               />
                             </div>
-                            <div className="space-y-1">
-                              <input
-                                type="text"
-                                list="product-color-preset-list"
-                                placeholder={category === 'perfume' ? 'เช่น กลิ่นอัมเบอร์ทอง' : 'เลือก/พิมพ์สี เช่น สีดำ (Black)'}
-                                value={v.color || ''}
-                                onFocus={(e) => e.target.select()}
-                                onClick={(e) => (e.target as HTMLInputElement).select()}
-                                onChange={(e) => {
+                            <input
+                              type="text"
+                              list="product-color-preset-list"
+                              placeholder={category === 'perfume' ? 'เช่น กลิ่นอัมเบอร์ทอง' : 'เลือก/พิมพ์สี เช่น สีดำ (Black)'}
+                              value={v.color || ''}
+                              onFocus={(e) => e.target.select()}
+                              onClick={(e) => (e.target as HTMLInputElement).select()}
+                              onChange={(e) => {
+                                const updated = [...variants];
+                                updated[idx].color = e.target.value;
+                                setVariants(updated);
+                              }}
+                              className="w-full bg-stone-950 border-2 border-amber-400/60 rounded-xl p-2 text-amber-200 font-extrabold text-xs sm:text-sm focus:outline-none focus:border-amber-400 shadow-inner"
+                            />
+                            <select
+                              value=""
+                              onChange={(e) => {
+                                if (e.target.value) {
                                   const updated = [...variants];
                                   updated[idx].color = e.target.value;
                                   setVariants(updated);
-                                }}
-                                className="w-full bg-dubai-dark border border-gold-400/30 rounded p-1.5 text-amber-300 font-bold text-xs"
-                              />
-                              <select
-                                value=""
-                                onChange={(e) => {
-                                  if (e.target.value) {
-                                    const updated = [...variants];
-                                    updated[idx].color = e.target.value;
-                                    setVariants(updated);
-                                  }
-                                }}
-                                className="w-full bg-dubai-black/80 border border-gold-400/20 rounded px-1.5 py-1 text-[10px] text-gray-300 font-bold hover:border-gold-400/50 transition cursor-pointer"
-                              >
-                                <option value="">-- เลือกสีด่วน (Quick Select) --</option>
-                                {PRODUCT_COLOR_PRESETS.map((colorName) => (
-                                  <option key={colorName} value={colorName}>
-                                    {colorName}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
+                                }
+                              }}
+                              className="w-full bg-stone-950 border border-amber-400/40 rounded-xl px-2 py-1.5 text-xs text-white font-extrabold hover:border-amber-400 transition cursor-pointer"
+                            >
+                              <option value="" className="bg-stone-900 text-white font-bold">-- เลือกสีด่วน (Quick Select) --</option>
+                              {PRODUCT_COLOR_PRESETS.map((colorName) => (
+                                <option key={colorName} value={colorName} className="bg-stone-900 text-white font-bold py-1">
+                                  {colorName}
+                                </option>
+                              ))}
+                            </select>
                           </div>
 
                           {/* Size / Volume Name Field */}
-                          <div className="sm:col-span-3">
-                            <div className="flex items-center justify-between mb-1">
-                              <label className="text-[10px] text-gray-300 block font-bold">
+                          <div className="sm:col-span-3 space-y-1">
+                            <div className="flex items-center justify-between mb-0.5">
+                              <label className="text-xs text-white font-extrabold block">
                                 {category === 'perfume' ? 'ขนาดปริมาณ (ml / ขวด)' : 'ชื่อไซส์ / ความยาว'}
                               </label>
                               <VoiceInputButton
@@ -901,7 +899,7 @@ export const AdminProductManager: React.FC = () => {
                                 updated[idx].name = e.target.value;
                                 setVariants(updated);
                               }}
-                              className="w-full bg-dubai-dark border border-gold-400/30 rounded p-1.5 text-white font-bold text-xs"
+                              className="w-full bg-stone-950 border-2 border-amber-400/60 rounded-xl p-2 text-white font-extrabold text-xs sm:text-sm focus:outline-none focus:border-amber-400 shadow-inner"
                             />
                           </div>
 
@@ -909,8 +907,8 @@ export const AdminProductManager: React.FC = () => {
                           <div className="sm:col-span-6 grid grid-cols-3 gap-2">
                             {/* Price Field */}
                             <div>
-                              <label className="text-[10px] text-gold-400 block mb-1 font-extrabold truncate">
-                                ราคาขาย
+                              <label className="text-xs text-amber-300 block mb-1 font-extrabold truncate">
+                                ราคาขาย (บาท)
                               </label>
                               <input
                                 type="number"
@@ -928,13 +926,13 @@ export const AdminProductManager: React.FC = () => {
                                   }
                                   setVariants(updated);
                                 }}
-                                className="w-full bg-dubai-dark border-2 border-gold-400/60 rounded p-1.5 text-gold-300 font-extrabold font-mono text-xs sm:text-sm text-right"
+                                className="w-full bg-stone-950 border-2 border-amber-400 rounded-xl p-2 text-amber-300 font-extrabold font-mono text-sm sm:text-base text-right shadow-inner focus:ring-2 focus:ring-amber-400 focus:outline-none"
                               />
                             </div>
 
                             {/* Cost Price Field - High Visibility Orange Badge Box */}
-                            <div className="bg-amber-950/80 p-1 rounded-lg border-2 border-amber-500 shadow-md">
-                              <label className="text-[10px] text-amber-300 block mb-0.5 font-extrabold text-center bg-amber-500/20 rounded py-0.5 border border-amber-500/40 truncate">
+                            <div className="bg-amber-950/90 p-1.5 rounded-xl border-2 border-amber-500 shadow-md">
+                              <label className="text-[11px] text-amber-200 block mb-1 font-extrabold text-center bg-amber-500/30 rounded py-0.5 border border-amber-400/50 truncate">
                                 ต้นทุน (บาท)
                               </label>
                               <input
@@ -949,13 +947,13 @@ export const AdminProductManager: React.FC = () => {
                                   updated[idx].costPrice = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
                                   setVariants(updated);
                                 }}
-                                className="w-full bg-amber-950 border-2 border-amber-400 rounded p-1.5 text-amber-200 font-extrabold font-mono text-xs sm:text-sm text-right shadow-inner focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                                className="w-full bg-amber-950 border-2 border-amber-400 rounded-lg p-2 text-amber-100 font-extrabold font-mono text-sm sm:text-base text-right shadow-inner focus:ring-2 focus:ring-amber-400 focus:outline-none"
                               />
                             </div>
 
                             {/* Stock Field */}
                             <div>
-                              <label className="text-[10px] text-emerald-400 block mb-1 font-extrabold truncate">
+                              <label className="text-xs text-emerald-300 block mb-1 font-extrabold truncate">
                                 สต๊อก (ชิ้น)
                               </label>
                               <input
@@ -970,7 +968,7 @@ export const AdminProductManager: React.FC = () => {
                                   updated[idx].stockQuantity = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
                                   setVariants(updated);
                                 }}
-                                className="w-full bg-dubai-dark border-2 border-emerald-500/60 rounded p-1.5 text-emerald-300 font-extrabold font-mono text-xs sm:text-sm text-right"
+                                className="w-full bg-emerald-950 border-2 border-emerald-400 rounded-xl p-2 text-emerald-200 font-extrabold font-mono text-sm sm:text-base text-right shadow-inner focus:ring-2 focus:ring-emerald-400 focus:outline-none"
                               />
                             </div>
                           </div>
@@ -983,23 +981,23 @@ export const AdminProductManager: React.FC = () => {
               </div>
 
               {/* Sticky Bottom Footer */}
-              <div className="sticky bottom-0 z-30 bg-dubai-black/95 backdrop-blur-md -mx-4 -mb-4 sm:-mx-6 sm:-mb-6 p-4 border-t-2 border-gold-400/50 flex items-center justify-between gap-3 shrink-0 shadow-2xl mt-4">
-                <span className="text-[11px] text-gold-300/80 font-bold hidden sm:block">
+              <div className="sticky bottom-0 z-30 bg-stone-900 -mx-4 -mb-4 sm:-mx-6 sm:-mb-6 p-4 border-t-2 border-amber-400/60 flex items-center justify-between gap-3 shrink-0 shadow-2xl mt-4">
+                <span className="text-xs text-amber-300 font-extrabold hidden sm:block">
                   ตรวจสอบความถูกต้อง แล้วกดปุ่มบันทึกสินค้า
                 </span>
                 <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
                   <button
                     type="button"
                     onClick={() => setIsAddModalOpen(false)}
-                    className="px-4 py-2.5 bg-dubai-dark hover:bg-gold-500/20 border border-gold-400/30 text-gray-300 rounded-xl font-bold text-xs transition"
+                    className="px-4 py-2.5 bg-stone-800 hover:bg-stone-700 border-2 border-amber-400/40 text-stone-200 rounded-xl font-extrabold text-xs sm:text-sm transition"
                   >
                     ยกเลิก
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-3 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-dubai-black font-extrabold rounded-xl text-xs sm:text-sm shadow-gold-strong scale-100 hover:scale-105 transition flex items-center justify-center gap-2 cursor-pointer font-sans w-full sm:w-auto"
+                    className="px-6 py-3 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-stone-950 font-extrabold rounded-xl text-xs sm:text-sm shadow-lg scale-100 hover:scale-105 transition flex items-center justify-center gap-2 cursor-pointer font-sans w-full sm:w-auto border border-emerald-300"
                   >
-                    <CheckCircle2 className="w-5 h-5 text-dubai-black shrink-0" />
+                    <CheckCircle2 className="w-5 h-5 text-stone-950 shrink-0" />
                     <span>บันทึกสินค้า (Save Product)</span>
                   </button>
                 </div>
