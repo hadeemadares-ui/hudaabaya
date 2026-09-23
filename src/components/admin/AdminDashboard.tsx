@@ -106,24 +106,24 @@ export const AdminDashboard: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         
         {/* Admin Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-dubai-black p-5 rounded-2xl border border-gold-400/40 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-stone-900 p-5 rounded-2xl border-2 border-amber-400/50 shadow-xl">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gold-500/20 border border-gold-400 flex items-center justify-center text-gold-400 shadow-gold-glow">
+            <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center text-amber-400 shadow-md">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="font-serif font-extrabold text-xl text-white tracking-wide">
+                <h2 className="font-serif font-extrabold text-xl sm:text-2xl text-white tracking-wide">
                   HUDA ABAYA Backoffice (ระบบผู้ดูแลร้านค้า)
                 </h2>
-                <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/50 px-2.5 py-0.5 rounded-full font-bold font-sans flex items-center gap-1">
+                <span className="text-xs bg-emerald-950 text-emerald-300 border border-emerald-500/60 px-2.5 py-0.5 rounded-full font-extrabold font-sans flex items-center gap-1">
                   ● เชื่อมต่อระบบเรียลไทม์ 100%
                 </span>
-                <span className="text-[10px] bg-gold-500/20 text-gold-300 border border-gold-400/40 px-2 py-0.5 rounded-full font-bold font-sans">
-                  เวอร์ชันใหม่ v1.0.6
+                <span className="text-xs bg-amber-950 text-amber-300 border border-amber-400/60 px-2.5 py-0.5 rounded-full font-extrabold font-sans">
+                  v1.0.7 High Contrast
                 </span>
               </div>
-              <p className="text-xs text-gold-300/80 mt-1">
+              <p className="text-xs text-white font-bold mt-1">
                 จัดการสต๊อกสินค้าเสื้อผ้าและน้ำหอมดูไบ คิดเงิน POS ตรวจสอบออเดอร์ และดูรายงานวิเคราะห์ต้นทุน/กำไร
               </p>
             </div>
@@ -132,7 +132,7 @@ export const AdminDashboard: React.FC = () => {
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <button
               onClick={() => setActiveTab('reports')}
-              className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-gold-glow cursor-pointer border border-emerald-400/40"
+              className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-md cursor-pointer border border-emerald-400/50"
               title="เปิดดูรายงานวิเคราะห์ต้นทุน กำไรสุทธิ และสรุปคลังสินค้า"
             >
               <TrendingUp className="w-4 h-4 text-emerald-300" />
@@ -145,16 +145,16 @@ export const AdminDashboard: React.FC = () => {
                   clearBrowserCacheAndReload();
                 }
               }}
-              className="px-3 py-2 bg-amber-950/80 border border-amber-600/50 hover:bg-amber-900 text-amber-200 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-md relative"
+              className="px-3.5 py-2.5 bg-amber-950 border-2 border-amber-500 hover:bg-amber-900 text-amber-200 font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-md relative"
               title="ล้างไฟล์ค้างแคชในมือถือ/คอมพิวเตอร์นี้และดึงเวอร์ชันล่าสุด"
             >
-              <span className="animate-pulse bg-gold-500 text-dubai-black text-[9px] px-1.5 py-0.2 rounded font-extrabold mr-0.5">NEW</span>
-              <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+              <span className="animate-pulse bg-amber-400 text-stone-950 text-[10px] px-1.5 py-0.2 rounded font-extrabold mr-0.5">NEW</span>
+              <RotateCcw className="w-4 h-4 text-amber-400" />
               <span>ล้างแคช</span>
             </button>
             <button
               onClick={logoutAdmin}
-              className="px-4 py-2 bg-red-950/80 border border-red-700/50 hover:bg-red-900 text-red-200 font-bold text-xs rounded-xl transition flex items-center gap-1.5 shrink-0"
+              className="px-4 py-2.5 bg-red-950 border-2 border-red-600 hover:bg-red-900 text-red-200 font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shrink-0"
             >
               <LogOut className="w-4 h-4" />
               <span>ออกจากหลังบ้าน</span>
@@ -166,89 +166,89 @@ export const AdminDashboard: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div
             onClick={() => setActiveTab('reports')}
-            className="p-4 bg-dubai-card hover:bg-gold-500/10 border-2 border-gold-400/40 hover:border-gold-400 rounded-xl space-y-1 shadow-md cursor-pointer transition group"
+            className="p-4 bg-stone-900 hover:bg-stone-800 border-2 border-amber-400/50 hover:border-amber-400 rounded-2xl space-y-1.5 shadow-lg cursor-pointer transition group"
             title="กดที่นี่เพื่อเปิดดูรายงานยอดขาย ต้นทุน และกำไรสุทธิ"
           >
-            <div className="flex items-center justify-between text-xs text-gold-400 font-bold">
+            <div className="flex items-center justify-between text-xs text-amber-300 font-extrabold">
               <span>ยอดขายสะสมสุทธิ</span>
-              <DollarSign className="w-4 h-4 text-gold-400 group-hover:scale-110 transition" />
+              <DollarSign className="w-4 h-4 text-amber-400 group-hover:scale-110 transition" />
             </div>
-            <p className="text-xl sm:text-2xl font-serif font-extrabold text-gold-300">
+            <p className="text-xl sm:text-2xl font-serif font-extrabold text-amber-300">
               ฿{totalRevenue.toLocaleString()}
             </p>
-            <p className="text-[10px] text-emerald-400 font-bold">กดเพื่อดูรายงานต้นทุน & กำไร</p>
+            <p className="text-xs text-emerald-400 font-extrabold">กดเพื่อดูรายงานต้นทุน & กำไร</p>
           </div>
 
           <div
             onClick={() => setActiveTab('reports')}
-            className="p-4 bg-dubai-card hover:bg-gold-500/10 border-2 border-gold-400/40 hover:border-gold-400 rounded-xl space-y-1 shadow-md cursor-pointer transition group"
+            className="p-4 bg-stone-900 hover:bg-stone-800 border-2 border-amber-400/50 hover:border-amber-400 rounded-2xl space-y-1.5 shadow-lg cursor-pointer transition group"
             title="กดที่นี่เพื่อเปิดดูรายงานยอดขาย ต้นทุน และกำไรสุทธิ"
           >
-            <div className="flex items-center justify-between text-xs text-gold-400 font-bold">
+            <div className="flex items-center justify-between text-xs text-amber-300 font-extrabold">
               <span>คำสั่งซื้อทั้งหมด</span>
-              <ShoppingBag className="w-4 h-4 text-gold-400 group-hover:scale-110 transition" />
+              <ShoppingBag className="w-4 h-4 text-amber-400 group-hover:scale-110 transition" />
             </div>
             <p className="text-xl sm:text-2xl font-serif font-extrabold text-white">
-              {totalOrdersCount} <span className="text-xs font-sans font-normal text-gray-400">รายการ</span>
+              {totalOrdersCount} <span className="text-xs font-sans font-extrabold text-amber-200">รายการ</span>
             </p>
-            <p className="text-[10px] text-emerald-400 font-bold">กดเพื่อดูตารางขายสินค้า</p>
+            <p className="text-xs text-emerald-400 font-extrabold">กดเพื่อดูตารางขายสินค้า</p>
           </div>
 
-          <div className="p-4 bg-dubai-card border border-gold-400/30 rounded-xl space-y-1 shadow-md">
-            <div className="flex items-center justify-between text-xs text-gold-400">
+          <div className="p-4 bg-stone-900 border-2 border-amber-400/40 rounded-2xl space-y-1.5 shadow-lg">
+            <div className="flex items-center justify-between text-xs text-amber-300 font-extrabold">
               <span>รายการสินค้าในร้าน</span>
-              <Layers className="w-4 h-4" />
+              <Layers className="w-4 h-4 text-amber-400" />
             </div>
             <p className="text-xl sm:text-2xl font-serif font-extrabold text-white">
-              {totalProductsCount} <span className="text-xs font-sans font-normal text-gray-400">แบบ/รุ่น</span>
+              {totalProductsCount} <span className="text-xs font-sans font-extrabold text-amber-200">แบบ/รุ่น</span>
             </p>
-            <p className="text-[10px] text-gray-400">แยกสต๊อกรายไซส์</p>
+            <p className="text-xs text-stone-200 font-bold">แยกสต๊อกรายไซส์</p>
           </div>
 
-          <div className="p-4 bg-dubai-card border border-gold-400/30 rounded-xl space-y-1 shadow-md">
-            <div className="flex items-center justify-between text-xs text-amber-400">
+          <div className="p-4 bg-stone-900 border-2 border-amber-400/40 rounded-2xl space-y-1.5 shadow-lg">
+            <div className="flex items-center justify-between text-xs text-amber-400 font-extrabold">
               <span>แจ้งเตือนไซส์สต๊อกต่ำ</span>
-              <AlertCircle className="w-4 h-4" />
+              <AlertCircle className="w-4 h-4 text-amber-400" />
             </div>
             <p className="text-xl sm:text-2xl font-serif font-extrabold text-amber-300">
-              {lowStockCount} <span className="text-xs font-sans font-normal text-gray-400">แบบ</span>
+              {lowStockCount} <span className="text-xs font-sans font-extrabold text-amber-200">แบบ</span>
             </p>
-            <p className="text-[10px] text-amber-400 font-bold">สต๊อกเหลือน้อยกว่า {threshold} ชิ้น</p>
+            <p className="text-xs text-amber-400 font-extrabold">สต๊อกเหลือน้อยกว่า {threshold} ชิ้น</p>
           </div>
         </div>
 
         {/* Tab Switcher Bar */}
-        <div className="flex flex-wrap gap-2.5 border-b border-gold-400/20 pb-3">
+        <div className="flex flex-wrap gap-2.5 border-b-2 border-amber-400/30 pb-3">
           <button
             onClick={() => setActiveTab('products')}
-            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md ${
+            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md cursor-pointer ${
               activeTab === 'products'
-                ? 'bg-gradient-to-r from-amber-500 via-gold-400 to-amber-600 text-dubai-black shadow-gold-glow scale-102 border-2 border-amber-300 font-sans'
-                : 'bg-dubai-card text-gold-300 hover:text-white border-2 border-gold-400/40'
+                ? 'bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-500 text-stone-950 shadow-lg border-2 border-amber-300'
+                : 'bg-stone-900 text-amber-300 hover:text-white border-2 border-amber-400/50'
             }`}
           >
-            <Layers className="w-4.5 h-4.5 text-gold-400" />
+            <Layers className="w-4.5 h-4.5" />
             <span>จัดการสต๊อกสินค้า & ใส่ต้นทุน ({products.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('pos')}
-            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md ${
+            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md cursor-pointer ${
               activeTab === 'pos'
-                ? 'bg-gold-500 text-dubai-black shadow-gold-glow scale-102 border-2 border-gold-300'
-                : 'bg-dubai-card text-gold-300/80 hover:text-white border border-gold-400/30'
+                ? 'bg-amber-400 text-stone-950 shadow-lg border-2 border-amber-300'
+                : 'bg-stone-900 text-amber-300 hover:text-white border-2 border-amber-400/50'
             }`}
           >
-            <Store className="w-4.5 h-4.5 text-gold-400" />
+            <Store className="w-4.5 h-4.5" />
             <span>คิดเงินหน้าร้าน (POS Cashier)</span>
           </button>
 
           <button
             onClick={() => setActiveTab('reports')}
-            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md ${
+            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md cursor-pointer ${
               activeTab === 'reports'
-                ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-dubai-black font-extrabold shadow-gold-glow scale-102 border-2 border-emerald-300'
-                : 'bg-emerald-950/80 text-emerald-300 hover:text-white border-2 border-emerald-500/60 shadow-md'
+                ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-stone-950 shadow-lg border-2 border-emerald-300'
+                : 'bg-emerald-950 text-emerald-300 hover:text-white border-2 border-emerald-500/60 shadow-md'
             }`}
           >
             <TrendingUp className="w-4.5 h-4.5 text-emerald-400" />
@@ -257,37 +257,37 @@ export const AdminDashboard: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('orders')}
-            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 ${
+            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'orders'
-                ? 'bg-gold-500 text-dubai-black shadow-gold-glow font-extrabold'
-                : 'bg-dubai-card text-gold-300/70 hover:text-white border border-gold-400/20'
+                ? 'bg-amber-400 text-stone-950 shadow-lg border-2 border-amber-300'
+                : 'bg-stone-900 text-amber-300 hover:text-white border-2 border-amber-400/40'
             }`}
           >
-            <ShoppingBag className="w-4 h-4 text-gold-400" />
+            <ShoppingBag className="w-4 h-4" />
             <span>ออเดอร์ ({orders.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('settings')}
-            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 ${
+            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'settings'
-                ? 'bg-gold-500 text-dubai-black shadow-gold-glow font-extrabold'
-                : 'bg-dubai-card text-gold-300/70 hover:text-white border border-gold-400/20'
+                ? 'bg-amber-400 text-stone-950 shadow-lg border-2 border-amber-300'
+                : 'bg-stone-900 text-amber-300 hover:text-white border-2 border-amber-400/40'
             }`}
           >
-            <Settings className="w-4 h-4 text-gold-400" />
+            <Settings className="w-4 h-4" />
             <span>ตั้งค่าร้านค้า</span>
           </button>
 
           <button
             onClick={() => setActiveTab('logs')}
-            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 ${
+            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'logs'
-                ? 'bg-gold-500 text-dubai-black shadow-gold-glow font-extrabold'
-                : 'bg-dubai-card text-gold-300/70 hover:text-white border border-gold-400/20'
+                ? 'bg-amber-400 text-stone-950 shadow-lg border-2 border-amber-300'
+                : 'bg-stone-900 text-amber-300 hover:text-white border-2 border-amber-400/40'
             }`}
           >
-            <History className="w-4 h-4 text-gold-400" />
+            <History className="w-4 h-4" />
             <span>ประวัติเครื่อง</span>
           </button>
         </div>
@@ -299,48 +299,48 @@ export const AdminDashboard: React.FC = () => {
         {activeTab === 'orders' && <AdminOrderManager />}
         {activeTab === 'settings' && <AdminSettingsManager />}
         {activeTab === 'logs' && (
-          <div className="bg-dubai-card p-6 rounded-2xl border border-gold-400/30 space-y-4">
+          <div className="bg-stone-900 p-6 rounded-2xl border-2 border-amber-400/40 space-y-4 shadow-xl">
             <div className="flex items-center justify-between">
-              <h3 className="font-serif font-bold text-lg text-gold-300 flex items-center gap-2">
-                <History className="w-5 h-5 text-gold-400" />
+              <h3 className="font-serif font-extrabold text-lg text-amber-300 flex items-center gap-2">
+                <History className="w-5 h-5 text-amber-400" />
                 <span>บันทึกประวัติการเพิ่ม/แก้ไขข้อมูลเรียลไทม์ (Audit Logs)</span>
               </h3>
-              <span className="text-xs text-gray-400">บันทึกเครื่อง อุปกรณ์ และเวลา UTC ล่าสุด</span>
+              <span className="text-xs text-amber-200 font-extrabold">บันทึกเครื่อง อุปกรณ์ และเวลา UTC ล่าสุด</span>
             </div>
 
             {auditLogs.length === 0 ? (
-              <p className="text-xs text-gray-400 py-6 text-center">ยังไม่มีประวัติการทำรายการย้อนหลัง</p>
+              <p className="text-xs text-amber-200 font-extrabold py-6 text-center">ยังไม่มีประวัติการทำรายการย้อนหลัง</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-gold-400/20 text-gold-400 font-serif">
-                      <th className="py-2.5 px-3">เวลา (Timestamp)</th>
-                      <th className="py-2.5 px-3">ประเภทกิจกรรม</th>
-                      <th className="py-2.5 px-3">ผู้ทำรายการ / อุปกรณ์</th>
-                      <th className="py-2.5 px-3">รายละเอียด (Description)</th>
+                    <tr className="border-b-2 border-amber-400/40 text-amber-300 font-serif text-xs sm:text-sm">
+                      <th className="py-3 px-3 font-extrabold">เวลา (Timestamp)</th>
+                      <th className="py-3 px-3 font-extrabold">ประเภทกิจกรรม</th>
+                      <th className="py-3 px-3 font-extrabold">ผู้ทำรายการ / อุปกรณ์</th>
+                      <th className="py-3 px-3 font-extrabold">รายละเอียด (Description)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gold-400/10 text-gray-200">
+                  <tbody className="divide-y divide-amber-400/20 text-white">
                     {auditLogs.map((log) => (
-                      <tr key={log.id} className="hover:bg-dubai-black/40">
-                        <td className="py-2.5 px-3 font-mono text-[11px] text-gold-300">
+                      <tr key={log.id} className="hover:bg-stone-950 transition">
+                        <td className="py-3 px-3 font-mono text-xs text-amber-300 font-extrabold">
                           {new Date(log.timestamp).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}
                         </td>
-                        <td className="py-2.5 px-3 font-bold">
-                          <span className="px-2 py-0.5 rounded bg-gold-500/20 text-gold-300 border border-gold-400/30 text-[10px]">
+                        <td className="py-3 px-3 font-bold">
+                          <span className="px-2.5 py-1 rounded-lg bg-stone-950 text-amber-300 border border-amber-400/40 text-xs font-extrabold">
                             {log.action}
                           </span>
                         </td>
-                        <td className="py-2.5 px-3 font-medium flex items-center gap-1.5">
+                        <td className="py-3 px-3 font-extrabold flex items-center gap-1.5 text-white">
                           {log.performedBy.includes('Mobile') || log.performedBy.includes('iPhone') ? (
-                            <Smartphone className="w-3.5 h-3.5 text-gold-400" />
+                            <Smartphone className="w-4 h-4 text-amber-400" />
                           ) : (
-                            <Monitor className="w-3.5 h-3.5 text-gold-400" />
+                            <Monitor className="w-4 h-4 text-amber-400" />
                           )}
                           <span>{log.performedBy}</span>
                         </td>
-                        <td className="py-2.5 px-3 text-gray-300">{log.description}</td>
+                        <td className="py-3 px-3 text-white font-bold">{log.description}</td>
                       </tr>
                     ))}
                   </tbody>

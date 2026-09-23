@@ -118,15 +118,15 @@ export const AdminSettingsManager: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-5">
           
           {/* Section 1: Admin Security Passcode Protection */}
-          <div className="space-y-3 p-4 bg-dubai-dark rounded-xl border border-gold-400/30">
-            <h4 className="font-serif font-bold text-gold-300 text-sm flex items-center gap-2">
-              <Lock className="w-4 h-4 text-gold-400" />
+          <div className="space-y-3.5 p-4 sm:p-5 bg-stone-900 rounded-2xl border-2 border-amber-400/50 shadow-md">
+            <h4 className="font-serif font-extrabold text-amber-300 text-sm sm:text-base flex items-center gap-2">
+              <Lock className="w-5 h-5 text-amber-400" />
               <span>ตั้งค่ารหัสผ่านเข้าหลังบ้าน (Admin Passcode Protection)</span>
             </h4>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-gray-300 mb-1 font-bold">
+                <label className="block text-amber-200 mb-1 font-extrabold text-xs sm:text-sm">
                   รหัสผ่านเข้าโหมดผู้ดูแล (Admin Passcode PIN) *
                 </label>
                 <input
@@ -135,67 +135,67 @@ export const AdminSettingsManager: React.FC = () => {
                   placeholder="กรอกรหัสผ่านเข้าหลังบ้าน"
                   value={form.adminPasscode}
                   onChange={(e) => setForm({ ...form, adminPasscode: e.target.value })}
-                  className="w-full bg-dubai-black border border-gold-400/40 rounded p-2.5 text-gold-300 font-mono font-bold text-sm tracking-wider"
+                  className="w-full bg-stone-950 border-2 border-amber-400/70 rounded-xl p-3 text-amber-300 font-mono font-extrabold text-base tracking-wider focus:outline-none focus:border-amber-400 shadow-inner"
                 />
               </div>
-              <div className="text-[11px] text-gray-400 flex items-center">
+              <div className="text-xs text-stone-200 font-bold flex items-center">
                 <span>* เมื่อกดปุ่ม "เข้าหลังบ้าน" ระบบจะเรียกร้องรหัสผ่านนี้ก่อนเปิดให้เข้าถึง ป้องกันลูกค้าเข้ากดแก้ไขข้อมูล</span>
               </div>
             </div>
           </div>
 
           {/* Section 2: Store Brand Info */}
-          <div className="space-y-3 p-4 bg-dubai-dark rounded-xl border border-gold-400/20">
-            <h4 className="font-serif font-bold text-gold-300 text-sm flex items-center gap-2">
-              <Store className="w-4 h-4 text-gold-400" />
+          <div className="space-y-3.5 p-4 sm:p-5 bg-stone-900 rounded-2xl border-2 border-amber-400/40 shadow-md">
+            <h4 className="font-serif font-extrabold text-amber-300 text-sm sm:text-base flex items-center gap-2">
+              <Store className="w-5 h-5 text-amber-400" />
               <span>ชื่อร้านค้า & สโลแกน & โลโก้ร้าน</span>
             </h4>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-gray-300 mb-1 font-bold">ชื่อร้านค้า (Store Name) *</label>
+                <label className="block text-amber-200 mb-1 font-extrabold text-xs sm:text-sm">ชื่อร้านค้า (Store Name) *</label>
                 <input
                   type="text"
                   required
                   value={form.storeName}
                   onChange={(e) => setForm({ ...form, storeName: e.target.value })}
-                  className="w-full bg-dubai-black border border-gold-400/30 rounded p-2 text-white font-bold"
+                  className="w-full bg-stone-950 border-2 border-amber-400/60 rounded-xl p-3 text-white font-extrabold text-sm focus:outline-none focus:border-amber-400 shadow-inner"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-300 mb-1 font-bold">สโลแกนร้านค้า (Tagline)</label>
+                <label className="block text-amber-200 mb-1 font-extrabold text-xs sm:text-sm">สโลแกนร้านค้า (Tagline)</label>
                 <input
                   type="text"
                   value={form.storeTagline}
                   onChange={(e) => setForm({ ...form, storeTagline: e.target.value })}
-                  className="w-full bg-dubai-black border border-gold-400/30 rounded p-2 text-white"
+                  className="w-full bg-stone-950 border-2 border-amber-400/60 rounded-xl p-3 text-white font-extrabold text-sm focus:outline-none focus:border-amber-400 shadow-inner"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-300 mb-1">อักษรย่อโลโก้สำรอง (Logo Letter)</label>
+                <label className="block text-amber-200 mb-1 font-extrabold text-xs sm:text-sm">อักษรย่อโลโก้สำรอง (Logo Letter)</label>
                 <input
                   type="text"
                   maxLength={3}
                   value={form.logoLetter}
                   onChange={(e) => setForm({ ...form, logoLetter: e.target.value })}
-                  className="w-full bg-dubai-black border border-gold-400/30 rounded p-2 text-gold-400 font-bold uppercase"
+                  className="w-full bg-stone-950 border-2 border-amber-400/60 rounded-xl p-3 text-amber-300 font-extrabold text-sm uppercase focus:outline-none focus:border-amber-400 shadow-inner"
                 />
               </div>
 
               {/* Logo Upload Section with Auto-Save & Memory Lock */}
-              <div className="sm:col-span-2 space-y-2.5 p-4 bg-dubai-black rounded-xl border-2 border-gold-400/40 shadow-lg">
+              <div className="sm:col-span-2 space-y-3 p-4 bg-stone-950 rounded-2xl border-2 border-amber-400/50 shadow-lg">
                 <div className="flex items-center justify-between">
-                  <label className="block text-gold-300 font-extrabold text-xs flex items-center gap-1.5">
-                    <Camera className="w-4 h-4 text-gold-400" />
+                  <label className="block text-amber-300 font-extrabold text-xs sm:text-sm flex items-center gap-1.5">
+                    <Camera className="w-4 h-4 text-amber-400" />
                     <span>โลโก้ร้านค้า (จำโลโก้อัตโนมัติ ไม่ต้องเลือกใหม่เมื่อแก้ไข):</span>
                   </label>
                   {form.logoImageUrl && (
                     <button
                       type="button"
                       onClick={handleClearLogo}
-                      className="text-red-400 hover:text-red-200 text-[11px] font-bold flex items-center gap-1 bg-red-950/40 px-2 py-0.5 rounded border border-red-800/40"
+                      className="text-red-200 hover:text-white text-xs font-extrabold flex items-center gap-1 bg-red-950 px-2.5 py-1 rounded-xl border border-red-600"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>ลบรูปโลโก้</span>
@@ -204,8 +204,8 @@ export const AdminSettingsManager: React.FC = () => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <label className="cursor-pointer px-4 py-2.5 bg-gradient-to-r from-gold-500 to-amber-600 text-dubai-black font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-gold-glow hover:scale-102 transition">
-                    <Camera className="w-4 h-4" />
+                  <label className="cursor-pointer px-4 py-2.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-stone-950 font-extrabold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 shadow hover:scale-102 transition border border-amber-300">
+                    <Camera className="w-4 h-4 text-stone-950" />
                     <span>ถ่ายภาพโลโก้จากกล้อง</span>
                     <input
                       type="file"
@@ -216,8 +216,8 @@ export const AdminSettingsManager: React.FC = () => {
                     />
                   </label>
 
-                  <label className="cursor-pointer px-4 py-2.5 bg-dubai-dark border border-gold-400/40 text-gold-300 hover:text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition">
-                    <ImageIcon className="w-4 h-4 text-gold-400" />
+                  <label className="cursor-pointer px-4 py-2.5 bg-stone-900 border-2 border-amber-400/50 text-amber-300 hover:text-white font-extrabold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 transition">
+                    <ImageIcon className="w-4 h-4 text-amber-400" />
                     <span>เลือกรูปโลโก้จากอัลบั้ม</span>
                     <input
                       type="file"
@@ -239,25 +239,25 @@ export const AdminSettingsManager: React.FC = () => {
                         updateStoreSettings({ logoImageUrl: val });
                       }}
                       placeholder="หรือวางลิงก์รูปโลโก้ Image URL (https://...)"
-                      className="w-full bg-dubai-dark border border-gold-400/30 rounded p-2 text-white text-xs pl-8 font-mono"
+                      className="w-full bg-stone-900 border-2 border-amber-400/50 rounded-xl p-2.5 text-white font-extrabold text-xs pl-8 font-mono placeholder-stone-500 focus:outline-none focus:border-amber-400"
                     />
-                    <LinkIcon className="w-3.5 h-3.5 text-gold-400 absolute left-2.5 top-2.5" />
+                    <LinkIcon className="w-4 h-4 text-amber-400 absolute left-2.5 top-3" />
                   </div>
                 </div>
 
                 {/* Logo Image Preview Frame */}
                 {form.logoImageUrl && (
-                  <div className="flex items-center gap-4 pt-3 border-t border-gold-400/20">
-                    <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-gold-600 via-gold-400 to-amber-200 shadow-gold-glow flex items-center justify-center shrink-0">
+                  <div className="flex items-center gap-4 pt-3 border-t-2 border-amber-400/30">
+                    <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-amber-500 to-yellow-400 shadow-md flex items-center justify-center shrink-0">
                       <img
                         src={form.logoImageUrl}
                         alt="Logo Preview"
-                        className="w-full h-full rounded-full object-cover border-2 border-dubai-black"
+                        className="w-full h-full rounded-full object-cover border-2 border-stone-950"
                       />
                     </div>
                     <div>
-                      <span className="text-emerald-400 font-bold text-xs block">ระบบจดจำโลโก้นี้อย่างถาวรแล้ว</span>
-                      <p className="text-[11px] text-gray-300">
+                      <span className="text-emerald-400 font-extrabold text-xs sm:text-sm block">ระบบจดจำโลโก้นี้อย่างถาวรแล้ว</span>
+                      <p className="text-xs text-stone-200 font-bold mt-0.5">
                         โลโก้นี้จะแสดงผลใน Header, ท้ายเว็บ และใบเสร็จรับเงิน POS โดยไม่ต้องเลือกใหม่เมื่อบันทึกข้อมูล
                       </p>
                     </div>
@@ -269,167 +269,167 @@ export const AdminSettingsManager: React.FC = () => {
           </div>
 
           {/* Section 3: Contact & Address */}
-          <div className="space-y-3 p-4 bg-dubai-dark rounded-xl border border-gold-400/20">
-            <h4 className="font-serif font-bold text-gold-300 text-sm flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-gold-400" />
+          <div className="space-y-3.5 p-4 sm:p-5 bg-stone-900 rounded-2xl border-2 border-amber-400/40 shadow-md">
+            <h4 className="font-serif font-extrabold text-amber-300 text-sm sm:text-base flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-amber-400" />
               <span>ข้อมูลการติดต่อ & ที่อยู่ร้านค้า</span>
             </h4>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-gray-300 mb-1">เบอร์โทรศัพท์ติดต่อร้าน</label>
+                <label className="block text-amber-200 mb-1 font-extrabold text-xs sm:text-sm">เบอร์โทรศัพท์ติดต่อร้าน</label>
                 <input
                   type="text"
                   value={form.contactPhone}
                   onChange={(e) => setForm({ ...form, contactPhone: e.target.value })}
-                  className="w-full bg-dubai-black border border-gold-400/30 rounded p-2 text-white font-mono"
+                  className="w-full bg-stone-950 border-2 border-amber-400/60 rounded-xl p-3 text-white font-mono font-extrabold text-sm focus:outline-none focus:border-amber-400 shadow-inner"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-300 mb-1">LINE Official / LINE ID</label>
+                <label className="block text-amber-200 mb-1 font-extrabold text-xs sm:text-sm">LINE Official / LINE ID</label>
                 <input
                   type="text"
                   value={form.contactLine}
                   onChange={(e) => setForm({ ...form, contactLine: e.target.value })}
-                  className="w-full bg-dubai-black border border-gold-400/30 rounded p-2 text-white font-mono"
+                  className="w-full bg-stone-950 border-2 border-amber-400/60 rounded-xl p-3 text-white font-mono font-extrabold text-sm focus:outline-none focus:border-amber-400 shadow-inner"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-gray-300 mb-1">ที่อยู่ร้านค้า (แสดงในท้ายเว็บ & ใบเสร็จ)</label>
+                <label className="block text-amber-200 mb-1 font-extrabold text-xs sm:text-sm">ที่อยู่ร้านค้า (แสดงในท้ายเว็บ & ใบเสร็จ)</label>
                 <textarea
                   rows={2}
                   value={form.contactAddress}
                   onChange={(e) => setForm({ ...form, contactAddress: e.target.value })}
                   placeholder="เช่น 11/2 ม.1 ..."
-                  className="w-full bg-dubai-black border border-gold-400/30 rounded p-2 text-white font-medium"
+                  className="w-full bg-stone-950 border-2 border-amber-400/60 rounded-xl p-3 text-white font-bold text-sm focus:outline-none focus:border-amber-400 shadow-inner"
                 />
               </div>
             </div>
           </div>
 
           {/* Section 4: Payment Channels Toggles & Configuration */}
-          <div className="space-y-3 p-4 bg-dubai-dark rounded-xl border border-gold-400/20">
-            <h4 className="font-serif font-bold text-gold-300 text-sm flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-gold-400" />
+          <div className="space-y-3.5 p-4 sm:p-5 bg-stone-900 rounded-2xl border-2 border-amber-400/40 shadow-md">
+            <h4 className="font-serif font-extrabold text-amber-300 text-sm sm:text-base flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-amber-400" />
               <span>เปิด-ปิด & ตั้งค่าช่องทางชำระเงินที่รองรับ</span>
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-              <label className="flex items-center gap-2 bg-dubai-black p-3 rounded-lg border border-gold-400/20 cursor-pointer">
+              <label className="flex items-center gap-2.5 bg-stone-950 p-3.5 rounded-xl border-2 border-amber-400/40 cursor-pointer shadow-md">
                 <input
                   type="checkbox"
                   checked={form.enablePromptPay}
                   onChange={(e) => setForm({ ...form, enablePromptPay: e.target.checked })}
-                  className="w-4 h-4 accent-gold-500 rounded"
+                  className="w-4 h-4 accent-amber-500 rounded"
                 />
-                <span className="font-bold text-gold-300 flex items-center gap-1">
-                  <QrCode className="w-3.5 h-3.5 text-gold-400" /> Dynamic PromptPay QR
+                <span className="font-extrabold text-amber-300 text-xs sm:text-sm flex items-center gap-1">
+                  <QrCode className="w-4 h-4 text-amber-400" /> Dynamic PromptPay QR
                 </span>
               </label>
 
-              <label className="flex items-center gap-2 bg-dubai-black p-3 rounded-lg border border-gold-400/20 cursor-pointer">
+              <label className="flex items-center gap-2.5 bg-stone-950 p-3.5 rounded-xl border-2 border-amber-400/40 cursor-pointer shadow-md">
                 <input
                   type="checkbox"
                   checked={form.enableBankTransfer}
                   onChange={(e) => setForm({ ...form, enableBankTransfer: e.target.checked })}
-                  className="w-4 h-4 accent-gold-500 rounded"
+                  className="w-4 h-4 accent-amber-500 rounded"
                 />
-                <span className="font-bold text-gold-300 flex items-center gap-1">
-                  <Building className="w-3.5 h-3.5 text-gold-400" /> โอนเงินผ่านธนาคาร
+                <span className="font-extrabold text-amber-300 text-xs sm:text-sm flex items-center gap-1">
+                  <Building className="w-4 h-4 text-amber-400" /> โอนเงินผ่านธนาคาร
                 </span>
               </label>
 
-              <label className="flex items-center gap-2 bg-dubai-black p-3 rounded-lg border border-gold-400/20 cursor-pointer">
+              <label className="flex items-center gap-2.5 bg-stone-950 p-3.5 rounded-xl border-2 border-amber-400/40 cursor-pointer shadow-md">
                 <input
                   type="checkbox"
                   checked={form.enableCreditCard}
                   onChange={(e) => setForm({ ...form, enableCreditCard: e.target.checked })}
-                  className="w-4 h-4 accent-gold-500 rounded"
+                  className="w-4 h-4 accent-amber-500 rounded"
                 />
-                <span className="font-bold text-gold-300 flex items-center gap-1">
-                  <CreditCard className="w-3.5 h-3.5 text-gold-400" /> บัตรเครดิต / เดบิต
+                <span className="font-extrabold text-amber-300 text-xs sm:text-sm flex items-center gap-1">
+                  <CreditCard className="w-4 h-4 text-amber-400" /> บัตรเครดิต / เดบิต
                 </span>
               </label>
 
-              <label className="flex items-center gap-2 bg-dubai-black p-3 rounded-lg border border-gold-400/20 cursor-pointer">
+              <label className="flex items-center gap-2.5 bg-stone-950 p-3.5 rounded-xl border-2 border-amber-400/40 cursor-pointer shadow-md">
                 <input
                   type="checkbox"
                   checked={form.enableCOD}
                   onChange={(e) => setForm({ ...form, enableCOD: e.target.checked })}
-                  className="w-4 h-4 accent-gold-500 rounded"
+                  className="w-4 h-4 accent-amber-500 rounded"
                 />
-                <span className="font-bold text-gold-300 flex items-center gap-1">
-                  <Truck className="w-3.5 h-3.5 text-gold-400" /> ชำระปลายทาง (COD)
+                <span className="font-extrabold text-amber-300 text-xs sm:text-sm flex items-center gap-1">
+                  <Truck className="w-4 h-4 text-amber-400" /> ชำระปลายทาง (COD)
                 </span>
               </label>
 
-              <label className="flex items-center gap-2 bg-dubai-black p-3 rounded-lg border border-gold-400/20 cursor-pointer">
+              <label className="flex items-center gap-2.5 bg-stone-950 p-3.5 rounded-xl border-2 border-amber-400/40 cursor-pointer shadow-md">
                 <input
                   type="checkbox"
                   checked={form.enableTrueMoney}
                   onChange={(e) => setForm({ ...form, enableTrueMoney: e.target.checked })}
-                  className="w-4 h-4 accent-gold-500 rounded"
+                  className="w-4 h-4 accent-amber-500 rounded"
                 />
-                <span className="font-bold text-gold-300 flex items-center gap-1">
-                  <Wallet className="w-3.5 h-3.5 text-gold-400" /> TrueMoney / LINE Pay
+                <span className="font-extrabold text-amber-300 text-xs sm:text-sm flex items-center gap-1">
+                  <Wallet className="w-4 h-4 text-amber-400" /> TrueMoney / LINE Pay
                 </span>
               </label>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-gold-400/20">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t-2 border-amber-400/30">
               <div>
-                <label className="block text-gray-300 mb-1">เบอร์พร้อมเพย์ (PromptPay QR)</label>
+                <label className="block text-amber-200 mb-1 font-extrabold text-xs sm:text-sm">เบอร์พร้อมเพย์ (PromptPay QR)</label>
                 <input
                   type="text"
                   value={form.promptPayNumber}
                   onChange={(e) => setForm({ ...form, promptPayNumber: e.target.value })}
-                  className="w-full bg-dubai-black border border-gold-400/30 rounded p-2 text-white font-mono"
+                  className="w-full bg-stone-950 border-2 border-amber-400/60 rounded-xl p-3 text-white font-mono font-extrabold text-sm focus:outline-none focus:border-amber-400 shadow-inner"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-300 mb-1">ชื่อธนาคาร</label>
+                <label className="block text-amber-200 mb-1 font-extrabold text-xs sm:text-sm">ชื่อธนาคาร</label>
                 <input
                   type="text"
                   value={form.bankName}
                   onChange={(e) => setForm({ ...form, bankName: e.target.value })}
-                  className="w-full bg-dubai-black border border-gold-400/30 rounded p-2 text-white"
+                  className="w-full bg-stone-950 border-2 border-amber-400/60 rounded-xl p-3 text-white font-extrabold text-sm focus:outline-none focus:border-amber-400 shadow-inner"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-300 mb-1">เลขที่บัญชีธนาคาร</label>
+                <label className="block text-amber-200 mb-1 font-extrabold text-xs sm:text-sm">เลขที่บัญชีธนาคาร</label>
                 <input
                   type="text"
                   value={form.bankAccountNo}
                   onChange={(e) => setForm({ ...form, bankAccountNo: e.target.value })}
-                  className="w-full bg-dubai-black border border-gold-400/30 rounded p-2 text-white font-mono"
+                  className="w-full bg-stone-950 border-2 border-amber-400/60 rounded-xl p-3 text-white font-mono font-extrabold text-sm focus:outline-none focus:border-amber-400 shadow-inner"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-300 mb-1">ชื่อบัญชีผู้รับเงิน</label>
+                <label className="block text-amber-200 mb-1 font-extrabold text-xs sm:text-sm">ชื่อบัญชีผู้รับเงิน</label>
                 <input
                   type="text"
                   value={form.bankAccountName}
                   onChange={(e) => setForm({ ...form, bankAccountName: e.target.value })}
-                  className="w-full bg-dubai-black border border-gold-400/30 rounded p-2 text-white"
+                  className="w-full bg-stone-950 border-2 border-amber-400/60 rounded-xl p-3 text-white font-extrabold text-sm focus:outline-none focus:border-amber-400 shadow-inner"
                 />
               </div>
             </div>
           </div>
 
           {/* Section 5: Low Stock Threshold Alert */}
-          <div className="space-y-3 p-4 bg-dubai-dark rounded-xl border border-gold-400/20">
-            <h4 className="font-serif font-bold text-amber-400 text-sm flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-400" />
+          <div className="space-y-3.5 p-4 sm:p-5 bg-stone-900 rounded-2xl border-2 border-amber-400/40 shadow-md">
+            <h4 className="font-serif font-extrabold text-amber-300 text-sm sm:text-base flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-400" />
               <span>กำหนดเกณฑ์แจ้งเตือนสต๊อกต่ำ (Low Stock Alert Threshold)</span>
             </h4>
 
             <div>
-              <label className="block text-gray-300 mb-1">
+              <label className="block text-amber-200 mb-1 font-extrabold text-xs sm:text-sm">
                 จำนวนสต๊อกสินค้าขั้นต่ำที่จะให้แสดงการแจ้งเตือน (ชิ้น)
               </label>
               <input
@@ -444,15 +444,15 @@ export const AdminSettingsManager: React.FC = () => {
                   const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
                   setForm({ ...form, lowStockThreshold: cleanVal === '' ? 0 : Math.max(1, parseInt(cleanVal, 10) || 0) });
                 }}
-                className="w-full bg-dubai-black border border-amber-500/40 rounded p-2 text-amber-300 font-bold font-mono"
+                className="w-full bg-stone-950 border-2 border-amber-400/70 rounded-xl p-3 text-amber-300 font-extrabold font-mono text-base focus:outline-none focus:border-amber-400 shadow-inner"
               />
             </div>
           </div>
 
           {/* Section 6: Announcement Banner */}
-          <div className="space-y-3 p-4 bg-dubai-dark rounded-xl border border-gold-400/20">
-            <h4 className="font-serif font-bold text-gold-300 text-sm flex items-center gap-2">
-              <Megaphone className="w-4 h-4 text-gold-400" />
+          <div className="space-y-3.5 p-4 sm:p-5 bg-stone-900 rounded-2xl border-2 border-amber-400/40 shadow-md">
+            <h4 className="font-serif font-extrabold text-amber-300 text-sm sm:text-base flex items-center gap-2">
+              <Megaphone className="w-5 h-5 text-amber-400" />
               <span>ข้อความแถบประกาศด้านบนสุด (Top Announcement Banner)</span>
             </h4>
 
@@ -461,22 +461,22 @@ export const AdminSettingsManager: React.FC = () => {
                 type="text"
                 value={form.topAnnouncement}
                 onChange={(e) => setForm({ ...form, topAnnouncement: e.target.value })}
-                className="w-full bg-dubai-black border border-gold-400/30 rounded p-2 text-white"
+                className="w-full bg-stone-950 border-2 border-amber-400/60 rounded-xl p-3 text-white font-extrabold text-sm focus:outline-none focus:border-amber-400 shadow-inner"
               />
             </div>
           </div>
 
           {/* Section 7: Clear Browser Cache & Purge Stale Storage */}
-          <div className="space-y-3 p-4 bg-dubai-dark rounded-xl border border-amber-500/30">
-            <h4 className="font-serif font-bold text-amber-300 text-sm flex items-center gap-2">
-              <RotateCcw className="w-4 h-4 text-amber-400" />
+          <div className="space-y-3.5 p-4 sm:p-5 bg-stone-900 rounded-2xl border-2 border-amber-500/50 shadow-md">
+            <h4 className="font-serif font-extrabold text-amber-300 text-sm sm:text-base flex items-center gap-2">
+              <RotateCcw className="w-5 h-5 text-amber-400" />
               <span>ล้างแคชเบราว์เซอร์เครื่องนี้ (Clear Local Browser Cache)</span>
             </h4>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-dubai-black p-3 rounded-lg border border-amber-500/20">
-              <div className="space-y-0.5">
-                <p className="text-xs font-bold text-white">เครื่องติดจำแคชเวอร์ชันเก่าในมือถือ/คอมพิวเตอร์?</p>
-                <p className="text-[11px] text-gray-400">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-stone-950 p-4 rounded-xl border-2 border-amber-500/40">
+              <div className="space-y-1">
+                <p className="text-xs sm:text-sm font-extrabold text-white">เครื่องติดจำแคชเวอร์ชันเก่าในมือถือ/คอมพิวเตอร์?</p>
+                <p className="text-xs text-stone-200 font-bold">
                   กดปุ่มนี้เพื่อล้างไฟล์ค้างแคช ServiceWorker / Web Caches ในอุปกรณ์นี้ และบังคับดึงโค้ดล่าสุดจาก Vercel 100%
                 </p>
               </div>
@@ -488,20 +488,20 @@ export const AdminSettingsManager: React.FC = () => {
                     clearBrowserCacheAndReload();
                   }
                 }}
-                className="px-4 py-2 bg-amber-950 hover:bg-amber-900 border border-amber-600/50 text-amber-200 font-extrabold text-xs rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-md"
+                className="px-4 py-2.5 bg-amber-950 hover:bg-amber-900 border-2 border-amber-500 text-amber-200 font-extrabold text-xs sm:text-sm rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-md cursor-pointer"
               >
-                <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                <RotateCcw className="w-4 h-4 text-amber-400" />
                 <span>กดล้างแคชเครื่องนี้ทันที</span>
               </button>
             </div>
           </div>
 
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end pt-3">
             <button
               type="submit"
-              className="px-6 py-2.5 bg-gradient-to-r from-gold-500 via-gold-400 to-amber-600 text-dubai-black font-extrabold text-xs rounded-xl shadow-gold-glow hover:scale-105 transition flex items-center gap-1.5"
+              className="px-6 py-3.5 bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-500 text-stone-950 font-extrabold text-xs sm:text-sm rounded-xl shadow-lg hover:scale-105 transition flex items-center gap-2 cursor-pointer border border-amber-300"
             >
-              <Save className="w-4 h-4" />
+              <Save className="w-5 h-5 text-stone-950" />
               <span>บันทึกการตั้งค่าร้านค้าและรหัสผ่านทั้งหมด</span>
             </button>
           </div>

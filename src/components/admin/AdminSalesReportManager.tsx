@@ -850,7 +850,7 @@ export const AdminSalesReportManager: React.FC = () => {
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block text-gray-300 mb-1 font-bold">ชื่อสินค้า / แบบ</label>
+                <label className="block text-amber-300 mb-1 font-extrabold">ชื่อสินค้า / แบบ</label>
                 <input
                   type="text"
                   value={editingProduct.title}
@@ -861,28 +861,28 @@ export const AdminSalesReportManager: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-gray-300 mb-1 font-bold">หมวดหมู่</label>
+                  <label className="block text-amber-300 mb-1 font-extrabold">หมวดหมู่</label>
                   <select
                     value={editingProduct.category}
                     onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value as CategoryType })}
                     className="w-full bg-dubai-black border border-gold-400/30 rounded-xl p-2.5 text-gold-300 font-bold focus:border-gold-400 focus:outline-none"
                   >
-                    <option value="abaya">ชุดอาบายะห์ (Abaya)</option>
-                    <option value="kaftan">ชุดคัฟทาน (Kaftan)</option>
-                    <option value="perfume">น้ำหอมดูไบ (Perfume)</option>
-                    <option value="incense">ไม้หอม & บุคคูร์ (Oud)</option>
-                    <option value="combo">เซตสุดคุ้ม (Combo)</option>
-                    <option value="other">สินค้าอื่นๆ</option>
+                    <option value="abaya" className="bg-stone-900 text-white font-bold">ชุดอาบายะห์ (Abaya)</option>
+                    <option value="kaftan" className="bg-stone-900 text-white font-bold">ชุดคัฟทาน (Kaftan)</option>
+                    <option value="perfume" className="bg-stone-900 text-white font-bold">น้ำหอมดูไบ (Perfume)</option>
+                    <option value="incense" className="bg-stone-900 text-white font-bold">ไม้หอม & บุคคูร์ (Oud)</option>
+                    <option value="combo" className="bg-stone-900 text-white font-bold">เซตสุดคุ้ม (Combo)</option>
+                    <option value="other" className="bg-stone-900 text-white font-bold">สินค้าอื่นๆ</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 mb-1 font-bold">ไซส์ / ตัวเลือก</label>
+                  <label className="block text-amber-300 mb-1 font-extrabold">ไซส์ / ตัวเลือก</label>
                   <input
                     type="text"
                     disabled
                     value={editingProduct.variantName}
-                    className="w-full bg-dubai-black/60 border border-gray-700 rounded-xl p-2.5 text-gray-400 font-bold"
+                    className="w-full bg-dubai-black/60 border border-gray-700 rounded-xl p-2.5 text-gray-300 font-bold"
                   />
                 </div>
               </div>
