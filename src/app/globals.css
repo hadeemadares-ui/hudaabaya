@@ -5,8 +5,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #FAF8F5;
-  --foreground: #0F172A;
+  --background: #FAF9F6;
+  --foreground: #1C1917;
 }
 
 body {
@@ -14,25 +14,26 @@ body {
   background: var(--background);
   font-family: 'Prompt', sans-serif;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Scrollbar for Luxury White & Gold Theme */
+/* Custom Scrollbar for Luxury Theme */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #FAF8F5;
+  background: #FAF9F6;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #D4AF37, #CA8A04);
-  border-radius: 4px;
+  background: #CFA76F;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #FACC15, #EAB308);
+  background: #B89352;
 }
 
 .no-scrollbar::-webkit-scrollbar {

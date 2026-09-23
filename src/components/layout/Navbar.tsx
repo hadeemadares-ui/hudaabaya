@@ -72,30 +72,31 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-amber-300/60 text-slate-900 shadow-md transition-all">
-      {/* Top Announcement Banner */}
-      <div className="bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 text-white text-xs font-bold py-1.5 px-3 text-center tracking-wide flex items-center justify-between shadow-sm">
-        <div className="hidden md:flex items-center gap-1.5 text-[11px] shrink-0">
-          <Globe className="w-3.5 h-3.5 shrink-0" />
-          <span>สั่งซื้อตรงจากดูไบ UAE — สินค้าแท้ 100%</span>
+    <header className="sticky top-0 z-40 bg-[#FAF9F6]/95 backdrop-blur-md border-b border-[#E8E3DA] text-[#1C1917] shadow-sm transition-all">
+      {/* Top Announcement Bar */}
+      <div className="bg-[#1C1917] text-[#FAF9F6] text-xs py-2 px-4 tracking-wider flex items-center justify-between font-light">
+        <div className="hidden md:flex items-center gap-2 text-[11px] text-stone-300">
+          <Globe className="w-3.5 h-3.5 text-[#B89352]" />
+          <span>นำเข้าชุดอาบายะห์และน้ำหอมแท้จากดูไบ UAE | 100% Authentic Import</span>
         </div>
 
         <div className="flex items-center justify-center gap-2 mx-auto md:mx-0 text-[11px] sm:text-xs">
-          <Sparkles className="w-3.5 h-3.5 animate-pulse shrink-0 text-amber-200" />
-          <span className="font-bold">{storeSettings.topAnnouncement}</span>
-          <Sparkles className="w-3.5 h-3.5 animate-pulse shrink-0 text-amber-200" />
+          <Sparkles className="w-3.5 h-3.5 text-[#B89352]" />
+          <span className="font-medium tracking-wide text-stone-200">{storeSettings.topAnnouncement}</span>
+          <Sparkles className="w-3.5 h-3.5 text-[#B89352]" />
         </div>
 
         {/* Currency Switcher */}
-        <div className="hidden md:flex items-center gap-1 bg-amber-950/20 px-2 py-0.5 rounded-full border border-amber-300/40 shrink-0">
+        <div className="hidden md:flex items-center gap-1.5 border-l border-stone-800 pl-3">
+          <span className="text-[10px] text-stone-400 font-serif uppercase tracking-widest mr-1">Currency:</span>
           {currencies.map((c) => (
             <button
               key={c.id}
               onClick={() => setCurrency(c.id)}
-              className={`text-[10px] font-mono px-1.5 py-0.5 rounded transition ${
+              className={`text-[10px] font-mono px-2 py-0.5 transition rounded-sm ${
                 currency === c.id
-                  ? 'bg-white text-amber-900 font-extrabold shadow'
-                  : 'text-white/90 hover:text-white font-semibold'
+                  ? 'bg-[#B89352] text-white font-bold'
+                  : 'text-stone-400 hover:text-white'
               }`}
             >
               {c.label}
@@ -104,49 +105,47 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 sm:h-24 md:h-28 gap-1.5 sm:gap-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-20 sm:h-24 md:h-26 gap-3">
           
-          {/* Main Logo & Store Name Display */}
-          <div className="flex items-center gap-2 sm:gap-3.5 cursor-pointer group shrink-0" onClick={() => handleCategoryClick('all')}>
-            <div className="flex items-center gap-2 sm:gap-3.5">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full p-0.5 sm:p-1 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-500 shadow-md flex items-center justify-center shrink-0 group-hover:scale-105 transition duration-300">
-                <img
-                  src={storeSettings.logoImageUrl || DEFAULT_LOGO_BASE64}
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = DEFAULT_LOGO_BASE64;
-                  }}
-                  alt={storeSettings.storeName}
-                  className="w-full h-full rounded-full object-contain bg-white p-0.5 border border-amber-400/50 sm:border-2 shadow-inner"
-                />
-              </div>
-              <div className="flex flex-col justify-center">
-                <h1 className="font-serif text-xs xs:text-sm sm:text-lg md:text-2xl lg:text-3xl font-extrabold tracking-normal sm:tracking-wider bg-gradient-to-r from-amber-800 via-amber-600 to-amber-700 bg-clip-text text-transparent drop-shadow-sm whitespace-nowrap leading-tight">
-                  {storeSettings.storeName}
-                </h1>
-                <p className="text-[8px] xs:text-[10px] sm:text-xs text-amber-800 tracking-wider uppercase font-sans font-semibold mt-0.5 whitespace-nowrap">
-                  {storeSettings.storeTagline}
-                </p>
-              </div>
+          {/* Main Store Logo & Name */}
+          <div className="flex items-center gap-3 sm:gap-4 cursor-pointer group shrink-0" onClick={() => handleCategoryClick('all')}>
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full p-0.5 bg-gradient-to-tr from-[#B89352] via-[#E9DABF] to-[#B89352] shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 transition duration-300">
+              <img
+                src={storeSettings.logoImageUrl || DEFAULT_LOGO_BASE64}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = DEFAULT_LOGO_BASE64;
+                }}
+                alt={storeSettings.storeName}
+                className="w-full h-full rounded-full object-contain bg-white p-0.5 border border-[#E8E3DA]"
+              />
+            </div>
+            <div className="flex flex-col justify-center">
+              <h1 className="font-serif text-base sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-tight text-[#1C1917] group-hover:text-[#B89352] transition-colors leading-tight">
+                {storeSettings.storeName}
+              </h1>
+              <p className="text-[9px] sm:text-[11px] text-[#B89352] tracking-widest uppercase font-serif font-medium mt-0.5">
+                {storeSettings.storeTagline}
+              </p>
             </div>
           </div>
 
-          {/* Desktop Search Bar */}
-          <div className="hidden lg:flex flex-1 max-w-md mx-4 items-center gap-1.5">
+          {/* Desktop Search Input */}
+          <div className="hidden lg:flex flex-1 max-w-md mx-6 items-center gap-2">
             <div className="relative flex-1">
               <input
                 type="text"
                 placeholder="ค้นหาชุดอาบายะห์, เดรส, น้ำหอมดูไบ..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 border border-amber-300/80 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-full py-2 pl-10 pr-12 text-xs text-slate-900 placeholder-slate-400 transition"
+                className="w-full bg-[#F5F3EF] border border-[#E5E0D8] focus:border-[#B89352] focus:bg-white rounded-full py-2 pl-10 pr-12 text-xs text-[#1C1917] placeholder-stone-400 transition-all outline-none"
               />
-              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-amber-600" />
+              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-stone-400" />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-2.5 text-xs text-amber-700 hover:text-amber-900 font-bold"
+                  className="absolute right-3 top-2.5 text-xs text-stone-500 hover:text-[#1C1917] font-medium"
                 >
                   ล้าง
                 </button>
@@ -158,73 +157,73 @@ export const Navbar: React.FC = () => {
             />
           </div>
 
-          {/* Action Navigation Buttons */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          {/* Header Utilities / Actions */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             
-            {/* Google Maps Button */}
+            {/* GPS Map Link */}
             <a
               href={storeSettings.mapUrl || defaultMapUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-1 text-xs text-amber-800 hover:text-amber-950 transition bg-amber-50/80 hover:bg-amber-100 px-2.5 sm:px-3 py-1.5 rounded-full border border-amber-300 shadow-sm"
-              title="เปิดแผนที่นำทาง Google Maps มายังหน้าร้าน HUDA ABAYA DUBAI"
+              className="hidden xl:flex items-center gap-1.5 text-xs text-stone-700 hover:text-[#B89352] transition bg-white px-3 py-1.5 rounded-full border border-[#E8E3DA] hover:border-[#B89352] shadow-2xs font-medium"
+              title="แผนที่นำทาง GPS ร้าน HUDA ABAYA DUBAI"
             >
-              <Compass className="w-4 h-4 text-amber-600" />
-              <span className="hidden xl:inline font-bold">แผนที่ GPS</span>
+              <Compass className="w-3.5 h-3.5 text-[#B89352]" />
+              <span>แผนที่ร้าน</span>
             </a>
 
-            {/* Install App / QR Code Button */}
+            {/* Install App QR */}
             <button
               onClick={triggerQRModal}
-              className="flex items-center gap-1 text-xs text-amber-800 hover:text-amber-950 transition bg-amber-50/80 hover:bg-amber-100 px-2 sm:px-3 py-1.5 rounded-full border border-amber-300 shadow-sm"
-              title="ติดตั้งแอปพลิเคชันหรือสแกน QR Code เพื่อดาวน์โหลดลงมือถือ"
+              className="hidden sm:flex items-center gap-1.5 text-xs text-stone-700 hover:text-[#B89352] transition bg-white px-3 py-1.5 rounded-full border border-[#E8E3DA] hover:border-[#B89352] shadow-2xs font-medium"
+              title="สแกน QR Code เพื่อใช้งานบนแอปพลิเคชัน"
             >
-              <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
-              <span className="hidden xl:inline font-bold">ติดตั้งแอป</span>
+              <QrCode className="w-3.5 h-3.5 text-[#B89352]" />
+              <span>แอปพลิเคชัน</span>
             </button>
 
-            {/* AI Stylist Button */}
+            {/* AI Stylist */}
             <button
               onClick={() => setIsAIConciergeOpen(true)}
-              className="flex items-center gap-1 text-xs text-amber-900 hover:text-amber-950 transition bg-gradient-to-r from-amber-100 via-amber-200 to-amber-100 px-2 sm:px-3 py-1.5 rounded-full border border-amber-400 shadow-sm font-bold"
+              className="flex items-center gap-1.5 text-xs text-[#1C1917] hover:text-[#B89352] transition bg-[#F4ECE1] hover:bg-[#E9DABF] px-3 py-1.5 rounded-full border border-[#DCC59F] shadow-2xs font-medium"
               title="ผู้ช่วยสไตลิสต์ดูไบ AI ช่วยเลือกไซส์"
             >
-              <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
-              <span className="hidden sm:inline font-bold">AI Stylist</span>
+              <Bot className="w-3.5 h-3.5 text-[#B89352]" />
+              <span className="hidden sm:inline">AI Stylist</span>
             </button>
 
-            {/* Order Tracking Button */}
+            {/* Order Tracking */}
             <button
               onClick={() => setIsOrderTrackingOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 text-xs text-slate-800 hover:text-amber-800 transition bg-slate-100/90 hover:bg-slate-200 px-3 py-1.5 rounded-full border border-slate-300"
+              className="hidden md:flex items-center gap-1.5 text-xs text-stone-700 hover:text-[#1C1917] transition bg-white px-3 py-1.5 rounded-full border border-[#E8E3DA] hover:border-stone-400 font-medium"
             >
-              <PackageSearch className="w-4 h-4 text-amber-600" />
+              <PackageSearch className="w-3.5 h-3.5 text-stone-500" />
               <span>ติดตามพัสดุ</span>
             </button>
 
-            {/* Password-Protected Admin Button */}
+            {/* Admin Management Button */}
             <button
               onClick={handleAdminBtnClick}
-              className={`flex items-center gap-1 text-xs px-2 sm:px-3 py-1.5 rounded-full transition border ${
+              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition border ${
                 isAdminMode
-                  ? 'bg-amber-500 text-slate-950 font-extrabold border-amber-600 shadow'
-                  : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
+                  ? 'bg-[#1C1917] text-white font-semibold border-[#1C1917]'
+                  : 'bg-white text-stone-700 border-[#E8E3DA] hover:border-[#B89352]'
               }`}
-              title="เข้าสู่ระบบผู้ดูแลร้านค้า (ต้องใส่รหัสผ่าน)"
+              title="เข้าสู่ระบบหลังบ้านผู้ดูแลร้านค้า"
             >
-              {isAdminAuthenticated ? <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />}
-              <span className="hidden sm:inline">{isAdminMode ? 'โหมดหลังบ้าน' : 'หลังบ้าน'}</span>
+              {isAdminAuthenticated ? <User className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5 text-[#B89352]" />}
+              <span className="hidden sm:inline">{isAdminMode ? 'จัดการหลังบ้าน' : 'หลังบ้าน'}</span>
             </button>
 
-            {/* Cart Button with Count Badge */}
+            {/* Shopping Cart Button */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative p-2 sm:p-2.5 text-amber-700 hover:text-amber-900 transition bg-amber-50 hover:bg-amber-100 rounded-full border border-amber-300 shadow-sm"
+              className="relative p-2.5 text-[#1C1917] hover:text-[#B89352] transition bg-white rounded-full border border-[#E8E3DA] hover:border-[#B89352] shadow-2xs"
               aria-label="ตะกร้าสินค้า"
             >
-              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
+              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-[#1C1917]" />
               {totalCartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center shadow-md animate-bounce">
+                <span className="absolute -top-1 -right-1 bg-[#B89352] text-white text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center shadow-sm">
                   {totalCartCount}
                 </span>
               )}
@@ -232,7 +231,7 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Search Input & Currency Row */}
+        {/* Mobile Search Input */}
         <div className="lg:hidden pb-3 space-y-2">
           <div className="relative">
             <input
@@ -240,31 +239,31 @@ export const Navbar: React.FC = () => {
               placeholder="ค้นหาชุดอาบายะห์, เดรส, น้ำหอมดูไบ..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 border border-amber-300 rounded-full py-1.5 pl-9 pr-4 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500"
+              className="w-full bg-[#F5F3EF] border border-[#E5E0D8] rounded-full py-2 pl-9 pr-4 text-xs text-[#1C1917] placeholder-stone-400 focus:outline-none focus:border-[#B89352]"
             />
-            <Search className="absolute left-3 top-2 w-3.5 h-3.5 text-amber-600" />
+            <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-stone-400" />
           </div>
 
-          <div className="flex items-center justify-between text-[11px]">
+          <div className="flex items-center justify-between text-[11px] text-stone-600">
             <a
               href={storeSettings.mapUrl || defaultMapUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="sm:hidden text-amber-800 flex items-center gap-1 underline font-medium"
+              className="sm:hidden text-[#B89352] flex items-center gap-1 underline font-medium"
             >
-              <Compass className="w-3.5 h-3.5 text-amber-600" />
-              <span>แผนที่นำทาง GPS</span>
+              <Compass className="w-3.5 h-3.5" />
+              <span>นำทาง GPS</span>
             </a>
 
             <div className="flex items-center gap-1.5 ml-auto">
-              <span className="text-amber-800 font-bold">สกุลเงิน:</span>
+              <span className="text-stone-500">สกุลเงิน:</span>
               <div className="flex gap-1">
                 {currencies.map((c) => (
                   <button
                     key={c.id}
                     onClick={() => setCurrency(c.id)}
                     className={`px-2 py-0.5 rounded text-[10px] font-mono ${
-                      currency === c.id ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-100 text-slate-700'
+                      currency === c.id ? 'bg-[#1C1917] text-white font-bold' : 'bg-white border border-[#E8E3DA] text-stone-600'
                     }`}
                   >
                     {c.label}
@@ -276,15 +275,15 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* Category Navigation Bar */}
-        <nav className="flex items-center gap-2 overflow-x-auto py-2 sm:py-2.5 no-scrollbar border-t border-amber-200/60">
+        <nav className="flex items-center gap-2 overflow-x-auto py-2.5 no-scrollbar border-t border-[#E8E3DA]">
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => handleCategoryClick(cat.id)}
-              className={`px-3.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+              className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
                 selectedCategory === cat.id
-                  ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 text-slate-950 font-extrabold border border-amber-300 shadow-sm scale-105'
-                  : 'bg-white text-slate-700 hover:text-amber-800 border border-amber-200/80 hover:border-amber-400'
+                  ? 'bg-[#1C1917] text-white font-semibold shadow-xs'
+                  : 'bg-white/70 text-stone-700 hover:text-[#1C1917] hover:bg-white border border-[#E8E3DA]'
               }`}
             >
               {cat.label}

@@ -38,10 +38,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   return (
     <>
-      <div className="group bg-white border border-amber-300/60 rounded-2xl overflow-hidden hover:border-amber-400 shadow-md hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-500 flex flex-col justify-between hover:-translate-y-1">
+      <div className="group bg-white border border-[#E8E3DA] rounded-lg overflow-hidden hover:border-[#B89352] shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col justify-between hover:-translate-y-0.5">
         
-        {/* Image Container */}
-        <div className="relative aspect-[4/5] overflow-hidden bg-amber-50/50 cursor-pointer" onClick={() => setIsModalOpen(true)}>
+        {/* Image Frame */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-[#F5F3EF] cursor-pointer" onClick={() => setIsModalOpen(true)}>
           <img
             src={imgSrc}
             alt={product.title}
@@ -50,34 +50,34 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 setImgSrc(defaultImg);
               }
             }}
-            className="w-full h-full object-cover object-center transform transition duration-700 group-hover:scale-105"
+            className="w-full h-full object-cover object-center transform transition duration-500 group-hover:scale-105"
           />
           
-          {/* Overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-40 group-hover:opacity-20 transition" />
+          {/* Subtle image Overlay on Hover */}
+          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition duration-300" />
 
-          {/* Badges */}
-          <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+          {/* Badges - Subtle & Clean */}
+          <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
             {product.onSale && product.discountPercent && (
-              <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[11px] font-extrabold px-2.5 py-1 rounded-full shadow-md">
-                ลด {product.discountPercent}%
+              <span className="bg-[#B89352] text-white text-[10px] font-medium px-2 py-0.5 rounded-xs tracking-wider">
+                -{product.discountPercent}%
               </span>
             )}
             {product.isNew && (
-              <span className="bg-amber-400 text-slate-950 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow">
-                HAUTE COUTURE
+              <span className="bg-[#1C1917] text-white text-[9px] font-medium px-2 py-0.5 rounded-xs uppercase tracking-wider">
+                NEW ARRIVAL
               </span>
             )}
           </div>
 
-          {/* Stock & 3D Badges */}
-          <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1.5">
+          {/* Stock & 3D Interactive Badge */}
+          <div className="absolute top-2.5 right-2.5 z-10 flex flex-col items-end gap-1">
             {totalStock > 0 ? (
-              <span className="bg-white/90 backdrop-blur-md border border-amber-300 text-amber-900 text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-sm">
-                พร้อมส่ง (สต๊อก {totalStock})
+              <span className="bg-white/90 text-stone-800 text-[10px] font-medium px-2 py-0.5 rounded-xs border border-stone-200">
+                พร้อมส่ง ({totalStock})
               </span>
             ) : (
-              <span className="bg-red-50 border border-red-300 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+              <span className="bg-stone-100 text-stone-500 text-[10px] font-medium px-2 py-0.5 rounded-xs border border-stone-200">
                 สินค้าหมด
               </span>
             )}
@@ -87,95 +87,90 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 e.stopPropagation();
                 setActive3DProduct(product);
               }}
-              className="bg-white/90 hover:bg-amber-400 hover:text-slate-950 border border-amber-300 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm transition"
+              className="bg-white/90 hover:bg-[#1C1917] hover:text-white text-stone-700 text-[10px] font-medium px-2 py-0.5 rounded-xs border border-stone-200 flex items-center gap-1 transition"
               title="ดูมุมมอง 3 มิติ 360°"
             >
-              <Box className="w-3 h-3 animate-spin text-amber-600" />
-              <span>3D Hologram</span>
+              <Box className="w-3 h-3 text-[#B89352]" />
+              <span>3D</span>
             </button>
           </div>
 
           {/* Quick View Button on Hover */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+          <div className="absolute inset-x-3 bottom-3 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setIsModalOpen(true);
               }}
-              className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-full shadow-md flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition duration-300 border border-amber-300"
+              className="w-full bg-[#1C1917]/90 hover:bg-[#1C1917] text-white font-medium text-xs py-2 rounded transition shadow-md flex items-center justify-center gap-1.5 backdrop-blur-xs"
             >
-              <Eye className="w-4 h-4" />
-              <span>ดูรายละเอียด & เลือกไซส์</span>
+              <Eye className="w-3.5 h-3.5" />
+              <span>ดูรายละเอียด</span>
             </button>
           </div>
         </div>
 
         {/* Product Details Info */}
-        <div className="p-4 space-y-3 flex-1 flex flex-col justify-between text-slate-900">
+        <div className="p-4 space-y-2.5 flex-1 flex flex-col justify-between bg-white">
           <div>
             {/* Category / Rating */}
-            <div className="flex items-center justify-between text-[11px] text-amber-800 font-medium mb-1">
-              <span className="uppercase font-semibold tracking-wider">
+            <div className="flex items-center justify-between text-[11px] text-[#B89352] font-serif mb-1">
+              <span className="uppercase tracking-widest text-[10px] font-medium">
                 {product.category === 'abaya' && 'ชุดอาบายะห์ดูไบ'}
                 {product.category === 'kaftan' && 'ชุดคัฟทาน'}
                 {product.category === 'perfume' && 'น้ำหอมดูไบ'}
                 {product.category === 'incense' && 'เครื่องหอมดูไบ'}
                 {product.category === 'combo' && 'เซ็ตของขวัญพิเศษ'}
-                {product.category === 'other' && 'สินค้าอื่นๆ'}
+                {product.category === 'other' && 'สินค้าทั่วไป'}
               </span>
               <div className="flex items-center gap-1 text-amber-600">
-                <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                <span className="font-bold">{product.rating}</span>
-                <span className="text-slate-500 text-[10px]">({product.reviewsCount})</span>
+                <Star className="w-3 h-3 fill-[#B89352] text-[#B89352]" />
+                <span className="font-semibold text-stone-800 text-[11px]">{product.rating}</span>
               </div>
             </div>
 
-            {/* Title */}
+            {/* Product Title */}
             <h3
               onClick={() => setIsModalOpen(true)}
-              className="text-sm font-serif font-bold text-slate-900 group-hover:text-amber-800 transition line-clamp-2 cursor-pointer leading-snug"
+              className="text-sm font-serif font-bold text-[#1C1917] group-hover:text-[#B89352] transition-colors line-clamp-2 cursor-pointer leading-snug"
             >
               {product.title}
             </h3>
 
             {/* Arabic Title */}
             {product.arabicTitle && (
-              <p className="text-[11px] font-serif text-amber-700/80 dir-rtl mt-0.5 font-medium">
+              <p className="text-[11px] font-serif text-[#B89352] dir-rtl mt-0.5 font-normal">
                 {product.arabicTitle}
               </p>
             )}
 
-            {/* Available Sizes / Variants Pill */}
-            <div className="mt-2.5 flex items-center gap-1 flex-wrap">
-              <span className="text-[10px] text-slate-500 font-medium mr-1 flex items-center gap-0.5">
-                <Layers className="w-3 h-3 text-amber-600" />
-                <span>ไซส์:</span>
-              </span>
+            {/* Size Variants Display */}
+            <div className="mt-2 flex items-center gap-1 flex-wrap">
               {product.variants.map((v) => (
                 <span
                   key={v.id}
-                  className={`text-[10px] px-2 py-0.5 rounded border ${
+                  className={`text-[10px] px-1.5 py-0.5 rounded-xs border ${
                     v.stockQuantity > 0
-                      ? 'bg-amber-50 border-amber-200 text-slate-800 font-medium'
-                      : 'bg-slate-100 border-slate-200 text-slate-400 line-through'
+                      ? 'bg-[#FAF9F6] border-[#E8E3DA] text-stone-700'
+                      : 'bg-stone-50 border-stone-200 text-stone-400 line-through'
                   }`}
                   title={`${v.name} (สต๊อก ${v.stockQuantity})`}
                 >
-                  {v.name.split(' ')[0]} {v.name.includes('Size') ? v.name.split(' ')[1] : ''}
+                  {v.name.replace('Size ', 'S')}
                 </span>
               ))}
             </div>
           </div>
 
-          {/* Pricing & Add Action */}
-          <div className="pt-3 border-t border-amber-200/60 flex items-center justify-between">
+          {/* Pricing & Order Action */}
+          <div className="pt-2.5 border-t border-[#F5F3EF] flex items-center justify-between">
             <div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-base sm:text-lg font-serif font-extrabold text-amber-700">
+              <div className="flex items-baseline gap-1">
+                <span className="text-base font-serif font-bold text-[#1C1917]">
                   {formatPrice(minPrice)}
                 </span>
                 {maxPrice > minPrice && (
-                  <span className="text-xs text-slate-500 font-serif font-medium">
+                  <span className="text-xs text-stone-500 font-serif">
                     - {formatPrice(maxPrice)}
                   </span>
                 )}
@@ -184,10 +179,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-gradient-to-r from-amber-500 via-gold-400 to-amber-600 text-slate-950 font-extrabold text-xs px-3.5 py-1.5 rounded-lg transition shadow-sm hover:shadow-md flex items-center gap-1.5 border border-amber-300"
+              className="bg-[#1C1917] hover:bg-[#B89352] text-white font-medium text-xs px-3 py-1.5 rounded transition flex items-center gap-1 cursor-pointer"
             >
               <ShoppingBag className="w-3.5 h-3.5" />
-              <span>เลือกไซส์</span>
+              <span>สั่งซื้อ</span>
             </button>
           </div>
 

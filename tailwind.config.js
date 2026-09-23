@@ -9,30 +9,26 @@ module.exports = {
     extend: {
       colors: {
         gold: {
-          50: '#FFFDF0',
-          100: '#FEF9C3',
-          200: '#FEF08A',
-          300: '#FDE047',
-          400: '#FACC15',
-          500: '#EAB308',
-          600: '#CA8A04',
-          700: '#A16207',
-          800: '#854D0E',
-          900: '#713F12',
-          DEFAULT: '#D4AF37',
+          50: '#FAF6EF',
+          100: '#F5EDDF',
+          200: '#E9DABF',
+          300: '#DCC59F',
+          400: '#CFA76F',
+          500: '#B89352', // Bespoke Antique Gold
+          600: '#9B783E',
+          700: '#7E5F2E',
+          800: '#614820',
+          900: '#463214',
+          DEFAULT: '#B89352',
         },
-        sky: {
-          50: '#F0F9FF',
-          100: '#E0F2FE',
-          200: '#BAE6FD',
-          300: '#7DD3FC',
-          400: '#38BDF8',
-          500: '#0EA5E9',
-          600: '#0284C7',
-          700: '#0369A1',
-          800: '#075985',
-          900: '#0C4A6E',
-          950: '#082F49',
+        luxury: {
+          bg: '#FAF9F6',      // Fine Warm Alabaster / Pearl White
+          card: '#FFFFFF',    // Crisp Pure White Card
+          dark: '#1C1917',    // Obsidian Charcoal (Refined Black)
+          gold: '#B89352',    // Bespoke Metallic Warm Gold
+          'gold-light': '#F4ECE1', // Soft Champagne Tint
+          border: '#E8E3DA',  // Subtle Warm Hairline Border
+          subtext: '#666666', // Muted Natural Body Text
         },
         slate: {
           50: '#F8FAFC',
@@ -48,13 +44,13 @@ module.exports = {
           950: '#020617',
         },
         dubai: {
-          black: '#FFFFFF',     // Clean White Container
-          dark: '#FAF8F5',      // Soft Pearl White Section Background
-          card: '#FFFFFF',      // Pure White Premium Card Container
-          sky: '#0284C7',       // Sky Blue Accent
-          gold: '#D4AF37',      // Regal Gold
-          sand: '#FDFBF7',      // Warm Ivory White
-          cream: '#F4EFE6',     // Premium Champagne Cream
+          black: '#FFFFFF',
+          dark: '#FAF9F6',
+          card: '#FFFFFF',
+          sky: '#B89352',
+          gold: '#B89352',
+          sand: '#FDFBF7',
+          cream: '#F4ECE1',
         }
       },
       fontFamily: {
@@ -62,10 +58,9 @@ module.exports = {
         sans: ['Prompt', 'sans-serif'],
       },
       boxShadow: {
-        'gold-glow': '0 0 25px rgba(212, 175, 55, 0.35)',
-        'gold-strong': '0 0 45px rgba(234, 179, 8, 0.45)',
-        'sky-glow': '0 0 25px rgba(2, 132, 199, 0.35)',
-        'tritone-glow': '0 4px 20px rgba(212, 175, 55, 0.25)',
+        'lux-soft': '0 4px 20px -2px rgba(28, 25, 23, 0.05)',
+        'lux-card': '0 10px 30px -5px rgba(184, 147, 82, 0.08)',
+        'lux-glow': '0 0 25px rgba(184, 147, 82, 0.2)',
       }
     },
   },
