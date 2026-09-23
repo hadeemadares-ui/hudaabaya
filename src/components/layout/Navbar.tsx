@@ -74,31 +74,31 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#FAF9F6]/98 backdrop-blur-md border-b border-stone-300 text-[#0A0A0A] shadow-xs transition-all">
+    <header className="sticky top-0 z-40 bg-white backdrop-blur-md border-b border-stone-200 text-[#0A0A0A] shadow-xs transition-all">
       {/* Top Announcement Bar */}
-      <div className="bg-[#0A0A0A] text-white text-xs py-2 px-4 tracking-wider flex items-center justify-between font-normal">
-        <div className="hidden md:flex items-center gap-2 text-[11px] text-stone-200">
-          <Globe className="w-3.5 h-3.5 text-amber-400" />
+      <div className="bg-white text-[#0A0A0A] border-b border-stone-200 text-xs py-2 px-4 tracking-wider flex items-center justify-between font-normal">
+        <div className="hidden md:flex items-center gap-2 text-[11px] text-stone-900 font-semibold">
+          <Globe className="w-3.5 h-3.5 text-amber-700" />
           <span>นำเข้าชุดอาบายะห์และน้ำหอมแท้จากดูไบ UAE | 100% Authentic Import</span>
         </div>
 
         <div className="flex items-center justify-center gap-2 mx-auto md:mx-0 text-[11px] sm:text-xs">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          <span className="font-bold tracking-wide text-white">{storeSettings.topAnnouncement}</span>
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+          <span className="font-extrabold tracking-wide text-[#0A0A0A]">{storeSettings.topAnnouncement}</span>
+          <Sparkles className="w-3.5 h-3.5 text-amber-700" />
         </div>
 
         {/* Currency & Sound Switcher */}
-        <div className="hidden md:flex items-center gap-2 border-l border-stone-800 pl-3">
-          <span className="text-[10px] text-stone-300 font-serif uppercase tracking-widest font-semibold">Currency:</span>
+        <div className="hidden md:flex items-center gap-2 border-l border-stone-300 pl-3">
+          <span className="text-[10px] text-stone-900 font-serif uppercase tracking-widest font-bold">Currency:</span>
           {currencies.map((c) => (
             <button
               key={c.id}
               onClick={() => setCurrency(c.id)}
-              className={`text-[10px] font-mono px-2 py-0.5 transition rounded-sm ${
+              className={`text-[10px] font-mono px-2 py-0.5 transition rounded-sm border ${
                 currency === c.id
-                  ? 'bg-amber-500 text-[#0A0A0A] font-extrabold'
-                  : 'text-stone-300 hover:text-white font-semibold'
+                  ? 'bg-[#0A0A0A] text-white font-extrabold border-[#0A0A0A]'
+                  : 'bg-white text-stone-900 hover:text-black border-stone-300 font-bold'
               }`}
             >
               {c.label}
@@ -110,12 +110,12 @@ export const Navbar: React.FC = () => {
             onClick={toggleSound}
             className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full transition border cursor-pointer ${
               isSoundMuted
-                ? 'bg-stone-800 text-stone-400 border-stone-700'
-                : 'bg-amber-500 text-stone-950 border-amber-300 font-extrabold shadow-xs'
+                ? 'bg-stone-100 text-stone-600 border-stone-300'
+                : 'bg-amber-100 text-amber-950 border-amber-400 font-extrabold shadow-xs'
             }`}
             title={isSoundMuted ? 'เปิดเสียงเอฟเฟกต์การคลิกและพิมพ์ (Unmute UI Sound)' : 'เปิดใช้งานเสียงเอฟเฟกต์แล้ว (Mute Sound)'}
           >
-            {isSoundMuted ? <VolumeX className="w-3 h-3 text-stone-400" /> : <Volume2 className="w-3 h-3 text-stone-950" />}
+            {isSoundMuted ? <VolumeX className="w-3 h-3 text-stone-600" /> : <Volume2 className="w-3 h-3 text-amber-800" />}
             <span>{isSoundMuted ? 'ปิดเสียง' : 'มีเสียงพิมพ์/คลิก'}</span>
           </button>
         </div>
