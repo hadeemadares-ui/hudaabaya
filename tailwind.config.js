@@ -48,13 +48,13 @@ module.exports = {
           950: '#020617',
         },
         dubai: {
-          black: '#0F172A',     // Soothing Slate Gray / Deep Blue Background
-          dark: '#1E293B',      // Elegant Slate Gray Container
-          card: '#1E293B',      // Slate Gray Card Background
-          sky: '#38BDF8',       // Vibrant Sky Blue
+          black: '#FFFFFF',     // Clean White Container
+          dark: '#FAF8F5',      // Soft Pearl White Section Background
+          card: '#FFFFFF',      // Pure White Premium Card Container
+          sky: '#0284C7',       // Sky Blue Accent
           gold: '#D4AF37',      // Regal Gold
-          sand: '#F8FAFC',
-          cream: '#F1F5F9',
+          sand: '#FDFBF7',      // Warm Ivory White
+          cream: '#F4EFE6',     // Premium Champagne Cream
         }
       },
       fontFamily: {
@@ -62,10 +62,10 @@ module.exports = {
         sans: ['Prompt', 'sans-serif'],
       },
       boxShadow: {
-        'gold-glow': '0 0 25px rgba(212, 175, 55, 0.4)',
-        'gold-strong': '0 0 45px rgba(234, 179, 8, 0.6)',
-        'sky-glow': '0 0 25px rgba(56, 189, 248, 0.45)',
-        'tritone-glow': '0 0 30px rgba(56, 189, 248, 0.25), 0 0 15px rgba(234, 179, 8, 0.25)',
+        'gold-glow': '0 0 25px rgba(212, 175, 55, 0.35)',
+        'gold-strong': '0 0 45px rgba(234, 179, 8, 0.45)',
+        'sky-glow': '0 0 25px rgba(2, 132, 199, 0.35)',
+        'tritone-glow': '0 4px 20px rgba(212, 175, 55, 0.25)',
       }
     },
   },

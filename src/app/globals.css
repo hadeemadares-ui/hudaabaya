@@ -5,8 +5,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #0F172A;
-  --foreground: #F8FAFC;
+  --background: #FAF8F5;
+  --foreground: #0F172A;
 }
 
 body {
@@ -16,23 +16,23 @@ body {
   overflow-x: hidden;
 }
 
-/* Custom Scrollbar for Sky Blue, Slate Gray & Regal Gold Theme */
+/* Custom Scrollbar for Luxury White & Gold Theme */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #020617;
+  background: #FAF8F5;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #38BDF8, #EAB308);
+  background: linear-gradient(to bottom, #D4AF37, #CA8A04);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #7DD3FC, #FACC15);
+  background: linear-gradient(to bottom, #FACC15, #EAB308);
 }
 
 .no-scrollbar::-webkit-scrollbar {

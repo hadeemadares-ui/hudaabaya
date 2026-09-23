@@ -72,30 +72,30 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-xl border-b border-amber-400/30 text-white shadow-tritone-glow transition-all">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-amber-300/60 text-slate-900 shadow-md transition-all">
       {/* Top Announcement Banner */}
-      <div className="bg-gradient-to-r from-amber-500 via-sky-400 to-amber-500 text-slate-950 text-xs font-extrabold py-1.5 px-3 text-center tracking-wide flex items-center justify-between shadow-sm">
+      <div className="bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 text-white text-xs font-bold py-1.5 px-3 text-center tracking-wide flex items-center justify-between shadow-sm">
         <div className="hidden md:flex items-center gap-1.5 text-[11px] shrink-0">
           <Globe className="w-3.5 h-3.5 shrink-0" />
           <span>สั่งซื้อตรงจากดูไบ UAE — สินค้าแท้ 100%</span>
         </div>
 
         <div className="flex items-center justify-center gap-2 mx-auto md:mx-0 text-[11px] sm:text-xs">
-          <Sparkles className="w-3.5 h-3.5 animate-pulse shrink-0 text-slate-950" />
+          <Sparkles className="w-3.5 h-3.5 animate-pulse shrink-0 text-amber-200" />
           <span className="font-bold">{storeSettings.topAnnouncement}</span>
-          <Sparkles className="w-3.5 h-3.5 animate-pulse shrink-0 text-slate-950" />
+          <Sparkles className="w-3.5 h-3.5 animate-pulse shrink-0 text-amber-200" />
         </div>
 
         {/* Currency Switcher */}
-        <div className="hidden md:flex items-center gap-1 bg-slate-950/40 px-2 py-0.5 rounded-full border border-amber-300/40 shrink-0">
+        <div className="hidden md:flex items-center gap-1 bg-amber-950/20 px-2 py-0.5 rounded-full border border-amber-300/40 shrink-0">
           {currencies.map((c) => (
             <button
               key={c.id}
               onClick={() => setCurrency(c.id)}
               className={`text-[10px] font-mono px-1.5 py-0.5 rounded transition ${
                 currency === c.id
-                  ? 'bg-amber-400 text-slate-950 font-extrabold shadow'
-                  : 'text-slate-900 hover:text-white font-semibold'
+                  ? 'bg-white text-amber-900 font-extrabold shadow'
+                  : 'text-white/90 hover:text-white font-semibold'
               }`}
             >
               {c.label}
@@ -107,10 +107,10 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 sm:h-24 md:h-28 gap-1.5 sm:gap-3">
           
-          {/* Main Logo & Store Name Display (Ensuring full text HUDA ABAYA DUBAI is visible on all screens) */}
+          {/* Main Logo & Store Name Display */}
           <div className="flex items-center gap-2 sm:gap-3.5 cursor-pointer group shrink-0" onClick={() => handleCategoryClick('all')}>
             <div className="flex items-center gap-2 sm:gap-3.5">
-              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full p-0.5 sm:p-1 bg-gradient-to-tr from-amber-400 via-sky-300 to-amber-200 shadow-gold-glow flex items-center justify-center shrink-0 group-hover:scale-105 transition duration-300">
+              <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full p-0.5 sm:p-1 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-500 shadow-md flex items-center justify-center shrink-0 group-hover:scale-105 transition duration-300">
                 <img
                   src={storeSettings.logoImageUrl || DEFAULT_LOGO_BASE64}
                   onError={(e) => {
@@ -118,14 +118,14 @@ export const Navbar: React.FC = () => {
                     target.src = DEFAULT_LOGO_BASE64;
                   }}
                   alt={storeSettings.storeName}
-                  className="w-full h-full rounded-full object-contain bg-slate-900 p-0.5 border border-amber-400/50 sm:border-2 shadow-inner"
+                  className="w-full h-full rounded-full object-contain bg-white p-0.5 border border-amber-400/50 sm:border-2 shadow-inner"
                 />
               </div>
               <div className="flex flex-col justify-center">
-                <h1 className="font-serif text-xs xs:text-sm sm:text-lg md:text-2xl lg:text-3xl font-extrabold tracking-normal sm:tracking-wider bg-gradient-to-r from-amber-200 via-sky-300 to-amber-300 bg-clip-text text-transparent drop-shadow-md whitespace-nowrap leading-tight">
+                <h1 className="font-serif text-xs xs:text-sm sm:text-lg md:text-2xl lg:text-3xl font-extrabold tracking-normal sm:tracking-wider bg-gradient-to-r from-amber-800 via-amber-600 to-amber-700 bg-clip-text text-transparent drop-shadow-sm whitespace-nowrap leading-tight">
                   {storeSettings.storeName}
                 </h1>
-                <p className="text-[8px] xs:text-[10px] sm:text-xs text-amber-300/90 tracking-wider uppercase font-sans font-semibold mt-0.5 whitespace-nowrap">
+                <p className="text-[8px] xs:text-[10px] sm:text-xs text-amber-800 tracking-wider uppercase font-sans font-semibold mt-0.5 whitespace-nowrap">
                   {storeSettings.storeTagline}
                 </p>
               </div>
@@ -140,13 +140,13 @@ export const Navbar: React.FC = () => {
                 placeholder="ค้นหาชุดอาบายะห์, เดรส, น้ำหอมดูไบ..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-800/90 border border-slate-700 focus:border-sky-400 focus:ring-1 focus:ring-amber-400 rounded-full py-2 pl-10 pr-12 text-xs text-slate-100 placeholder-slate-400 transition backdrop-blur-md"
+                className="w-full bg-slate-50 border border-amber-300/80 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-full py-2 pl-10 pr-12 text-xs text-slate-900 placeholder-slate-400 transition"
               />
-              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-sky-400" />
+              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-amber-600" />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-2.5 text-xs text-amber-400 hover:text-amber-300 font-bold"
+                  className="absolute right-3 top-2.5 text-xs text-amber-700 hover:text-amber-900 font-bold"
                 >
                   ล้าง
                 </button>
@@ -166,39 +166,39 @@ export const Navbar: React.FC = () => {
               href={storeSettings.mapUrl || defaultMapUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-1 text-xs text-sky-300 hover:text-amber-300 transition bg-slate-800 px-2.5 sm:px-3 py-1.5 rounded-full border border-slate-700 hover:border-amber-400/60 shadow-sm"
+              className="hidden sm:flex items-center gap-1 text-xs text-amber-800 hover:text-amber-950 transition bg-amber-50/80 hover:bg-amber-100 px-2.5 sm:px-3 py-1.5 rounded-full border border-amber-300 shadow-sm"
               title="เปิดแผนที่นำทาง Google Maps มายังหน้าร้าน HUDA ABAYA DUBAI"
             >
-              <Compass className="w-4 h-4 text-amber-400" />
+              <Compass className="w-4 h-4 text-amber-600" />
               <span className="hidden xl:inline font-bold">แผนที่ GPS</span>
             </a>
 
             {/* Install App / QR Code Button */}
             <button
               onClick={triggerQRModal}
-              className="flex items-center gap-1 text-xs text-sky-300 hover:text-amber-300 transition bg-slate-800 px-2 sm:px-3 py-1.5 rounded-full border border-slate-700 hover:border-amber-400/60 shadow-sm"
+              className="flex items-center gap-1 text-xs text-amber-800 hover:text-amber-950 transition bg-amber-50/80 hover:bg-amber-100 px-2 sm:px-3 py-1.5 rounded-full border border-amber-300 shadow-sm"
               title="ติดตั้งแอปพลิเคชันหรือสแกน QR Code เพื่อดาวน์โหลดลงมือถือ"
             >
-              <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+              <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
               <span className="hidden xl:inline font-bold">ติดตั้งแอป</span>
             </button>
 
             {/* AI Stylist Button */}
             <button
               onClick={() => setIsAIConciergeOpen(true)}
-              className="flex items-center gap-1 text-xs text-sky-200 hover:text-amber-200 transition bg-gradient-to-r from-slate-800 to-slate-900 px-2 sm:px-3 py-1.5 rounded-full border border-sky-400/40 hover:border-amber-400 shadow-sm animate-pulse"
+              className="flex items-center gap-1 text-xs text-amber-900 hover:text-amber-950 transition bg-gradient-to-r from-amber-100 via-amber-200 to-amber-100 px-2 sm:px-3 py-1.5 rounded-full border border-amber-400 shadow-sm font-bold"
               title="ผู้ช่วยสไตลิสต์ดูไบ AI ช่วยเลือกไซส์"
             >
-              <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400" />
+              <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
               <span className="hidden sm:inline font-bold">AI Stylist</span>
             </button>
 
             {/* Order Tracking Button */}
             <button
               onClick={() => setIsOrderTrackingOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 text-xs text-slate-300 hover:text-amber-300 transition bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700 hover:border-amber-400/60"
+              className="hidden sm:flex items-center gap-1.5 text-xs text-slate-800 hover:text-amber-800 transition bg-slate-100/90 hover:bg-slate-200 px-3 py-1.5 rounded-full border border-slate-300"
             >
-              <PackageSearch className="w-4 h-4 text-amber-400" />
+              <PackageSearch className="w-4 h-4 text-amber-600" />
               <span>ติดตามพัสดุ</span>
             </button>
 
@@ -207,26 +207,24 @@ export const Navbar: React.FC = () => {
               onClick={handleAdminBtnClick}
               className={`flex items-center gap-1 text-xs px-2 sm:px-3 py-1.5 rounded-full transition border ${
                 isAdminMode
-                  ? 'bg-amber-400 text-slate-950 font-extrabold border-amber-300 shadow-gold-glow'
-                  : 'bg-slate-800 text-amber-300/90 border-slate-700 hover:border-amber-400/60'
+                  ? 'bg-amber-500 text-slate-950 font-extrabold border-amber-600 shadow'
+                  : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
               }`}
               title="เข้าสู่ระบบผู้ดูแลร้านค้า (ต้องใส่รหัสผ่าน)"
             >
-              {isAdminAuthenticated ? <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />}
+              {isAdminAuthenticated ? <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />}
               <span className="hidden sm:inline">{isAdminMode ? 'โหมดหลังบ้าน' : 'หลังบ้าน'}</span>
             </button>
-
-
 
             {/* Cart Button with Count Badge */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative p-2 sm:p-2.5 text-amber-400 hover:text-amber-300 transition bg-slate-800 rounded-full border border-slate-700 hover:border-sky-400 shadow-sm"
+              className="relative p-2 sm:p-2.5 text-amber-700 hover:text-amber-900 transition bg-amber-50 hover:bg-amber-100 rounded-full border border-amber-300 shadow-sm"
               aria-label="ตะกร้าสินค้า"
             >
-              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
               {totalCartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-sky-500 to-blue-600 text-white text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center shadow-md animate-bounce">
+                <span className="absolute -top-1 -right-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center shadow-md animate-bounce">
                   {totalCartCount}
                 </span>
               )}
@@ -242,33 +240,31 @@ export const Navbar: React.FC = () => {
               placeholder="ค้นหาชุดอาบายะห์, เดรส, น้ำหอมดูไบ..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-full py-1.5 pl-9 pr-4 text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:border-sky-400"
+              className="w-full bg-slate-50 border border-amber-300 rounded-full py-1.5 pl-9 pr-4 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500"
             />
-            <Search className="absolute left-3 top-2 w-3.5 h-3.5 text-sky-400" />
+            <Search className="absolute left-3 top-2 w-3.5 h-3.5 text-amber-600" />
           </div>
-
-
 
           <div className="flex items-center justify-between text-[11px]">
             <a
               href={storeSettings.mapUrl || defaultMapUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="sm:hidden text-sky-300 flex items-center gap-1 underline font-medium"
+              className="sm:hidden text-amber-800 flex items-center gap-1 underline font-medium"
             >
-              <Compass className="w-3.5 h-3.5 text-amber-400" />
+              <Compass className="w-3.5 h-3.5 text-amber-600" />
               <span>แผนที่นำทาง GPS</span>
             </a>
 
             <div className="flex items-center gap-1.5 ml-auto">
-              <span className="text-amber-300 font-bold">สกุลเงิน:</span>
+              <span className="text-amber-800 font-bold">สกุลเงิน:</span>
               <div className="flex gap-1">
                 {currencies.map((c) => (
                   <button
                     key={c.id}
                     onClick={() => setCurrency(c.id)}
                     className={`px-2 py-0.5 rounded text-[10px] font-mono ${
-                      currency === c.id ? 'bg-amber-400 text-slate-950 font-bold' : 'bg-slate-800 text-slate-300'
+                      currency === c.id ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-slate-100 text-slate-700'
                     }`}
                   >
                     {c.label}
@@ -280,15 +276,15 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* Category Navigation Bar */}
-        <nav className="flex items-center gap-2 overflow-x-auto py-2 sm:py-2.5 no-scrollbar border-t border-slate-800">
+        <nav className="flex items-center gap-2 overflow-x-auto py-2 sm:py-2.5 no-scrollbar border-t border-amber-200/60">
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => handleCategoryClick(cat.id)}
               className={`px-3.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
                 selectedCategory === cat.id
-                  ? 'bg-gradient-to-r from-sky-400 via-cyan-400 to-sky-500 text-slate-950 font-extrabold border border-amber-300/60 shadow-sky-glow scale-105'
-                  : 'bg-slate-800/80 text-slate-300 hover:text-sky-300 border border-slate-700/70 hover:border-sky-400/50'
+                  ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 text-slate-950 font-extrabold border border-amber-300 shadow-sm scale-105'
+                  : 'bg-white text-slate-700 hover:text-amber-800 border border-amber-200/80 hover:border-amber-400'
               }`}
             >
               {cat.label}

@@ -66,46 +66,46 @@ export const HeroBanner: React.FC = () => {
   const realCount = products.filter((p) => p.category === active.category).length;
 
   return (
-    <div className="relative bg-slate-900 overflow-hidden border-b border-amber-400/25">
+    <div className="relative bg-gradient-to-br from-[#FAF8F5] via-[#F4EFE6] to-[#FAF8F5] text-slate-900 overflow-hidden border-b border-amber-300/40">
       
-      {/* Soft Tri-tone Background Glow Elements */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-10 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+      {/* Soft Glow Elements */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-200/30 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-10 w-96 h-96 bg-amber-300/20 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           
           {/* Text Content */}
           <div className="lg:col-span-7 space-y-6 z-10">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-800/90 border border-amber-400/40 text-amber-300 text-xs font-semibold tracking-wider uppercase shadow-gold-glow">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 border border-amber-300 text-amber-900 text-xs font-semibold tracking-wider uppercase shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
               <span>{active.badge}</span>
               {realCount > 0 && (
-                <span className="ml-1 bg-amber-400 text-slate-950 font-bold px-2 py-0.5 rounded-full text-[10px]">
+                <span className="ml-1 bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded-full text-[10px]">
                   พร้อมส่ง {realCount} รายการ
                 </span>
               )}
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-extrabold text-white tracking-normal sm:tracking-tight leading-snug sm:leading-tight break-words">
-                <span className="block bg-gradient-to-r from-amber-200 via-sky-300 to-amber-400 bg-clip-text text-transparent">
+              <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-extrabold text-slate-900 tracking-normal sm:tracking-tight leading-snug sm:leading-tight break-words">
+                <span className="block bg-gradient-to-r from-amber-800 via-amber-600 to-amber-700 bg-clip-text text-transparent">
                   {active.title}
                 </span>
               </h2>
-              <p className="text-lg sm:text-xl font-serif text-sky-300 font-medium">
+              <p className="text-lg sm:text-xl font-serif text-amber-800 font-bold">
                 {active.subtitle}
               </p>
             </div>
 
-            <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-700 max-w-2xl leading-relaxed">
               {active.description}
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <button
                 onClick={() => handleSelectCategory(active.category)}
-                className="px-6 py-3.5 rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-sky-500 text-slate-950 font-extrabold text-sm tracking-wider uppercase hover:shadow-gold-strong transition transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
+                className="px-6 py-3.5 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 text-slate-950 font-extrabold text-sm tracking-wider uppercase hover:shadow-lg transition transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer border border-amber-300"
               >
                 <span>เลือกซื้อสินค้าคอลเลกชันนี้</span>
                 <ArrowRight className="w-4 h-4 text-slate-950" />
@@ -119,7 +119,7 @@ export const HeroBanner: React.FC = () => {
                   key={idx}
                   onClick={() => setCurrentSlide(idx)}
                   className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                    currentSlide === idx ? 'w-8 bg-amber-400' : 'w-2 bg-slate-700'
+                    currentSlide === idx ? 'w-8 bg-amber-500' : 'w-2 bg-amber-200'
                   }`}
                   aria-label={`Slide ${idx + 1}`}
                 />
@@ -129,21 +129,21 @@ export const HeroBanner: React.FC = () => {
 
           {/* Image Feature Showcase */}
           <div className="lg:col-span-5 relative">
-            <div className="relative mx-auto max-w-md lg:max-w-none rounded-2xl overflow-hidden border-2 border-amber-400/40 shadow-2xl shadow-sky-950/50 group">
+            <div className="relative mx-auto max-w-md lg:max-w-none rounded-2xl overflow-hidden border-2 border-amber-300/80 shadow-xl group">
               <img
                 src={getSlideImage(active.category, active.image)}
                 alt={active.title}
                 className="w-full h-[380px] sm:h-[450px] object-cover object-center transform transition duration-700 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-60" />
               
-              <div className="absolute bottom-4 left-4 right-4 p-4 rounded-xl bg-slate-900/90 backdrop-blur-md border border-amber-400/30 flex items-center justify-between">
+              <div className="absolute bottom-4 left-4 right-4 p-4 rounded-xl bg-white/95 backdrop-blur-md border border-amber-300/80 flex items-center justify-between shadow-lg">
                 <div>
-                  <p className="text-xs text-amber-300/80 font-serif">HUDA ABAYA DUBAI</p>
-                  <p className="text-sm font-semibold text-white">รับประกันผ้าและกลิ่นตรงปก 100%</p>
+                  <p className="text-xs text-amber-800 font-serif font-bold">HUDA ABAYA DUBAI</p>
+                  <p className="text-sm font-semibold text-slate-900">รับประกันผ้าและกลิ่นตรงปก 100%</p>
                 </div>
-                <div className="flex items-center gap-1 bg-amber-400/20 px-2.5 py-1 rounded-full border border-amber-400/40 text-amber-300 text-xs font-bold">
-                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <div className="flex items-center gap-1 bg-amber-100 px-2.5 py-1 rounded-full border border-amber-300 text-amber-900 text-xs font-bold">
+                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                   <span>4.9 / 5.0</span>
                 </div>
               </div>

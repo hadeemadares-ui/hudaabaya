@@ -38,10 +38,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   return (
     <>
-      <div className="group bg-slate-800/90 backdrop-blur-md border border-slate-700/80 rounded-2xl overflow-hidden hover:border-amber-400/70 shadow-md hover:shadow-sky-500/20 transition-all duration-500 flex flex-col justify-between hover:-translate-y-1">
+      <div className="group bg-white border border-amber-300/60 rounded-2xl overflow-hidden hover:border-amber-400 shadow-md hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-500 flex flex-col justify-between hover:-translate-y-1">
         
         {/* Image Container */}
-        <div className="relative aspect-[4/5] overflow-hidden bg-slate-950 cursor-pointer" onClick={() => setIsModalOpen(true)}>
+        <div className="relative aspect-[4/5] overflow-hidden bg-amber-50/50 cursor-pointer" onClick={() => setIsModalOpen(true)}>
           <img
             src={imgSrc}
             alt={product.title}
@@ -50,16 +50,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 setImgSrc(defaultImg);
               }
             }}
-            className="w-full h-full object-cover object-center transform transition duration-700 group-hover:scale-108"
+            className="w-full h-full object-cover object-center transform transition duration-700 group-hover:scale-105"
           />
           
-          {/* Dark Overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-black/20 opacity-70 group-hover:opacity-40 transition" />
+          {/* Overlay gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-40 group-hover:opacity-20 transition" />
 
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
             {product.onSale && product.discountPercent && (
-              <span className="bg-gradient-to-r from-sky-500 to-cyan-500 text-slate-950 text-[11px] font-extrabold px-2.5 py-1 rounded-full shadow-md">
+              <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[11px] font-extrabold px-2.5 py-1 rounded-full shadow-md">
                 ลด {product.discountPercent}%
               </span>
             )}
@@ -73,11 +73,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {/* Stock & 3D Badges */}
           <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1.5">
             {totalStock > 0 ? (
-              <span className="bg-slate-900/90 backdrop-blur-md border border-amber-400/40 text-amber-300 text-[10px] font-medium px-2 py-0.5 rounded-full">
+              <span className="bg-white/90 backdrop-blur-md border border-amber-300 text-amber-900 text-[10px] font-semibold px-2 py-0.5 rounded-full shadow-sm">
                 พร้อมส่ง (สต๊อก {totalStock})
               </span>
             ) : (
-              <span className="bg-red-950/90 border border-red-500 text-red-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-red-50 border border-red-300 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                 สินค้าหมด
               </span>
             )}
@@ -87,10 +87,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 e.stopPropagation();
                 setActive3DProduct(product);
               }}
-              className="bg-slate-900/90 hover:bg-amber-400 hover:text-slate-950 border border-sky-400/50 text-sky-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-md transition"
+              className="bg-white/90 hover:bg-amber-400 hover:text-slate-950 border border-amber-300 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm transition"
               title="ดูมุมมอง 3 มิติ 360°"
             >
-              <Box className="w-3 h-3 animate-spin text-amber-400" />
+              <Box className="w-3 h-3 animate-spin text-amber-600" />
               <span>3D Hologram</span>
             </button>
           </div>
@@ -102,7 +102,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 e.stopPropagation();
                 setIsModalOpen(true);
               }}
-              className="bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-full shadow-gold-glow flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition duration-300"
+              className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-full shadow-md flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition duration-300 border border-amber-300"
             >
               <Eye className="w-4 h-4" />
               <span>ดูรายละเอียด & เลือกไซส์</span>
@@ -111,11 +111,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </div>
 
         {/* Product Details Info */}
-        <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+        <div className="p-4 space-y-3 flex-1 flex flex-col justify-between text-slate-900">
           <div>
             {/* Category / Rating */}
-            <div className="flex items-center justify-between text-[11px] text-sky-400 mb-1">
-              <span className="uppercase font-medium tracking-wider">
+            <div className="flex items-center justify-between text-[11px] text-amber-800 font-medium mb-1">
+              <span className="uppercase font-semibold tracking-wider">
                 {product.category === 'abaya' && 'ชุดอาบายะห์ดูไบ'}
                 {product.category === 'kaftan' && 'ชุดคัฟทาน'}
                 {product.category === 'perfume' && 'น้ำหอมดูไบ'}
@@ -123,32 +123,32 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 {product.category === 'combo' && 'เซ็ตของขวัญพิเศษ'}
                 {product.category === 'other' && 'สินค้าอื่นๆ'}
               </span>
-              <div className="flex items-center gap-1 text-amber-400">
-                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                <span>{product.rating}</span>
-                <span className="text-slate-400 text-[10px]">({product.reviewsCount})</span>
+              <div className="flex items-center gap-1 text-amber-600">
+                <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                <span className="font-bold">{product.rating}</span>
+                <span className="text-slate-500 text-[10px]">({product.reviewsCount})</span>
               </div>
             </div>
 
             {/* Title */}
             <h3
               onClick={() => setIsModalOpen(true)}
-              className="text-sm font-serif font-semibold text-white group-hover:text-amber-300 transition line-clamp-2 cursor-pointer leading-snug"
+              className="text-sm font-serif font-bold text-slate-900 group-hover:text-amber-800 transition line-clamp-2 cursor-pointer leading-snug"
             >
               {product.title}
             </h3>
 
             {/* Arabic Title */}
             {product.arabicTitle && (
-              <p className="text-[11px] font-serif text-amber-300/70 dir-rtl mt-0.5">
+              <p className="text-[11px] font-serif text-amber-700/80 dir-rtl mt-0.5 font-medium">
                 {product.arabicTitle}
               </p>
             )}
 
             {/* Available Sizes / Variants Pill */}
             <div className="mt-2.5 flex items-center gap-1 flex-wrap">
-              <span className="text-[10px] text-slate-400 font-medium mr-1 flex items-center gap-0.5">
-                <Layers className="w-3 h-3 text-sky-400" />
+              <span className="text-[10px] text-slate-500 font-medium mr-1 flex items-center gap-0.5">
+                <Layers className="w-3 h-3 text-amber-600" />
                 <span>ไซส์:</span>
               </span>
               {product.variants.map((v) => (
@@ -156,8 +156,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   key={v.id}
                   className={`text-[10px] px-2 py-0.5 rounded border ${
                     v.stockQuantity > 0
-                      ? 'bg-slate-900/80 border-slate-700 text-slate-200'
-                      : 'bg-red-950/40 border-red-800/40 text-slate-500 line-through'
+                      ? 'bg-amber-50 border-amber-200 text-slate-800 font-medium'
+                      : 'bg-slate-100 border-slate-200 text-slate-400 line-through'
                   }`}
                   title={`${v.name} (สต๊อก ${v.stockQuantity})`}
                 >
@@ -168,14 +168,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
 
           {/* Pricing & Add Action */}
-          <div className="pt-3 border-t border-slate-700/70 flex items-center justify-between">
+          <div className="pt-3 border-t border-amber-200/60 flex items-center justify-between">
             <div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-base font-serif font-extrabold text-amber-300">
+                <span className="text-base sm:text-lg font-serif font-extrabold text-amber-700">
                   {formatPrice(minPrice)}
                 </span>
                 {maxPrice > minPrice && (
-                  <span className="text-xs text-slate-400 font-serif">
+                  <span className="text-xs text-slate-500 font-serif font-medium">
                     - {formatPrice(maxPrice)}
                   </span>
                 )}
@@ -184,7 +184,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-gradient-to-r from-sky-500 to-cyan-600 hover:from-amber-400 hover:to-amber-500 text-white hover:text-slate-950 border border-sky-400/40 text-xs px-3 py-1.5 rounded-lg transition font-bold flex items-center gap-1.5 shadow"
+              className="bg-gradient-to-r from-amber-500 via-gold-400 to-amber-600 text-slate-950 font-extrabold text-xs px-3.5 py-1.5 rounded-lg transition shadow-sm hover:shadow-md flex items-center gap-1.5 border border-amber-300"
             >
               <ShoppingBag className="w-3.5 h-3.5" />
               <span>เลือกไซส์</span>
