@@ -253,7 +253,7 @@ export const AdminPOSManager: React.FC = () => {
                 return (
                   <div
                     key={prod.id}
-                    className="bg-dubai-card border border-gold-400/30 rounded-xl p-3 space-y-2.5 flex flex-col justify-between hover:border-gold-400 transition shadow-md group"
+                    className="bg-stone-900 border-2 border-amber-400/40 rounded-2xl p-3 space-y-2.5 flex flex-col justify-between hover:border-amber-400 transition shadow-xl group"
                   >
                     {/* Clickable Image & Title Area for Fast Touch Selection */}
                     <div
@@ -267,19 +267,19 @@ export const AdminPOSManager: React.FC = () => {
                           alt={prod.title}
                           className="w-full h-28 object-cover rounded-lg border border-gold-400/20 group-hover:scale-105 transition duration-300"
                         />
-                        <span className="absolute top-1.5 right-1.5 bg-dubai-black/90 border border-gold-400/50 text-gold-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow">
-                          <Box className="w-3 h-3 text-gold-400" />
+                        <span className="absolute top-1.5 right-1.5 bg-stone-950/90 border border-amber-400/50 text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow">
+                          <Box className="w-3 h-3 text-amber-400" />
                           <span>รวม {totalProdStock} ชิ้น</span>
                         </span>
                         
-                        <div className="absolute inset-0 bg-gold-500/10 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                          <span className="bg-gold-500 text-dubai-black font-extrabold text-[11px] px-3 py-1 rounded-full shadow-gold-glow flex items-center gap-1">
+                        <div className="absolute inset-0 bg-amber-500/10 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                          <span className="bg-amber-400 text-stone-950 font-black text-[11px] px-3 py-1 rounded-full shadow-gold-glow flex items-center gap-1">
                             <Plus className="w-3.5 h-3.5" /> เลือกสินค้านี้
                           </span>
                         </div>
                       </div>
 
-                      <h4 className="font-serif font-bold text-white text-xs truncate group-hover:text-gold-300 transition">
+                      <h4 className="font-serif font-extrabold text-amber-300 text-xs sm:text-sm truncate group-hover:text-amber-200 transition">
                         {prod.title}
                       </h4>
                     </div>

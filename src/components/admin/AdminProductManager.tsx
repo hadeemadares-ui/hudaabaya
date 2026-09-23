@@ -433,34 +433,34 @@ export const AdminProductManager: React.FC = () => {
             return (
               <div
                 key={product.id}
-                className="bg-dubai-card border border-gold-400/30 rounded-xl p-4 space-y-3 shadow-lg hover:border-gold-400/60 transition"
+                className="bg-stone-900 border-2 border-amber-400/40 rounded-2xl p-4.5 space-y-4 shadow-2xl hover:border-amber-400 transition"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gold-400/20 pb-3">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-amber-400/20 pb-3">
+                  <div className="flex items-center gap-3.5">
                     <img
                       src={product.images[0]}
                       alt={product.title}
                       loading="lazy"
                       decoding="async"
-                      className="w-14 h-16 object-cover rounded-lg border border-gold-400/30 bg-dubai-black shrink-0"
+                      className="w-16 h-20 object-cover rounded-xl border-2 border-amber-400/60 bg-stone-950 shrink-0 shadow-md"
                     />
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase text-gold-400 bg-dubai-black px-2 py-0.5 rounded border border-gold-400/20">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-extrabold uppercase text-amber-300 bg-stone-950 px-2.5 py-0.5 rounded-lg border border-amber-400/40">
                           {product.category === 'perfume' ? 'น้ำหอมดูไบ' : product.category}
                         </span>
                         {product.colors && product.colors.length > 0 && (
-                          <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500/30 flex items-center gap-1">
-                            <Palette className="w-3 h-3 text-emerald-400" />
+                          <span className="text-xs font-extrabold text-emerald-300 bg-emerald-950 px-2.5 py-0.5 rounded-lg border border-emerald-500/40 flex items-center gap-1">
+                            <Palette className="w-3.5 h-3.5 text-emerald-400" />
                             {product.colors.join(', ')}
                           </span>
                         )}
                       </div>
-                      <h4 className="font-serif font-bold text-sm text-white mt-0.5">
+                      <h4 className="font-serif font-extrabold text-base sm:text-lg text-amber-300 mt-1">
                         {product.title}
                       </h4>
-                      <p className="text-xs text-gray-400">
-                        สต๊อกรวมทั้งหมด: <strong className="text-gold-300">{totalStock} ชิ้น</strong>
+                      <p className="text-xs text-stone-300 font-extrabold mt-0.5">
+                        สต๊อกรวมทั้งหมด: <strong className="text-emerald-400 text-sm font-black">{totalStock} ชิ้น</strong>
                       </p>
                     </div>
                   </div>
@@ -509,53 +509,59 @@ export const AdminProductManager: React.FC = () => {
 
                 {/* Size / Volume & Color Variants Quick Stock Adjuster */}
                 <div>
-                  <p className="text-xs font-serif font-bold text-gold-300 mb-2">
-                    {product.category === 'perfume' ? 'สต๊อกน้ำหอมแยกตามขนาด/ปริมาณ (ml):' : 'สต๊อกสินค้าและต้นทุนแยกตามไซส์ (Size, Cost & Stock):'}
+                  <p className="text-xs font-serif font-extrabold text-amber-300 mb-2.5 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>{product.category === 'perfume' ? 'สต๊อกน้ำหอมแยกตามขนาด/ปริมาณ (ml):' : 'สต๊อกสินค้าและต้นทุนแยกตามไซส์ (Size, Cost & Stock):'}</span>
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                    {product.variants.map((variant) => (
-                      <div
-                        key={variant.id}
-                        className={`p-2.5 rounded-xl border-2 flex flex-col justify-between text-xs shadow-md transition-all gap-1.5 ${
-                          variant.stockQuantity > 0
-                            ? 'bg-emerald-950/20 border-emerald-500 shadow-emerald-950/30'
-                            : 'bg-red-950/25 border-red-600 shadow-red-950/30'
-                        }`}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between gap-1 mb-1">
-                            <span className="font-extrabold text-white text-xs">{variant.name}</span>
-                            <span
-                              className={`px-1.5 py-0.5 text-[9px] font-extrabold rounded-full ${
-                                variant.stockQuantity > 0
-                                  ? 'bg-emerald-500 text-dubai-black'
-                                  : 'bg-red-600 text-white'
-                              }`}
-                            >
-                              {variant.stockQuantity > 0 ? `สต๊อก ${variant.stockQuantity} ชิ้น` : 'สต๊อกหมด (0)'}
-                            </span>
-                          </div>
-                          {variant.color && (
-                            <span className="text-[10px] text-amber-300 block font-serif mb-1">
-                              {variant.color}
-                            </span>
-                          )}
-                          <div className="flex flex-wrap items-center gap-1.5 text-[10px] mt-1">
-                            <span className="font-extrabold text-gold-300 bg-dubai-dark px-1.5 py-0.5 rounded border border-gold-400/20">
-                              ขาย ฿{variant.price.toLocaleString()}
-                            </span>
-                            
-                            <span className="font-extrabold text-amber-200 bg-amber-950/90 px-1.5 py-0.5 rounded-lg border-2 border-amber-500 shadow-sm">
-                              ต้นทุน ฿{(variant.costPrice ?? Math.round(variant.price * 0.5)).toLocaleString()}
-                            </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                    {product.variants.map((variant) => {
+                      const costVal = variant.costPrice ?? Math.round(variant.price * 0.5);
+                      const profitVal = variant.price - costVal;
 
-                            <span className="font-extrabold text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/40">
-                              กำไร +฿{(variant.price - (variant.costPrice ?? Math.round(variant.price * 0.5))).toLocaleString()}
-                            </span>
+                      return (
+                        <div
+                          key={variant.id}
+                          className={`p-3 rounded-2xl border-2 flex flex-col justify-between text-xs shadow-lg transition-all gap-2 ${
+                            variant.stockQuantity > 0
+                              ? 'bg-stone-950 border-emerald-500 shadow-emerald-950/40'
+                              : 'bg-stone-950 border-red-500 shadow-red-950/40'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                              <span className="font-extrabold text-white text-xs sm:text-sm">{variant.name}</span>
+                              <span
+                                className={`px-2 py-0.5 text-[10px] font-black rounded-full ${
+                                  variant.stockQuantity > 0
+                                    ? 'bg-emerald-500 text-stone-950'
+                                    : 'bg-red-600 text-white'
+                                }`}
+                              >
+                                {variant.stockQuantity > 0 ? `สต๊อก ${variant.stockQuantity} ชิ้น` : 'สต๊อกหมด (0)'}
+                              </span>
+                            </div>
+                            {variant.color && (
+                              <span className="text-xs text-amber-300 block font-bold mb-1.5">
+                                🎨 {variant.color}
+                              </span>
+                            )}
+                            <div className="flex flex-wrap items-center gap-1.5 text-xs mt-1.5">
+                              <span className="font-extrabold text-white bg-stone-900 px-2 py-1 rounded-lg border border-amber-400/40">
+                                ขาย ฿{variant.price.toLocaleString()}
+                              </span>
+                              
+                              <span className="font-extrabold text-amber-200 bg-amber-950 px-2 py-1 rounded-lg border-2 border-amber-500 shadow-sm">
+                                ต้นทุน ฿{costVal.toLocaleString()}
+                              </span>
+
+                              <span className="font-extrabold text-emerald-300 bg-emerald-950 px-2 py-1 rounded-lg border-2 border-emerald-500/80">
+                                กำไร +฿{profitVal.toLocaleString()}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
