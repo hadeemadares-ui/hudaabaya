@@ -516,19 +516,34 @@ export const AdminProductManager: React.FC = () => {
                     {product.variants.map((variant) => (
                       <div
                         key={variant.id}
-                        className="p-2.5 bg-dubai-black rounded-xl border border-gold-400/30 flex items-center justify-between text-xs shadow-sm"
+                        className={`p-2.5 rounded-xl border-2 flex items-center justify-between text-xs shadow-md transition-all ${
+                          variant.stockQuantity > 0
+                            ? 'bg-emerald-950/20 border-emerald-500 shadow-emerald-950/30'
+                            : 'bg-red-950/25 border-red-600 shadow-red-950/30'
+                        }`}
                       >
                         <div>
-                          <span className="font-bold text-white block">{variant.name}</span>
-                          {variant.color && (
-                            <span className="text-[10px] text-amber-300 block font-serif">
-                              {variant.color}
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="font-bold text-white block">{variant.name}</span>
+                            <span
+                              className={`px-1.5 py-0.5 text-[9px] font-extrabold rounded-full ${
+                                variant.stockQuantity > 0
+                                  ? 'bg-emerald-500 text-dubai-black'
+                                  : 'bg-red-600 text-white'
+                              }`}
+                            >
+                              {variant.stockQuantity > 0 ? `มีสินค้า (${variant.stockQuantity})` : 'หมด (0)'}
                             </span>
-                          )}
-                          <div className="flex flex-wrap items-center gap-1.5 text-[10px] mt-1">
-                            <span className="font-bold text-gold-300 bg-dubai-dark px-1.5 py-0.5 rounded border border-gold-400/20">
-                              ขาย ฿{variant.price.toLocaleString()}
-                            </span>
+                          </div>
+                            {variant.color && (
+                              <span className="text-[10px] text-amber-300 block font-serif">
+                                {variant.color}
+                              </span>
+                            )}
+                            <div className="flex flex-wrap items-center gap-1.5 text-[10px] mt-1">
+                              <span className="font-bold text-gold-300 bg-dubai-dark px-1.5 py-0.5 rounded border border-gold-400/20">
+                                ขาย ฿{variant.price.toLocaleString()}
+                              </span>
                             
                             {/* Inlined Bright Orange Cost Price Box */}
                             <div className="bg-amber-950/90 px-1.5 py-0.5 rounded-lg border-2 border-amber-500 flex items-center gap-1 shadow-md">
@@ -821,11 +836,29 @@ export const AdminProductManager: React.FC = () => {
 
                   <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1 no-scrollbar">
                     {variants.map((v, idx) => (
-                      <div key={idx} className="bg-dubai-black p-3.5 rounded-xl border-2 border-gold-400/40 shadow-md space-y-2.5">
-                        <div className="flex items-center justify-between border-b border-gold-400/20 pb-1.5">
-                          <span className="text-[11px] font-bold text-gold-300 font-serif">
-                            รายการที่ {idx + 1}: {v.name || 'ไซส์/รายการใหม่'}
-                          </span>
+                      <div
+                        key={idx}
+                        className={`p-3.5 rounded-xl border-2 shadow-md space-y-2.5 transition-all ${
+                          v.stockQuantity > 0
+                            ? 'bg-dubai-black border-emerald-500 shadow-emerald-950/30'
+                            : 'bg-dubai-black border-red-600 shadow-red-950/30'
+                        }`}
+                      >
+                          <div className="flex items-center justify-between border-b border-gold-400/20 pb-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-bold text-gold-300 font-serif">
+                                รายการที่ {idx + 1}: {v.name || 'ไซส์/รายการใหม่'}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 text-[9px] font-extrabold rounded-full ${
+                                  v.stockQuantity > 0
+                                    ? 'bg-emerald-500 text-dubai-black'
+                                    : 'bg-red-600 text-white'
+                                }`}
+                              >
+                                {v.stockQuantity > 0 ? `มีสต๊อก (${v.stockQuantity} ชิ้น)` : 'ไม่มีสต๊อก (0 ชิ้น)'}
+                              </span>
+                            </div>
                           <button
                             type="button"
                             onClick={() => handleRemoveVariantField(idx)}
