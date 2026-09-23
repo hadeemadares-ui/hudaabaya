@@ -31,6 +31,52 @@ export const AdminProductManager: React.FC = () => {
   const [fabric, setFabric] = useState('Nida Silk Dubai');
   const [imageUrl, setImageUrl] = useState('');
 
+  // Comprehensive Color List in Thai (English)
+  const PRODUCT_COLOR_PRESETS = [
+    'สีดำ (Black)',
+    'สีทอง (Gold)',
+    'สีขาว (White)',
+    'สีครีม (Cream)',
+    'สีไอวอรี่ (Ivory)',
+    'สีเบจ (Beige)',
+    'สีนู๊ด (Nude)',
+    'สีน้ำตาล (Brown)',
+    'สีช็อกโกแลต (Chocolate Brown)',
+    'สีน้ำตาลกาแฟ (Coffee / Latte)',
+    'สีเทา (Grey / Gray)',
+    'สีเทาเงิน (Silver)',
+    'สีชาโคล (Charcoal Grey)',
+    'สีเขียวมรกต (Emerald Green)',
+    'สีเขียวเข้ม (Dark Green / Pine)',
+    'สีเขียวมะกอก (Olive Green)',
+    'สีเขียวมินต์ (Mint Green)',
+    'สีเขียวเซจ (Sage Green)',
+    'สีน้ำเงินรอยัล (Royal Blue)',
+    'สีน้ำเงินกรมท่า (Navy Blue)',
+    'สีฟ้าสกายบลู (Sky Blue)',
+    'สีฟ้าพาสเทล (Baby Blue)',
+    'สีเทอร์ควอยซ์ (Turquoise)',
+    'สีม่วง (Purple / Violet)',
+    'สีม่วงเข้ม (Dark Plum)',
+    'สีม่วงลาเวนเดอร์ (Lavender)',
+    'สีแดง (Red)',
+    'สีแดงเลือดหมู (Burgundy / Wine)',
+    'สีแดงทับทิม (Ruby Red)',
+    'สีส้ม (Orange)',
+    'สีส้มอิฐ (Terracotta / Copper)',
+    'สีพีช (Peach)',
+    'สีชมพู (Pink)',
+    'สีโรสโกลด์ (Rose Gold)',
+    'สีชมพูบานเย็น (Fuchsia / Magenta)',
+    'สีชมพูพาสเทล (Baby Pink)',
+    'สีเหลือง (Yellow)',
+    'สีเหลืองมัสตาร์ด (Mustard Yellow)',
+    'สีทองแดง (Bronze)',
+    'สีแชมเปญ (Champagne)',
+    'สีทูโทน (Two-Tone)',
+    'สีมัลติคัลเลอร์ (Multicolor)',
+  ];
+
   // Standard Dubai Abaya Default Sizes
   const DEFAULT_DUBAI_SIZES = [
     { name: 'Size 52 (ส่วนสูง ~150-155 ซม. / ยาว 52")', sku: 'HD-ABY-52', price: 0, costPrice: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
@@ -807,17 +853,40 @@ export const AdminProductManager: React.FC = () => {
                                 currentValue={v.color || ''}
                               />
                             </div>
-                            <input
-                              type="text"
-                              placeholder={category === 'perfume' ? 'เช่น กลิ่นอัมเบอร์ทอง' : 'เช่น สีดำ, สีทอง'}
-                              value={v.color || ''}
-                              onChange={(e) => {
-                                const updated = [...variants];
-                                updated[idx].color = e.target.value;
-                                setVariants(updated);
-                              }}
-                              className="w-full bg-dubai-dark border border-gold-400/30 rounded p-1.5 text-amber-300 font-bold text-xs"
-                            />
+                            <div className="space-y-1">
+                              <input
+                                type="text"
+                                list="product-color-preset-list"
+                                placeholder={category === 'perfume' ? 'เช่น กลิ่นอัมเบอร์ทอง' : 'เลือก/พิมพ์สี เช่น สีดำ (Black)'}
+                                value={v.color || ''}
+                                onFocus={(e) => e.target.select()}
+                                onClick={(e) => (e.target as HTMLInputElement).select()}
+                                onChange={(e) => {
+                                  const updated = [...variants];
+                                  updated[idx].color = e.target.value;
+                                  setVariants(updated);
+                                }}
+                                className="w-full bg-dubai-dark border border-gold-400/30 rounded p-1.5 text-amber-300 font-bold text-xs"
+                              />
+                              <select
+                                value=""
+                                onChange={(e) => {
+                                  if (e.target.value) {
+                                    const updated = [...variants];
+                                    updated[idx].color = e.target.value;
+                                    setVariants(updated);
+                                  }
+                                }}
+                                className="w-full bg-dubai-black/80 border border-gold-400/20 rounded px-1.5 py-1 text-[10px] text-gray-300 font-bold hover:border-gold-400/50 transition cursor-pointer"
+                              >
+                                <option value="">-- เลือกสีด่วน (Quick Select) --</option>
+                                {PRODUCT_COLOR_PRESETS.map((colorName) => (
+                                  <option key={colorName} value={colorName}>
+                                    {colorName}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
                           </div>
 
                           {/* Size / Volume Name Field */}
@@ -952,6 +1021,11 @@ export const AdminProductManager: React.FC = () => {
           </div>
         </div>
       )}
+      <datalist id="product-color-preset-list">
+        {PRODUCT_COLOR_PRESETS.map((colorName) => (
+          <option key={colorName} value={colorName} />
+        ))}
+      </datalist>
     </div>
   );
 };
