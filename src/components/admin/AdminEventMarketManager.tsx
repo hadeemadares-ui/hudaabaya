@@ -8,16 +8,14 @@ import { EventSchedule } from '../../types';
 export const AdminEventMarketManager: React.FC = () => {
   const { storeSettings } = useShop();
 
-  const [activeBranch, setActiveBranch] = useState<string>('HUDA ABAYA - บูธป๊อบอัพ งานแฟชั่นมุสลิม');
+  const [activeBranch, setActiveBranch] = useState<string>('HUDA ABAYA - สาขาใหญ่ หนองจอก');
   const [eventStatusFilter, setEventStatusFilter] = useState<'all' | 'UPCOMING' | 'ACTIVE' | 'COMPLETED'>('all');
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState<boolean>(false);
   const [isAddBranchModalOpen, setIsAddBranchModalOpen] = useState<boolean>(false);
 
-  // Store branches state for HUDA ABAYA
+  // Store branches state for HUDA ABAYA (Single Main Branch by default)
   const [branches, setBranches] = useState<string[]>([
-    'HUDA ABAYA - บูธป๊อบอัพ งานแฟชั่นมุสลิม',
-    'HUDA ABAYA - บูธออกงานศูนย์การค้า (Mall Event)',
-    'HUDA ABAYA - สำนักงานใหญ่ หนองจอก กรุงเทพฯ',
+    'HUDA ABAYA - สาขาใหญ่ หนองจอก',
   ]);
   const [newBranchInput, setNewBranchInput] = useState<string>('');
 
@@ -34,7 +32,7 @@ export const AdminEventMarketManager: React.FC = () => {
 
   // Form State for Add Event (HUDA ABAYA Default)
   const [eventTitle, setEventTitle] = useState<string>('งานแฟชั่นมุสลิม & มลายูเอ็กซ์โป');
-  const [eventBranch, setEventBranch] = useState<string>('HUDA ABAYA - บูธป๊อบอัพ งานแฟชั่นมุสลิม');
+  const [eventBranch, setEventBranch] = useState<string>('HUDA ABAYA - สาขาใหญ่ หนองจอก');
   const [eventLocation, setEventLocation] = useState<string>('ศูนย์การค้า / งานแฟชั่นมุสลิม');
   const [eventHours, setEventHours] = useState<string>('10:00 - 22:00 น.');
   const [eventProducts, setEventProducts] = useState<string>('ชุดอาบายะห์ดูไบ • ชุดคัฟทาน • น้ำหอมดูไบ EDP');
