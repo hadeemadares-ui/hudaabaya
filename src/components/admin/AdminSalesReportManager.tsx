@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Calendar, TrendingUp, DollarSign, Package, PieChart, Download, ArrowUpRight, ArrowDownRight, Layers, FileSpreadsheet, RefreshCw, Sparkles, Filter, Edit2, Trash2, X, Save } from 'lucide-react';
+import { Calendar, TrendingUp, DollarSign, Package, PieChart, Download, ArrowUpRight, ArrowDownRight, Layers, FileSpreadsheet, RefreshCw, Sparkles, Filter, Edit2, Trash2, X, Save, Printer, CheckSquare, Square, Sliders, FileText, Check, ChevronRight } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Product, Order, CartItem, CategoryType } from '../../types';
 
@@ -18,6 +18,290 @@ export const AdminSalesReportManager: React.FC = () => {
     return d.toISOString().slice(0, 10);
   });
   const [endDate, setEndDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+
+  // Custom Report Builder Modal & Filter States
+  const [isCustomReportModalOpen, setIsCustomReportModalOpen] = useState<boolean>(false);
+  const [isPreviewPrintModalOpen, setIsPreviewPrintModalOpen] = useState<boolean>(false);
+
+  const [customReportType, setCustomReportType] = useState<'sales' | 'bestsellers' | 'inventory' | 'events'>('sales');
+  const [customDateMode, setCustomDateMode] = useState<'today' | 'last7' | 'month' | 'year' | 'all' | 'custom'>('all');
+  const [customRangeStart, setCustomRangeStart] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [customRangeEnd, setCustomRangeEnd] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [customPaymentFilter, setCustomPaymentFilter] = useState<string>('ALL');
+
+  // Available Column Definitions per Report Type
+  const REPORT_COLUMNS: Record<string, { key: string; label: string; defaultSelected: boolean }[]> = {
+    sales: [
+      { key: 'id', label: 'รหัสคำสั่งซื้อ (Order ID)', defaultSelected: true },
+      { key: 'date', label: 'วันที่และเวลา (Date & Time)', defaultSelected: true },
+      { key: 'customerName', label: 'ชื่อลูกค้า (Customer Name)', defaultSelected: true },
+      { key: 'customerPhone', label: 'เบอร์โทรศัพท์ (Customer Phone)', defaultSelected: true },
+      { key: 'customerAddress', label: 'ที่อยู่จัดส่ง (Delivery Address)', defaultSelected: false },
+      { key: 'items', label: 'รายการสินค้าและไซส์ (Item Details)', defaultSelected: true },
+      { key: 'totalQty', label: 'จำนวนชิ้นรวม (Total Qty)', defaultSelected: true },
+      { key: 'netAmount', label: 'ยอดขายสุทธิ (Net Amount)', defaultSelected: true },
+      { key: 'orderCost', label: 'ต้นทุนสินค้า (Cost)', defaultSelected: true },
+      { key: 'orderProfit', label: 'กำไรสุทธิ (Profit)', defaultSelected: true },
+      { key: 'paymentMethod', label: 'ช่องทางชำระเงิน (Payment)', defaultSelected: true },
+      { key: 'note', label: 'หมายเหตุ (Note)', defaultSelected: false },
+    ],
+    bestsellers: [
+      { key: 'rank', label: 'อันดับขายดี (Rank #)', defaultSelected: true },
+      { key: 'title', label: 'ชื่อสินค้า / แบบ (Product Title)', defaultSelected: true },
+      { key: 'variant', label: 'ไซส์ / ปริมาณ (Variant)', defaultSelected: true },
+      { key: 'unitsSold', label: 'จำนวนที่ขายได้ (Units Sold)', defaultSelected: true },
+      { key: 'revenue', label: 'ยอดขายรวม (Total Revenue)', defaultSelected: true },
+      { key: 'cost', label: 'ต้นทุนรวม (Total Cost)', defaultSelected: true },
+      { key: 'profit', label: 'กำไรสุทธิ (Net Profit)', defaultSelected: true },
+      { key: 'margin', label: 'อัตรากำไร (%) (Profit Margin)', defaultSelected: true },
+    ],
+    inventory: [
+      { key: 'id', label: 'รหัสสินค้า (Product ID)', defaultSelected: true },
+      { key: 'title', label: 'ชื่อสินค้า (Product Title)', defaultSelected: true },
+      { key: 'category', label: 'หมวดหมู่ (Category)', defaultSelected: true },
+      { key: 'variant', label: 'ไซส์ / แบบ (Variant)', defaultSelected: true },
+      { key: 'price', label: 'ราคาขาย (Retail Price)', defaultSelected: true },
+      { key: 'costPrice', label: 'ต้นทุนสินค้า (Cost Price)', defaultSelected: true },
+      { key: 'stockQuantity', label: 'สต๊อกคงเหลือ (Stock Qty)', defaultSelected: true },
+      { key: 'totalCostValue', label: 'มูลค่าต้นทุนสต๊อก (Total Cost Value)', defaultSelected: true },
+      { key: 'totalRetailValue', label: 'มูลค่าราคาขายสต๊อก (Total Selling Value)', defaultSelected: true },
+    ],
+    events: [
+      { key: 'id', label: 'รหัสตารางงาน (Event ID)', defaultSelected: true },
+      { key: 'title', label: 'ชื่องาน / ตลาดนัด (Event Title)', defaultSelected: true },
+      { key: 'branchName', label: 'สาขา / บูธ (Branch / Booth)', defaultSelected: true },
+      { key: 'location', label: 'สถานที่ (Location)', defaultSelected: true },
+      { key: 'dates', label: 'ช่วงวันที่ (Dates)', defaultSelected: true },
+      { key: 'operatingHours', label: 'เวลาเปิด-ปิด (Hours)', defaultSelected: true },
+      { key: 'status', label: 'สถานะงาน (Status)', defaultSelected: true },
+      { key: 'salesTarget', label: 'ยอดขายเป้าหมาย (Target)', defaultSelected: true },
+      { key: 'productsToPrepare', label: 'รายการสินค้าเตรียมขาย (Products)', defaultSelected: true },
+      { key: 'assignedStaff', label: 'พนักงานรับผิดชอบ (Staff)', defaultSelected: false },
+    ],
+  };
+
+  // State of Selected Columns
+  const [selectedCols, setSelectedCols] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
+    Object.values(REPORT_COLUMNS).flatMap((cols) => cols).forEach((c) => {
+      init[c.key] = c.defaultSelected;
+    });
+    return init;
+  });
+
+  const toggleCol = (key: string) => {
+    setSelectedCols((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const selectAllCols = () => {
+    const activeCols = REPORT_COLUMNS[customReportType] || [];
+    const updated = { ...selectedCols };
+    activeCols.forEach((c) => { updated[c.key] = true; });
+    setSelectedCols(updated);
+  };
+
+  const deselectAllCols = () => {
+    const activeCols = REPORT_COLUMNS[customReportType] || [];
+    const updated = { ...selectedCols };
+    activeCols.forEach((c) => { updated[c.key] = false; });
+    setSelectedCols(updated);
+  };
+
+  // Helper to extract filtered report data for export & print preview
+  const getFilteredReportData = () => {
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+
+    let start = '1970-01-01';
+    let end = '2099-12-31';
+
+    if (customDateMode === 'today') {
+      start = todayStr;
+      end = todayStr;
+    } else if (customDateMode === 'last7') {
+      const d = new Date();
+      d.setDate(d.getDate() - 7);
+      start = d.toISOString().slice(0, 10);
+      end = todayStr;
+    } else if (customDateMode === 'month') {
+      const d = new Date(now.getFullYear(), now.getMonth(), 1);
+      start = d.toISOString().slice(0, 10);
+      end = todayStr;
+    } else if (customDateMode === 'year') {
+      start = `${now.getFullYear()}-01-01`;
+      end = todayStr;
+    } else if (customDateMode === 'custom') {
+      start = customRangeStart;
+      end = customRangeEnd;
+    }
+
+    if (customReportType === 'sales') {
+      return orders.filter((o) => {
+        const oDate = o.createdAt.slice(0, 10);
+        const matchDate = oDate >= start && oDate <= end;
+        const pm = String(o.paymentMethod || '');
+        const matchPayment = customPaymentFilter === 'ALL' || pm === customPaymentFilter;
+        return matchDate && matchPayment;
+      }).map((o) => {
+        let orderCost = 0;
+        let totalQty = 0;
+        const itemsFormatted = o.items.map((it) => {
+          totalQty += it.quantity;
+          const cost = it.costPrice !== undefined && it.costPrice > 0 ? it.costPrice : Math.round(it.price * 0.5);
+          orderCost += cost * it.quantity;
+          return `${it.productTitle} (${it.variantName || 'ธรรมดา'}) x${it.quantity}`;
+        }).join(' | ');
+        const orderProfit = o.netAmount - orderCost;
+        const pm = String(o.paymentMethod || '');
+
+        return {
+          id: o.id,
+          date: new Date(o.createdAt).toLocaleString('th-TH'),
+          customerName: o.customerName || 'ลูกค้าหน้าร้าน',
+          customerPhone: o.customerPhone || '-',
+          customerAddress: o.customerAddress || '-',
+          items: itemsFormatted,
+          totalQty,
+          netAmount: o.netAmount,
+          orderCost,
+          orderProfit,
+          paymentMethod: pm === 'cash' ? 'เงินสด (Cash)' : pm === 'promptpay' ? 'พร้อมเพย์ QR' : pm === 'bank_transfer' ? 'โอนผ่านธนาคาร' : pm === 'credit_card' || pm === 'card' ? 'รูดบัตร EDC' : pm,
+          note: o.note || '-',
+        };
+      });
+    }
+
+    if (customReportType === 'bestsellers') {
+      const filteredOrders = orders.filter((o) => {
+        const oDate = o.createdAt.slice(0, 10);
+        return oDate >= start && oDate <= end;
+      });
+
+      const map: Record<string, { title: string; variant: string; unitsSold: number; revenue: number; cost: number }> = {};
+      filteredOrders.forEach((o) => {
+        o.items.forEach((it) => {
+          const key = `${it.productTitle}___${it.variantName || 'ธรรมดา'}`;
+          const cost = it.costPrice !== undefined && it.costPrice > 0 ? it.costPrice : Math.round(it.price * 0.5);
+          if (!map[key]) {
+            map[key] = { title: it.productTitle, variant: it.variantName || 'ธรรมดา', unitsSold: 0, revenue: 0, cost: 0 };
+          }
+          map[key].unitsSold += it.quantity;
+          map[key].revenue += it.price * it.quantity;
+          map[key].cost += cost * it.quantity;
+        });
+      });
+
+      const list = Object.values(map).sort((a, b) => b.unitsSold - a.unitsSold);
+      return list.map((item, index) => {
+        const profit = item.revenue - item.cost;
+        const margin = item.revenue > 0 ? Math.round((profit / item.revenue) * 100) : 0;
+        return {
+          rank: `#${index + 1}`,
+          title: item.title,
+          variant: item.variant,
+          unitsSold: item.unitsSold,
+          revenue: item.revenue,
+          cost: item.cost,
+          profit,
+          margin: `${margin}%`,
+        };
+      });
+    }
+
+    if (customReportType === 'inventory') {
+      const list: any[] = [];
+      products.forEach((p) => {
+        p.variants.forEach((v) => {
+          const cost = v.costPrice !== undefined && v.costPrice > 0 ? v.costPrice : Math.round(v.price * 0.5);
+          const totalCostVal = cost * v.stockQuantity;
+          const totalRetailVal = v.price * v.stockQuantity;
+          list.push({
+            id: p.id,
+            title: p.title,
+            category: p.category || 'อาบายะห์',
+            variant: v.name || 'ขนาดมาตรฐาน',
+            price: v.price,
+            costPrice: cost,
+            stockQuantity: v.stockQuantity,
+            totalCostValue: totalCostVal,
+            totalRetailValue: totalRetailVal,
+          });
+        });
+      });
+      return list;
+    }
+
+    if (customReportType === 'events') {
+      let savedEvents: any[] = [];
+      if (typeof window !== 'undefined') {
+        const raw = localStorage.getItem('huda_event_schedules');
+        if (raw) {
+          try { savedEvents = JSON.parse(raw); } catch (e) {}
+        }
+      }
+      return savedEvents.map((ev) => ({
+        id: ev.id,
+        title: ev.title,
+        branchName: ev.branchName,
+        location: ev.location,
+        dates: `${ev.startDate} ถึง ${ev.endDate}`,
+        operatingHours: ev.operatingHours,
+        status: ev.status === 'ACTIVE' ? 'กำลังขายอยู่' : ev.status === 'UPCOMING' ? 'เร็วๆ นี้' : 'เสร็จสิ้นแล้ว',
+        salesTarget: ev.salesTarget,
+        productsToPrepare: ev.productsToPrepare,
+        assignedStaff: ev.assignedStaff || '-',
+      }));
+    }
+
+    return [];
+  };
+
+  const handleExportCustomCSV = () => {
+    const data = getFilteredReportData();
+    const cols = (REPORT_COLUMNS[customReportType] || []).filter((c) => selectedCols[c.key]);
+
+    if (cols.length === 0) {
+      alert('กรุณาเลือกอย่างน้อย 1 หัวข้อ/ฟิลด์ที่ต้องการออกรายงานครับ');
+      return;
+    }
+
+    // UTF-8 BOM so Excel opens Thai language perfectly
+    let csvContent = '\uFEFF';
+
+    // Header Row
+    csvContent += cols.map((c) => `"${c.label.replace(/"/g, '""')}"`).join(',') + '\n';
+
+    // Data Rows
+    data.forEach((row) => {
+      const rowValues = cols.map((c) => {
+        const val = (row as any)[c.key];
+        if (val === undefined || val === null) return '""';
+        if (typeof val === 'number') return val;
+        return `"${String(val).replace(/"/g, '""')}"`;
+      });
+      csvContent += rowValues.join(',') + '\n';
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const typeNames: Record<string, string> = {
+      sales: 'ยอดขายคำสั่งซื้อ',
+      bestsellers: 'สินค้าขายดี',
+      inventory: 'คลังสินค้าและต้นทุน',
+      events: 'ตารางออกงานตลาดนัด',
+    };
+    link.setAttribute('download', `รายงาน_${typeNames[customReportType] || 'Custom'}_HUDA_ABAYA_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    alert('ดาวน์โหลดรายงาน Excel (CSV) สำเร็จ!');
+  };
 
   // 1. Calculate Total Inventory Stock Valuation across all catalog products
   let totalStockPieces = 0;
@@ -376,13 +660,23 @@ export const AdminSalesReportManager: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={handleExportCSV}
-          className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 shrink-0 border border-emerald-700 cursor-pointer"
-        >
-          <FileSpreadsheet className="w-4 h-4 text-white" />
-          <span>ดาวน์โหลดรายงาน Excel (CSV)</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <button
+            onClick={() => setIsCustomReportModalOpen(true)}
+            className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 border border-amber-500 cursor-pointer"
+          >
+            <Sliders className="w-4 h-4 text-stone-950" />
+            <span>✨ ศูนย์ดึงรายงาน &amp; เลือกหัวข้ออิสระ (Custom Report)</span>
+          </button>
+
+          <button
+            onClick={handleExportCSV}
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 border border-emerald-700 cursor-pointer"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-white" />
+            <span>ดาวน์โหลด Excel ด่วน (CSV)</span>
+          </button>
+        </div>
       </div>
 
       {/* Date Filter Tabs */}
@@ -953,6 +1247,378 @@ export const AdminSalesReportManager: React.FC = () => {
                 <span>บันทึกการแก้ไข</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CUSTOM REPORT GENERATOR & FIELD SELECTOR */}
+      {isCustomReportModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative bg-white border-2 border-amber-500 rounded-3xl max-w-2xl w-full p-6 text-stone-950 shadow-2xl space-y-5 text-left">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-center border-b-2 border-amber-400/40 pb-3">
+              <div>
+                <h3 className="font-serif font-black text-xl text-stone-950 flex items-center gap-2">
+                  <Sliders className="w-5 h-5 text-amber-600" />
+                  <span>ศูนย์ดึงรายงาน &amp; เลือกข้อมูลอิสระ (Custom Report Generator)</span>
+                </h3>
+                <p className="text-xs text-stone-800 font-extrabold mt-0.5">
+                  เลือกประเภทรายงาน ช่วงเวลา ตัวกรอง และติ๊กเลือกฟิลด์หัวข้อข้อมูลที่ต้องการดึงรายงานได้ตามใจชอบ 100%
+                </p>
+              </div>
+              <button
+                onClick={() => setIsCustomReportModalOpen(false)}
+                className="text-stone-700 hover:text-stone-950 p-1 rounded-full border border-stone-300 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* STEP 1: REPORT TYPE SELECTION */}
+            <div className="space-y-2">
+              <label className="block text-stone-950 font-black text-xs flex items-center gap-1.5">
+                <span className="w-5 h-5 bg-amber-400 text-stone-950 rounded-full flex items-center justify-center text-[10px] font-black">1</span>
+                <span>เลือกประเภทรายงานที่ต้องการดึง (Report Category):</span>
+              </label>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCustomReportType('sales')}
+                  className={`p-3 rounded-2xl border-2 text-left transition cursor-pointer flex flex-col justify-between ${
+                    customReportType === 'sales'
+                      ? 'bg-amber-100 border-amber-500 text-stone-950 shadow-md'
+                      : 'bg-white border-stone-300 text-stone-950 hover:bg-stone-50'
+                  }`}
+                >
+                  <TrendingUp className="w-5 h-5 text-amber-600 mb-1" />
+                  <div>
+                    <div className="font-black text-xs">ยอดขาย &amp; คำสั่งซื้อ</div>
+                    <div className="text-[10px] text-stone-700 font-bold">ออเดอร์, ยอดขาย, กำไร</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCustomReportType('bestsellers')}
+                  className={`p-3 rounded-2xl border-2 text-left transition cursor-pointer flex flex-col justify-between ${
+                    customReportType === 'bestsellers'
+                      ? 'bg-amber-100 border-amber-500 text-stone-950 shadow-md'
+                      : 'bg-white border-stone-300 text-stone-950 hover:bg-stone-50'
+                  }`}
+                >
+                  <Sparkles className="w-5 h-5 text-amber-600 mb-1" />
+                  <div>
+                    <div className="font-black text-xs">สินค้าขายดี</div>
+                    <div className="text-[10px] text-stone-700 font-bold">สรุปยอดขายแยกไซส์/แบบ</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCustomReportType('inventory')}
+                  className={`p-3 rounded-2xl border-2 text-left transition cursor-pointer flex flex-col justify-between ${
+                    customReportType === 'inventory'
+                      ? 'bg-amber-100 border-amber-500 text-stone-950 shadow-md'
+                      : 'bg-white border-stone-300 text-stone-950 hover:bg-stone-50'
+                  }`}
+                >
+                  <Package className="w-5 h-5 text-amber-600 mb-1" />
+                  <div>
+                    <div className="font-black text-xs">คลังสินค้า &amp; ต้นทุน</div>
+                    <div className="text-[10px] text-stone-700 font-bold">สต๊อกคงเหลือ &amp; มูลค่า</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCustomReportType('events')}
+                  className={`p-3 rounded-2xl border-2 text-left transition cursor-pointer flex flex-col justify-between ${
+                    customReportType === 'events'
+                      ? 'bg-amber-100 border-amber-500 text-stone-950 shadow-md'
+                      : 'bg-white border-stone-300 text-stone-950 hover:bg-stone-50'
+                  }`}
+                >
+                  <Calendar className="w-5 h-5 text-amber-600 mb-1" />
+                  <div>
+                    <div className="font-black text-xs">ออกบูธ &amp; ตลาดนัด</div>
+                    <div className="text-[10px] text-stone-700 font-bold">ตารางงาน &amp; สาขา</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* STEP 2: DATE RANGE & FILTERS */}
+            <div className="space-y-2 pt-1 border-t border-amber-400/30">
+              <label className="block text-stone-950 font-black text-xs flex items-center gap-1.5">
+                <span className="w-5 h-5 bg-amber-400 text-stone-950 rounded-full flex items-center justify-center text-[10px] font-black">2</span>
+                <span>เลือกช่วงเวลาและตัวกรองข้อมูล (Filter Data):</span>
+              </label>
+
+              <div className="flex flex-wrap items-center gap-1.5 bg-stone-50 p-2.5 rounded-2xl border border-stone-300">
+                <button
+                  type="button"
+                  onClick={() => setCustomDateMode('today')}
+                  className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
+                    customDateMode === 'today' ? 'bg-amber-400 text-stone-950 shadow border border-amber-500' : 'bg-white border text-stone-950'
+                  }`}
+                >
+                  วันนี้
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomDateMode('last7')}
+                  className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
+                    customDateMode === 'last7' ? 'bg-amber-400 text-stone-950 shadow border border-amber-500' : 'bg-white border text-stone-950'
+                  }`}
+                >
+                  7 วันล่าสุด
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomDateMode('month')}
+                  className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
+                    customDateMode === 'month' ? 'bg-amber-400 text-stone-950 shadow border border-amber-500' : 'bg-white border text-stone-950'
+                  }`}
+                >
+                  เดือนนี้
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomDateMode('year')}
+                  className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
+                    customDateMode === 'year' ? 'bg-amber-400 text-stone-950 shadow border border-amber-500' : 'bg-white border text-stone-950'
+                  }`}
+                >
+                  ปีนี้
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomDateMode('all')}
+                  className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
+                    customDateMode === 'all' ? 'bg-amber-400 text-stone-950 shadow border border-amber-500' : 'bg-white border text-stone-950'
+                  }`}
+                >
+                  สะสมทั้งหมด
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomDateMode('custom')}
+                  className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
+                    customDateMode === 'custom' ? 'bg-amber-400 text-stone-950 shadow border border-amber-500' : 'bg-white border text-stone-950'
+                  }`}
+                >
+                  กำหนดช่วงวันที่เอง
+                </button>
+              </div>
+
+              {customDateMode === 'custom' && (
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-black text-stone-950">จากวันที่:</span>
+                    <input
+                      type="date"
+                      value={customRangeStart}
+                      onChange={(e) => setCustomRangeStart(e.target.value)}
+                      className="bg-white border-2 border-stone-400 rounded-xl px-2.5 py-1 text-xs text-stone-950 font-black focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-black text-stone-950">ถึงวันที่:</span>
+                    <input
+                      type="date"
+                      value={customRangeEnd}
+                      onChange={(e) => setCustomRangeEnd(e.target.value)}
+                      className="bg-white border-2 border-stone-400 rounded-xl px-2.5 py-1 text-xs text-stone-950 font-black focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {customReportType === 'sales' && (
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="text-xs font-black text-stone-950">ช่องทางชำระเงิน:</span>
+                  <select
+                    value={customPaymentFilter}
+                    onChange={(e) => setCustomPaymentFilter(e.target.value)}
+                    className="bg-white border-2 border-amber-500 rounded-xl px-3 py-1 text-xs text-stone-950 font-black cursor-pointer"
+                  >
+                    <option value="ALL">ชำระเงินทั้งหมด (All Payments)</option>
+                    <option value="cash">เงินสด (Cash)</option>
+                    <option value="promptpay">พร้อมเพย์ QR</option>
+                    <option value="card">รูดบัตร EDC</option>
+                    <option value="govt">โครงการรัฐบาล</option>
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* STEP 3: CUSTOM FIELD / COLUMN SELECTOR */}
+            <div className="space-y-2 pt-1 border-t border-amber-400/30">
+              <div className="flex items-center justify-between">
+                <label className="block text-stone-950 font-black text-xs flex items-center gap-1.5">
+                  <span className="w-5 h-5 bg-amber-400 text-stone-950 rounded-full flex items-center justify-center text-[10px] font-black">3</span>
+                  <span>เลือกหัวข้อ/ฟิลด์ข้อมูลที่ต้องการออกในไฟล์ (Select Columns):</span>
+                </label>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={selectAllCols}
+                    className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-stone-950 border border-amber-400 rounded-lg text-[11px] font-black transition cursor-pointer flex items-center gap-1"
+                  >
+                    <CheckSquare className="w-3.5 h-3.5 text-amber-700" />
+                    <span>เลือกทั้งหมด</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={deselectAllCols}
+                    className="px-2.5 py-1 bg-stone-100 hover:bg-stone-200 text-stone-950 border border-stone-300 rounded-lg text-[11px] font-black transition cursor-pointer flex items-center gap-1"
+                  >
+                    <Square className="w-3.5 h-3.5 text-stone-600" />
+                    <span>ยกเลิกทั้งหมด</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-stone-50 p-3 rounded-2xl border border-stone-300 max-h-56 overflow-y-auto">
+                {(REPORT_COLUMNS[customReportType] || []).map((col) => {
+                  const isChecked = !!selectedCols[col.key];
+                  return (
+                    <label
+                      key={col.key}
+                      onClick={() => toggleCol(col.key)}
+                      className={`flex items-center gap-2.5 p-2 rounded-xl border transition cursor-pointer select-none ${
+                        isChecked
+                          ? 'bg-amber-400/20 border-amber-500 text-stone-950 font-black'
+                          : 'bg-white border-stone-300 text-stone-700 hover:bg-stone-100'
+                      }`}
+                    >
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                        isChecked ? 'bg-amber-400 border-amber-600 text-stone-950' : 'bg-white border-stone-400'
+                      }`}>
+                        {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                      </div>
+                      <span className="text-xs">{col.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* MODAL FOOTER & ACTIONS */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-amber-400/40">
+              <div className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-amber-600" />
+                <span>จำนวนรายการที่จะถูกดึง: {getFilteredReportData().length} รายการ</span>
+              </div>
+
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewPrintModalOpen(true)}
+                  className="px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-black text-xs rounded-xl shadow-md transition flex items-center gap-1.5 border border-sky-700 cursor-pointer"
+                >
+                  <Printer className="w-4 h-4 text-white" />
+                  <span>พรีวิวตาราง &amp; สั่งพิมพ์ PDF</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportCustomCSV}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md transition flex items-center gap-1.5 border border-emerald-700 cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-white" />
+                  <span>ดาวน์โหลด Excel (CSV)</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: PRINTABLE REPORT PREVIEW & PDF PRINT OVERLAY */}
+      {isPreviewPrintModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <div className="relative bg-white border-2 border-stone-800 rounded-3xl max-w-4xl w-full p-6 sm:p-8 text-stone-950 shadow-2xl space-y-6 text-left max-h-[90vh] overflow-y-auto">
+            
+            {/* Header & Print Actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-stone-200 pb-4">
+              <div>
+                <span className="text-[10px] font-black text-stone-950 bg-amber-400 px-3 py-1 rounded-full uppercase border border-amber-500">
+                  HUDA ABAYA DUBAI — OFFICIAL REPORT
+                </span>
+                <h3 className="font-serif font-black text-2xl text-stone-950 mt-1">
+                  รายงานสรุปข้อมูลตามตัวกรองอิสระ (Custom Report Summary)
+                </h3>
+                <p className="text-xs text-stone-700 font-bold">
+                  ดึงข้อมูล ณ วันที่ {new Date().toLocaleDateString('th-TH')} | จำนวนรวม {getFilteredReportData().length} รายการ
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow-md transition flex items-center gap-1.5 border border-amber-500 cursor-pointer"
+                >
+                  <Printer className="w-4 h-4 text-stone-950" />
+                  <span>สั่งพิมพ์ / บันทึกเป็น PDF</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewPrintModalOpen(false)}
+                  className="px-4 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-950 font-black text-xs rounded-xl border border-stone-300 transition cursor-pointer"
+                >
+                  ปิดหน้าต่าง
+                </button>
+              </div>
+            </div>
+
+            {/* Printable Preview Table */}
+            <div className="overflow-x-auto border-2 border-stone-300 rounded-2xl">
+              <table className="w-full text-xs text-left text-stone-950">
+                <thead className="bg-amber-400 text-stone-950 font-black border-b-2 border-amber-500">
+                  <tr>
+                    {(REPORT_COLUMNS[customReportType] || []).filter((c) => selectedCols[c.key]).map((c) => (
+                      <th key={c.key} className="px-3.5 py-2.5 whitespace-nowrap border-r border-amber-500/40 last:border-r-0">
+                        {c.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-200">
+                  {getFilteredReportData().length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={(REPORT_COLUMNS[customReportType] || []).filter((c) => selectedCols[c.key]).length || 1}
+                        className="text-center py-8 text-stone-500 font-bold"
+                      >
+                        ไม่พบข้อมูลตามช่วงเวลาและตัวกรองที่เลือก
+                      </td>
+                    </tr>
+                  ) : (
+                    getFilteredReportData().map((row, idx) => (
+                      <tr key={idx} className="hover:bg-amber-50/50 transition">
+                        {(REPORT_COLUMNS[customReportType] || []).filter((c) => selectedCols[c.key]).map((c) => {
+                          const val = (row as any)[c.key];
+                          const isNumber = typeof val === 'number';
+                          return (
+                            <td key={c.key} className={`px-3.5 py-2.5 font-bold ${isNumber ? 'font-mono text-right' : ''}`}>
+                              {isNumber ? val.toLocaleString('th-TH') : String(val ?? '-')}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
           </div>
         </div>
       )}
