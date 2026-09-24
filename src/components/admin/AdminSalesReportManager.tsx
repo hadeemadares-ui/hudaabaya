@@ -53,6 +53,8 @@ export const AdminSalesReportManager: React.FC = () => {
       { key: 'rank', label: 'อันดับขายดี (Rank #)', defaultSelected: true },
       { key: 'title', label: 'ชื่อสินค้า / แบบ (Product Title)', defaultSelected: true },
       { key: 'variant', label: 'ไซส์ / ปริมาณ (Variant)', defaultSelected: true },
+      { key: 'latestSaleDate', label: 'วันที่ เวลา ที่ขาย (Date & Time)', defaultSelected: true },
+      { key: 'staffName', label: 'พนักงานผู้ขาย (Sales Staff)', defaultSelected: true },
       { key: 'unitsSold', label: 'จำนวนที่ขายได้ (Units Sold)', defaultSelected: true },
       { key: 'revenue', label: 'ยอดขายรวม (Total Revenue)', defaultSelected: true },
       { key: 'cost', label: 'ต้นทุนรวม (Total Cost)', defaultSelected: true },
@@ -181,17 +183,33 @@ export const AdminSalesReportManager: React.FC = () => {
         return oDate >= start && oDate <= end;
       });
 
-      const map: Record<string, { title: string; variant: string; unitsSold: number; revenue: number; cost: number }> = {};
+      const map: Record<string, { title: string; variant: string; unitsSold: number; revenue: number; cost: number; latestSaleDate: string; staffName: string }> = {};
       filteredOrders.forEach((o) => {
+        const saleDateStr = new Date(o.createdAt).toLocaleString('th-TH');
+        const staffStr = o.note?.includes('พนักงาน:')
+          ? o.note.split('พนักงาน:')[1].split('\n')[0].trim()
+          : (o.customerName && !o.customerName.includes('หน้าร้าน') && !o.customerName.includes('Walk-in') && !o.customerName.includes('ทดลอง'))
+            ? o.customerName
+            : 'เจ้าของร้าน (Admin)';
+
         o.items.forEach((it) => {
           const key = `${it.productTitle}___${it.variantName || 'ธรรมดา'}`;
           const cost = it.costPrice !== undefined && it.costPrice > 0 ? it.costPrice : Math.round(it.price * 0.5);
           if (!map[key]) {
-            map[key] = { title: it.productTitle, variant: it.variantName || 'ธรรมดา', unitsSold: 0, revenue: 0, cost: 0 };
+            map[key] = {
+              title: it.productTitle,
+              variant: it.variantName || 'ธรรมดา',
+              unitsSold: 0,
+              revenue: 0,
+              cost: 0,
+              latestSaleDate: saleDateStr,
+              staffName: staffStr,
+            };
           }
           map[key].unitsSold += it.quantity;
           map[key].revenue += it.price * it.quantity;
           map[key].cost += cost * it.quantity;
+          map[key].latestSaleDate = saleDateStr;
         });
       });
 
@@ -203,6 +221,8 @@ export const AdminSalesReportManager: React.FC = () => {
           rank: `#${index + 1}`,
           title: item.title,
           variant: item.variant,
+          latestSaleDate: item.latestSaleDate,
+          staffName: item.staffName,
           unitsSold: item.unitsSold,
           revenue: item.revenue,
           cost: item.cost,
@@ -435,12 +455,21 @@ export const AdminSalesReportManager: React.FC = () => {
       revenue: number;
       cost: number;
       profit: number;
+      latestSaleDate: string;
+      staffName: string;
     }
   >();
 
   filteredOrders.forEach((order) => {
     totalRevenue += order.netAmount;
     
+    const saleDateStr = new Date(order.createdAt).toLocaleString('th-TH');
+    const staffStr = order.note?.includes('พนักงาน:')
+      ? order.note.split('พนักงาน:')[1].split('\n')[0].trim()
+      : (order.customerName && !order.customerName.includes('หน้าร้าน') && !order.customerName.includes('Walk-in') && !order.customerName.includes('ทดลอง'))
+        ? order.customerName
+        : 'เจ้าของร้าน (Admin)';
+
     order.items.forEach((item) => {
       totalItemsSold += item.quantity;
       
@@ -467,6 +496,10 @@ export const AdminSalesReportManager: React.FC = () => {
         existing.revenue += itemTotalRevenue;
         existing.cost += itemTotalCost;
         existing.profit += itemTotalRevenue - itemTotalCost;
+        existing.latestSaleDate = saleDateStr;
+        if (staffStr && !existing.staffName.includes(staffStr)) {
+          existing.staffName = `${existing.staffName}, ${staffStr}`;
+        }
       } else {
         productSalesMap.set(key, {
           productId: resolvedProductId,
@@ -478,6 +511,8 @@ export const AdminSalesReportManager: React.FC = () => {
           revenue: itemTotalRevenue,
           cost: itemTotalCost,
           profit: itemTotalRevenue - itemTotalCost,
+          latestSaleDate: saleDateStr,
+          staffName: staffStr,
         });
       }
     });
@@ -1128,6 +1163,8 @@ export const AdminSalesReportManager: React.FC = () => {
                 <th className="p-3 font-black">ลำดับ</th>
                 <th className="p-3 font-black">ชื่อสินค้า / แบบ</th>
                 <th className="p-3 font-black">ไซส์ / ปริมาณ</th>
+                <th className="p-3 font-black whitespace-nowrap">วันที่ เวลา ที่ขาย</th>
+                <th className="p-3 font-black whitespace-nowrap">พนักงานผู้ขาย</th>
                 <th className="p-3 text-center font-black">จำนวนที่ขายได้</th>
                 <th className="p-3 text-right font-black">ยอดขายรวม (บาท)</th>
                 <th className="p-3 text-right font-black">ต้นทุนรวม (บาท)</th>
@@ -1138,7 +1175,7 @@ export const AdminSalesReportManager: React.FC = () => {
             <tbody className="divide-y divide-stone-200">
               {productSalesList.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-stone-700 font-black">
+                  <td colSpan={10} className="p-8 text-center text-stone-700 font-black">
                     ยังไม่มีข้อมูลยอดขายในช่วงเวลาที่เลือก
                   </td>
                 </tr>
@@ -1150,6 +1187,14 @@ export const AdminSalesReportManager: React.FC = () => {
                     <td className="p-3">
                       <span className="px-2 py-0.5 rounded bg-stone-100 text-[11px] text-stone-950 font-black border border-stone-300">
                         {item.variantName}
+                      </span>
+                    </td>
+                    <td className="p-3 font-bold whitespace-nowrap text-stone-800">
+                      {item.latestSaleDate || '-'}
+                    </td>
+                    <td className="p-3 font-black whitespace-nowrap text-amber-950">
+                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-400 text-[11px]">
+                        {item.staffName || 'เจ้าของร้าน (Admin)'}
                       </span>
                     </td>
                     <td className="p-3 text-center font-black font-mono text-stone-950 text-sm">
