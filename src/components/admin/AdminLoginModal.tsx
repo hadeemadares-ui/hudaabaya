@@ -76,11 +76,11 @@ export const AdminLoginModal: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full py-3 bg-gradient-to-r from-amber-400 via-yellow-500 to-gold-500 text-dubai-black font-extrabold text-sm tracking-wider rounded-xl shadow-gold-glow hover:scale-102 transition flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-3 bg-gradient-to-r from-amber-400 via-yellow-500 to-gold-500 text-stone-950 font-extrabold text-sm tracking-wider rounded-xl shadow-gold-glow hover:scale-102 transition flex items-center justify-center gap-2 cursor-pointer"
           >
-            <ShieldCheck className="w-5 h-5 text-dubai-black" />
+            <ShieldCheck className="w-5 h-5 text-stone-950" />
             <span>เข้าสู่ระบบหลังบ้าน (Admin Login)</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4 text-stone-950" />
           </button>
         </form>
 

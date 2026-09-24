@@ -253,7 +253,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onSuccess
               </button>
               <button
                 onClick={onSuccess}
-                className="flex-1 py-3 rounded-xl bg-gold-500 text-dubai-black font-extrabold text-xs uppercase tracking-wider shadow-gold-glow"
+                className="flex-1 py-3 rounded-xl bg-gold-500 text-stone-950 font-extrabold text-xs uppercase tracking-wider shadow-gold-glow cursor-pointer"
               >
                 เสร็จสิ้น ปิดหน้าต่าง
               </button>
@@ -561,7 +561,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, onSuccess
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-dubai-black font-extrabold text-sm uppercase tracking-wider shadow-gold-strong hover:scale-105 transition flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-stone-950 font-extrabold text-sm uppercase tracking-wider shadow-gold-strong hover:scale-105 transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isSubmitting ? (
                   <span>กำลังดำเนินการ...</span>

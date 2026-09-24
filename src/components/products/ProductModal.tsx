@@ -280,7 +280,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                   addedSuccess
                     ? 'bg-emerald-600 text-white'
                     : selectedVariant.stockQuantity > 0
-                    ? 'bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-dubai-black hover:shadow-gold-strong shadow-gold-glow'
+                    ? 'bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-stone-950 font-black hover:shadow-gold-strong shadow-gold-glow cursor-pointer'
                     : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                 }`}
               >

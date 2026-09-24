@@ -257,7 +257,7 @@ export const CartDrawer: React.FC = () => {
                 {/* Checkout Trigger Button */}
                 <button
                   onClick={() => setIsCheckoutOpen(true)}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-dubai-black font-extrabold text-sm uppercase tracking-wider shadow-gold-glow hover:shadow-gold-strong transition flex items-center justify-center gap-2"
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-stone-950 font-extrabold text-sm uppercase tracking-wider shadow-gold-glow hover:shadow-gold-strong transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>ดำเนินการสั่งซื้อ & ชำระเงิน</span>
                   <ArrowRight className="w-4 h-4" />
