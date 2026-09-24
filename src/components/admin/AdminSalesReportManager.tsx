@@ -6,7 +6,7 @@ import { useShop } from '../../context/ShopContext';
 import { Product, Order, CartItem, CategoryType } from '../../types';
 
 export const AdminSalesReportManager: React.FC = () => {
-  const { orders, products, createOrder, deleteOrder, addProduct, deleteProduct, updateProduct } = useShop();
+  const { orders, products, createOrder, deleteOrder, addProduct, updateProduct } = useShop();
 
   // Filter Mode: 'today' | 'month' | 'year' | 'all' | 'custom'
   const [filterMode, setFilterMode] = useState<'today' | 'month' | 'year' | 'all' | 'custom'>('all');
@@ -203,26 +203,20 @@ export const AdminSalesReportManager: React.FC = () => {
   const profitMarginPercent = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0.0';
   const productSalesList = Array.from(productSalesMap.values()).sort((a, b) => b.revenue - a.revenue);
 
-  // Delete product handler from Sales Report table
+  // Delete sales history record handler from Sales Report table (Keep product catalog intact)
   const handleDeleteProduct = (item: { productId: string; variantId: string; productTitle: string; variantName: string }) => {
-    const targetProd = products.find((p) => (item.productId && p.id === item.productId) || p.title === item.productTitle);
-
     const confirmed = window.confirm(
-      `คุณต้องการลบสินค้า/ประวัติรายการขาย "${item.productTitle}" (${item.variantName}) ใช่หรือไม่?\n\n*ระบบจะทำการลบรายการนี้ในทุกอุปกรณ์ real-time`
+      `คุณต้องการลบ "ประวัติรายการขาย" ของสินค้า "${item.productTitle}" (${item.variantName}) ออกจากรายงานใช่หรือไม่?\n\n*หมายเหตุ: สินค้าในคลัง (Product Catalog) จะยังคงอยู่ตามปกติ 100% ไม่ถูกลบออก`
     );
 
     if (confirmed) {
-      if (targetProd) {
-        deleteProduct(targetProd.id);
-      }
-
-      // Delete matching orders containing this test item title
+      // Delete matching orders containing this item from order history
       const matchingOrders = orders.filter((o) =>
         o.items.some((i) => (item.productId && i.productId === item.productId) || i.productTitle === item.productTitle)
       );
       matchingOrders.forEach((o) => deleteOrder(o.id));
 
-      alert(`ลบรายการ "${item.productTitle}" ออกจากระบบเรียบร้อยแล้วครับ!`);
+      alert(`ลบประวัติรายการขายของ "${item.productTitle}" ออกจากรายงานเรียบร้อยแล้วครับ!\n(สินค้าในคลังยังคงอยู่ในระบบตามปกติ)`);
     }
   };
 
@@ -816,10 +810,10 @@ export const AdminSalesReportManager: React.FC = () => {
                         <button
                           onClick={() => handleDeleteProduct(item)}
                           className="px-2.5 py-1 bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-500/40 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition shadow-sm cursor-pointer"
-                          title="ลบสินค้าออกจากระบบอย่างถาวร"
+                          title="ลบเฉพาะประวัติรายการขายออกจากรายงาน (สินค้าในคลังจะไม่ถูกลบ)"
                         >
                           <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                          <span>ลบ</span>
+                          <span>ลบประวัติขาย</span>
                         </button>
                       </div>
                     </td>
