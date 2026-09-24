@@ -8,15 +8,24 @@ import { EventSchedule } from '../../types';
 export const AdminEventMarketManager: React.FC = () => {
   const { storeSettings } = useShop();
 
-  const [activeBranch, setActiveBranch] = useState<string>('HUDA ABAYA - สาขาใหญ่ หนองจอก');
+  // Store branches state for HUDA ABAYA with localStorage persistence
+  const [branches, setBranches] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('huda_event_branches');
+      if (saved) {
+        try { return JSON.parse(saved); } catch (e) {}
+      }
+    }
+    return [
+      'HUDA ABAYA - สาขาใหญ่ หนองจอก',
+      'HUDA ABAYA - บูธ/ตลาดนัดคลอง16',
+    ];
+  });
+
+  const [activeBranch, setActiveBranch] = useState<string>('HUDA ABAYA - บูธ/ตลาดนัดคลอง16');
   const [eventStatusFilter, setEventStatusFilter] = useState<'all' | 'UPCOMING' | 'ACTIVE' | 'COMPLETED'>('all');
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState<boolean>(false);
   const [isAddBranchModalOpen, setIsAddBranchModalOpen] = useState<boolean>(false);
-
-  // Store branches state for HUDA ABAYA (Single Main Branch by default)
-  const [branches, setBranches] = useState<string[]>([
-    'HUDA ABAYA - สาขาใหญ่ หนองจอก',
-  ]);
   const [newBranchInput, setNewBranchInput] = useState<string>('');
 
   // Event schedules state
@@ -27,20 +36,38 @@ export const AdminEventMarketManager: React.FC = () => {
         try { return JSON.parse(saved); } catch (e) {}
       }
     }
-    return [];
+    return [
+      {
+        id: 'EVENT-KLONG16-001',
+        title: 'ออกบูธตลาดนัดคลอง 16 (HUDA ABAYA Pop-up)',
+        branchName: 'HUDA ABAYA - บูธ/ตลาดนัดคลอง16',
+        location: 'ตลาดนัดคลอง 16',
+        startDate: new Date().toISOString().slice(0, 10),
+        endDate: new Date().toISOString().slice(0, 10),
+        operatingHours: '10:00 - 22:00 น.',
+        productsToPrepare: 'ชุดอาบายะห์ดูไบ • คัฟทาน • น้ำหอมดูไบ & Oud',
+        phonePromptPay: storeSettings.contactPhone || '083-427-4687',
+        status: 'ACTIVE',
+        salesTarget: 30000,
+        actualSales: 0,
+        assignedStaff: 'เจ้าของร้าน (Admin)',
+        note: 'คำนวณเตรียมสต๊อกอาบายะห์ 100 ชุด และน้ำหอมดูไบ EDP 50 ขวด',
+        createdAt: new Date().toISOString(),
+      },
+    ];
   });
 
   // Form State for Add Event (HUDA ABAYA Default)
-  const [eventTitle, setEventTitle] = useState<string>('งานแฟชั่นมุสลิม & มลายูเอ็กซ์โป');
-  const [eventBranch, setEventBranch] = useState<string>('HUDA ABAYA - สาขาใหญ่ หนองจอก');
-  const [eventLocation, setEventLocation] = useState<string>('ศูนย์การค้า / งานแฟชั่นมุสลิม');
+  const [eventTitle, setEventTitle] = useState<string>('งานออกบูธตลาดนัดคลอง 16');
+  const [eventBranch, setEventBranch] = useState<string>('HUDA ABAYA - บูธ/ตลาดนัดคลอง16');
+  const [eventLocation, setEventLocation] = useState<string>('ตลาดนัดคลอง 16');
   const [eventHours, setEventHours] = useState<string>('10:00 - 22:00 น.');
-  const [eventProducts, setEventProducts] = useState<string>('ชุดอาบายะห์ดูไบ • ชุดคัฟทาน • น้ำหอมดูไบ EDP');
-  const [eventPhone, setEventPhone] = useState<string>(storeSettings.contactPhone || storeSettings.promptPayNumber || '0966482037');
-  const [eventStatus, setEventStatus] = useState<'UPCOMING' | 'ACTIVE' | 'COMPLETED'>('UPCOMING');
+  const [eventProducts, setEventProducts] = useState<string>('ชุดอาบายะห์ดูไบ • คัฟทาน • น้ำหอมดูไบ & Oud');
+  const [eventPhone, setEventPhone] = useState<string>(storeSettings.contactPhone || '083-427-4687');
+  const [eventStatus, setEventStatus] = useState<'UPCOMING' | 'ACTIVE' | 'COMPLETED'>('ACTIVE');
   const [eventStartDate, setEventStartDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [eventEndDate, setEventEndDate] = useState<string>(new Date().toISOString().slice(0, 10));
-  const [eventSalesTarget, setEventSalesTarget] = useState<number>(20000);
+  const [eventSalesTarget, setEventSalesTarget] = useState<number>(30000);
   const [eventStaff, setEventStaff] = useState<string>('เจ้าของร้าน (Admin)');
   const [eventNote, setEventNote] = useState<string>('คำนวณเตรียมสต๊อกอาบายะห์ 100 ชุด และน้ำหอมดูไบ 50 ขวด');
 
@@ -54,6 +81,13 @@ export const AdminEventMarketManager: React.FC = () => {
   const upcomingCount = schedules.filter((s) => s.status === 'UPCOMING').length;
   const activeCount = schedules.filter((s) => s.status === 'ACTIVE').length;
   const completedCount = schedules.filter((s) => s.status === 'COMPLETED').length;
+
+  const saveBranchesToStorage = (updatedBranches: string[]) => {
+    setBranches(updatedBranches);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('huda_event_branches', JSON.stringify(updatedBranches));
+    }
+  };
 
   const saveSchedulesToStorage = (updated: EventSchedule[]) => {
     setSchedules(updated);
@@ -95,11 +129,35 @@ export const AdminEventMarketManager: React.FC = () => {
   const handleAddBranch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBranchInput.trim()) return;
-    setBranches([...branches, newBranchInput.trim()]);
-    setActiveBranch(newBranchInput.trim());
+    const formattedBranch = newBranchInput.trim().startsWith('HUDA ABAYA')
+      ? newBranchInput.trim()
+      : `HUDA ABAYA - ${newBranchInput.trim()}`;
+
+    if (branches.includes(formattedBranch)) {
+      alert(`มีสาขา/บูธ "${formattedBranch}" อยู่ในระบบแล้วครับ`);
+      return;
+    }
+
+    const updated = [...branches, formattedBranch];
+    saveBranchesToStorage(updated);
+    setActiveBranch(formattedBranch);
     setNewBranchInput('');
     setIsAddBranchModalOpen(false);
-    alert(`เพิ่มบูธ/สาขา "${newBranchInput}" สำเร็จ!`);
+    alert(`เพิ่มบูธ/สาขา "${formattedBranch}" สำเร็จ! สามารถเลือกใช้งานได้ทันที`);
+  };
+
+  const handleDeleteBranch = (branchToDelete: string) => {
+    if (branches.length <= 1) {
+      alert('ต้องมีอย่างน้อย 1 สาขาหลักในระบบครับ');
+      return;
+    }
+    if (confirm(`คุณต้องการลบสาขา/บูธ "${branchToDelete}" ใช่หรือไม่?`)) {
+      const updated = branches.filter((b) => b !== branchToDelete);
+      saveBranchesToStorage(updated);
+      if (activeBranch === branchToDelete) {
+        setActiveBranch(updated[0]);
+      }
+    }
   };
 
   const handleDeleteSchedule = (id: string) => {
@@ -145,7 +203,7 @@ export const AdminEventMarketManager: React.FC = () => {
             <span className="text-stone-400">•</span>
             <span className="text-emerald-900 flex items-center gap-1 font-mono font-black">
               <Phone className="w-3.5 h-3.5 text-emerald-700" />
-              <span>โทร/พร้อมเพย์: {storeSettings.contactPhone || storeSettings.promptPayNumber || '0966482037'}</span>
+              <span>โทร/พร้อมเพย์: {storeSettings.contactPhone || '083-427-4687'}</span>
             </span>
           </p>
         </div>
@@ -173,6 +231,17 @@ export const AdminEventMarketManager: React.FC = () => {
             <Plus className="w-4 h-4 text-stone-950" />
             <span>เพิ่มบูธ/สาขา</span>
           </button>
+
+          {branches.length > 1 && (
+            <button
+              onClick={() => handleDeleteBranch(activeBranch)}
+              className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-950 font-black border border-red-300 rounded-xl text-xs transition cursor-pointer flex items-center gap-1"
+              title="ลบสาขา/บูธที่เลือกอยู่นี้"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-red-700" />
+              <span>ลบสาขานี้</span>
+            </button>
+          )}
         </div>
       </div>
 
