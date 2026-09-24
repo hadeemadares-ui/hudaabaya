@@ -1,23 +1,23 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Calendar, MapPin, Clock, Plus, Store, User, Phone, DollarSign, Sparkles, CheckCircle2, AlertCircle, X, ChevronRight, Filter, Flame, Edit2, Trash2 } from 'lucide-react';
+import { Calendar, MapPin, Clock, Plus, Store, User, Phone, DollarSign, Sparkles, CheckCircle2, AlertCircle, X, ChevronRight, Filter, Flame, Edit2, Trash2, ShoppingBag } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { EventSchedule } from '../../types';
 
 export const AdminEventMarketManager: React.FC = () => {
   const { storeSettings } = useShop();
 
-  const [activeBranch, setActiveBranch] = useState<string>('ร้านลูกไอ้บัง - ตลาดนัดคลอง16');
+  const [activeBranch, setActiveBranch] = useState<string>('HUDA ABAYA - บูธป๊อบอัพ งานแฟชั่นมุสลิม');
   const [eventStatusFilter, setEventStatusFilter] = useState<'all' | 'UPCOMING' | 'ACTIVE' | 'COMPLETED'>('all');
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState<boolean>(false);
   const [isAddBranchModalOpen, setIsAddBranchModalOpen] = useState<boolean>(false);
 
-  // Store branches state
+  // Store branches state for HUDA ABAYA
   const [branches, setBranches] = useState<string[]>([
-    'ร้านลูกไอ้บัง - ตลาดนัดคลอง16',
-    'สาขาสำนักงานใหญ่ - หนองจอก',
-    'บูธสตรีทฟู้ด - งานกาชาด',
+    'HUDA ABAYA - บูธป๊อบอัพ งานแฟชั่นมุสลิม',
+    'HUDA ABAYA - บูธออกงานศูนย์การค้า (Mall Event)',
+    'HUDA ABAYA - สำนักงานใหญ่ หนองจอก กรุงเทพฯ',
   ]);
   const [newBranchInput, setNewBranchInput] = useState<string>('');
 
@@ -32,19 +32,19 @@ export const AdminEventMarketManager: React.FC = () => {
     return [];
   });
 
-  // Form State for Add Event
-  const [eventTitle, setEventTitle] = useState<string>('ตลาดนัดคลอง 16 เสาร์-อาทิตย์');
-  const [eventBranch, setEventBranch] = useState<string>('ร้านลูกไอ้บัง - ตลาดนัดคลอง16');
-  const [eventLocation, setEventLocation] = useState<string>('ตลาดนัดคลอง 16');
-  const [eventHours, setEventHours] = useState<string>('04:00 - 12:00 น.');
-  const [eventProducts, setEventProducts] = useState<string>('โรตีนาน • เนื้อย่างสดใหม่');
-  const [eventPhone, setEventPhone] = useState<string>('0966482037');
+  // Form State for Add Event (HUDA ABAYA Default)
+  const [eventTitle, setEventTitle] = useState<string>('งานแฟชั่นมุสลิม & มลายูเอ็กซ์โป');
+  const [eventBranch, setEventBranch] = useState<string>('HUDA ABAYA - บูธป๊อบอัพ งานแฟชั่นมุสลิม');
+  const [eventLocation, setEventLocation] = useState<string>('ศูนย์การค้า / งานแฟชั่นมุสลิม');
+  const [eventHours, setEventHours] = useState<string>('10:00 - 22:00 น.');
+  const [eventProducts, setEventProducts] = useState<string>('ชุดอาบายะห์ดูไบ • ชุดคัฟทาน • น้ำหอมดูไบ EDP');
+  const [eventPhone, setEventPhone] = useState<string>(storeSettings.contactPhone || storeSettings.promptPayNumber || '0966482037');
   const [eventStatus, setEventStatus] = useState<'UPCOMING' | 'ACTIVE' | 'COMPLETED'>('UPCOMING');
   const [eventStartDate, setEventStartDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [eventEndDate, setEventEndDate] = useState<string>(new Date().toISOString().slice(0, 10));
-  const [eventSalesTarget, setEventSalesTarget] = useState<number>(5000);
+  const [eventSalesTarget, setEventSalesTarget] = useState<number>(20000);
   const [eventStaff, setEventStaff] = useState<string>('เจ้าของร้าน (Admin)');
-  const [eventNote, setEventNote] = useState<string>('คำนวณเตรียมแป้งโรตี 50 กิโลกรัม และเนื้อหมัก 30 กิโลกรัม');
+  const [eventNote, setEventNote] = useState<string>('คำนวณเตรียมสต๊อกอาบายะห์ 100 ชุด และน้ำหอมดูไบ 50 ขวด');
 
   // Filtered Schedules
   const filteredSchedules = schedules.filter((s) => {
@@ -127,11 +127,11 @@ export const AdminEventMarketManager: React.FC = () => {
           <div className="flex flex-wrap items-center justify-center gap-2">
             <span className="text-[11px] font-black uppercase text-stone-950 bg-amber-400 px-3 py-1 rounded-full shadow-md flex items-center gap-1">
               <Store className="w-3.5 h-3.5" />
-              <span>ออกบูธ &amp; ตลาดนัด</span>
+              <span>HUDA ABAYA ออกบูธ &amp; ตลาดนัด</span>
             </span>
             <span className="text-[11px] font-extrabold text-emerald-300 bg-emerald-950 px-3 py-1 rounded-full border border-emerald-500/50 flex items-center gap-1">
               <Clock className="w-3.5 h-3.5 text-emerald-400" />
-              <span>เปิด 04:00 - 12:00 น.</span>
+              <span>เปิด 10:00 - 22:00 น.</span>
             </span>
           </div>
 
@@ -141,13 +141,13 @@ export const AdminEventMarketManager: React.FC = () => {
 
           <p className="text-xs sm:text-sm text-stone-200 font-extrabold flex items-center justify-center gap-2 flex-wrap">
             <span className="text-amber-200 flex items-center gap-1">
-              <Flame className="w-4 h-4 text-amber-400" />
-              <span>โรตีนาน • เนื้อย่างสดใหม่</span>
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span>ชุดอาบายะห์ดูไบ • คัฟทาน • น้ำหอมดูไบ &amp; Oud</span>
             </span>
             <span className="text-stone-400">•</span>
             <span className="text-emerald-400 flex items-center gap-1 font-mono">
               <Phone className="w-3.5 h-3.5 text-emerald-400" />
-              <span>โทร/พร้อมเพย์: 0966482037</span>
+              <span>โทร/พร้อมเพย์: {storeSettings.contactPhone || storeSettings.promptPayNumber || '0966482037'}</span>
             </span>
           </p>
         </div>
@@ -235,10 +235,10 @@ export const AdminEventMarketManager: React.FC = () => {
           <div className="space-y-1">
             <h3 className="font-serif font-extrabold text-xl sm:text-2xl text-amber-300 flex items-center justify-center gap-2">
               <Calendar className="w-6 h-6 text-amber-400" />
-              <span>ตารางออกงาน &amp; วางแผนตลาดนัด</span>
+              <span>ตารางออกงาน &amp; วางแผนตลาดนัด (HUDA ABAYA)</span>
             </h3>
             <p className="text-xs sm:text-sm text-stone-200 font-bold">
-              ลงตารางออกบูธล่วงหน้า คำนวณเตรียมของ แจ้งพนักงาน และเปิด POS ขายแยกสาขา
+              ลงตารางออกบูธล่วงหน้า คำนวณเตรียมสต๊อกอาบายะห์และน้ำหอมดูไบ แจ้งพนักงาน และเปิด POS ขายแยกสาขา
             </p>
           </div>
 
@@ -312,7 +312,7 @@ export const AdminEventMarketManager: React.FC = () => {
                 ยังไม่มีรายการตารางงานในช่วงนี้
               </h4>
               <p className="text-xs text-stone-300 max-w-sm mx-auto font-bold leading-relaxed">
-                กดปุ่ม "ลงตารางออกงานใหม่" เพื่อเริ่มวางแผนออกงาน/ตลาดนัดล่วงหน้า คำนวณวัตถุดิบโรตีนาน &amp; เนื้อย่าง และเปิดขายหน้าร้าน POS
+                กดปุ่ม "ลงตารางออกงานใหม่" เพื่อเริ่มวางแผนออกงาน/ตลาดนัดล่วงหน้า คำนวณสต๊อกสินค้า HUDA ABAYA และเปิดขายหน้าร้าน POS
               </p>
             </div>
 
@@ -374,8 +374,8 @@ export const AdminEventMarketManager: React.FC = () => {
                       <span>เวลาเปิด-ปิด: {s.operatingHours} ({s.startDate} ถึง {s.endDate})</span>
                     </p>
                     <p className="flex items-center gap-1.5 font-bold text-amber-300">
-                      <Flame className="w-4 h-4 text-amber-400 shrink-0" />
-                      <span>เมนูเตรียมขาย: {s.productsToPrepare}</span>
+                      <ShoppingBag className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span>สินค้าเตรียมขาย: {s.productsToPrepare}</span>
                     </p>
                     {s.assignedStaff && (
                       <p className="flex items-center gap-1.5 font-bold text-stone-400">
@@ -436,7 +436,7 @@ export const AdminEventMarketManager: React.FC = () => {
             <div className="flex justify-between items-center border-b-2 border-amber-400/30 pb-3">
               <h3 className="font-serif font-extrabold text-lg text-amber-300 flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-amber-400" />
-                <span>ลงตารางออกงาน &amp; ตลาดนัดใหม่</span>
+                <span>ลงตารางออกงาน &amp; ตลาดนัดใหม่ (HUDA ABAYA)</span>
               </h3>
               <button
                 onClick={() => setIsAddEventModalOpen(false)}
@@ -454,7 +454,7 @@ export const AdminEventMarketManager: React.FC = () => {
                   required
                   value={eventTitle}
                   onChange={(e) => setEventTitle(e.target.value)}
-                  placeholder="เช่น ตลาดนัดคลอง 16 เสาร์-อาทิตย์"
+                  placeholder="เช่น งานแฟชั่นมุสลิม & มลายูเอ็กซ์โป"
                   className="w-full bg-stone-900 border-2 border-amber-400/60 rounded-xl p-3 text-white font-extrabold text-sm focus:outline-none focus:border-amber-400 shadow-inner"
                 />
               </div>
@@ -482,7 +482,7 @@ export const AdminEventMarketManager: React.FC = () => {
                     required
                     value={eventLocation}
                     onChange={(e) => setEventLocation(e.target.value)}
-                    placeholder="เช่น ตลาดนัดคลอง 16"
+                    placeholder="เช่น ศูนย์การค้า / งานแฟชั่นมุสลิม"
                     className="w-full bg-stone-900 border-2 border-amber-400/60 rounded-xl p-3 text-white font-extrabold text-xs focus:outline-none"
                   />
                 </div>
@@ -496,7 +496,7 @@ export const AdminEventMarketManager: React.FC = () => {
                     required
                     value={eventHours}
                     onChange={(e) => setEventHours(e.target.value)}
-                    placeholder="เช่น 04:00 - 12:00 น."
+                    placeholder="เช่น 10:00 - 22:00 น."
                     className="w-full bg-stone-900 border-2 border-emerald-500 rounded-xl p-3 text-emerald-300 font-extrabold text-xs focus:outline-none"
                   />
                 </div>
@@ -515,13 +515,13 @@ export const AdminEventMarketManager: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-amber-300 font-extrabold mb-1">รายการเมนูที่ต้องเตรียมขาย *</label>
+                <label className="block text-amber-300 font-extrabold mb-1">รายการสินค้าที่ต้องเตรียมขาย *</label>
                 <input
                   type="text"
                   required
                   value={eventProducts}
                   onChange={(e) => setEventProducts(e.target.value)}
-                  placeholder="เช่น โรตีนาน • เนื้อย่างสดใหม่"
+                  placeholder="เช่น ชุดอาบายะห์ดูไบ • ชุดคัฟทาน • น้ำหอมดูไบ EDP"
                   className="w-full bg-stone-900 border-2 border-amber-400/60 rounded-xl p-3 text-white font-extrabold text-xs focus:outline-none"
                 />
               </div>
@@ -551,12 +551,12 @@ export const AdminEventMarketManager: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-stone-300 font-extrabold mb-1">คำนวณวัตถุดิบ / หมายเหตุเตรียมตัว</label>
+                <label className="block text-stone-300 font-extrabold mb-1">คำนวณเตรียมสต๊อก / หมายเหตุเตรียมตัว</label>
                 <input
                   type="text"
                   value={eventNote}
                   onChange={(e) => setEventNote(e.target.value)}
-                  placeholder="เช่น คำนวณเตรียมแป้งโรตี 50 กิโลกรัม และเนื้อหมัก 30 กิโลกรัม"
+                  placeholder="เช่น คำนวณเตรียมสต๊อกอาบายะห์ 100 ชุด และน้ำหอมดูไบ 50 ขวด"
                   className="w-full bg-stone-900 border border-amber-400/30 rounded-xl p-2.5 text-white font-bold focus:outline-none"
                 />
               </div>
@@ -590,7 +590,7 @@ export const AdminEventMarketManager: React.FC = () => {
             <div className="flex justify-between items-center border-b-2 border-amber-400/30 pb-3">
               <h3 className="font-serif font-extrabold text-lg text-amber-300 flex items-center gap-2">
                 <Store className="w-5 h-5 text-amber-400" />
-                <span>เพิ่มบูธ / สาขาใหม่</span>
+                <span>เพิ่มบูธ / สาขาใหม่ (HUDA ABAYA)</span>
               </h3>
               <button
                 onClick={() => setIsAddBranchModalOpen(false)}
@@ -608,7 +608,7 @@ export const AdminEventMarketManager: React.FC = () => {
                   required
                   value={newBranchInput}
                   onChange={(e) => setNewBranchInput(e.target.value)}
-                  placeholder="เช่น ร้านลูกไอ้บัง - ตลาดนัดคลอง16"
+                  placeholder="เช่น HUDA ABAYA - บูธป๊อบอัพ งานแฟชั่นมุสลิม"
                   className="w-full bg-stone-900 border-2 border-amber-400/60 rounded-xl p-3 text-white font-extrabold text-sm focus:outline-none"
                 />
               </div>
