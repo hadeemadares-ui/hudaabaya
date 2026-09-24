@@ -131,12 +131,12 @@ export const AdminOrderManager: React.FC = () => {
                         </button>
                         <button
                           onClick={() => {
-                            if (confirm(`คุณต้องการลบคำสั่งซื้อ #${order.id} ใช่หรือไม่?`)) {
+                            if (confirm(`คุณต้องการลบคำสั่งซื้อ #${order.id} ออกจากระบบใช่หรือไม่?\n\n*หมายเหตุ: ข้อมูลสินค้าในคลัง (Product Catalog) จะยังคงอยู่ตามปกติไม่ถูกลบ`)) {
                               deleteOrder(order.id);
                             }
                           }}
-                          className="p-2 bg-red-950 border-2 border-red-600/70 text-red-200 hover:text-white rounded-xl text-xs transition"
-                          title="ลบคำสั่งซื้อนี้"
+                          className="p-2 bg-red-950 border-2 border-red-600/70 text-red-200 hover:text-white rounded-xl text-xs transition cursor-pointer"
+                          title="ลบเฉพาะคำสั่งซื้อนี้ออกจากระบบ (ไม่กระทบสินค้าในคลัง)"
                         >
                           <Trash2 className="w-4 h-4 text-red-400" />
                         </button>

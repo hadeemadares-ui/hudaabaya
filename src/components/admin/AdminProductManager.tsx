@@ -495,12 +495,12 @@ export const AdminProductManager: React.FC = () => {
                     
                     <button
                       onClick={() => {
-                        if (confirm(`คุณต้องการลบสินค้า "${product.title}" ใช่หรือไม่?`)) {
+                        if (confirm(`คุณต้องการลบสินค้า "${product.title}" ออกจากคลังสินค้าใช่หรือไม่?\n\n*คำเตือน: การลบนี้จะทำการลบข้อมูลสินค้าออกจากคลังและหน้าคิดเงิน POS ทั่วโลก`)) {
                           deleteProduct(product.id);
                         }
                       }}
-                      className="p-2 bg-red-950/60 border border-red-800/40 text-red-300 hover:text-red-100 rounded-xl text-xs flex items-center gap-1 transition"
-                      title="ลบสินค้าชนิดนี้ออกจากระบบ"
+                      className="p-2 bg-red-950/60 border border-red-800/40 text-red-300 hover:text-red-100 rounded-xl text-xs flex items-center gap-1 transition cursor-pointer"
+                      title="ลบสินค้าชนิดนี้ออกจากคลังสินค้าอย่างถาวร"
                     >
                       <Trash2 className="w-4 h-4 text-red-400" />
                     </button>
