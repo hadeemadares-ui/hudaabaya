@@ -38,6 +38,13 @@ export async function POST(request: Request) {
     const orderData = await request.json();
     const nowIso = new Date().toISOString();
 
+    if (orderData.action === 'sync_all_orders') {
+      if (Array.isArray(orderData.orders)) {
+        globalOrders = orderData.orders;
+      }
+      return NextResponse.json({ success: true, orders: globalOrders }, { headers: noCacheHeaders });
+    }
+
     if (orderData.action === 'update_status') {
       const { orderId, orderStatus, trackingNumber, courier, performedBy } = orderData;
       globalOrders = globalOrders.map((o) =>

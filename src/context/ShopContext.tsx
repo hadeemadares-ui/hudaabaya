@@ -115,9 +115,19 @@ const getTimestampMs = (val: any): number => {
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
 export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const deletedProductIdsRef = useRef<Set<string>>(new Set());
-
   const [deletedProductIds, setDeletedProductIds] = useState<Set<string>>(new Set());
+  const [deletedOrderIds, setDeletedOrderIds] = useState<Set<string>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('huda_deleted_order_ids');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return new Set(parsed);
+        } catch (e) {}
+      }
+    }
+    return new Set<string>();
+  });
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
@@ -456,11 +466,23 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const syncOrders = async () => {
     try {
+      let currentDeletedSet = deletedOrderIds;
+      if (typeof window !== 'undefined') {
+        const savedDeleted = localStorage.getItem('huda_deleted_order_ids');
+        if (savedDeleted) {
+          try {
+            const arr = JSON.parse(savedDeleted);
+            if (Array.isArray(arr)) currentDeletedSet = new Set([...Array.from(currentDeletedSet), ...arr]);
+          } catch (e) {}
+        }
+      }
+
       const cloudOrders = await fetchCloudOrders();
       if (Array.isArray(cloudOrders) && cloudOrders.length > 0) {
-        setOrders(cloudOrders);
+        const cleanOrders = cloudOrders.filter((o) => !currentDeletedSet.has(o.id));
+        setOrders(cleanOrders);
         if (typeof window !== 'undefined') {
-          localStorage.setItem('huda_orders', JSON.stringify(cloudOrders));
+          localStorage.setItem('huda_orders', JSON.stringify(cleanOrders));
         }
       } else {
         if (typeof window !== 'undefined') {
@@ -469,8 +491,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
               const parsed = JSON.parse(saved);
               if (Array.isArray(parsed) && parsed.length > 0) {
-                setOrders(parsed);
-                saveCloudOrders(parsed);
+                const cleanOrders = parsed.filter((o: Order) => !currentDeletedSet.has(o.id));
+                setOrders(cleanOrders);
+                saveCloudOrders(cleanOrders);
               }
             } catch (e) {}
           }
@@ -848,6 +871,14 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const deleteOrder = (orderId: string) => {
+    setDeletedOrderIds((prevSet) => {
+      const updatedSet = new Set(Array.from(prevSet)).add(orderId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_deleted_order_ids', JSON.stringify(Array.from(updatedSet)));
+      }
+      return updatedSet;
+    });
+
     setOrders((prev) => {
       const updated = prev.filter((o) => o.id !== orderId);
       if (typeof window !== 'undefined') {
