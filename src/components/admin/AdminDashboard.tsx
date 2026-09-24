@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { DollarSign, ShoppingBag, Layers, AlertCircle, LogOut, ShieldCheck, Settings, Store, Sparkles, Clock, History, Smartphone, Monitor, TrendingUp, RotateCcw, Truck } from 'lucide-react';
+import { DollarSign, ShoppingBag, Layers, AlertCircle, LogOut, ShieldCheck, Settings, Store, Sparkles, Clock, History, Smartphone, Monitor, TrendingUp, RotateCcw, Truck, Calendar } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { AdminProductManager } from './AdminProductManager';
 import { AdminOrderManager } from './AdminOrderManager';
@@ -9,6 +9,7 @@ import { AdminSettingsManager } from './AdminSettingsManager';
 import { AdminPOSManager } from './AdminPOSManager';
 import { AdminSalesReportManager } from './AdminSalesReportManager';
 import { AdminSupplierSettlementManager } from './AdminSupplierSettlementManager';
+import { AdminEventMarketManager } from './AdminEventMarketManager';
 import { AuditLog } from '../../types';
 
 export const AdminDashboard: React.FC = () => {
@@ -20,7 +21,7 @@ export const AdminDashboard: React.FC = () => {
     clearBrowserCacheAndReload,
   } = useShop();
 
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'settings' | 'pos' | 'logs' | 'reports' | 'suppliers'>(() => {
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'settings' | 'pos' | 'logs' | 'reports' | 'suppliers' | 'events'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const targetTab = sessionStorage.getItem('huda_target_tab');
@@ -34,6 +35,7 @@ export const AdminDashboard: React.FC = () => {
         return 'reports';
       }
       if (params.get('tab') === 'suppliers' || params.get('tab') === 'supplier') return 'suppliers';
+      if (params.get('tab') === 'events' || params.get('tab') === 'market') return 'events';
       if (params.get('tab') === 'pos' || params.get('tab') === 'cashier') return 'pos';
       if (params.get('tab') === 'orders') return 'orders';
       if (params.get('tab') === 'settings') return 'settings';
@@ -258,6 +260,18 @@ export const AdminDashboard: React.FC = () => {
           </button>
 
           <button
+            onClick={() => setActiveTab('events')}
+            className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md cursor-pointer ${
+              activeTab === 'events'
+                ? 'bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 text-white shadow-lg border-2 border-purple-300'
+                : 'bg-stone-900 text-purple-300 hover:text-white border-2 border-purple-500/50'
+            }`}
+          >
+            <Calendar className="w-4.5 h-4.5 text-purple-300" />
+            <span>ตารางออกงาน &amp; ตลาดนัด</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('suppliers')}
             className={`px-4 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md cursor-pointer ${
               activeTab === 'suppliers'
@@ -309,6 +323,7 @@ export const AdminDashboard: React.FC = () => {
         {/* Tab Contents */}
         {activeTab === 'pos' && <AdminPOSManager />}
         {activeTab === 'reports' && <AdminSalesReportManager />}
+        {activeTab === 'events' && <AdminEventMarketManager />}
         {activeTab === 'suppliers' && <AdminSupplierSettlementManager />}
         {activeTab === 'products' && <AdminProductManager />}
         {activeTab === 'orders' && <AdminOrderManager />}

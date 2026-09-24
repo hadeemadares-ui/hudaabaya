@@ -413,19 +413,19 @@ export const AdminPOSManager: React.FC = () => {
             </div>
 
             {/* Walk-in Customer Info */}
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gold-400/20">
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t-2 border-amber-400/20">
               <div>
-                <label className="block text-gray-400 text-[10px] mb-1">ชื่อลูกค้า (หรือ Walk-in)</label>
+                <label className="block text-amber-300 text-xs mb-1 font-extrabold">ชื่อลูกค้า (หรือ Walk-in)</label>
                 <input
                   type="text"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full bg-dubai-dark border border-gold-400/30 rounded p-1.5 text-white"
+                  className="w-full bg-stone-950 border-2 border-amber-400/40 rounded-xl p-2 text-white font-extrabold text-xs focus:outline-none focus:border-amber-400 shadow-inner"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-400 text-[10px] mb-1">ส่วนลดหน้าร้าน (บาท)</label>
+                <label className="block text-amber-300 text-xs mb-1 font-extrabold">ส่วนลดหน้าร้าน (บาท)</label>
                 <input
                   type="number"
                   min={0}
@@ -437,79 +437,79 @@ export const AdminPOSManager: React.FC = () => {
                     const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
                     setDiscountInput(cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0));
                   }}
-                  className="w-full bg-dubai-dark border border-gold-400/30 rounded p-1.5 text-gold-300 font-bold font-mono"
+                  className="w-full bg-stone-950 border-2 border-amber-400/40 rounded-xl p-2 text-amber-300 font-extrabold font-mono text-xs text-right focus:outline-none focus:border-amber-400 shadow-inner"
                 />
               </div>
             </div>
 
             {/* Payment Method Selector */}
-            <div className="space-y-2.5 pt-2 border-t border-gold-400/20">
-              <label className="block text-gold-400 text-[11px] font-bold">เลือกวิธีชำระเงินหน้าร้าน:</label>
+            <div className="space-y-2.5 pt-2.5 border-t-2 border-amber-400/20">
+              <label className="block text-amber-300 text-xs font-extrabold">เลือกวิธีชำระเงินหน้าร้าน:</label>
               
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('cash')}
-                  className={`p-2 rounded-xl border text-center transition flex flex-col items-center gap-1 ${
+                  className={`p-2.5 rounded-xl border-2 text-center transition flex flex-col items-center gap-1 cursor-pointer ${
                     paymentMethod === 'cash'
-                      ? 'bg-gold-500 text-dubai-black font-extrabold border-gold-400 shadow-gold-glow'
-                      : 'bg-dubai-dark text-gold-300 border-gold-400/20'
+                      ? 'bg-amber-400 text-stone-950 font-black border-amber-300 shadow-lg scale-102'
+                      : 'bg-stone-950 text-amber-300 border-amber-400/40 hover:border-amber-300 hover:text-white'
                   }`}
                 >
                   <Banknote className="w-4 h-4" />
-                  <span className="text-[10px]">เงินสด (Cash)</span>
+                  <span className="text-xs font-extrabold">เงินสด (Cash)</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('promptpay')}
-                  className={`p-2 rounded-xl border text-center transition flex flex-col items-center gap-1 ${
+                  className={`p-2.5 rounded-xl border-2 text-center transition flex flex-col items-center gap-1 cursor-pointer ${
                     paymentMethod === 'promptpay'
-                      ? 'bg-gold-500 text-dubai-black font-extrabold border-gold-400 shadow-gold-glow'
-                      : 'bg-dubai-dark text-gold-300 border-gold-400/20'
+                      ? 'bg-amber-400 text-stone-950 font-black border-amber-300 shadow-lg scale-102'
+                      : 'bg-stone-950 text-amber-300 border-amber-400/40 hover:border-amber-300 hover:text-white'
                   }`}
                 >
                   <QrCode className="w-4 h-4" />
-                  <span className="text-[10px]">พร้อมเพย์ QR</span>
+                  <span className="text-xs font-extrabold">พร้อมเพย์ QR</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('credit_card')}
-                  className={`p-2 rounded-xl border text-center transition flex flex-col items-center gap-1 ${
+                  className={`p-2.5 rounded-xl border-2 text-center transition flex flex-col items-center gap-1 cursor-pointer ${
                     paymentMethod === 'credit_card'
-                      ? 'bg-gold-500 text-dubai-black font-extrabold border-gold-400 shadow-gold-glow'
-                      : 'bg-dubai-dark text-gold-300 border-gold-400/20'
+                      ? 'bg-amber-400 text-stone-950 font-black border-amber-300 shadow-lg scale-102'
+                      : 'bg-stone-950 text-amber-300 border-amber-400/40 hover:border-amber-300 hover:text-white'
                   }`}
                 >
                   <CreditCard className="w-4 h-4" />
-                  <span className="text-[10px]">รูดบัตร EDC</span>
+                  <span className="text-xs font-extrabold">รูดบัตร EDC</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('gov_copay')}
-                  className={`p-2 rounded-xl border text-center transition flex flex-col items-center gap-1 ${
+                  className={`p-2.5 rounded-xl border-2 text-center transition flex flex-col items-center gap-1 cursor-pointer ${
                     paymentMethod === 'gov_copay'
-                      ? 'bg-gradient-to-r from-amber-400 via-gold-400 to-amber-500 text-dubai-black font-extrabold border-gold-300 shadow-gold-glow scale-102'
-                      : 'bg-dubai-dark text-amber-300 border-amber-500/40 hover:border-amber-400'
+                      ? 'bg-gradient-to-r from-amber-400 via-gold-400 to-amber-500 text-stone-950 font-black border-amber-300 shadow-lg scale-102'
+                      : 'bg-stone-950 text-amber-300 border-amber-500/40 hover:border-amber-400 hover:text-white'
                   }`}
                 >
                   <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
-                  <span className="text-[10px] font-bold">โครงการรัฐบาล</span>
+                  <span className="text-xs font-extrabold">โครงการรัฐบาล</span>
                 </button>
               </div>
 
               {/* Cash Quick Presets & Change Calculation */}
               {paymentMethod === 'cash' && (
-                <div className="p-3 bg-dubai-dark rounded-xl border border-gold-400/30 space-y-2.5">
-                  <div className="space-y-1">
-                    <span className="text-gray-300 text-[11px] font-bold block">ปุ่มลัดรับเงินสด (Quick Cash Presets):</span>
-                    <div className="flex flex-wrap gap-1">
+                <div className="p-4 bg-stone-900 rounded-2xl border-2 border-amber-400/50 space-y-3 shadow-xl">
+                  <div className="space-y-1.5">
+                    <span className="text-amber-300 text-xs font-extrabold block">ปุ่มลัดรับเงินสด (Quick Cash Presets):</span>
+                    <div className="flex flex-wrap gap-1.5">
                       <button
                         type="button"
                         onClick={() => handleQuickCashPreset(netAmount)}
-                        className="px-2 py-1 bg-gold-500/20 hover:bg-gold-500 hover:text-dubai-black border border-gold-400/40 text-gold-300 rounded font-bold text-[10px]"
+                        className="px-3 py-1.5 bg-amber-400 text-stone-950 border-2 border-amber-300 rounded-xl font-black text-xs shadow-md hover:bg-amber-300 transition cursor-pointer"
                       >
                         พอดี (฿{netAmount.toLocaleString()})
                       </button>
@@ -518,7 +518,7 @@ export const AdminPOSManager: React.FC = () => {
                           key={amt}
                           type="button"
                           onClick={() => handleQuickCashPreset(amt)}
-                          className="px-2 py-1 bg-dubai-black hover:bg-gold-500 hover:text-dubai-black border border-gold-400/30 text-gold-200 rounded font-mono font-bold text-[10px]"
+                          className="px-3 py-1.5 bg-stone-950 hover:bg-amber-400 hover:text-stone-950 border-2 border-amber-400/50 text-amber-300 rounded-xl font-mono font-black text-xs shadow transition cursor-pointer"
                         >
                           ฿{amt.toLocaleString()}
                         </button>
@@ -527,7 +527,7 @@ export const AdminPOSManager: React.FC = () => {
                   </div>
 
                   <div className="flex items-center justify-between pt-1">
-                    <span className="text-gray-300 text-xs font-bold">รับเงินสดมา (บาท):</span>
+                    <span className="text-white text-xs sm:text-sm font-extrabold">รับเงินสดมา (บาท):</span>
                     <input
                       type="number"
                       placeholder="0"
@@ -538,13 +538,13 @@ export const AdminPOSManager: React.FC = () => {
                         const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
                         setCashReceived(cleanVal);
                       }}
-                      className="w-32 bg-dubai-black border border-gold-400/40 rounded p-1.5 text-right font-mono font-bold text-white text-sm"
+                      className="w-36 bg-stone-950 border-2 border-amber-400 rounded-xl p-2 text-right font-mono font-black text-amber-300 text-base shadow-inner focus:ring-2 focus:ring-amber-400 focus:outline-none"
                     />
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-gold-400/20">
-                    <span className="text-emerald-400 font-serif font-bold text-xs">เงินทอนลูกค้า:</span>
-                    <span className="text-emerald-400 font-mono font-extrabold text-lg">
+                  <div className="flex items-center justify-between p-3 bg-stone-950 rounded-xl border-2 border-emerald-500 shadow-md">
+                    <span className="text-emerald-400 font-serif font-extrabold text-xs sm:text-sm">เงินทอนลูกค้า:</span>
+                    <span className="text-emerald-400 font-mono font-black text-xl sm:text-2xl">
                       ฿{changeAmount.toLocaleString()}
                     </span>
                   </div>
@@ -553,30 +553,30 @@ export const AdminPOSManager: React.FC = () => {
 
               {/* PromptPay QR View */}
               {paymentMethod === 'promptpay' && qrCodeUrl && (
-                <div className="p-3 bg-dubai-dark rounded-xl border border-gold-400/30 flex items-center gap-3">
-                  <img src={qrCodeUrl} alt="POS QR Code" className="w-24 h-24 rounded border border-gold-400 bg-white" />
+                <div className="p-4 bg-stone-900 rounded-2xl border-2 border-amber-400/50 flex items-center gap-3.5 shadow-xl">
+                  <img src={qrCodeUrl} alt="POS QR Code" className="w-24 h-24 rounded-xl border-2 border-amber-400 bg-white shadow-md shrink-0" />
                   <div className="space-y-1">
-                    <span className="text-gold-400 font-bold block">สแกนชำระพร้อมเพย์:</span>
-                    <p className="text-white font-mono font-bold text-sm">฿{netAmount.toLocaleString()}</p>
-                    <p className="text-[10px] text-gray-400">เบอร์ร้าน: {storeSettings.promptPayNumber}</p>
+                    <span className="text-amber-300 font-extrabold block text-xs sm:text-sm">สแกนชำระพร้อมเพย์:</span>
+                    <p className="text-amber-300 font-mono font-black text-xl">฿{netAmount.toLocaleString()}</p>
+                    <p className="text-xs text-stone-300 font-bold">เบอร์ร้าน: {storeSettings.promptPayNumber}</p>
                   </div>
                 </div>
               )}
 
-              {/* Payment Summary */}
+              {/* Payment Summary for Government Co-Pay */}
               {paymentMethod === 'gov_copay' && (
-                <div className="p-3 bg-dubai-dark rounded-xl border border-amber-500/30 space-y-3">
+                <div className="p-4 bg-stone-900 rounded-2xl border-2 border-amber-500/50 space-y-3 shadow-xl">
                   <div className="space-y-1.5">
-                    <span className="text-amber-300 font-bold text-xs block">สัดส่วนเงินสนับสนุนโครงการรัฐบาล:</span>
+                    <span className="text-amber-300 font-extrabold text-xs block">สัดส่วนเงินสนับสนุนโครงการรัฐบาล:</span>
                     
-                    <div className="grid grid-cols-4 gap-1.5 text-[11px] font-bold">
+                    <div className="grid grid-cols-4 gap-1.5 text-xs font-extrabold">
                       <button
                         type="button"
                         onClick={() => setGovRatio('60_40')}
-                        className={`py-1.5 rounded-lg border text-center transition ${
+                        className={`py-2 rounded-xl border-2 text-center transition cursor-pointer ${
                           govRatio === '60_40'
-                            ? 'bg-amber-400 text-dubai-black border-amber-300 font-extrabold'
-                            : 'bg-dubai-black text-amber-200 border-amber-500/30 hover:border-amber-400'
+                            ? 'bg-amber-400 text-stone-950 border-amber-300 font-black shadow-md'
+                            : 'bg-stone-950 text-amber-200 border-amber-500/40 hover:border-amber-400'
                         }`}
                       >
                         60 / 40
@@ -584,10 +584,10 @@ export const AdminPOSManager: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setGovRatio('50_50')}
-                        className={`py-1.5 rounded-lg border text-center transition ${
+                        className={`py-2 rounded-xl border-2 text-center transition cursor-pointer ${
                           govRatio === '50_50'
-                            ? 'bg-amber-400 text-dubai-black border-amber-300 font-extrabold'
-                            : 'bg-dubai-black text-amber-200 border-amber-500/30 hover:border-amber-400'
+                            ? 'bg-amber-400 text-stone-950 border-amber-300 font-black shadow-md'
+                            : 'bg-stone-950 text-amber-200 border-amber-500/40 hover:border-amber-400'
                         }`}
                       >
                         50 / 50
@@ -595,10 +595,10 @@ export const AdminPOSManager: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setGovRatio('70_30')}
-                        className={`py-1.5 rounded-lg border text-center transition ${
+                        className={`py-2 rounded-xl border-2 text-center transition cursor-pointer ${
                           govRatio === '70_30'
-                            ? 'bg-amber-400 text-dubai-black border-amber-300 font-extrabold'
-                            : 'bg-dubai-black text-amber-200 border-amber-500/30 hover:border-amber-400'
+                            ? 'bg-amber-400 text-stone-950 border-amber-300 font-black shadow-md'
+                            : 'bg-stone-950 text-amber-200 border-amber-500/40 hover:border-amber-400'
                         }`}
                       >
                         70 / 30
@@ -606,10 +606,10 @@ export const AdminPOSManager: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setGovRatio('custom')}
-                        className={`py-1.5 rounded-lg border text-center transition ${
+                        className={`py-2 rounded-xl border-2 text-center transition cursor-pointer ${
                           govRatio === 'custom'
-                            ? 'bg-amber-400 text-dubai-black border-amber-300 font-extrabold'
-                            : 'bg-dubai-black text-amber-200 border-amber-500/30 hover:border-amber-400'
+                            ? 'bg-amber-400 text-stone-950 border-amber-300 font-black shadow-md'
+                            : 'bg-stone-950 text-amber-200 border-amber-500/40 hover:border-amber-400'
                         }`}
                       >
                         ระบุ % เอง
@@ -619,8 +619,8 @@ export const AdminPOSManager: React.FC = () => {
 
                   {/* Custom Percent Input */}
                   {govRatio === 'custom' && (
-                    <div className="flex items-center justify-between bg-dubai-black p-2 rounded-lg border border-amber-500/30">
-                      <span className="text-gray-300 text-xs">ระบุ % รัฐบาลจ่าย:</span>
+                    <div className="flex items-center justify-between bg-stone-950 p-2.5 rounded-xl border border-amber-500/40">
+                      <span className="text-stone-300 font-extrabold text-xs">ระบุ % รัฐบาลจ่าย:</span>
                       <div className="flex items-center gap-1">
                         <input
                           type="number"
@@ -634,25 +634,25 @@ export const AdminPOSManager: React.FC = () => {
                             const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
                             setCustomGovPercent(cleanVal === '' ? 0 : Math.min(100, Math.max(0, parseInt(cleanVal, 10) || 0)));
                           }}
-                          className="w-16 bg-dubai-dark border border-amber-500/50 rounded px-2 py-1 text-right text-amber-300 font-mono font-bold text-xs"
+                          className="w-20 bg-stone-900 border-2 border-amber-500/60 rounded-lg px-2 py-1 text-right text-amber-300 font-mono font-extrabold text-sm"
                         />
-                        <span className="text-amber-400 font-bold">%</span>
+                        <span className="text-amber-400 font-extrabold">%</span>
                       </div>
                     </div>
                   )}
 
                   {/* Calculation Result Summary Box */}
                   <div className="space-y-1.5 pt-1 text-xs">
-                    <div className="flex justify-between items-center text-amber-300/90 font-medium">
+                    <div className="flex justify-between items-center text-amber-300 font-extrabold">
                       <span>รัฐบาล/โครงการจ่าย ({govPercent}%):</span>
-                      <span className="font-mono font-bold text-amber-300">
+                      <span className="font-mono font-black text-amber-300 text-sm">
                         ฿{govAmount.toLocaleString()}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center text-emerald-300 font-bold bg-emerald-950/60 p-2 rounded-lg border border-emerald-500/40">
+                    <div className="flex justify-between items-center text-emerald-300 font-bold bg-stone-950 p-2.5 rounded-xl border-2 border-emerald-500/80 shadow-md">
                       <span>ยอดที่ลูกค้าชำระเพิ่ม ({customerPercent}%):</span>
-                      <span className="font-mono font-extrabold text-sm text-emerald-400">
+                      <span className="font-mono font-black text-base text-emerald-400">
                         ฿{customerPayAmount.toLocaleString()}
                       </span>
                     </div>
@@ -660,12 +660,12 @@ export const AdminPOSManager: React.FC = () => {
 
                   {/* QR Code for Customer Share Scan */}
                   {qrCodeUrl && (
-                    <div className="p-2.5 bg-dubai-black rounded-lg border border-gold-400/30 flex items-center gap-3">
-                      <img src={qrCodeUrl} alt="POS Gov QR Code" className="w-20 h-20 rounded border border-gold-400 bg-white shrink-0" />
-                      <div className="space-y-1 text-[11px]">
-                        <span className="text-gold-400 font-bold block">สแกนชำระส่วนของลูกค้า (เป๋าตัง/พร้อมเพย์):</span>
-                        <p className="text-white font-mono font-bold text-sm">฿{customerPayAmount.toLocaleString()}</p>
-                        <p className="text-[10px] text-gray-400">แอปถุงเงิน / เบอร์ร้าน: {storeSettings.promptPayNumber}</p>
+                    <div className="p-3 bg-stone-950 rounded-xl border border-amber-400/30 flex items-center gap-3">
+                      <img src={qrCodeUrl} alt="POS Gov QR Code" className="w-20 h-20 rounded-lg border border-amber-400 bg-white shrink-0" />
+                      <div className="space-y-1 text-xs">
+                        <span className="text-amber-300 font-extrabold block">สแกนชำระส่วนของลูกค้า (เป๋าตัง/พร้อมเพย์):</span>
+                        <p className="text-amber-300 font-mono font-black text-base">฿{customerPayAmount.toLocaleString()}</p>
+                        <p className="text-[11px] text-stone-300 font-bold">แอปถุงเงิน / เบอร์ร้าน: {storeSettings.promptPayNumber}</p>
                       </div>
                     </div>
                   )}

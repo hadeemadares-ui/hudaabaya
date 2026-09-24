@@ -144,6 +144,24 @@ export interface SupplierSettlement {
   movementIds: string[];
 }
 
+export interface EventSchedule {
+  id: string;
+  title: string;
+  branchName: string;
+  location: string;
+  startDate: string;
+  endDate: string;
+  operatingHours: string;
+  productsToPrepare: string;
+  phonePromptPay: string;
+  status: 'UPCOMING' | 'ACTIVE' | 'COMPLETED';
+  salesTarget?: number;
+  actualSales?: number;
+  assignedStaff?: string;
+  note?: string;
+  createdAt: string;
+}
+
 export interface StoreSettings {
   storeName: string;
   storeTagline: string;
