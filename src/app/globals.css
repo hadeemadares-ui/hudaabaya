@@ -44,3 +44,15 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Ensure text selection is always high contrast gold on black */
+::selection {
+  background-color: #B89352;
+  color: #000000;
+}
+
+/* Ensure select dropdown options are always readable on all browsers */
+option {
+  background-color: #1C1917;
+  color: #FFFFFF;
+}

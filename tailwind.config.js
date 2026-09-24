@@ -44,9 +44,9 @@ module.exports = {
           950: '#020617',
         },
         dubai: {
-          black: '#FFFFFF',
-          dark: '#FAF9F6',
-          card: '#FFFFFF',
+          black: '#0D0D0D',
+          dark: '#141414',
+          card: '#1C1917',
           sky: '#B89352',
           gold: '#B89352',
           sand: '#FDFBF7',
