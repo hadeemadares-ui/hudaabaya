@@ -887,6 +887,15 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       saveCloudOrders(updated);
       return updated;
     });
+
+    // Sync Stock Movements for Unsettled Sales Breakdown
+    setStockMovements((prevMovements) => {
+      const updatedMovements = prevMovements.filter((m) => m.referenceOrderNo !== orderId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovements));
+      }
+      return updatedMovements;
+    });
   };
 
   const clearSampleOrders = async () => {
@@ -944,6 +953,33 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       saveCloudProducts(updated);
       return updated;
+    });
+
+    // Update corresponding stock movements to keep Unsettled Sales Breakdown in sync
+    setStockMovements((prevMovements) => {
+      const updatedMovements = prevMovements.map((m) => {
+        if (m.productId === updatedProduct.id || m.productTitle === updatedProduct.title) {
+          const matchedVariant = updatedProduct.variants.find(
+            (v) => v.id === m.variantId || v.name === m.variantName
+          );
+          const newCost = matchedVariant?.costPrice !== undefined && matchedVariant.costPrice > 0
+            ? matchedVariant.costPrice
+            : m.costPrice;
+          return {
+            ...m,
+            productTitle: updatedProduct.title,
+            variantName: matchedVariant?.name || m.variantName,
+            costPrice: newCost,
+            totalCost: newCost * m.quantity,
+          };
+        }
+        return m;
+      });
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovements));
+      }
+      return updatedMovements;
     });
   };
 
