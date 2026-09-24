@@ -362,40 +362,40 @@ export const AdminSalesReportManager: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 text-xs text-white">
+    <div className="space-y-6 text-xs text-stone-950">
       
       {/* Header & Date Filter Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-dubai-black p-4 rounded-xl border border-gold-400/40 shadow-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border-2 border-amber-400/60 shadow-xl text-stone-950">
         <div>
-          <h3 className="font-serif font-bold text-lg text-white flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-gold-400" />
+          <h3 className="font-serif font-black text-lg text-stone-950 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-amber-600" />
             <span>แดชบอร์ดสรุปรายรับ - รายจ่าย/ต้นทุน - ยอดขาย &amp; กำไร (Financial Dashboard)</span>
           </h3>
-          <p className="text-xs text-gold-300/80">
+          <p className="text-xs text-stone-800 font-extrabold mt-1">
             วิเคราะห์สรุปรายรับสุทธิ รายจ่ายต้นทุนสินค้า กำไรสุทธิ และสินค้าขายดี เลือกดูตามวัน เดือน ปี หรือช่วงเวลาที่ต้องการได้ 100%
           </p>
         </div>
 
         <button
           onClick={handleExportCSV}
-          className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs rounded-xl shadow-md hover:scale-105 transition flex items-center justify-center gap-2 shrink-0 border border-emerald-400/40"
+          className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 shrink-0 border border-emerald-700 cursor-pointer"
         >
-          <FileSpreadsheet className="w-4 h-4" />
+          <FileSpreadsheet className="w-4 h-4 text-white" />
           <span>ดาวน์โหลดรายงาน Excel (CSV)</span>
         </button>
       </div>
 
       {/* Date Filter Tabs */}
-      <div className="bg-dubai-black p-3.5 rounded-xl border border-gold-400/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-white p-4 rounded-2xl border-2 border-amber-400/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md text-stone-950">
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-          <Filter className="w-4 h-4 text-gold-400 shrink-0 mr-1" />
+          <Filter className="w-4 h-4 text-amber-600 shrink-0 mr-1" />
           
           <button
             onClick={() => setFilterMode('today')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer ${
               filterMode === 'today'
-                ? 'bg-gold-500 text-dubai-black shadow-gold-glow'
-                : 'bg-dubai-card text-gold-200/80 border border-gold-400/20'
+                ? 'bg-amber-400 text-stone-950 border-2 border-amber-500 shadow-md'
+                : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
             }`}
           >
             วันนี้ (Today)
@@ -403,10 +403,10 @@ export const AdminSalesReportManager: React.FC = () => {
 
           <button
             onClick={() => setFilterMode('month')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer ${
               filterMode === 'month'
-                ? 'bg-gold-500 text-dubai-black shadow-gold-glow'
-                : 'bg-dubai-card text-gold-200/80 border border-gold-400/20'
+                ? 'bg-amber-400 text-stone-950 border-2 border-amber-500 shadow-md'
+                : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
             }`}
           >
             เดือนนี้ (This Month)
@@ -414,10 +414,10 @@ export const AdminSalesReportManager: React.FC = () => {
 
           <button
             onClick={() => setFilterMode('year')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer ${
               filterMode === 'year'
-                ? 'bg-gold-500 text-dubai-black shadow-gold-glow'
-                : 'bg-dubai-card text-gold-200/80 border border-gold-400/20'
+                ? 'bg-amber-400 text-stone-950 border-2 border-amber-500 shadow-md'
+                : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
             }`}
           >
             ปีนี้ (This Year)
@@ -425,10 +425,10 @@ export const AdminSalesReportManager: React.FC = () => {
 
           <button
             onClick={() => setFilterMode('all')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer ${
               filterMode === 'all'
-                ? 'bg-gold-500 text-dubai-black shadow-gold-glow'
-                : 'bg-dubai-card text-gold-200/80 border border-gold-400/20'
+                ? 'bg-amber-400 text-stone-950 border-2 border-amber-500 shadow-md'
+                : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
             }`}
           >
             สะสมทั้งหมด (All Time)
@@ -436,10 +436,10 @@ export const AdminSalesReportManager: React.FC = () => {
 
           <button
             onClick={() => setFilterMode('custom')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer ${
               filterMode === 'custom'
-                ? 'bg-amber-400 text-dubai-black shadow'
-                : 'bg-dubai-card text-gold-200/80 border border-gold-400/20'
+                ? 'bg-amber-400 text-stone-950 border-2 border-amber-500 shadow-md'
+                : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
             }`}
           >
             กำหนดช่วงวันที่เอง
@@ -448,74 +448,74 @@ export const AdminSalesReportManager: React.FC = () => {
 
         {/* Custom Date Range Picker */}
         {filterMode === 'custom' && (
-          <div className="flex items-center gap-2 bg-dubai-dark p-2 rounded-lg border border-amber-500/40">
-            <span className="text-[11px] text-amber-300 font-bold">ตั้งแต่วันที่:</span>
+          <div className="flex items-center gap-2 bg-stone-50 p-2 rounded-xl border border-stone-300 text-stone-950">
+            <span className="text-[11px] text-stone-950 font-black">ตั้งแต่วันที่:</span>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="bg-dubai-black border border-amber-500/30 rounded px-2 py-1 text-xs text-white"
+              className="bg-white border-2 border-stone-400 rounded-lg px-2 py-1 text-xs text-stone-950 font-black"
             />
-            <span className="text-[11px] text-amber-300 font-bold">ถึง:</span>
+            <span className="text-[11px] text-stone-950 font-black">ถึง:</span>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="bg-dubai-black border border-amber-500/30 rounded px-2 py-1 text-xs text-white"
+              className="bg-white border-2 border-stone-400 rounded-lg px-2 py-1 text-xs text-stone-950 font-black"
             />
           </div>
         )}
       </div>
 
       {/* Total Inventory Stock Cost Valuation Banner (Owner Executive Snapshot) */}
-      <div className="bg-gradient-to-r from-dubai-card via-dubai-black to-dubai-card border-2 border-gold-400/60 rounded-2xl p-5 shadow-gold-strong space-y-3 relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gold-400/25 pb-3">
+      <div className="bg-white border-2 border-amber-400/80 rounded-2xl p-5 shadow-xl space-y-3 text-stone-950">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200 pb-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-serif font-extrabold text-gold-300 uppercase tracking-wider bg-dubai-black/80 px-3 py-1 rounded-xl border border-gold-400/40 shadow-sm flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-gold-400 animate-pulse" />
+            <span className="text-xs font-serif font-black text-stone-950 uppercase tracking-wider bg-amber-100 px-3 py-1 rounded-xl border border-amber-400 shadow-xs flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-amber-600" />
               สรุปมูลค่าต้นทุนสต๊อกสินค้าทั้งหมดในร้าน (Inventory Valuation)
             </span>
           </div>
-          <span className="text-xs text-gold-300 font-extrabold bg-gold-500/20 px-3 py-1 rounded-full border border-gold-400/40">
+          <span className="text-xs text-stone-950 font-black bg-amber-100 px-3 py-1 rounded-full border border-amber-400">
             สินค้าในคลังรวม {products.length} แบบ ({totalStockPieces} ชิ้น)
           </span>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 pt-1 text-xs">
-          <div className="bg-dubai-black/80 p-3.5 rounded-xl border border-gold-400/30 shadow-inner">
-            <span className="text-[10px] text-gray-300 block font-bold mb-0.5">สต๊อกสินค้ารวม</span>
-            <span className="text-lg font-serif font-extrabold text-white">{totalStockPieces.toLocaleString()} ชิ้น</span>
+          <div className="bg-stone-50 p-3.5 rounded-xl border border-stone-300 shadow-xs">
+            <span className="text-[10px] text-stone-700 block font-black mb-0.5">สต๊อกสินค้ารวม</span>
+            <span className="text-lg font-serif font-black text-stone-950">{totalStockPieces.toLocaleString()} ชิ้น</span>
           </div>
-          <div className="bg-dubai-black/80 p-3.5 rounded-xl border border-gold-400/30 shadow-inner">
-            <span className="text-[10px] text-gold-400 block font-bold mb-0.5">มูลค่าขายรวม (Retail Value)</span>
-            <span className="text-lg font-serif font-extrabold text-gold-300">฿{totalStockSellingValue.toLocaleString()}</span>
+          <div className="bg-stone-50 p-3.5 rounded-xl border border-stone-300 shadow-xs">
+            <span className="text-[10px] text-amber-900 block font-black mb-0.5">มูลค่าขายรวม (Retail Value)</span>
+            <span className="text-lg font-serif font-black text-amber-900">฿{totalStockSellingValue.toLocaleString()}</span>
           </div>
-          <div className="bg-gradient-to-br from-amber-950 via-dubai-card to-amber-900/60 p-3.5 rounded-xl border-2 border-amber-500/80 shadow-md">
-            <span className="text-[10px] text-amber-300 block font-extrabold mb-0.5">ต้นทุนคลังรวม (Total Inventory Cost)</span>
-            <span className="text-lg font-serif font-extrabold text-amber-200">฿{totalStockCostValue.toLocaleString()}</span>
+          <div className="bg-amber-50 p-3.5 rounded-xl border-2 border-amber-400 shadow-xs">
+            <span className="text-[10px] text-amber-950 block font-black mb-0.5">ต้นทุนคลังรวม (Total Inventory Cost)</span>
+            <span className="text-lg font-serif font-black text-amber-950">฿{totalStockCostValue.toLocaleString()}</span>
           </div>
-          <div className="bg-gradient-to-br from-emerald-950 via-dubai-card to-emerald-900/60 p-3.5 rounded-xl border-2 border-emerald-500/80 shadow-md">
-            <span className="text-[10px] text-emerald-400 block font-extrabold mb-0.5">กำไรคาดการณ์ (Expected Profit)</span>
-            <span className="text-lg font-serif font-extrabold text-emerald-300">+฿{totalStockExpectedProfit.toLocaleString()}</span>
+          <div className="bg-emerald-50 p-3.5 rounded-xl border-2 border-emerald-400 shadow-xs">
+            <span className="text-[10px] text-emerald-950 block font-black mb-0.5">กำไรคาดการณ์ (Expected Profit)</span>
+            <span className="text-lg font-serif font-black text-emerald-900">+฿{totalStockExpectedProfit.toLocaleString()}</span>
           </div>
         </div>
       </div>
 
       {/* Notice Banner when 0 Orders exist with 1-Tap Sample Order Creator */}
       {filteredOrders.length === 0 && (
-        <div className="bg-gradient-to-r from-amber-950 via-dubai-card to-amber-950 border-2 border-amber-500 rounded-2xl p-4 text-xs text-amber-200 shadow-2xl space-y-2">
+        <div className="bg-amber-50 border-2 border-amber-400 rounded-2xl p-4 text-xs text-stone-950 shadow-md space-y-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="font-extrabold text-amber-300 text-sm flex items-center gap-1.5">
+              <div className="font-black text-stone-950 text-sm flex items-center gap-1.5">
                 <span>สถานะ: ยังไม่มีคำสั่งซื้อที่ชำระเงินในระบบ (0 รายการ)</span>
               </div>
-              <p className="text-xs text-amber-100/90 leading-relaxed mt-1">
+              <p className="text-xs text-stone-800 font-extrabold mt-1">
                 ต้นทุนและกำไรสุทธิจะคำนวณและแสดงผลในตารางด้านล่างทันทีเมื่อคุณขายสินค้าผ่าน POS หรือเมื่อมีลูกค้าสั่งซื้อเข้ามาครับ
               </p>
             </div>
             <button
               onClick={handleCreateSampleOrder}
-              className="px-4 py-2.5 bg-gradient-to-r from-amber-500 via-gold-400 to-amber-600 hover:from-amber-400 hover:to-gold-300 text-dubai-black font-extrabold text-xs rounded-xl shadow-gold-glow hover:scale-105 transition shrink-0 whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5"
+              className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow-md transition shrink-0 whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5 border border-amber-500"
             >
               <span>ทดลองสร้างออเดอร์ตัวอย่าง 1 รายการ</span>
             </button>
@@ -527,73 +527,73 @@ export const AdminSalesReportManager: React.FC = () => {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
         
         {/* Total Revenue Card */}
-        <div className="p-4 bg-gradient-to-br from-dubai-card to-dubai-black border-2 border-gold-400/50 rounded-2xl space-y-1.5 shadow-gold-glow hover:scale-102 transition">
-          <div className="flex items-center justify-between text-xs text-gold-400 font-extrabold">
+        <div className="p-4 bg-white border-2 border-amber-400/80 rounded-2xl space-y-1.5 shadow-md hover:scale-102 transition text-stone-950">
+          <div className="flex items-center justify-between text-xs text-stone-900 font-black">
             <span>รายรับรวม (Revenue)</span>
-            <div className="w-7 h-7 rounded-full bg-gold-500/20 border border-gold-400 flex items-center justify-center">
-              <DollarSign className="w-4 h-4 text-gold-400" />
+            <div className="w-7 h-7 rounded-full bg-amber-100 border border-amber-400 flex items-center justify-center">
+              <DollarSign className="w-4 h-4 text-amber-700" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-serif font-extrabold text-gold-300 drop-shadow">
+          <p className="text-2xl sm:text-3xl font-serif font-black text-amber-900">
             ฿{totalRevenue.toLocaleString()}
           </p>
-          <p className="text-[10px] text-gold-200/70 font-bold">จากออเดอร์ที่ชำระเงินแล้ว</p>
+          <p className="text-[10px] text-stone-700 font-black">จากออเดอร์ที่ชำระเงินแล้ว</p>
         </div>
 
         {/* Total Cost Card */}
-        <div className="p-4 bg-gradient-to-br from-amber-950/60 to-dubai-card border-2 border-amber-500/50 rounded-2xl space-y-1.5 shadow-lg hover:scale-102 transition">
-          <div className="flex items-center justify-between text-xs text-amber-400 font-extrabold">
+        <div className="p-4 bg-white border-2 border-amber-400/80 rounded-2xl space-y-1.5 shadow-md hover:scale-102 transition text-stone-950">
+          <div className="flex items-center justify-between text-xs text-stone-900 font-black">
             <span>ต้นทุนรวม (Total Cost)</span>
-            <div className="w-7 h-7 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center">
-              <Package className="w-4 h-4 text-amber-400" />
+            <div className="w-7 h-7 rounded-full bg-amber-100 border border-amber-400 flex items-center justify-center">
+              <Package className="w-4 h-4 text-amber-700" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-serif font-extrabold text-amber-300 drop-shadow">
+          <p className="text-2xl sm:text-3xl font-serif font-black text-amber-900">
             ฿{totalCost.toLocaleString()}
           </p>
-          <p className="text-[10px] text-amber-200/70 font-bold">ต้นทุนสินค้าที่ขายออกไป</p>
+          <p className="text-[10px] text-stone-700 font-black">ต้นทุนสินค้าที่ขายออกไป</p>
         </div>
 
         {/* Net Profit Card */}
-        <div className="p-4 bg-gradient-to-br from-emerald-950 via-dubai-card to-teal-950 border-2 border-emerald-400 rounded-2xl space-y-1.5 shadow-2xl hover:scale-102 transition">
-          <div className="flex items-center justify-between text-xs text-emerald-400 font-extrabold">
+        <div className="p-4 bg-white border-2 border-emerald-500 rounded-2xl space-y-1.5 shadow-md hover:scale-102 transition text-stone-950">
+          <div className="flex items-center justify-between text-xs text-emerald-900 font-black">
             <span>กำไรสุทธิ (Net Profit)</span>
-            <div className="w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center">
-              <ArrowUpRight className="w-4 h-4 text-emerald-400" />
+            <div className="w-7 h-7 rounded-full bg-emerald-100 border border-emerald-500 flex items-center justify-center">
+              <ArrowUpRight className="w-4 h-4 text-emerald-700" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-serif font-extrabold text-emerald-300 drop-shadow">
+          <p className="text-2xl sm:text-3xl font-serif font-black text-emerald-800">
             +฿{netProfit.toLocaleString()}
           </p>
-          <p className="text-[10px] text-emerald-400 font-extrabold">รายรับ หัก ต้นทุนสินค้า</p>
+          <p className="text-[10px] text-emerald-800 font-black">รายรับ หัก ต้นทุนสินค้า</p>
         </div>
 
         {/* Profit Margin Card */}
-        <div className="p-4 bg-gradient-to-br from-dubai-card to-dubai-black border-2 border-teal-400/50 rounded-2xl space-y-1.5 shadow-lg hover:scale-102 transition">
-          <div className="flex items-center justify-between text-xs text-teal-400 font-extrabold">
+        <div className="p-4 bg-white border-2 border-amber-400/80 rounded-2xl space-y-1.5 shadow-md hover:scale-102 transition text-stone-950">
+          <div className="flex items-center justify-between text-xs text-stone-900 font-black">
             <span>อัตรากำไร (Margin %)</span>
-            <div className="w-7 h-7 rounded-full bg-teal-500/20 border border-teal-400 flex items-center justify-center">
-              <PieChart className="w-4 h-4 text-teal-400" />
+            <div className="w-7 h-7 rounded-full bg-amber-100 border border-amber-400 flex items-center justify-center">
+              <PieChart className="w-4 h-4 text-amber-700" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-serif font-extrabold text-teal-300 drop-shadow">
+          <p className="text-2xl sm:text-3xl font-serif font-black text-stone-950">
             {profitMarginPercent}%
           </p>
-          <p className="text-[10px] text-teal-300/80 font-bold">สัดส่วนกำไรต่อรายรับ</p>
+          <p className="text-[10px] text-stone-700 font-black">สัดส่วนกำไรต่อรายรับ</p>
         </div>
 
         {/* Items Sold Count Card */}
-        <div className="p-4 bg-gradient-to-br from-dubai-card to-dubai-black border-2 border-purple-400/50 rounded-2xl space-y-1.5 shadow-lg col-span-2 lg:col-span-1 hover:scale-102 transition">
-          <div className="flex items-center justify-between text-xs text-purple-400 font-extrabold">
+        <div className="p-4 bg-white border-2 border-amber-400/80 rounded-2xl space-y-1.5 shadow-md col-span-2 lg:col-span-1 hover:scale-102 transition text-stone-950">
+          <div className="flex items-center justify-between text-xs text-stone-900 font-black">
             <span>จำนวนขายได้ทั้งหมด</span>
-            <div className="w-7 h-7 rounded-full bg-purple-500/20 border border-purple-400 flex items-center justify-center">
-              <Layers className="w-4 h-4 text-purple-400" />
+            <div className="w-7 h-7 rounded-full bg-amber-100 border border-amber-400 flex items-center justify-center">
+              <Layers className="w-4 h-4 text-amber-700" />
             </div>
           </div>
-          <p className="text-2xl sm:text-3xl font-serif font-extrabold text-white drop-shadow">
-            {totalItemsSold} <span className="text-xs font-sans font-normal text-gray-400">ชิ้น</span>
+          <p className="text-2xl sm:text-3xl font-serif font-black text-stone-950">
+            {totalItemsSold} <span className="text-xs font-sans font-black text-stone-800">ชิ้น</span>
           </p>
-          <p className="text-[10px] text-purple-300/80 font-bold">รวม {filteredOrders.length} คำสั่งซื้อ</p>
+          <p className="text-[10px] text-stone-700 font-black">รวม {filteredOrders.length} คำสั่งซื้อ</p>
         </div>
 
       </div>
@@ -602,13 +602,13 @@ export const AdminSalesReportManager: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         
         {/* Chart 1: Visual Financial Overview Bar Chart */}
-        <div className="bg-dubai-card border-2 border-gold-400/40 rounded-xl p-4 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-gold-400/20 pb-2">
-            <h4 className="font-serif font-bold text-sm text-gold-300 flex items-center gap-2">
-              <PieChart className="w-4 h-4 text-gold-400" />
+        <div className="bg-white border-2 border-amber-400/60 rounded-2xl p-5 shadow-xl space-y-4 text-stone-950">
+          <div className="flex items-center justify-between border-b border-stone-200 pb-2">
+            <h4 className="font-serif font-black text-sm text-stone-950 flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-amber-600" />
               <span>กราฟสรุปสัดส่วน รายรับ - ต้นทุน - กำไรสุทธิ</span>
             </h4>
-            <span className="text-[10px] bg-gold-500/20 text-gold-300 px-2 py-0.5 rounded-full font-bold">
+            <span className="text-[10px] bg-amber-100 text-stone-950 px-2 py-0.5 rounded-full font-black border border-amber-300">
               อัตรากำไร {profitMarginPercent}%
             </span>
           </div>
@@ -616,16 +616,16 @@ export const AdminSalesReportManager: React.FC = () => {
           <div className="space-y-3 text-xs">
             {/* 1. Revenue Bar */}
             <div className="space-y-1">
-              <div className="flex justify-between text-[11px] font-bold">
-                <span className="text-gold-300 flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-gold-400 inline-block"></span>
+              <div className="flex justify-between text-[11px] font-black text-stone-950">
+                <span className="flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
                   ยอดขายสุทธิ (Revenue)
                 </span>
-                <span className="text-gold-300 font-serif font-extrabold">฿{totalRevenue.toLocaleString()}</span>
+                <span className="font-serif font-black text-stone-950">฿{totalRevenue.toLocaleString()}</span>
               </div>
-              <div className="w-full bg-dubai-black h-4 rounded-full overflow-hidden border border-gold-400/30 p-0.5">
+              <div className="w-full bg-stone-100 h-4 rounded-full overflow-hidden border border-stone-300 p-0.5">
                 <div
-                  className="bg-gradient-to-r from-amber-500 via-gold-400 to-amber-300 h-full rounded-full transition-all duration-500 shadow-gold-glow"
+                  className="bg-amber-400 h-full rounded-full transition-all duration-500"
                   style={{ width: totalRevenue > 0 ? '100%' : '0%' }}
                 ></div>
               </div>
@@ -633,18 +633,18 @@ export const AdminSalesReportManager: React.FC = () => {
 
             {/* 2. Total Cost Bar */}
             <div className="space-y-1">
-              <div className="flex justify-between text-[11px] font-bold">
-                <span className="text-amber-400 flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
+              <div className="flex justify-between text-[11px] font-black text-stone-950">
+                <span className="flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-stone-500 inline-block"></span>
                   ต้นทุนสินค้าที่ขาย (Cost)
                 </span>
-                <span className="text-amber-300 font-serif font-extrabold">
+                <span className="font-serif font-black text-amber-900">
                   ฿{totalCost.toLocaleString()} ({totalRevenue > 0 ? Math.round((totalCost / totalRevenue) * 100) : 0}%)
                 </span>
               </div>
-              <div className="w-full bg-dubai-black h-4 rounded-full overflow-hidden border border-amber-500/30 p-0.5">
+              <div className="w-full bg-stone-100 h-4 rounded-full overflow-hidden border border-stone-300 p-0.5">
                 <div
-                  className="bg-gradient-to-r from-amber-600 via-amber-500 to-orange-400 h-full rounded-full transition-all duration-500"
+                  className="bg-stone-500 h-full rounded-full transition-all duration-500"
                   style={{ width: `${totalRevenue > 0 ? Math.min(100, Math.round((totalCost / totalRevenue) * 100)) : 0}%` }}
                 ></div>
               </div>
@@ -652,35 +652,35 @@ export const AdminSalesReportManager: React.FC = () => {
 
             {/* 3. Net Profit Bar */}
             <div className="space-y-1">
-              <div className="flex justify-between text-[11px] font-bold">
-                <span className="text-emerald-400 flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span>
+              <div className="flex justify-between text-[11px] font-black text-stone-950">
+                <span className="flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
                   กำไรสุทธิจากการขาย (Net Profit)
                 </span>
-                <span className="text-emerald-300 font-serif font-extrabold">
+                <span className="font-serif font-black text-emerald-800">
                   +฿{netProfit.toLocaleString()} ({profitMarginPercent}%)
                 </span>
               </div>
-              <div className="w-full bg-dubai-black h-4 rounded-full overflow-hidden border border-emerald-500/30 p-0.5">
+              <div className="w-full bg-stone-100 h-4 rounded-full overflow-hidden border border-stone-300 p-0.5">
                 <div
-                  className="bg-gradient-to-r from-emerald-600 via-emerald-400 to-teal-300 h-full rounded-full transition-all duration-500 shadow-md"
+                  className="bg-emerald-500 h-full rounded-full transition-all duration-500"
                   style={{ width: `${totalRevenue > 0 ? Math.max(0, Math.min(100, Math.round((netProfit / totalRevenue) * 100))) : 0}%` }}
                 ></div>
               </div>
             </div>
 
             {/* 4. Total Inventory Valuation Cost Bar */}
-            <div className="space-y-1 pt-1 border-t border-gold-400/10">
-              <div className="flex justify-between text-[11px] font-bold">
-                <span className="text-gray-300 flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span>
+            <div className="space-y-1 pt-1 border-t border-stone-200">
+              <div className="flex justify-between text-[11px] font-black text-stone-950">
+                <span className="flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-600 inline-block"></span>
                   ต้นทุนสต๊อกคลังรวมทั้งหมด
                 </span>
-                <span className="text-amber-200 font-serif font-bold">฿{totalStockCostValue.toLocaleString()}</span>
+                <span className="font-serif font-black text-stone-950">฿{totalStockCostValue.toLocaleString()}</span>
               </div>
-              <div className="w-full bg-dubai-black h-3 rounded-full overflow-hidden border border-gold-400/20 p-0.5">
+              <div className="w-full bg-stone-100 h-3 rounded-full overflow-hidden border border-stone-300 p-0.5">
                 <div
-                  className="bg-gradient-to-r from-amber-700 to-amber-500 h-full rounded-full transition-all duration-500"
+                  className="bg-amber-500 h-full rounded-full transition-all duration-500"
                   style={{ width: `${totalStockSellingValue > 0 ? Math.round((totalStockCostValue / totalStockSellingValue) * 100) : 50}%` }}
                 ></div>
               </div>
@@ -689,22 +689,22 @@ export const AdminSalesReportManager: React.FC = () => {
         </div>
 
         {/* Chart 2: Top Selling Products Progress Bar Visual Chart */}
-        <div className="bg-dubai-card border-2 border-gold-400/40 rounded-xl p-4 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-gold-400/20 pb-2">
-            <h4 className="font-serif font-bold text-sm text-gold-300 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-gold-400" />
+        <div className="bg-white border-2 border-amber-400/60 rounded-2xl p-5 shadow-xl space-y-4 text-stone-950">
+          <div className="flex items-center justify-between border-b border-stone-200 pb-2">
+            <h4 className="font-serif font-black text-sm text-stone-950 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-amber-600" />
               <span>กราฟเปรียบเทียบ 5 อันดับสินค้าขายดี (Top Best Sellers)</span>
             </h4>
-            <span className="text-[10px] text-gray-400">เรียงตามยอดขาย</span>
+            <span className="text-[10px] text-stone-700 font-black">เรียงตามยอดขาย</span>
           </div>
 
           <div className="space-y-3 text-xs">
             {productSalesList.length === 0 ? (
-              <div className="py-10 text-center text-gray-400 space-y-2">
-                <p>ยังไม่มีข้อมูลสถิติมียอดขายสินค้า</p>
+              <div className="py-10 text-center text-stone-700 space-y-2">
+                <p className="font-black">ยังไม่มีข้อมูลสถิติมียอดขายสินค้า</p>
                 <button
                   onClick={handleCreateSampleOrder}
-                  className="px-3 py-1.5 bg-amber-500 text-dubai-black font-extrabold rounded-lg text-xs"
+                  className="px-3 py-1.5 bg-amber-400 text-stone-950 font-black rounded-lg text-xs border border-amber-500"
                 >
                   กดทดลองสร้างออเดอร์ตัวอย่าง
                 </button>
@@ -714,21 +714,21 @@ export const AdminSalesReportManager: React.FC = () => {
                 const maxRevenue = productSalesList[0].revenue || 1;
                 const percentOfMax = Math.round((item.revenue / maxRevenue) * 100);
                 return (
-                  <div key={idx} className="space-y-1 bg-dubai-black/60 p-2.5 rounded-lg border border-gold-400/15">
+                  <div key={idx} className="space-y-1 bg-stone-50 p-2.5 rounded-xl border border-stone-200 text-stone-950">
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-bold text-white truncate max-w-[200px]">
+                      <span className="font-black text-stone-950 truncate max-w-[200px]">
                         #{idx + 1} {item.productTitle} ({item.variantName})
                       </span>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-gray-400">{item.quantity} ชิ้น</span>
-                        <span className="font-serif font-bold text-gold-300">฿{item.revenue.toLocaleString()}</span>
-                        <span className="font-serif font-extrabold text-emerald-400">+฿{item.profit.toLocaleString()}</span>
+                        <span className="text-stone-700 font-bold">{item.quantity} ชิ้น</span>
+                        <span className="font-serif font-black text-amber-900">฿{item.revenue.toLocaleString()}</span>
+                        <span className="font-serif font-black text-emerald-800">+฿{item.profit.toLocaleString()}</span>
                       </div>
                     </div>
 
-                    <div className="w-full bg-dubai-dark h-2.5 rounded-full overflow-hidden border border-gold-400/20">
+                    <div className="w-full bg-stone-200 h-2.5 rounded-full overflow-hidden border border-stone-300">
                       <div
-                        className="bg-gradient-to-r from-emerald-500 via-gold-400 to-amber-500 h-full rounded-full transition-all duration-500"
+                        className="bg-amber-400 h-full rounded-full transition-all duration-500"
                         style={{ width: `${percentOfMax}%` }}
                       ></div>
                     </div>
@@ -742,77 +742,77 @@ export const AdminSalesReportManager: React.FC = () => {
       </div>
 
       {/* Product-by-Product Sales Performance Table */}
-      <div className="bg-dubai-card border border-gold-400/30 rounded-xl overflow-hidden shadow-xl space-y-3 p-4">
-        <div className="flex items-center justify-between border-b border-gold-400/20 pb-2">
-          <h4 className="font-serif font-bold text-sm text-gold-300 flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4 text-gold-400" />
+      <div className="bg-white border-2 border-amber-400/60 rounded-2xl overflow-hidden shadow-xl space-y-3 p-4 text-stone-950">
+        <div className="flex items-center justify-between border-b border-stone-200 pb-2">
+          <h4 className="font-serif font-black text-sm text-stone-950 flex items-center gap-1.5">
+            <Sparkles className="w-4 h-4 text-amber-600" />
             <span>ตารางสรุปยอดขายและกำไรแยกตามสินค้า (Best Sellers Breakdown)</span>
           </h4>
-          <span className="text-[11px] text-gray-400">
+          <span className="text-[11px] text-stone-700 font-black">
             รวม {productSalesList.length} รายการแบบ/ไซส์ที่ขายได้
           </span>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left text-gray-200">
-            <thead className="bg-dubai-black text-gold-400 font-serif border-b border-gold-400/30">
+          <table className="w-full text-xs text-left text-stone-950">
+            <thead className="bg-amber-100 text-stone-950 font-serif border-b-2 border-amber-400 font-black">
               <tr>
-                <th className="p-3">ลำดับ</th>
-                <th className="p-3">ชื่อสินค้า / แบบ</th>
-                <th className="p-3">ไซส์ / ปริมาณ</th>
-                <th className="p-3 text-center">จำนวนที่ขายได้</th>
-                <th className="p-3 text-right">ยอดขายรวม (บาท)</th>
-                <th className="p-3 text-right">ต้นทุนรวม (บาท)</th>
-                <th className="p-3 text-right">กำไรสุทธิ (บาท)</th>
-                <th className="p-3 text-center">จัดการ (Actions)</th>
+                <th className="p-3 font-black">ลำดับ</th>
+                <th className="p-3 font-black">ชื่อสินค้า / แบบ</th>
+                <th className="p-3 font-black">ไซส์ / ปริมาณ</th>
+                <th className="p-3 text-center font-black">จำนวนที่ขายได้</th>
+                <th className="p-3 text-right font-black">ยอดขายรวม (บาท)</th>
+                <th className="p-3 text-right font-black">ต้นทุนรวม (บาท)</th>
+                <th className="p-3 text-right font-black">กำไรสุทธิ (บาท)</th>
+                <th className="p-3 text-center font-black">จัดการ (Actions)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gold-400/10">
+            <tbody className="divide-y divide-stone-200">
               {productSalesList.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-gray-400">
+                  <td colSpan={8} className="p-8 text-center text-stone-700 font-black">
                     ยังไม่มีข้อมูลยอดขายในช่วงเวลาที่เลือก
                   </td>
                 </tr>
               ) : (
                 productSalesList.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-dubai-black/40 transition">
-                    <td className="p-3 font-mono font-bold text-gold-400">#{idx + 1}</td>
-                    <td className="p-3 font-bold text-white">{item.productTitle}</td>
+                  <tr key={idx} className="hover:bg-amber-50/60 transition">
+                    <td className="p-3 font-mono font-black text-stone-950">#{idx + 1}</td>
+                    <td className="p-3 font-black text-stone-950">{item.productTitle}</td>
                     <td className="p-3">
-                      <span className="px-2 py-0.5 rounded bg-dubai-black text-[11px] text-gold-300 font-bold border border-gold-400/20">
+                      <span className="px-2 py-0.5 rounded bg-stone-100 text-[11px] text-stone-950 font-black border border-stone-300">
                         {item.variantName}
                       </span>
                     </td>
-                    <td className="p-3 text-center font-bold font-mono text-white text-sm">
+                    <td className="p-3 text-center font-black font-mono text-stone-950 text-sm">
                       {item.quantity} ชิ้น
                     </td>
-                    <td className="p-3 text-right font-serif font-bold text-gold-300">
+                    <td className="p-3 text-right font-serif font-black text-amber-900">
                       ฿{item.revenue.toLocaleString()}
                     </td>
-                    <td className="p-3 text-right font-mono text-amber-300">
+                    <td className="p-3 text-right font-mono text-stone-950 font-black">
                       ฿{item.cost.toLocaleString()}
                     </td>
-                    <td className="p-3 text-right font-serif font-extrabold text-emerald-400 text-sm">
+                    <td className="p-3 text-right font-serif font-black text-emerald-800 text-sm">
                       +฿{item.profit.toLocaleString()}
                     </td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={() => handleOpenEditModal(item)}
-                          className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition shadow-sm cursor-pointer"
+                          className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-stone-950 border border-amber-400 rounded-lg text-[11px] font-black flex items-center gap-1 transition shadow-xs cursor-pointer"
                           title="แก้ไขข้อมูลสินค้า / ต้นทุน / สต๊อก"
                         >
-                          <Edit2 className="w-3.5 h-3.5 text-amber-300" />
+                          <Edit2 className="w-3.5 h-3.5 text-stone-950" />
                           <span>แก้ไข</span>
                         </button>
 
                         <button
                           onClick={() => handleDeleteProduct(item)}
-                          className="px-2.5 py-1 bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-500/40 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition shadow-sm cursor-pointer"
+                          className="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-950 border border-red-400 rounded-lg text-[11px] font-black flex items-center gap-1 transition shadow-xs cursor-pointer"
                           title="ลบเฉพาะประวัติรายการขายออกจากรายงาน (สินค้าในคลังจะไม่ถูกลบ)"
                         >
-                          <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                          <Trash2 className="w-3.5 h-3.5 text-red-700" />
                           <span>ลบประวัติขาย</span>
                         </button>
                       </div>
@@ -827,16 +827,16 @@ export const AdminSalesReportManager: React.FC = () => {
 
       {/* Edit Product Modal for Sales Report Table */}
       {editingProduct && (
-        <div className="fixed inset-0 z-50 bg-dubai-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-dubai-card border-2 border-gold-400/60 rounded-2xl max-w-md w-full p-6 space-y-4 text-white shadow-2xl animate-scale-up">
-            <div className="flex items-center justify-between border-b border-gold-400/30 pb-3">
-              <h3 className="font-serif font-bold text-base text-gold-300 flex items-center gap-2">
-                <Edit2 className="w-5 h-5 text-gold-400" />
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-amber-500 rounded-3xl max-w-md w-full p-6 space-y-4 text-stone-950 shadow-2xl animate-scale-up text-left">
+            <div className="flex items-center justify-between border-b-2 border-amber-400/40 pb-3">
+              <h3 className="font-serif font-black text-base text-stone-950 flex items-center gap-2">
+                <Edit2 className="w-5 h-5 text-amber-600" />
                 <span>แก้ไขข้อมูลสินค้า & ต้นทุน</span>
               </h3>
               <button
                 onClick={() => setEditingProduct(null)}
-                className="text-gray-400 hover:text-white p-1 rounded-full border border-gold-400/20"
+                className="text-stone-700 hover:text-stone-950 p-1 rounded-full border border-stone-300"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -844,46 +844,46 @@ export const AdminSalesReportManager: React.FC = () => {
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block text-amber-300 mb-1 font-extrabold">ชื่อสินค้า / แบบ</label>
+                <label className="block text-stone-950 mb-1 font-black">ชื่อสินค้า / แบบ</label>
                 <input
                   type="text"
                   value={editingProduct.title}
                   onChange={(e) => setEditingProduct({ ...editingProduct, title: e.target.value })}
-                  className="w-full bg-dubai-black border border-gold-400/30 rounded-xl p-2.5 text-white font-bold focus:border-gold-400 focus:outline-none"
+                  className="w-full bg-white border-2 border-stone-400 rounded-xl p-2.5 text-stone-950 font-black focus:border-amber-500 focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-amber-300 mb-1 font-extrabold">หมวดหมู่</label>
+                  <label className="block text-stone-950 mb-1 font-black">หมวดหมู่</label>
                   <select
                     value={editingProduct.category}
                     onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value as CategoryType })}
-                    className="w-full bg-dubai-black border border-gold-400/30 rounded-xl p-2.5 text-gold-300 font-bold focus:border-gold-400 focus:outline-none"
+                    className="w-full bg-white border-2 border-stone-400 rounded-xl p-2.5 text-stone-950 font-black focus:border-amber-500 focus:outline-none"
                   >
-                    <option value="abaya" className="bg-stone-900 text-white font-bold">ชุดอาบายะห์ (Abaya)</option>
-                    <option value="kaftan" className="bg-stone-900 text-white font-bold">ชุดคัฟทาน (Kaftan)</option>
-                    <option value="perfume" className="bg-stone-900 text-white font-bold">น้ำหอมดูไบ (Perfume)</option>
-                    <option value="incense" className="bg-stone-900 text-white font-bold">ไม้หอม & บุคคูร์ (Oud)</option>
-                    <option value="combo" className="bg-stone-900 text-white font-bold">เซตสุดคุ้ม (Combo)</option>
-                    <option value="other" className="bg-stone-900 text-white font-bold">สินค้าอื่นๆ</option>
+                    <option value="abaya" className="bg-white text-stone-950 font-bold">ชุดอาบายะห์ (Abaya)</option>
+                    <option value="kaftan" className="bg-white text-stone-950 font-bold">ชุดคัฟทาน (Kaftan)</option>
+                    <option value="perfume" className="bg-white text-stone-950 font-bold">น้ำหอมดูไบ (Perfume)</option>
+                    <option value="incense" className="bg-white text-stone-950 font-bold">ไม้หอม & บุคคูร์ (Oud)</option>
+                    <option value="combo" className="bg-white text-stone-950 font-bold">เซตสุดคุ้ม (Combo)</option>
+                    <option value="other" className="bg-white text-stone-950 font-bold">สินค้าอื่นๆ</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-amber-300 mb-1 font-extrabold">ไซส์ / ตัวเลือก</label>
+                  <label className="block text-stone-950 mb-1 font-black">ไซส์ / ตัวเลือก</label>
                   <input
                     type="text"
                     disabled
                     value={editingProduct.variantName}
-                    className="w-full bg-dubai-black/60 border border-gray-700 rounded-xl p-2.5 text-gray-300 font-bold"
+                    className="w-full bg-stone-100 border-2 border-stone-300 rounded-xl p-2.5 text-stone-950 font-black"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-gray-300 mb-1 font-bold">ราคาขาย (บาท)</label>
+                  <label className="block text-stone-950 mb-1 font-black">ราคาขาย (บาท)</label>
                   <input
                     type="number"
                     min={0}
@@ -895,12 +895,12 @@ export const AdminSalesReportManager: React.FC = () => {
                       setEditingProduct({ ...editingProduct, price: cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0) });
                     }}
                     placeholder="0"
-                    className="w-full bg-dubai-black border border-gold-400/30 rounded-xl p-2.5 text-gold-300 font-mono font-bold focus:border-gold-400 focus:outline-none"
+                    className="w-full bg-white border-2 border-stone-400 rounded-xl p-2.5 text-stone-950 font-mono font-black focus:border-amber-500 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-amber-300 mb-1 font-bold">ต้นทุน (บาท)</label>
+                  <label className="block text-stone-950 mb-1 font-black">ต้นทุน (บาท)</label>
                   <input
                     type="number"
                     min={0}
@@ -912,12 +912,12 @@ export const AdminSalesReportManager: React.FC = () => {
                       setEditingProduct({ ...editingProduct, costPrice: cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0) });
                     }}
                     placeholder="0"
-                    className="w-full bg-dubai-black border border-amber-500/40 rounded-xl p-2.5 text-amber-300 font-mono font-bold focus:border-amber-400 focus:outline-none"
+                    className="w-full bg-white border-2 border-stone-400 rounded-xl p-2.5 text-stone-950 font-mono font-black focus:border-amber-500 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-emerald-300 mb-1 font-bold">สต๊อกคงเหลือ</label>
+                  <label className="block text-stone-950 mb-1 font-black">สต๊อกคงเหลือ</label>
                   <input
                     type="number"
                     min={0}
@@ -929,17 +929,17 @@ export const AdminSalesReportManager: React.FC = () => {
                       setEditingProduct({ ...editingProduct, stockQuantity: cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0) });
                     }}
                     placeholder="0"
-                    className="w-full bg-dubai-black border border-emerald-500/40 rounded-xl p-2.5 text-emerald-300 font-mono font-bold focus:border-emerald-400 focus:outline-none"
+                    className="w-full bg-white border-2 border-stone-400 rounded-xl p-2.5 text-stone-950 font-mono font-black focus:border-amber-500 focus:outline-none"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-gold-400/20">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-amber-400/30">
               <button
                 type="button"
                 onClick={() => setEditingProduct(null)}
-                className="px-4 py-2 bg-slate-800 text-gray-300 rounded-xl text-xs font-bold hover:bg-slate-700 transition"
+                className="px-4 py-2 bg-stone-100 border border-stone-300 text-stone-950 rounded-xl text-xs font-black hover:bg-stone-200 transition cursor-pointer"
               >
                 ยกเลิก
               </button>
@@ -947,9 +947,9 @@ export const AdminSalesReportManager: React.FC = () => {
               <button
                 type="button"
                 onClick={handleSaveEditProduct}
-                className="px-5 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-dubai-black rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-gold-glow hover:scale-105 transition cursor-pointer"
+                className="px-5 py-2 bg-amber-400 hover:bg-amber-300 text-stone-950 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md border border-amber-500 transition cursor-pointer"
               >
-                <Save className="w-4 h-4" />
+                <Save className="w-4 h-4 text-stone-950" />
                 <span>บันทึกการแก้ไข</span>
               </button>
             </div>
