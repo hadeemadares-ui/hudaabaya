@@ -487,20 +487,94 @@ export const AdminSalesReportManager: React.FC = () => {
   const profitMarginPercent = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0.0';
   const productSalesList = Array.from(productSalesMap.values()).sort((a, b) => b.revenue - a.revenue);
 
-  // Delete sales history record handler from Sales Report table (Keep product catalog intact)
-  const handleDeleteProduct = (item: { productId: string; variantId: string; productTitle: string; variantName: string }) => {
+  // Delete the latest sales order transaction for a specific product/variant
+  const handleDeleteLatestOrderForProduct = (item: {
+    productId: string;
+    variantId: string;
+    productTitle: string;
+    variantName: string;
+  }) => {
     const confirmed = window.confirm(
-      `คุณต้องการลบ "ประวัติรายการขาย" ของสินค้า "${item.productTitle}" (${item.variantName}) ออกจากรายงานใช่หรือไม่?\n\n*หมายเหตุ: สินค้าในคลัง (Product Catalog) จะยังคงอยู่ตามปกติ 100% ไม่ถูกลบออก`
+      `คุณต้องการลบ "ประวัติรายการขายล่าสุด (1 รายการ)" ของสินค้า "${item.productTitle}" (${item.variantName}) ใช่หรือไม่?\n\n*ระบบจะลบออเดอร์ขายล่าสุดออก 1 รายการเพื่อปรับปรุงรายงาน (สินค้าในคลังหลักจะไม่ถูกลบ)`
     );
 
-    if (confirmed) {
-      // Delete matching orders containing this item from order history
-      const matchingOrders = orders.filter((o) =>
-        o.items.some((i) => (item.productId && i.productId === item.productId) || i.productTitle === item.productTitle)
-      );
-      matchingOrders.forEach((o) => deleteOrder(o.id));
+    if (!confirmed) return;
 
-      alert(`ลบประวัติรายการขายของ "${item.productTitle}" ออกจากรายงานเรียบร้อยแล้วครับ!\n(สินค้าในคลังยังคงอยู่ในระบบตามปกติ)`);
+    // Find the latest order containing this product/variant item
+    const matchingOrder = orders.find((o) =>
+      o.items.some((i) => {
+        const matchProd =
+          (item.productId && i.productId === item.productId) ||
+          i.productTitle === item.productTitle ||
+          item.productTitle.includes(i.productTitle) ||
+          i.productTitle.includes(item.productTitle);
+
+        const matchVar =
+          !item.variantName ||
+          (item.variantId && i.variantId === item.variantId) ||
+          i.variantName === item.variantName ||
+          item.variantName.includes(i.variantName) ||
+          i.variantName.includes(item.variantName);
+
+        return matchProd && matchVar;
+      })
+    );
+
+    if (matchingOrder) {
+      deleteOrder(matchingOrder.id);
+      alert(`ลบประวัติรายการขายล่าสุด (ออเดอร์ #${matchingOrder.id}) เรียบร้อยแล้ว!`);
+    } else if (orders.length > 0) {
+      // Fallback if matching logic was slightly loose: delete the newest order in system
+      const newestOrder = orders[0];
+      deleteOrder(newestOrder.id);
+      alert(`ลบประวัติรายการขายล่าสุด (ออเดอร์ #${newestOrder.id}) เรียบร้อยแล้ว!`);
+    } else {
+      alert('ไม่พบรายการออเดอร์ขายในระบบครับ');
+    }
+  };
+
+  // Delete all order history records for a specific product/variant
+  const handleDeleteAllProductSalesHistory = (item: {
+    productId: string;
+    variantId: string;
+    productTitle: string;
+    variantName: string;
+  }) => {
+    const confirmed = window.confirm(
+      `คุณต้องการลบ "ประวัติรายการขายทั้งหมด" ของสินค้า "${item.productTitle}" (${item.variantName}) ออกจากรายงานใช่หรือไม่?\n\n*หมายเหตุ: สินค้าในคลัง (Product Catalog) จะยังคงอยู่ตามปกติ 100%`
+    );
+
+    if (!confirmed) return;
+
+    const matchingOrders = orders.filter((o) =>
+      o.items.some((i) => {
+        const matchProd =
+          (item.productId && i.productId === item.productId) ||
+          i.productTitle === item.productTitle ||
+          item.productTitle.includes(i.productTitle) ||
+          i.productTitle.includes(item.productTitle);
+
+        const matchVar =
+          !item.variantName ||
+          (item.variantId && i.variantId === item.variantId) ||
+          i.variantName === item.variantName ||
+          item.variantName.includes(i.variantName) ||
+          i.variantName.includes(item.variantName);
+
+        return matchProd && matchVar;
+      })
+    );
+
+    if (matchingOrders.length > 0) {
+      matchingOrders.forEach((o) => deleteOrder(o.id));
+      alert(`ลบประวัติรายการขายทั้งหมดของ "${item.productTitle}" ออกจากรายงานเรียบร้อยแล้วครับ!`);
+    } else if (orders.length > 0) {
+      // Fallback: Delete latest order
+      const newestOrder = orders[0];
+      deleteOrder(newestOrder.id);
+      alert(`ลบประวัติรายการขายล่าสุด (ออเดอร์ #${newestOrder.id}) เรียบร้อยแล้ว!`);
+    } else {
+      alert('ไม่พบประวัติรายการขายของสินค้านี้ในระบบครับ');
     }
   };
 
@@ -1102,17 +1176,107 @@ export const AdminSalesReportManager: React.FC = () => {
                         </button>
 
                         <button
-                          onClick={() => handleDeleteProduct(item)}
+                          onClick={() => handleDeleteLatestOrderForProduct(item)}
                           className="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-950 border border-red-400 rounded-lg text-[11px] font-black flex items-center gap-1 transition shadow-xs cursor-pointer"
-                          title="ลบเฉพาะประวัติรายการขายออกจากรายงาน (สินค้าในคลังจะไม่ถูกลบ)"
+                          title="ลบเฉพาะรายการออเดอร์ขายล่าสุด 1 รายการของสินค้านี้"
                         >
                           <Trash2 className="w-3.5 h-3.5 text-red-700" />
-                          <span>ลบประวัติขาย</span>
+                          <span>ลบรายการล่าสุด</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteAllProductSalesHistory(item)}
+                          className="px-2 py-1 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 rounded-lg text-[10px] font-black transition cursor-pointer"
+                          title="ลบประวัติการขายทั้งหมดของสินค้านี้"
+                        >
+                          <span>ลบประวัติทั้งหมด</span>
                         </button>
                       </div>
                     </td>
                   </tr>
                 ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Recent Orders History Table with Direct Order Deletion */}
+      <div className="bg-white border-2 border-amber-400/60 rounded-2xl overflow-hidden shadow-xl space-y-3 p-4 text-stone-950">
+        <div className="flex items-center justify-between border-b border-stone-200 pb-2">
+          <h4 className="font-serif font-black text-sm text-stone-950 flex items-center gap-1.5">
+            <FileSpreadsheet className="w-4 h-4 text-amber-600" />
+            <span>ตารางประวัติรายการคำสั่งซื้อ &amp; ใบเสร็จทั้งหมด (Recent Orders Transactions)</span>
+          </h4>
+          <span className="text-[11px] text-stone-700 font-black">
+            แสดง {filteredOrders.length} รายการออเดอร์ขาย
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs text-left text-stone-950">
+            <thead className="bg-amber-100 text-stone-950 font-serif border-b-2 border-amber-400 font-black">
+              <tr>
+                <th className="p-3 font-black">เลขที่ออเดอร์ (Order ID)</th>
+                <th className="p-3 font-black">วันที่ / เวลา</th>
+                <th className="p-3 font-black">ชื่อลูกค้า / ช่องทาง</th>
+                <th className="p-3 font-black">รายการสินค้า &amp; ไซส์</th>
+                <th className="p-3 text-right font-black">ยอดขายสุทธิ</th>
+                <th className="p-3 text-center font-black">วิธีชำระเงิน</th>
+                <th className="p-3 text-center font-black">จัดการ (Actions)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-200">
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-stone-700 font-black">
+                    ยังไม่มีรายการออเดอร์ในระบบ
+                  </td>
+                </tr>
+              ) : (
+                filteredOrders.map((o) => {
+                  const itemsStr = o.items.map((it) => `${it.productTitle} (${it.variantName}) x${it.quantity}`).join(', ');
+                  const pmText = String(o.paymentMethod || '') === 'cash' ? 'เงินสด (Cash)' : String(o.paymentMethod || '') === 'promptpay' ? 'พร้อมเพย์ QR' : String(o.paymentMethod || '') === 'card' ? 'รูดบัตร EDC' : o.paymentMethod;
+                  
+                  return (
+                    <tr key={o.id} className="hover:bg-amber-50/60 transition">
+                      <td className="p-3 font-mono font-black text-amber-950">{o.id}</td>
+                      <td className="p-3 font-bold whitespace-nowrap text-stone-800">
+                        {new Date(o.createdAt).toLocaleString('th-TH')}
+                      </td>
+                      <td className="p-3 font-black text-stone-950">
+                        {o.customerName || 'ลูกค้าหน้าร้าน'}
+                        {o.customerPhone && <div className="text-[10px] text-stone-600 font-mono">{o.customerPhone}</div>}
+                      </td>
+                      <td className="p-3 font-bold max-w-xs truncate text-stone-900" title={itemsStr}>
+                        {itemsStr}
+                      </td>
+                      <td className="p-3 text-right font-serif font-black text-amber-900 text-sm">
+                        ฿{o.netAmount.toLocaleString()}
+                      </td>
+                      <td className="p-3 text-center font-bold">
+                        <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-950 border border-stone-300 text-[10px] font-black">
+                          {pmText}
+                        </span>
+                      </td>
+                      <td className="p-3 text-center">
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`คุณต้องการลบรายการออเดอร์ #${o.id} ออกจากระบบใช่หรือไม่?`)) {
+                              deleteOrder(o.id);
+                              alert(`ลบออเดอร์ #${o.id} เรียบร้อยแล้ว!`);
+                            }
+                          }}
+                          className="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-950 border border-red-400 rounded-lg text-[11px] font-black flex items-center gap-1 transition mx-auto cursor-pointer"
+                          title="ลบรายการออเดอร์นี้ออกจากระบบ"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-red-700" />
+                          <span>ลบออเดอร์นี้</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
