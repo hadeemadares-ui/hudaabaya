@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Calendar, TrendingUp, DollarSign, Package, PieChart, Download, ArrowUpRight, ArrowDownRight, Layers, FileSpreadsheet, RefreshCw, Sparkles, Filter, Edit2, Trash2, X, Save, Printer, CheckSquare, Square, Sliders, FileText, Check, ChevronRight } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Product, Order, CartItem, CategoryType } from '../../types';
+import { VoiceNumberInput } from '../common/VoiceNumberInput';
 
 export const AdminSalesReportManager: React.FC = () => {
   const { orders, products, createOrder, deleteOrder, addProduct, updateProduct } = useShop();
@@ -1385,56 +1386,26 @@ export const AdminSalesReportManager: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-stone-950 mb-1 font-black">ราคาขาย (บาท)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={editingProduct.price === 0 ? '' : editingProduct.price}
-                    onFocus={(e) => e.target.select()}
-                    onClick={(e) => (e.target as HTMLInputElement).select()}
-                    onChange={(e) => {
-                      const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
-                      setEditingProduct({ ...editingProduct, price: cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0) });
-                    }}
-                    placeholder="0"
-                    className="w-full bg-white border-2 border-stone-400 rounded-xl p-2.5 text-stone-950 font-mono font-black focus:border-amber-500 focus:outline-none"
-                  />
-                </div>
+                <VoiceNumberInput
+                  label="ราคาขาย (บาท)"
+                  value={editingProduct.price}
+                  onChange={(val) => setEditingProduct({ ...editingProduct, price: val })}
+                  unitLabel="บาท"
+                />
 
-                <div>
-                  <label className="block text-stone-950 mb-1 font-black">ต้นทุน (บาท)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={editingProduct.costPrice === 0 ? '' : editingProduct.costPrice}
-                    onFocus={(e) => e.target.select()}
-                    onClick={(e) => (e.target as HTMLInputElement).select()}
-                    onChange={(e) => {
-                      const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
-                      setEditingProduct({ ...editingProduct, costPrice: cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0) });
-                    }}
-                    placeholder="0"
-                    className="w-full bg-white border-2 border-stone-400 rounded-xl p-2.5 text-stone-950 font-mono font-black focus:border-amber-500 focus:outline-none"
-                  />
-                </div>
+                <VoiceNumberInput
+                  label="ต้นทุน (บาท)"
+                  value={editingProduct.costPrice}
+                  onChange={(val) => setEditingProduct({ ...editingProduct, costPrice: val })}
+                  unitLabel="บาท"
+                />
 
-                <div>
-                  <label className="block text-stone-950 mb-1 font-black">สต๊อกคงเหลือ</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={editingProduct.stockQuantity === 0 ? '' : editingProduct.stockQuantity}
-                    onFocus={(e) => e.target.select()}
-                    onClick={(e) => (e.target as HTMLInputElement).select()}
-                    onChange={(e) => {
-                      const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
-                      setEditingProduct({ ...editingProduct, stockQuantity: cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0) });
-                    }}
-                    placeholder="0"
-                    className="w-full bg-white border-2 border-stone-400 rounded-xl p-2.5 text-stone-950 font-mono font-black focus:border-amber-500 focus:outline-none"
-                  />
-                </div>
+                <VoiceNumberInput
+                  label="สต๊อก (ชิ้น)"
+                  value={editingProduct.stockQuantity}
+                  onChange={(val) => setEditingProduct({ ...editingProduct, stockQuantity: val })}
+                  unitLabel="ชิ้น"
+                />
               </div>
             </div>
 

@@ -2,19 +2,24 @@
 
 import React, { useState } from 'react';
 import { Mic } from 'lucide-react';
+import { parseThaiNumberSpeech } from '../../utils/speechUtils';
 
 interface VoiceInputButtonProps {
   onTranscript: (text: string) => void;
+  onNumberTranscript?: (num: number) => void;
+  isNumber?: boolean;
   className?: string;
   title?: string;
   mode?: 'replace' | 'append';
-  currentValue?: string;
+  currentValue?: string | number;
 }
 
 export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
   onTranscript,
+  onNumberTranscript,
+  isNumber = false,
   className = '',
-  title = 'กดพูดแทนการพิมพ์ (Voice Speech-to-Text)',
+  title = 'กดพูดแทนการพิมพ์ (พูดตัวเลข เช่น 1250 หรือ หกร้อยห้าสิบ)',
   mode = 'replace',
   currentValue = '',
 }) => {
@@ -44,10 +49,30 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
         if (transcript) {
-          if (mode === 'append' && currentValue) {
-            onTranscript(`${currentValue} ${transcript}`.trim());
+          if (isNumber || onNumberTranscript) {
+            const parsedNum = parseThaiNumberSpeech(transcript);
+            if (parsedNum !== null && !isNaN(parsedNum)) {
+              if (onNumberTranscript) {
+                onNumberTranscript(parsedNum);
+              }
+              onTranscript(String(parsedNum));
+            } else {
+              // Fallback to direct digits if any
+              const digitsOnly = transcript.replace(/\D/g, '');
+              if (digitsOnly) {
+                const numVal = parseInt(digitsOnly, 10);
+                if (onNumberTranscript) onNumberTranscript(numVal);
+                onTranscript(String(numVal));
+              } else {
+                alert(`ถอดรหัสเสียง "${transcript}" เป็นตัวเลขไม่สำเร็จ กรุณาพูดใหม่อีกครั้งครับ (เช่น 1250 หรือ หกร้อยห้าสิบ)`);
+              }
+            }
           } else {
-            onTranscript(transcript.trim());
+            if (mode === 'append' && currentValue) {
+              onTranscript(`${currentValue} ${transcript}`.trim());
+            } else {
+              onTranscript(transcript.trim());
+            }
           }
         }
       };
@@ -75,11 +100,11 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
       className={`px-2 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer shrink-0 ${
         isListening
           ? 'bg-red-600 text-white animate-pulse border border-red-400 shadow-lg shadow-red-500/50'
-          : 'bg-gradient-to-r from-amber-500/20 via-gold-400/20 to-yellow-500/20 text-gold-300 border border-gold-400/50 hover:bg-gold-500 hover:text-dubai-black'
+          : 'bg-gradient-to-r from-amber-500/20 via-gold-400/20 to-yellow-500/20 text-amber-300 border border-amber-400/50 hover:bg-amber-400 hover:text-stone-950'
       } ${className}`}
       title={title}
     >
-      <Mic className={`w-3.5 h-3.5 ${isListening ? 'animate-bounce text-white' : 'text-gold-400'}`} />
+      <Mic className={`w-3.5 h-3.5 ${isListening ? 'animate-bounce text-white' : 'text-amber-400'}`} />
       <span>{isListening ? 'กำลังฟัง...' : 'พูดพิมพ์'}</span>
     </button>
   );

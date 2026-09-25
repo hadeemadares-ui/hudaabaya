@@ -913,9 +913,23 @@ export const AdminProductManager: React.FC = () => {
                           <div className="sm:col-span-6 grid grid-cols-3 gap-2">
                             {/* Price Field */}
                             <div>
-                              <label className="text-xs text-amber-300 block mb-1 font-extrabold truncate">
-                                ราคาขาย (บาท)
-                              </label>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="text-xs text-amber-300 block font-extrabold truncate">
+                                  ราคาขาย (บาท)
+                                </label>
+                                <VoiceInputButton
+                                  isNumber={true}
+                                  onNumberTranscript={(num) => {
+                                    const updated = [...variants];
+                                    updated[idx].price = num;
+                                    if (updated[idx].costPrice === undefined || updated[idx].costPrice === 0) {
+                                      updated[idx].costPrice = Math.round(num * 0.5);
+                                    }
+                                    setVariants(updated);
+                                  }}
+                                  onTranscript={() => {}}
+                                />
+                              </div>
                               <input
                                 type="number"
                                 placeholder="0"
@@ -938,9 +952,20 @@ export const AdminProductManager: React.FC = () => {
 
                             {/* Cost Price Field - High Visibility Orange Badge Box */}
                             <div className="bg-amber-950/90 p-1.5 rounded-xl border-2 border-amber-500 shadow-md">
-                              <label className="text-[11px] text-amber-200 block mb-1 font-extrabold text-center bg-amber-500/30 rounded py-0.5 border border-amber-400/50 truncate">
-                                ต้นทุน (บาท)
-                              </label>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="text-[11px] text-amber-200 block font-extrabold text-center bg-amber-500/30 rounded px-1.5 py-0.5 border border-amber-400/50 truncate">
+                                  ต้นทุน (บาท)
+                                </label>
+                                <VoiceInputButton
+                                  isNumber={true}
+                                  onNumberTranscript={(num) => {
+                                    const updated = [...variants];
+                                    updated[idx].costPrice = num;
+                                    setVariants(updated);
+                                  }}
+                                  onTranscript={() => {}}
+                                />
+                              </div>
                               <input
                                 type="number"
                                 placeholder="0"
@@ -959,9 +984,20 @@ export const AdminProductManager: React.FC = () => {
 
                             {/* Stock Field */}
                             <div>
-                              <label className="text-xs text-emerald-300 block mb-1 font-extrabold truncate">
-                                สต๊อก (ชิ้น)
-                              </label>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="text-xs text-emerald-300 block font-extrabold truncate">
+                                  สต๊อก (ชิ้น)
+                                </label>
+                                <VoiceInputButton
+                                  isNumber={true}
+                                  onNumberTranscript={(num) => {
+                                    const updated = [...variants];
+                                    updated[idx].stockQuantity = num;
+                                    setVariants(updated);
+                                  }}
+                                  onTranscript={() => {}}
+                                />
+                              </div>
                               <input
                                 type="number"
                                 placeholder="0"
