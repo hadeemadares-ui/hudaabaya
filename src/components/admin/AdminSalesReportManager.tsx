@@ -1163,8 +1163,8 @@ export const AdminSalesReportManager: React.FC = () => {
                 <th className="p-3 font-black">ลำดับ</th>
                 <th className="p-3 font-black">ชื่อสินค้า / แบบ</th>
                 <th className="p-3 font-black">ไซส์ / ปริมาณ</th>
-                <th className="p-3 font-black whitespace-nowrap">วันที่ เวลา ที่ขาย</th>
-                <th className="p-3 font-black whitespace-nowrap">พนักงานผู้ขาย</th>
+                <th className="p-3 font-black whitespace-nowrap">วันที่ เวลา</th>
+                <th className="p-3 font-black whitespace-nowrap">ผู้ขาย</th>
                 <th className="p-3 text-center font-black">จำนวนที่ขายได้</th>
                 <th className="p-3 text-right font-black">ยอดขายรวม (บาท)</th>
                 <th className="p-3 text-right font-black">ต้นทุนรวม (บาท)</th>
