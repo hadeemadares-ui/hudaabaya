@@ -13,7 +13,6 @@ export const AdminProductManager: React.FC = () => {
     updateProduct,
     updateVariantStock,
     deleteProduct,
-    clearAllProducts,
     selectedCategory,
     setSelectedCategory,
     syncProducts,
@@ -344,20 +343,6 @@ export const AdminProductManager: React.FC = () => {
           >
             <RotateCcw className="w-4 h-4 text-amber-700 animate-spin-slow" />
             <span>ซิงก์ดึงข้อมูลสินค้าด่วน</span>
-          </button>
-
-          <button
-            onClick={async () => {
-              if (confirm('คุณต้องการลบรายการสินค้าทั้งหมดออกจากระบบเพื่อเริ่มเปิดร้านใส่สินค้าของคุณเองใช่หรือไม่?')) {
-                await clearAllProducts();
-                alert('ลบรายการสินค้าทั้งหมดออกจากระบบและฐานข้อมูลเรียบร้อยแล้ว!');
-              }
-            }}
-            className="px-4 py-2.5 bg-red-100 hover:bg-red-200 text-red-950 border border-red-400 font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-            title="ลบสินค้าตัวอย่างทั้งหมดออกจากระบบเพื่อเริ่มขายจริง"
-          >
-            <Trash2 className="w-4 h-4 text-red-700" />
-            <span>ล้างสินค้าตัวอย่างทั้งหมด</span>
           </button>
 
           <button
