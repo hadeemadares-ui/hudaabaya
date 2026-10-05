@@ -30,6 +30,7 @@ export const AdminProductManager: React.FC = () => {
   const [fabric, setFabric] = useState('Nida Silk Dubai');
   const [imagesList, setImagesList] = useState<string[]>([]);
   const [newImageUrlInput, setNewImageUrlInput] = useState<string>('');
+  const [customVariantInput, setCustomVariantInput] = useState<string>('');
 
   // Comprehensive Color List in Thai (English)
   const PRODUCT_COLOR_PRESETS = [
@@ -90,6 +91,7 @@ export const AdminProductManager: React.FC = () => {
     { name: 'ขวดสเปรย์ 50 ml (EDP Spray)', sku: 'HD-PRF-50ML', price: 0, costPrice: 0, stockQuantity: 0, color: 'กลิ่นดูไบออริจินัล' },
     { name: 'ขวดสเปรย์ 100 ml (EDP Premium Spray)', sku: 'HD-PRF-100ML', price: 0, costPrice: 0, stockQuantity: 0, color: 'กลิ่นดูไบออริจินัล' },
     { name: 'ขวดแก้วคริสตัล 12 ml (Attar Pure Oil)', sku: 'HD-PRF-12ML', price: 0, costPrice: 0, stockQuantity: 0, color: 'กลิ่นดูไบออริจินัล' },
+    { name: 'ขวดเทสเตอร์ 3 ml (Sample Tester)', sku: 'HD-PRF-3ML', price: 0, costPrice: 0, stockQuantity: 0, color: 'กลิ่นดูไบออริจินัล' },
   ];
 
   // Standard Dubai Incense Default Variants
@@ -811,7 +813,15 @@ export const AdminProductManager: React.FC = () => {
                       </span>
                     </label>
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setVariants([])}
+                        className="px-3 py-1.5 bg-red-100 text-red-950 border border-red-400 rounded-xl text-xs font-black hover:bg-red-200 transition cursor-pointer"
+                        title="ล้างรายการทั้งหมดเพื่อเลือกเฉพาะขนาดที่ต้องการ"
+                      >
+                        ล้างรายการทั้งหมด (เลือกเอง)
+                      </button>
                       <button
                         type="button"
                         onClick={handleApplyDefaultPreset}
@@ -829,26 +839,134 @@ export const AdminProductManager: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Quick Add Buttons based on Category */}
-                  <div className="flex flex-wrap items-center gap-2 bg-stone-50 p-3 rounded-2xl border-2 border-amber-400/40">
-                    <span className="text-xs text-amber-950 font-black mr-1">ปุ่มกดเพิ่มเร็ว:</span>
-                    {(category === 'perfume'
-                      ? ['ขวดสเปรย์ 50 ml', 'ขวดสเปรย์ 100 ml', 'Attar Oil 12 ml', 'ขวดเทสเตอร์ 3 ml', 'ขนาดมาตรฐาน (Free Size)']
-                      : category === 'incense'
-                      ? ['กระปุก 50g', 'กระปุก 100g', 'เซ็ตเตาเผา + ถ่านหอม', 'ขนาดมาตรฐาน (Free Size)']
-                      : category === 'other'
-                      ? ['ชิ้น/กล่อง (Standard)', 'แพ็กสุดคุ้ม (Pack)', 'ขนาดมาตรฐาน (Free Size)']
-                      : ['Size 52 (ส่วนสูง ~150-155 ซม.)', 'Size 54 (ส่วนสูง ~155-160 ซม.)', 'Size 56 (ส่วนสูง ~160-165 ซม.)', 'Size 58 (ส่วนสูง ~165-170 ซม.)']
-                    ).map((sz) => (
-                      <button
-                        key={sz}
-                        type="button"
-                        onClick={() => handleAddSingleSize(sz)}
-                        className="px-2.5 py-1 bg-white hover:bg-amber-400 text-stone-950 border border-stone-300 rounded-lg text-xs font-mono font-black transition shadow-xs cursor-pointer"
-                      >
-                        + {sz}
-                      </button>
-                    ))}
+                  {/* Custom Size / Volume Input Field & Quick Add Buttons */}
+                  <div className="space-y-3 bg-stone-50 p-4 rounded-2xl border-2 border-amber-400/40 text-stone-950">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <span className="text-xs text-amber-950 font-black shrink-0 flex items-center gap-1">
+                        ➕ เพิ่มขนาดกำหนดเอง:
+                      </span>
+                      <div className="flex-1 flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={customVariantInput}
+                          onChange={(e) => setCustomVariantInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (customVariantInput.trim()) {
+                                handleAddSingleSize(customVariantInput.trim());
+                                setCustomVariantInput('');
+                              }
+                            }
+                          }}
+                          placeholder={
+                            category === 'perfume'
+                              ? 'เช่น ขวดลูกกลิ้ง 6 ml หรือ ขวดสเปรย์พกพา 15 ml'
+                              : 'เช่น Size 60 (ส่วนสูง ~170-175 ซม.) หรือ Free Size'
+                          }
+                          className="w-full bg-white border-2 border-stone-400 rounded-xl px-3 py-1.5 text-xs font-black text-stone-950 placeholder-stone-400 focus:outline-none focus:border-amber-500 shadow-inner"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (customVariantInput.trim()) {
+                              handleAddSingleSize(customVariantInput.trim());
+                              setCustomVariantInput('');
+                            }
+                          }}
+                          className="px-4 py-1.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow transition border border-amber-500 cursor-pointer shrink-0"
+                        >
+                          + เพิ่มขนาดนี้
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Categorized Quick Add Preset Buttons */}
+                    {category === 'perfume' ? (
+                      <div className="space-y-2 pt-2 border-t border-amber-400/30 text-xs">
+                        {/* Spray Bottles */}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="font-black text-stone-900 shrink-0">🧴 ขวดสเปรย์ (Spray):</span>
+                          {[
+                            'ขวดสเปรย์ 10 ml',
+                            'ขวดสเปรย์ 15 ml',
+                            'ขวดสเปรย์ 30 ml',
+                            'ขวดสเปรย์ 50 ml',
+                            'ขวดสเปรย์ 100 ml',
+                          ].map((sz) => (
+                            <button
+                              key={sz}
+                              type="button"
+                              onClick={() => handleAddSingleSize(sz)}
+                              className="px-2.5 py-0.5 bg-white hover:bg-amber-400 text-stone-950 border border-stone-300 rounded-lg text-xs font-mono font-black transition cursor-pointer"
+                            >
+                              + {sz}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Roller Bottles */}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="font-black text-stone-900 shrink-0">🧪 ขวดลูกกลิ้ง (Roller):</span>
+                          {[
+                            'ขวดลูกกลิ้ง 3 ml',
+                            'ขวดลูกกลิ้ง 6 ml',
+                            'ขวดลูกกลิ้ง 10 ml',
+                            'ขวดลูกกลิ้ง 12 ml',
+                            'ขวดลูกกลิ้ง 15 ml',
+                          ].map((sz) => (
+                            <button
+                              key={sz}
+                              type="button"
+                              onClick={() => handleAddSingleSize(sz)}
+                              className="px-2.5 py-0.5 bg-white hover:bg-amber-400 text-stone-950 border border-stone-300 rounded-lg text-xs font-mono font-black transition cursor-pointer"
+                            >
+                              + {sz}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Tester & Crystal Bottles */}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="font-black text-stone-900 shrink-0">🎁 คริสตัล & เทสเตอร์:</span>
+                          {[
+                            'Attar Oil 12 ml',
+                            'ขวดแก้วคริสตัล 6 ml',
+                            'ขวดเทสเตอร์ 3 ml',
+                            'ขวดเทสเตอร์ 5 ml',
+                            'ขนาดมาตรฐาน (Free Size)',
+                          ].map((sz) => (
+                            <button
+                              key={sz}
+                              type="button"
+                              onClick={() => handleAddSingleSize(sz)}
+                              className="px-2.5 py-0.5 bg-white hover:bg-amber-400 text-stone-950 border border-stone-300 rounded-lg text-xs font-mono font-black transition cursor-pointer"
+                            >
+                              + {sz}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-amber-400/30 text-xs">
+                        <span className="font-black text-stone-900 shrink-0">ปุ่มกดเพิ่มเร็ว:</span>
+                        {(category === 'incense'
+                          ? ['กระปุก 50g', 'กระปุก 100g', 'เซ็ตเตาเผา + ถ่านหอม', 'ขนาดมาตรฐาน (Free Size)']
+                          : category === 'other'
+                          ? ['ชิ้น/กล่อง (Standard)', 'แพ็กสุดคุ้ม (Pack)', 'ขนาดมาตรฐาน (Free Size)']
+                          : ['Size 52 (ส่วนสูง ~150-155 ซม.)', 'Size 54 (ส่วนสูง ~155-160 ซม.)', 'Size 56 (ส่วนสูง ~160-165 ซม.)', 'Size 58 (ส่วนสูง ~165-170 ซม.)', 'Size 60 (ส่วนสูง ~170-175 ซม.)']
+                        ).map((sz) => (
+                          <button
+                            key={sz}
+                            type="button"
+                            onClick={() => handleAddSingleSize(sz)}
+                            className="px-2.5 py-1 bg-white hover:bg-amber-400 text-stone-950 border border-stone-300 rounded-lg text-xs font-mono font-black transition cursor-pointer"
+                          >
+                            + {sz}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1 no-scrollbar">
@@ -963,6 +1081,25 @@ export const AdminProductManager: React.FC = () => {
                               }}
                               className="w-full bg-white border-2 border-stone-400 rounded-xl p-2 text-stone-950 font-black text-xs sm:text-sm focus:outline-none focus:border-amber-500 shadow-inner"
                             />
+                            {category === 'perfume' && (
+                              <select
+                                value=""
+                                onChange={(e) => {
+                                  if (e.target.value) {
+                                    const updated = [...variants];
+                                    updated[idx].name = e.target.value;
+                                    setVariants(updated);
+                                  }
+                                }}
+                                className="w-full bg-white border border-stone-300 rounded-xl px-2 py-1 text-xs text-stone-950 font-black hover:border-amber-500 transition cursor-pointer"
+                              >
+                                <option value="" className="bg-white text-stone-950 font-bold">-- เลือกขนาดด่วน --</option>
+                                <option value="ขวดสเปรย์ 50 ml (EDP Spray)" className="bg-white text-stone-950 font-bold py-1">ขวดสเปรย์ 50 ml</option>
+                                <option value="ขวดสเปรย์ 100 ml (EDP Premium Spray)" className="bg-white text-stone-950 font-bold py-1">ขวดสเปรย์ 100 ml</option>
+                                <option value="Attar Oil 12 ml (Pure Oil)" className="bg-white text-stone-950 font-bold py-1">Attar Oil 12 ml</option>
+                                <option value="ขวดเทสเตอร์ 3 ml (Sample Tester)" className="bg-white text-stone-950 font-bold py-1">ขวดเทสเตอร์ 3 ml</option>
+                              </select>
+                            )}
                           </div>
 
                           {/* 3 Numeric Inputs Grid (Price, Cost Price, Stock) */}
