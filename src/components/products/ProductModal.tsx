@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Star, ShoppingBag, Check, ShieldCheck, Ruler, Sparkles, AlertCircle, Truck, Palette, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product, ProductVariant } from '../../types';
 import { useShop } from '../../context/ShopContext';
@@ -21,6 +21,25 @@ const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
 
 export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) => {
   const { addToCart } = useShop();
+
+  useEffect(() => {
+    // Lock body scroll on mobile and desktop while modal is active
+    const originalStyle = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    // Handle Escape key to close modal
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalStyle;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
 
   const defaultImg = DEFAULT_CATEGORY_IMAGES[product.category] || DEFAULT_CATEGORY_IMAGES.abaya;
   const initialImg = (product.images && product.images.length > 0 && product.images[0] && typeof product.images[0] === 'string' && product.images[0].trim() !== '')
@@ -75,16 +94,37 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-dubai-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
-      <div className="relative bg-dubai-card border-2 border-gold-400/50 rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl text-white my-8">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-dubai-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 cursor-pointer"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        className="relative bg-dubai-card border-2 border-gold-400/50 rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl text-white my-3 sm:my-8 cursor-default"
+        onClick={(e) => e.stopPropagation()}
+      >
         
-        {/* Close Button */}
+        {/* Prominent Close Button */}
         <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-20 bg-dubai-black/80 text-gold-400 hover:text-white p-2 rounded-full border border-gold-400/40 transition"
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            onClose();
+          }}
+          onTouchEnd={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            onClose();
+          }}
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 z-50 bg-dubai-black/90 text-gold-400 hover:text-white p-2.5 sm:p-3 rounded-full border border-gold-400/60 shadow-2xl transition cursor-pointer active:scale-95 touch-manipulation"
           aria-label="ปิดหน้าต่าง"
+          title="ปิดหน้าต่างและกลับสู่หน้าหลัก"
         >
-          <X className="w-5 h-5" />
+          <X className="w-6 h-6 sm:w-5 sm:h-5 text-gold-400" />
         </button>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-6">
@@ -406,6 +446,25 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
 
           </div>
 
+        </div>
+
+        {/* Prominent Bottom Close Button Bar for Mobile & Desktop */}
+        <div className="p-3.5 bg-dubai-black/95 border-t-2 border-gold-400/30 flex items-center justify-center">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            onTouchEnd={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            className="w-full sm:w-auto px-8 py-2.5 bg-dubai-black hover:bg-gold-500 hover:text-stone-950 text-gold-400 border border-gold-400/50 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg cursor-pointer active:scale-95 touch-manipulation"
+          >
+            <X className="w-5 h-5 text-gold-400 hover:text-stone-950" />
+            <span>✕ ปิดหน้าต่างสินค้า (กลับสู่หน้าหลัก)</span>
+          </button>
         </div>
 
         {/* Size Guide Modal Overlay */}
