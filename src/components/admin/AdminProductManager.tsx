@@ -28,7 +28,8 @@ export const AdminProductManager: React.FC = () => {
   const [category, setCategory] = useState<CategoryType>('abaya');
   const [description, setDescription] = useState('');
   const [fabric, setFabric] = useState('Nida Silk Dubai');
-  const [imageUrl, setImageUrl] = useState('');
+  const [imagesList, setImagesList] = useState<string[]>([]);
+  const [newImageUrlInput, setNewImageUrlInput] = useState<string>('');
 
   // Comprehensive Color List in Thai (English)
   const PRODUCT_COLOR_PRESETS = [
@@ -161,10 +162,10 @@ export const AdminProductManager: React.FC = () => {
             const ctx = canvas.getContext('2d');
             ctx?.drawImage(img, 0, 0, width, height);
             const compressed = canvas.toDataURL('image/jpeg', 0.75);
-            setImageUrl(compressed);
+            setImagesList((prev) => [...prev, compressed]);
           };
           img.onerror = () => {
-            setImageUrl(rawBase64);
+            setImagesList((prev) => [...prev, rawBase64]);
           };
         }
       };
@@ -173,13 +174,34 @@ export const AdminProductManager: React.FC = () => {
     e.target.value = '';
   };
 
+  const handleAddUrlImage = () => {
+    if (newImageUrlInput.trim()) {
+      setImagesList((prev) => [...prev, newImageUrlInput.trim()]);
+      setNewImageUrlInput('');
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImagesList((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSetMainCover = (index: number) => {
+    setImagesList((prev) => {
+      const newArr = [...prev];
+      const [item] = newArr.splice(index, 1);
+      newArr.unshift(item);
+      return newArr;
+    });
+  };
+
   const resetForm = () => {
     setTitle('');
     setArabicTitle('');
     setCategory('abaya');
     setDescription('');
     setFabric('Nida Silk Dubai');
-    setImageUrl('');
+    setImagesList([]);
+    setNewImageUrlInput('');
     setVariants(DEFAULT_DUBAI_SIZES);
     setEditingProduct(null);
   };
@@ -201,6 +223,9 @@ export const AdminProductManager: React.FC = () => {
       ? 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop'
       : 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop';
 
+    const validImages = imagesList.filter((img) => img && typeof img === 'string' && img.trim() !== '');
+    const finalImages = validImages.length > 0 ? validImages : [fallbackImage];
+
     const newProductObj: Product = {
       id: editingProduct ? editingProduct.id : `huda-prod-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       title: title.trim(),
@@ -209,7 +234,7 @@ export const AdminProductManager: React.FC = () => {
       description: description.trim() || 'สินค้าคุณภาพสูง นำเข้าจากเมืองดูไบ UAE แท้ 100%',
       fabric: fabric.trim() || (category === 'perfume' ? 'Oud Oil & Attar Perfume Dubai' : 'Nida Silk Dubai Original'),
       origin: 'เมืองดูไบ, UAE',
-      images: [imageUrl.trim() || fallbackImage],
+      images: finalImages,
       colors: uniqueColors,
       variants: variants.map((v, idx) => ({
         id: `var-${Date.now()}-${idx}`,
@@ -459,7 +484,8 @@ export const AdminProductManager: React.FC = () => {
                         setCategory(product.category);
                         setDescription(product.description || '');
                         setFabric(product.fabric || '');
-                        setImageUrl(product.images[0]);
+                        setImagesList(Array.isArray(product.images) && product.images.length > 0 ? product.images : []);
+                        setNewImageUrlInput('');
                         setVariants(
                           product.variants.map((v) => ({
                             name: v.name,
@@ -638,16 +664,21 @@ export const AdminProductManager: React.FC = () => {
                     />
                   </div>
 
-                  {/* Compressed Image Upload Section */}
-                  <div className="sm:col-span-2 space-y-2.5 p-3.5 bg-stone-50 rounded-2xl border-2 border-amber-400/50 shadow-md text-stone-950">
-                    <label className="block text-stone-950 font-black text-xs sm:text-sm">
-                      รูปภาพสินค้า (Smart Compressed Camera / Upload)
-                    </label>
+                  {/* Compressed Multi-Image Upload Section */}
+                  <div className="sm:col-span-2 space-y-3 p-4 bg-stone-50 rounded-2xl border-2 border-amber-400/50 shadow-md text-stone-950">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-stone-950 font-black text-xs sm:text-sm">
+                        🖼️ รูปภาพสินค้า (เพิ่มได้หลายรูปภาพ / Smart Compressed HD)
+                      </label>
+                      <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
+                        {imagesList.length} รูปภาพ
+                      </span>
+                    </div>
 
                     <div className="flex flex-wrap items-center gap-2">
                       <label className="cursor-pointer px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black rounded-xl text-xs sm:text-sm flex items-center gap-1.5 shadow transition border border-amber-500">
                         <Camera className="w-4 h-4 text-stone-950" />
-                        <span>ถ่ายภาพจากกล้อง</span>
+                        <span>ถ่ายภาพเพิ่มจากกล้อง</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -659,7 +690,7 @@ export const AdminProductManager: React.FC = () => {
 
                       <label className="cursor-pointer px-4 py-2.5 bg-stone-100 hover:bg-stone-200 border-2 border-stone-300 text-stone-950 font-black rounded-xl text-xs sm:text-sm flex items-center gap-1.5 transition">
                         <ImageIcon className="w-4 h-4 text-stone-700" />
-                        <span>เลือกจากอัลบั้ม/คลังภาพ</span>
+                        <span>เพิ่มจากอัลบั้มภาพ</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -669,41 +700,81 @@ export const AdminProductManager: React.FC = () => {
                       </label>
                     </div>
 
-                    <div className="pt-1">
-                      <div className="relative">
+                    <div className="pt-1 flex items-center gap-2">
+                      <div className="relative flex-1">
                         <input
                           type="text"
-                          value={imageUrl}
-                          onChange={(e) => setImageUrl(e.target.value)}
-                          placeholder="หรือวางลิงก์รูปภาพ Image URL (https://...)"
+                          value={newImageUrlInput}
+                          onChange={(e) => setNewImageUrlInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddUrlImage();
+                            }
+                          }}
+                          placeholder="หรือวางลิงก์รูปภาพ Image URL (https://...) แล้วกด + เพิ่มรูป"
                           className="w-full bg-white border-2 border-stone-400 rounded-xl p-2.5 text-stone-950 font-black text-xs pl-8 font-mono placeholder-stone-400 focus:outline-none focus:border-amber-500"
                         />
                         <LinkIcon className="w-4 h-4 text-amber-600 absolute left-2.5 top-3" />
                       </div>
+                      <button
+                        type="button"
+                        onClick={handleAddUrlImage}
+                        className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow transition border border-amber-500 cursor-pointer shrink-0"
+                      >
+                        + เพิ่มรูปภาพนี้
+                      </button>
                     </div>
 
-                    {imageUrl && (
-                      <div className="flex items-center gap-3 pt-2 border-t border-amber-400/30">
-                        <img
-                          src={imageUrl}
-                          alt="Preview"
-                          loading="lazy"
-                          decoding="async"
-                          className="w-16 h-20 object-cover rounded-xl border-2 border-amber-400 shadow-md shrink-0 bg-white"
-                        />
-                        <div className="space-y-1">
-                          <span className="text-emerald-700 font-black block flex items-center gap-1 text-xs">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                            <span>ภาพถูกบีบอัดและพร้อมใช้งานทันที</span>
-                          </span>
-                          {imageUrl.startsWith('data:image') && (
-                            <span className="text-[10px] text-amber-950 font-mono bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-400 inline-block font-black">
-                              บีบอัดไฟล์เหลือเพียง ~{Math.round(((imageUrl.length * 3) / 4) / 1024)} KB (ย่อขนาด HD 600px โหลดเร็วสูงสุด)
-                            </span>
-                          )}
-                          <span className="text-[10px] text-stone-600 truncate max-w-xs block font-mono font-bold">
-                            {imageUrl.slice(0, 40)}...
-                          </span>
+                    {/* Image Thumbnails List */}
+                    {imagesList.length > 0 && (
+                      <div className="pt-3 border-t border-amber-400/30 space-y-2">
+                        <span className="text-xs font-black text-stone-800 block">
+                          รายการรูปภาพสินค้า ({imagesList.length} รายการ - รูปแรกจะเป็นภาพปกหลัก):
+                        </span>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                          {imagesList.map((img, idx) => (
+                            <div
+                              key={idx}
+                              className={`relative group rounded-xl border-2 overflow-hidden bg-white shadow-sm flex flex-col justify-between ${
+                                idx === 0 ? 'border-amber-500 ring-2 ring-amber-400' : 'border-stone-300'
+                              }`}
+                            >
+                              <div className="relative aspect-[3/4] w-full overflow-hidden bg-stone-100">
+                                <img
+                                  src={img}
+                                  alt={`Image ${idx + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                                {idx === 0 && (
+                                  <span className="absolute top-1 left-1 bg-amber-500 text-stone-950 text-[10px] font-black px-2 py-0.5 rounded-md shadow">
+                                    ภาพปกหลัก
+                                  </span>
+                                )}
+                              </div>
+                              <div className="p-1.5 bg-stone-100 border-t border-stone-200 flex items-center justify-between gap-1">
+                                {idx !== 0 ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSetMainCover(idx)}
+                                    className="text-[10px] font-black text-amber-800 hover:text-amber-950 underline"
+                                  >
+                                    ตั้งเป็นปก
+                                  </button>
+                                ) : (
+                                  <span className="text-[10px] font-black text-emerald-700">ปกปัจจุบัน</span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveImage(idx)}
+                                  className="text-[10px] font-black text-red-600 hover:text-red-800 p-0.5 rounded"
+                                  title="ลบรูปนี้"
+                                >
+                                  ลบ
+                                </button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}

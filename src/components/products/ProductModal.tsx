@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Star, ShoppingBag, Check, ShieldCheck, Ruler, Sparkles, AlertCircle, Truck, Palette } from 'lucide-react';
+import { X, Star, ShoppingBag, Check, ShieldCheck, Ruler, Sparkles, AlertCircle, Truck, Palette, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product, ProductVariant } from '../../types';
 import { useShop } from '../../context/ShopContext';
 
@@ -33,6 +33,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
   const [showSizeGuide, setShowSizeGuide] = useState<boolean>(false);
   const [addedSuccess, setAddedSuccess] = useState<boolean>(false);
 
+  const [isZoomOpen, setIsZoomOpen] = useState<boolean>(false);
+  const [zoomScale, setZoomScale] = useState<number>(1);
+
   const handleAddToCart = () => {
     if (selectedVariant.stockQuantity < quantity) {
       alert(`ขออภัยค่ะ สินค้าไซส์ ${selectedVariant.name} มีสต๊อกคงเหลือเพียง ${selectedVariant.stockQuantity} ชิ้น`);
@@ -63,7 +66,13 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
           
           {/* Left Column: Image Gallery */}
           <div className="md:col-span-6 space-y-4">
-            <div className="relative aspect-[4/5] rounded-xl overflow-hidden border border-gold-400/30 bg-dubai-black">
+            <div
+              className="relative aspect-[4/5] rounded-xl overflow-hidden border border-gold-400/30 bg-dubai-black cursor-zoom-in group"
+              onClick={() => {
+                setZoomScale(1);
+                setIsZoomOpen(true);
+              }}
+            >
               <img
                 src={selectedImage}
                 alt={product.title}
@@ -72,13 +81,25 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                     setSelectedImage(defaultImg);
                   }
                 }}
-                className="w-full h-full object-cover object-center"
+                className="w-full h-full object-cover object-center transition duration-300 group-hover:scale-105"
               />
               {product.onSale && (
                 <span className="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
                   ลดพิเศษ {product.discountPercent}%
                 </span>
               )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setZoomScale(1);
+                  setIsZoomOpen(true);
+                }}
+                className="absolute bottom-3 right-3 bg-dubai-black/80 hover:bg-gold-500 hover:text-stone-950 text-gold-400 px-3 py-1.5 rounded-full border border-gold-400/40 text-xs font-bold transition flex items-center gap-1.5 shadow-lg backdrop-blur-sm cursor-pointer z-10"
+              >
+                <ZoomIn className="w-4 h-4" />
+                <span>🔍 ขยายรูปซูมเต็มจอ</span>
+              </button>
             </div>
 
             {/* Thumbnail switcher */}
@@ -387,6 +408,121 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
         )}
 
       </div>
+
+      {/* High-Resolution Fullscreen Image Zoom Lightbox Modal */}
+      {isZoomOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col justify-between p-4">
+          {/* Top Bar */}
+          <div className="flex items-center justify-between text-white border-b border-gold-400/30 pb-3 z-10">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-serif font-bold text-gold-400">
+                🔍 {product.title}
+              </span>
+              {product.images.length > 1 && (
+                <span className="text-xs text-gray-300 bg-dubai-black px-2.5 py-0.5 rounded-full border border-gold-400/30">
+                  รูปภาพที่ {product.images.indexOf(selectedImage) + 1} / {product.images.length}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setZoomScale((s) => Math.min(s + 0.5, 3.5))}
+                className="p-2 bg-dubai-black hover:bg-gold-500 hover:text-stone-950 text-gold-400 rounded-full border border-gold-400/40 transition cursor-pointer"
+                title="ซูมขยาย (+)"
+              >
+                <ZoomIn className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={() => setZoomScale((s) => Math.max(s - 0.5, 1))}
+                className="p-2 bg-dubai-black hover:bg-gold-500 hover:text-stone-950 text-gold-400 rounded-full border border-gold-400/40 transition cursor-pointer"
+                title="ซูมลด (-)"
+              >
+                <ZoomOut className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={() => setZoomScale(1)}
+                className="p-2 bg-dubai-black hover:bg-gold-500 hover:text-stone-950 text-gold-400 rounded-full border border-gold-400/40 transition cursor-pointer"
+                title="รีเซ็ตขนาด (100%)"
+              >
+                <RotateCcw className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsZoomOpen(false);
+                  setZoomScale(1);
+                }}
+                className="p-2 bg-red-900/80 hover:bg-red-600 text-white rounded-full border border-red-500/40 transition cursor-pointer ml-2"
+                title="ปิดหน้าต่างซูม"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+
+          {/* Main Zoom Canvas Area */}
+          <div className="relative flex-1 flex items-center justify-center overflow-hidden my-2">
+            {/* Prev Arrow */}
+            {product.images.length > 1 && (
+              <button
+                onClick={() => {
+                  const currentIdx = product.images.indexOf(selectedImage);
+                  const prevIdx = currentIdx > 0 ? currentIdx - 1 : product.images.length - 1;
+                  setSelectedImage(product.images[prevIdx]);
+                }}
+                className="absolute left-3 z-20 p-3 bg-dubai-black/80 hover:bg-gold-500 hover:text-stone-950 text-gold-400 rounded-full border border-gold-400/40 transition shadow-xl cursor-pointer"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            )}
+
+            {/* Zoomed Image */}
+            <div className="w-full h-full flex items-center justify-center overflow-auto p-2">
+              <img
+                src={selectedImage}
+                alt={product.title}
+                style={{ transform: `scale(${zoomScale})` }}
+                className="max-h-[82vh] max-w-[92vw] object-contain transition-transform duration-200 shadow-2xl rounded-lg"
+              />
+            </div>
+
+            {/* Next Arrow */}
+            {product.images.length > 1 && (
+              <button
+                onClick={() => {
+                  const currentIdx = product.images.indexOf(selectedImage);
+                  const nextIdx = currentIdx < product.images.length - 1 ? currentIdx + 1 : 0;
+                  setSelectedImage(product.images[nextIdx]);
+                }}
+                className="absolute right-3 z-20 p-3 bg-dubai-black/80 hover:bg-gold-500 hover:text-stone-950 text-gold-400 rounded-full border border-gold-400/40 transition shadow-xl cursor-pointer"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            )}
+          </div>
+
+          {/* Bottom Thumbnail Selector Bar inside Lightbox */}
+          {product.images.length > 1 && (
+            <div className="flex justify-center gap-2 overflow-x-auto py-2 border-t border-gold-400/20 z-10">
+              {product.images.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedImage(img)}
+                  className={`w-14 h-16 rounded-lg overflow-hidden border-2 shrink-0 transition ${
+                    selectedImage === img ? 'border-gold-400 scale-105 ring-2 ring-gold-400' : 'border-gold-400/20 opacity-60'
+                  }`}
+                >
+                  <img src={img} alt={`zoom-thumb-${idx}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
     </div>
   );
 };
