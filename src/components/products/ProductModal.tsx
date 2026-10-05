@@ -35,6 +35,31 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
 
   const [isZoomOpen, setIsZoomOpen] = useState<boolean>(false);
   const [zoomScale, setZoomScale] = useState<number>(1);
+  const [zoomOrigin, setZoomOrigin] = useState<{ x: number; y: number }>({ x: 50, y: 50 });
+
+  const [showLoupe, setShowLoupe] = useState<boolean>(false);
+  const [loupePos, setLoupePos] = useState<{ x: number; y: number; xPercent: number; yPercent: number }>({
+    x: 0,
+    y: 0,
+    xPercent: 50,
+    yPercent: 50,
+  });
+
+  const handlePointerMove = (x: number, y: number, rect: DOMRect) => {
+    const xClamped = Math.max(0, Math.min(rect.width, x));
+    const yClamped = Math.max(0, Math.min(rect.height, y));
+    const xPercent = (xClamped / rect.width) * 100;
+    const yPercent = (yClamped / rect.height) * 100;
+    setLoupePos({ x: xClamped, y: yClamped, xPercent, yPercent });
+  };
+
+  const handleFullscreenPointerMove = (clientX: number, clientY: number, rect: DOMRect) => {
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    const xPercent = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    const yPercent = Math.max(0, Math.min(100, (y / rect.height) * 100));
+    setZoomOrigin({ x: xPercent, y: yPercent });
+  };
 
   const handleAddToCart = () => {
     if (selectedVariant.stockQuantity < quantity) {
@@ -67,7 +92,27 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
           {/* Left Column: Image Gallery */}
           <div className="md:col-span-6 space-y-4">
             <div
-              className="relative aspect-[4/5] rounded-xl overflow-hidden border border-gold-400/30 bg-dubai-black cursor-zoom-in group"
+              className="relative aspect-[4/5] rounded-xl overflow-hidden border border-gold-400/30 bg-dubai-black cursor-crosshair group select-none"
+              onMouseEnter={() => setShowLoupe(true)}
+              onMouseLeave={() => setShowLoupe(false)}
+              onMouseMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                handlePointerMove(e.clientX - rect.left, e.clientY - rect.top, rect);
+              }}
+              onTouchStart={(e) => {
+                setShowLoupe(true);
+                if (e.touches[0]) {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  handlePointerMove(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, rect);
+                }
+              }}
+              onTouchEnd={() => setShowLoupe(false)}
+              onTouchMove={(e) => {
+                if (e.touches[0]) {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  handlePointerMove(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, rect);
+                }
+              }}
               onClick={() => {
                 setZoomScale(1);
                 setIsZoomOpen(true);
@@ -81,25 +126,51 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                     setSelectedImage(defaultImg);
                   }
                 }}
-                className="w-full h-full object-cover object-center transition duration-300 group-hover:scale-105"
+                className="w-full h-full object-cover object-center transition duration-300 group-hover:scale-[1.02]"
               />
+              
               {product.onSale && (
-                <span className="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
+                <span className="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow z-10">
                   ลดพิเศษ {product.discountPercent}%
                 </span>
               )}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setZoomScale(1);
-                  setIsZoomOpen(true);
-                }}
-                className="absolute bottom-3 right-3 bg-dubai-black/80 hover:bg-gold-500 hover:text-stone-950 text-gold-400 px-3 py-1.5 rounded-full border border-gold-400/40 text-xs font-bold transition flex items-center gap-1.5 shadow-lg backdrop-blur-sm cursor-pointer z-10"
-              >
-                <ZoomIn className="w-4 h-4" />
-                <span>🔍 ขยายรูปซูมเต็มจอ</span>
-              </button>
+
+              {/* Magnifying Loupe Lens (แว่นขยายส่องจุดขยายภาพ) */}
+              {showLoupe && (
+                <div
+                  style={{
+                    top: `${loupePos.y - 70}px`,
+                    left: `${loupePos.x - 70}px`,
+                    backgroundImage: `url(${selectedImage})`,
+                    backgroundPosition: `${loupePos.xPercent}% ${loupePos.yPercent}%`,
+                    backgroundSize: '380%',
+                  }}
+                  className="absolute w-36 h-36 rounded-full border-4 border-gold-400 shadow-2xl pointer-events-none z-30 bg-no-repeat ring-4 ring-black/70"
+                >
+                  <div className="absolute inset-0 rounded-full border border-white/60 flex items-center justify-center">
+                    <div className="w-2.5 h-2.5 rounded-full bg-gold-400 ring-2 ring-white/90 shadow-sm" />
+                  </div>
+                </div>
+              )}
+
+              <div className="absolute bottom-3 inset-x-3 flex items-center justify-between pointer-events-none z-10">
+                <span className="bg-dubai-black/85 text-gold-300 text-[10px] font-bold px-2.5 py-1 rounded-full border border-gold-400/30 backdrop-blur-xs flex items-center gap-1 shadow">
+                  🔬 วางเมาส์/นิ้วเพื่อส่องจุดขยาย
+                </span>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomScale(1);
+                    setIsZoomOpen(true);
+                  }}
+                  className="pointer-events-auto bg-dubai-black/90 hover:bg-gold-500 hover:text-stone-950 text-gold-400 px-3 py-1 rounded-full border border-gold-400/40 text-[11px] font-bold transition flex items-center gap-1 shadow-lg backdrop-blur-sm cursor-pointer"
+                >
+                  <ZoomIn className="w-3.5 h-3.5" />
+                  <span>🔍 เต็มจอ</span>
+                </button>
+              </div>
             </div>
 
             {/* Thumbnail switcher */}
@@ -465,6 +536,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
 
           {/* Main Zoom Canvas Area */}
           <div className="relative flex-1 flex items-center justify-center overflow-hidden my-2">
+            {/* Spot Focus Instruction Badge */}
+            <div className="absolute top-2 z-20 bg-dubai-black/80 text-gold-300 text-xs px-3 py-1 rounded-full border border-gold-400/30 backdrop-blur-xs shadow-md">
+              🔬 เลื่อน pointer/นิ้ว ส่องขยายจุดเฉพาะ (Spot Focus) | คลิกที่ภาพเพื่อซูมขยาย 2.5x-3.5x
+            </div>
+
             {/* Prev Arrow */}
             {product.images.length > 1 && (
               <button
@@ -479,12 +555,32 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
               </button>
             )}
 
-            {/* Zoomed Image */}
-            <div className="w-full h-full flex items-center justify-center overflow-auto p-2">
+            {/* Zoomed Image Container with Dynamic Spot Focus Origin */}
+            <div
+              className="w-full h-full flex items-center justify-center overflow-auto p-2 cursor-crosshair select-none"
+              onMouseMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                handleFullscreenPointerMove(e.clientX, e.clientY, rect);
+              }}
+              onTouchMove={(e) => {
+                if (e.touches[0]) {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  handleFullscreenPointerMove(e.touches[0].clientX, e.touches[0].clientY, rect);
+                }
+              }}
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                handleFullscreenPointerMove(e.clientX, e.clientY, rect);
+                setZoomScale((s) => (s >= 2.5 ? 1 : Math.min(s + 0.75, 3.5)));
+              }}
+            >
               <img
                 src={selectedImage}
                 alt={product.title}
-                style={{ transform: `scale(${zoomScale})` }}
+                style={{
+                  transform: `scale(${zoomScale})`,
+                  transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
+                }}
                 className="max-h-[82vh] max-w-[92vw] object-contain transition-transform duration-200 shadow-2xl rounded-lg"
               />
             </div>
