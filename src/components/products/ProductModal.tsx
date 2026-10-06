@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Star, ShoppingBag, Check, ShieldCheck, Ruler, Sparkles, AlertCircle, Truck, Palette, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product, ProductVariant } from '../../types';
 import { useShop } from '../../context/ShopContext';
@@ -21,8 +22,10 @@ const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
 
 export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) => {
   const { addToCart } = useShop();
+  const [mounted, setMounted] = useState<boolean>(false);
 
   useEffect(() => {
+    setMounted(true);
     // Lock body scroll on mobile and desktop while modal is active
     const originalStyle = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -93,9 +96,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
     }, 1000);
   };
 
-  return (
+  if (!mounted || typeof document === 'undefined') return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-dubai-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 cursor-pointer"
+      className="fixed inset-0 z-[99999] overflow-y-auto bg-dubai-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 cursor-pointer"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -678,6 +683,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
         </div>
       )}
 
-    </div>
+    </div>,
+    document.body
   );
 };
