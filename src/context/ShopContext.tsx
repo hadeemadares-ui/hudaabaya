@@ -15,6 +15,12 @@ import {
   fetchCloudSettings,
   saveCloudSettings
 } from '../lib/cloudStorage';
+import {
+  sendLineNotification,
+  formatNewOrderMessage,
+  formatSlipUploadMessage,
+  formatLowStockMessage,
+} from '../lib/lineNotification';
 
 const DEFAULT_SETTINGS: StoreSettings = {
   storeName: 'HUDA ABAYA DUBAI',
@@ -39,6 +45,11 @@ const DEFAULT_SETTINGS: StoreSettings = {
   enableTrueMoney: false,
   googleSheetUrl: 'https://docs.google.com/spreadsheets/d/1WA1_fnTBdXe-ykTBNr1yOt3815uy-0hguA3n1kYDzkg/edit?gid=0#gid=0',
   googleSheetLastSync: '',
+  lineNotifyEnabled: true,
+  lineNotifyOnNewOrder: true,
+  lineNotifyOnSlipUpload: true,
+  lineNotifyOnLowStock: true,
+  lineNotifyOnDailySummary: true,
 };
 
 interface ShopContextType {
@@ -98,6 +109,7 @@ interface ShopContextType {
   syncOrders: () => Promise<void>;
   syncProducts: () => Promise<void>;
   syncFromGoogleSheet: (url?: string) => Promise<{ success: boolean; count: number; error?: string; message?: string }>;
+  testLineNotification: (customMsg?: string) => Promise<{ success: boolean; error?: string }>;
   clearBrowserCacheAndReload: () => Promise<void>;
 }
 
@@ -953,6 +965,14 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     clearCart();
+
+    // Auto-dispatch LINE Notification for New Order
+    if (storeSettings.lineNotifyOnNewOrder !== false) {
+      try {
+        sendLineNotification(formatNewOrderMessage(newOrder), storeSettings).catch(() => {});
+      } catch (e) {}
+    }
+
     return newOrder;
   };
 
@@ -1081,7 +1101,13 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setOrders((prev) => {
       const updated = prev.map((order) => {
         if (order.id === orderId) {
-          return { ...order, paymentStatus };
+          const updatedOrder = { ...order, paymentStatus };
+          if (paymentStatus === 'slip_uploaded' && storeSettings.lineNotifyOnSlipUpload !== false) {
+            try {
+              sendLineNotification(formatSlipUploadMessage(updatedOrder), storeSettings).catch(() => {});
+            } catch (e) {}
+          }
+          return updatedOrder;
         }
         return order;
       });
@@ -1242,6 +1268,11 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const testLineNotification = async (customMsg?: string): Promise<{ success: boolean; error?: string }> => {
+    const msg = customMsg || `🔔 [HUDA ABAYA DUBAI]\n━━━━━━━━━━━━━━━\nทดสอบเชื่อมต่อระบบแจ้งเตือน LINE สำเร็จ 100%!\n\nระบบพร้อมส่งการแจ้งเตือน:\n✅ ออเดอร์ใหม่จากลูกค้า\n✅ ลูกค้าแนบสลิปโอนเงิน\n✅ สินค้าสต๊อกใกล้หมด\n✅ สรุปยอดขายประจำวัน\n━━━━━━━━━━━━━━━\n⏰ เวลาทดสอบ: ${new Date().toLocaleTimeString('th-TH')} น.`;
+    return sendLineNotification(msg, storeSettings);
+  };
+
   return (
     <ShopContext.Provider
       value={{
@@ -1300,6 +1331,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         syncOrders,
         syncProducts,
         syncFromGoogleSheet,
+        testLineNotification,
         clearBrowserCacheAndReload,
       }}
     >

@@ -1,18 +1,25 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Store, CreditCard, MapPin, Megaphone, CheckCircle2, Save, AlertTriangle, QrCode, Building, Truck, Wallet, Lock, Camera, Image as ImageIcon, Link as LinkIcon, Trash2, RotateCcw, FileSpreadsheet } from 'lucide-react';
+import { Store, CreditCard, MapPin, Megaphone, CheckCircle2, Save, AlertTriangle, QrCode, Building, Truck, Wallet, Lock, Camera, Image as ImageIcon, Link as LinkIcon, Trash2, RotateCcw, FileSpreadsheet, Bell, MessageSquare, Send, HelpCircle, ExternalLink } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 
 export const AdminSettingsManager: React.FC = () => {
-  const { storeSettings, updateStoreSettings, clearBrowserCacheAndReload } = useShop();
+  const { storeSettings, updateStoreSettings, clearBrowserCacheAndReload, testLineNotification } = useShop();
 
   const [form, setForm] = useState({
     ...storeSettings,
     adminPasscode: storeSettings.adminPasscode || '1077',
+    lineNotifyEnabled: storeSettings.lineNotifyEnabled ?? true,
+    lineNotifyOnNewOrder: storeSettings.lineNotifyOnNewOrder ?? true,
+    lineNotifyOnSlipUpload: storeSettings.lineNotifyOnSlipUpload ?? true,
+    lineNotifyOnLowStock: storeSettings.lineNotifyOnLowStock ?? true,
   });
   const [savedMsg, setSavedMsg] = useState(false);
   const [isFormInitialized, setIsFormInitialized] = useState(false);
+  const [isTestingLine, setIsTestingLine] = useState(false);
+  const [lineTestFeedback, setLineTestFeedback] = useState<{ success: boolean; message: string } | null>(null);
+  const [showLineScriptGuide, setShowLineScriptGuide] = useState(false);
 
   // Sync initial form values on mount without overwriting active user typing
   useEffect(() => {
@@ -21,6 +28,10 @@ export const AdminSettingsManager: React.FC = () => {
         ...storeSettings,
         adminPasscode: storeSettings.adminPasscode || '1077',
         contactAddress: storeSettings.contactAddress || '11/2 ถนน คลองสิบสาม แขวงหนองจอก เขตหนองจอก กรุงเทพมหานคร 10530',
+        lineNotifyEnabled: storeSettings.lineNotifyEnabled ?? true,
+        lineNotifyOnNewOrder: storeSettings.lineNotifyOnNewOrder ?? true,
+        lineNotifyOnSlipUpload: storeSettings.lineNotifyOnSlipUpload ?? true,
+        lineNotifyOnLowStock: storeSettings.lineNotifyOnLowStock ?? true,
       });
       setIsFormInitialized(true);
     }
@@ -490,7 +501,195 @@ export const AdminSettingsManager: React.FC = () => {
             </div>
           </div>
 
-          {/* Section 8: Clear Browser Cache & Purge Stale Storage */}
+          {/* Section 8: LINE Notification & LINE Bot Settings */}
+          <div className="space-y-4 p-4 sm:p-5 bg-stone-900 rounded-2xl border-2 border-emerald-500/50 shadow-md">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-500/30 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-emerald-500/20 rounded-xl border border-emerald-400 text-emerald-300">
+                  <Bell className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-serif font-extrabold text-emerald-300 text-sm sm:text-base flex items-center gap-2">
+                    <span>ระบบแจ้งเตือนเข้า LINE (LINE Notification & LINE Bot)</span>
+                  </h4>
+                  <p className="text-[11px] text-stone-300 font-bold mt-0.5">
+                    รับแจ้งเตือนออเดอร์ใหม่, ลูกค้าแนบสลิป, และแจ้งเตือนสต๊อกต่ำเข้า LINE ทันที
+                  </p>
+                </div>
+              </div>
+
+              <label className="flex items-center gap-2 bg-stone-950 px-3 py-1.5 rounded-xl border border-emerald-400/50 cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  checked={form.lineNotifyEnabled}
+                  onChange={(e) => setForm({ ...form, lineNotifyEnabled: e.target.checked })}
+                  className="w-4 h-4 accent-emerald-500 rounded"
+                />
+                <span className="text-xs font-black text-emerald-300">เปิดระบบแจ้งเตือน LINE</span>
+              </label>
+            </div>
+
+            {/* Event Toggles */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <label className="flex items-center gap-2 bg-stone-950 p-2.5 rounded-xl border border-stone-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.lineNotifyOnNewOrder}
+                  onChange={(e) => setForm({ ...form, lineNotifyOnNewOrder: e.target.checked })}
+                  className="w-4 h-4 accent-emerald-500 rounded"
+                />
+                <span className="text-xs font-bold text-stone-200">🛍️ เมื่อมีออเดอร์ใหม่</span>
+              </label>
+
+              <label className="flex items-center gap-2 bg-stone-950 p-2.5 rounded-xl border border-stone-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.lineNotifyOnSlipUpload}
+                  onChange={(e) => setForm({ ...form, lineNotifyOnSlipUpload: e.target.checked })}
+                  className="w-4 h-4 accent-emerald-500 rounded"
+                />
+                <span className="text-xs font-bold text-stone-200">🧾 เมื่อลูกค้าแนบสลิป</span>
+              </label>
+
+              <label className="flex items-center gap-2 bg-stone-950 p-2.5 rounded-xl border border-stone-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.lineNotifyOnLowStock}
+                  onChange={(e) => setForm({ ...form, lineNotifyOnLowStock: e.target.checked })}
+                  className="w-4 h-4 accent-emerald-500 rounded"
+                />
+                <span className="text-xs font-bold text-stone-200">⚠️ เมื่อสต๊อกสินค้าใกล้หมด</span>
+              </label>
+            </div>
+
+            {/* Connection Inputs */}
+            <div className="space-y-3 pt-2">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-emerald-200 font-extrabold text-xs sm:text-sm">
+                    1. ลิงก์ LINE Webhook URL (เช่น Google Apps Script Webhook / Make / n8n)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowLineScriptGuide(!showLineScriptGuide)}
+                    className="text-[11px] text-amber-300 hover:text-amber-200 underline font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <HelpCircle className="w-3.5 h-3.5" />
+                    <span>{showLineScriptGuide ? 'ซ่อนโค้ดตัวอย่างฟรี' : 'ดูโค้ดเชื่อมต่อฟรีตลอดชีพ (Google Script)'}</span>
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={form.lineWebhookUrl || ''}
+                  onChange={(e) => setForm({ ...form, lineWebhookUrl: e.target.value })}
+                  placeholder="https://script.google.com/macros/s/.../exec"
+                  className="w-full bg-stone-950 border-2 border-emerald-400/60 rounded-xl p-3 text-amber-200 font-mono font-bold text-xs sm:text-sm focus:outline-none focus:border-amber-400 shadow-inner"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-emerald-200 mb-1 font-extrabold text-xs sm:text-sm">
+                    2. หรือ LINE Channel Access Token (LINE Official Account)
+                  </label>
+                  <input
+                    type="password"
+                    value={form.lineNotifyToken || ''}
+                    onChange={(e) => setForm({ ...form, lineNotifyToken: e.target.value })}
+                    placeholder="Channel Access Token จาก LINE Developers"
+                    className="w-full bg-stone-950 border-2 border-stone-700 rounded-xl p-3 text-amber-200 font-mono font-bold text-xs focus:outline-none focus:border-amber-400 shadow-inner"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-emerald-200 mb-1 font-extrabold text-xs sm:text-sm">
+                    Target User ID หรือ Group ID (เช่น U1234...)
+                  </label>
+                  <input
+                    type="text"
+                    value={form.lineUserId || ''}
+                    onChange={(e) => setForm({ ...form, lineUserId: e.target.value })}
+                    placeholder="User ID ของคุณ หรือ Group ID ห้องแชตไลน์"
+                    className="w-full bg-stone-950 border-2 border-stone-700 rounded-xl p-3 text-amber-200 font-mono font-bold text-xs focus:outline-none focus:border-amber-400 shadow-inner"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Test Send Button & Result Message */}
+            <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsTestingLine(true);
+                  setLineTestFeedback(null);
+                  updateStoreSettings(form);
+                  const res = await testLineNotification();
+                  setIsTestingLine(false);
+                  if (res.success) {
+                    setLineTestFeedback({ success: true, message: '✅ ส่งข้อความทดสอบเข้า LINE เรียบร้อยแล้ว! ตรวจสอบแชตของคุณได้เลยครับ' });
+                  } else {
+                    setLineTestFeedback({ success: false, message: `❌ ${res.error || 'ส่งข้อความไม่สำเร็จ กรุณาตรวจสอบ Webhook URL หรือ Token'}` });
+                  }
+                }}
+                disabled={isTestingLine || (!form.lineWebhookUrl && !form.lineNotifyToken)}
+                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-extrabold text-xs sm:text-sm rounded-xl transition flex items-center justify-center gap-2 border border-emerald-400 shadow-md cursor-pointer"
+              >
+                <Send className={`w-4 h-4 ${isTestingLine ? 'animate-spin' : ''}`} />
+                <span>{isTestingLine ? 'กำลังส่งทดสอบ...' : '🔔 ทดสอบส่งข้อความเข้า LINE ทันที'}</span>
+              </button>
+
+              {lineTestFeedback && (
+                <span className={`text-xs font-bold px-3 py-1.5 rounded-xl border ${
+                  lineTestFeedback.success
+                    ? 'bg-emerald-950 text-emerald-200 border-emerald-400'
+                    : 'bg-red-950 text-red-200 border-red-400'
+                }`}>
+                  {lineTestFeedback.message}
+                </span>
+              )}
+            </div>
+
+            {/* Collapsible Google Apps Script Guide */}
+            {showLineScriptGuide && (
+              <div className="p-4 bg-stone-950 rounded-xl border border-emerald-500/40 text-xs text-stone-200 space-y-2 mt-2">
+                <p className="font-serif font-black text-amber-300 text-sm">
+                  💡 วิธีเชื่อมต่อ LINE ด้วย Google Apps Script ฟรี 100% ตลอดชีพ:
+                </p>
+                <ol className="list-decimal list-inside space-y-1 text-stone-200 font-bold">
+                  <li>เปิด <a href="https://script.google.com" target="_blank" rel="noopener noreferrer" className="text-amber-400 underline">script.google.com</a> แล้วกด "โครงการใหม่ (New Project)"</li>
+                  <li>วางโค้ดด้านล่างนี้ลงไป แล้วเปลี่ยน <code className="text-amber-300 font-mono">YOUR_LINE_TOKEN</code> และ <code className="text-amber-300 font-mono">YOUR_USER_ID</code></li>
+                  <li>กดปุ่มสีฟ้าด้านบนขวา: <strong>ทำให้ใช้งานได้ (Deploy) ➔ การทำให้ใช้งานได้ใหม่ (New deployment) ➔ เว็บแอป (Web app)</strong></li>
+                  <li>เลือกเข้าถึงได้โดย: <strong>"ทุกคน (Anyone)"</strong> แล้วกด Deploy จะได้ลิงก์ Webhook URL มาวางในช่องด้านบน</li>
+                </ol>
+                <pre className="bg-stone-900 p-3 rounded-lg border border-stone-800 text-[11px] font-mono text-emerald-300 overflow-x-auto leading-relaxed select-all">
+{`function doPost(e) {
+  var data = JSON.parse(e.postData.contents);
+  var message = data.message || data.text || "แจ้งเตือนจาก HUDA ABAYA";
+  
+  // ใส่ Channel Access Token และ User ID ของคุณ
+  var LINE_TOKEN = "YOUR_LINE_CHANNEL_ACCESS_TOKEN";
+  var USER_ID = "YOUR_USER_ID_OR_GROUP_ID";
+  
+  UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
+    "method": "post",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + LINE_TOKEN
+    },
+    "payload": JSON.stringify({
+      "to": USER_ID,
+      "messages": [{"type": "text", "text": message}]
+    })
+  });
+  return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
+}`}
+                </pre>
+              </div>
+            )}
+          </div>
+
+          {/* Section 9: Clear Browser Cache & Purge Stale Storage */}
           <div className="space-y-3.5 p-4 sm:p-5 bg-stone-900 rounded-2xl border-2 border-amber-500/50 shadow-md">
             <h4 className="font-serif font-extrabold text-amber-300 text-sm sm:text-base flex items-center gap-2">
               <RotateCcw className="w-5 h-5 text-amber-400" />

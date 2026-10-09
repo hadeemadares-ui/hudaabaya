@@ -1,0 +1,117 @@
+// Cloudflare Pages Function for /api/line-notify
+const corsHeaders = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+export async function onRequestOptions() {
+  return new Response(null, { headers: corsHeaders });
+}
+
+export async function onRequestPost(context: any) {
+  try {
+    const body = await context.request.json();
+    const { message, webhookUrl, token, userId } = body;
+
+    if (!message) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Message is required' }),
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    let sent = false;
+    let lastError = '';
+
+    // 1. Send via Webhook URL (e.g. Google Apps Script / Make.com / n8n / Discord)
+    if (webhookUrl && webhookUrl.trim().startsWith('http')) {
+      try {
+        const res = await fetch(webhookUrl.trim(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message,
+            text: message,
+            timestamp: new Date().toISOString(),
+          }),
+        });
+        if (res.ok) sent = true;
+      } catch (err: any) {
+        lastError = `Webhook error: ${err.message}`;
+      }
+    }
+
+    // 2. Send via LINE Messaging API (LINE Official Account Bot Push)
+    if (token && userId) {
+      try {
+        const pushRes = await fetch('https://api.line.me/v2/bot/message/push', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token.trim()}`,
+          },
+          body: JSON.stringify({
+            to: userId.trim(),
+            messages: [
+              {
+                type: 'text',
+                text: message,
+              },
+            ],
+          }),
+        });
+
+        if (pushRes.ok) {
+          sent = true;
+        } else {
+          const pushErr = await pushRes.text();
+          lastError = `LINE API ${pushRes.status}: ${pushErr}`;
+        }
+      } catch (err: any) {
+        lastError = `LINE Push error: ${err.message}`;
+      }
+    }
+
+    // 3. Send via LINE Notify Token (if token without userId)
+    if (token && !userId && !sent) {
+      try {
+        const notifyRes = await fetch('https://notify-api.line.me/api/notify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `Bearer ${token.trim()}`,
+          },
+          body: new URLSearchParams({ message }),
+        });
+
+        if (notifyRes.ok) {
+          sent = true;
+        } else {
+          const notifyErr = await notifyRes.text();
+          lastError = `LINE Notify ${notifyRes.status}: ${notifyErr}`;
+        }
+      } catch (err: any) {
+        lastError = `LINE Notify error: ${err.message}`;
+      }
+    }
+
+    if (sent) {
+      return new Response(
+        JSON.stringify({ success: true, message: 'LINE notification sent successfully' }),
+        { headers: corsHeaders }
+      );
+    } else {
+      return new Response(
+        JSON.stringify({ success: false, error: lastError || 'Could not send notification. Please check settings.' }),
+        { status: 400, headers: corsHeaders }
+      );
+    }
+  } catch (err: any) {
+    return new Response(
+      JSON.stringify({ success: false, error: err.message }),
+      { status: 500, headers: corsHeaders }
+    );
+  }
+}

@@ -181,7 +181,15 @@ export interface StoreSettings {
   googleSheetUrl?: string; // Google Sheets CSV / Edit URL for 1-Click Live Stock Sync
   googleSheetLastSync?: string; // Timestamp of last Google Sheet sync
   
-  // Payment Toggles
+  // LINE Notification & Bot Settings
+  lineNotifyEnabled?: boolean;
+  lineNotifyToken?: string; // LINE Notify Token or Line Messaging API Channel Access Token
+  lineUserId?: string; // LINE Target User ID or Group ID
+  lineWebhookUrl?: string; // LINE Webhook (e.g. Google Apps Script / Make / Discord)
+  lineNotifyOnNewOrder?: boolean; // แจ้งเตือนเมื่อมีออเดอร์ใหม่
+  lineNotifyOnSlipUpload?: boolean; // แจ้งเตือนเมื่อลูกค้าแนบสลิปโอนเงิน
+  lineNotifyOnLowStock?: boolean; // แจ้งเตือนเมื่อสต๊อกใกล้หมด
+  lineNotifyOnDailySummary?: boolean; // แจ้งเตือนสรุปยอดขายประจำวัน
   enablePromptPay?: boolean;
   enableBankTransfer?: boolean;
   enableCreditCard?: boolean;
