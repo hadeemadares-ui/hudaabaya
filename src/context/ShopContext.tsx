@@ -46,6 +46,7 @@ const DEFAULT_SETTINGS: StoreSettings = {
   googleSheetUrl: 'https://docs.google.com/spreadsheets/d/1WA1_fnTBdXe-ykTBNr1yOt3815uy-0hguA3n1kYDzkg/edit?gid=0#gid=0',
   googleSheetLastSync: '',
   lineNotifyEnabled: true,
+  lineWebhookUrl: 'https://script.google.com/macros/s/AKfycbwg8oYenhFGPEmNSCi9N_DOk1IqVLSYpXycdASuLKeN83WESN3AKH7admKVFw7zJAaQ/exec',
   lineNotifyOnNewOrder: true,
   lineNotifyOnSlipUpload: true,
   lineNotifyOnLowStock: true,
