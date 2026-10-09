@@ -37,7 +37,20 @@ export async function onRequestPost(context: any) {
             timestamp: new Date().toISOString(),
           }),
         });
-        if (res.ok) sent = true;
+        const resText = await res.text();
+        if (res.ok && !resText.includes('Exception:') && !resText.includes('Authentication failed') && !resText.includes('ต้องมีสิทธิ์เข้าถึง')) {
+          sent = true;
+        } else if (resText.includes('Authentication failed') || resText.includes('401')) {
+          lastError = 'LINE 401: Access Token ใน Google Apps Script ไม่ถูกต้อง หรือยังไม่ได้ใส่ Token จริง';
+        } else if (resText.includes('ต้องมีสิทธิ์เข้าถึง')) {
+          lastError = 'Google Apps Script ติดสิทธิ์: กรุณาตั้งค่า Who has access เป็น Anyone (ทุกคน)';
+        } else if (resText.includes('Exception:')) {
+          lastError = `Google Apps Script ผิดพลาด: ${resText.slice(resText.indexOf('Exception:'), resText.indexOf('Exception:') + 150)}`;
+        } else if (res.ok) {
+          sent = true;
+        } else {
+          lastError = `Webhook HTTP ${res.status}`;
+        }
       } catch (err: any) {
         lastError = `Webhook error: ${err.message}`;
       }
