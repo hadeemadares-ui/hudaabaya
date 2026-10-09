@@ -56,34 +56,66 @@ export async function onRequestPost(context: any) {
       }
     }
 
-    // 2. Send via LINE Messaging API (LINE Official Account Bot Push)
-    if (token && userId) {
-      try {
-        const pushRes = await fetch('https://api.line.me/v2/bot/message/push', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token.trim()}`,
-          },
-          body: JSON.stringify({
-            to: userId.trim(),
-            messages: [
-              {
-                type: 'text',
-                text: message,
-              },
-            ],
-          }),
-        });
+    // 2. Send via LINE Messaging API (Push to user or Broadcast to all shop followers)
+    if (token && !sent) {
+      if (userId) {
+        try {
+          const pushRes = await fetch('https://api.line.me/v2/bot/message/push', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token.trim()}`,
+            },
+            body: JSON.stringify({
+              to: userId.trim(),
+              messages: [
+                {
+                  type: 'text',
+                  text: message,
+                },
+              ],
+            }),
+          });
 
-        if (pushRes.ok) {
-          sent = true;
-        } else {
-          const pushErr = await pushRes.text();
-          lastError = `LINE API ${pushRes.status}: ${pushErr}`;
+          if (pushRes.ok) {
+            sent = true;
+          } else {
+            const pushErr = await pushRes.text();
+            lastError = `LINE Push ${pushRes.status}: ${pushErr}`;
+          }
+        } catch (err: any) {
+          lastError = `LINE Push error: ${err.message}`;
         }
-      } catch (err: any) {
-        lastError = `LINE Push error: ${err.message}`;
+      }
+
+      // If push didn't happen or failed, broadcast to all friends of the bot
+      if (!sent) {
+        try {
+          const bRes = await fetch('https://api.line.me/v2/bot/message/broadcast', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token.trim()}`,
+            },
+            body: JSON.stringify({
+              messages: [
+                {
+                  type: 'text',
+                  text: message,
+                },
+              ],
+            }),
+          });
+
+          if (bRes.ok) {
+            sent = true;
+          } else {
+            const bErr = await bRes.text();
+            lastError = `LINE Broadcast ${bRes.status}: ${bErr}`;
+          }
+        } catch (err: any) {
+          lastError = `LINE Broadcast error: ${err.message}`;
+        }
       }
     }
 

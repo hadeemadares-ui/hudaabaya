@@ -14,7 +14,10 @@ export const AdminSettingsManager: React.FC = () => {
     lineNotifyOnNewOrder: storeSettings.lineNotifyOnNewOrder ?? true,
     lineNotifyOnSlipUpload: storeSettings.lineNotifyOnSlipUpload ?? true,
     lineNotifyOnLowStock: storeSettings.lineNotifyOnLowStock ?? true,
-    lineWebhookUrl: storeSettings.lineWebhookUrl || 'https://script.google.com/macros/s/AKfycbwg8oYenhFGPEmNSCi9N_DOk1IqVLSYpXycdASuLKeN83WESN3AKH7admKVFw7zJAaQ/exec',
+    lineWebhookUrl: storeSettings.lineWebhookUrl || '',
+    lineNotifyToken: storeSettings.lineNotifyToken || 'F5oQJACUmI8/SB64i2W+SPKwCnUVTCIfA5fAbdiW3KqjiaVa7rZ3ikE2rjoeROJ6CdGtlw+Fm/4wv7PnCbIVHnigM+j9mT4V6UqbSwOJRqLFQAWPLqwDHFqzrqTIbcVUI4QXjau+CL7JsfCxxSHuFo9PbdgDzCFqoOLOYbqAITQ=',
+    lineChannelId: storeSettings.lineChannelId || '2011949895',
+    lineChannelSecret: storeSettings.lineChannelSecret || '45811e9faeabea629c67ebcbb52d8236',
   });
   const [savedMsg, setSavedMsg] = useState(false);
   const [isFormInitialized, setIsFormInitialized] = useState(false);
@@ -33,7 +36,10 @@ export const AdminSettingsManager: React.FC = () => {
         lineNotifyOnNewOrder: storeSettings.lineNotifyOnNewOrder ?? true,
         lineNotifyOnSlipUpload: storeSettings.lineNotifyOnSlipUpload ?? true,
         lineNotifyOnLowStock: storeSettings.lineNotifyOnLowStock ?? true,
-        lineWebhookUrl: storeSettings.lineWebhookUrl || 'https://script.google.com/macros/s/AKfycbwg8oYenhFGPEmNSCi9N_DOk1IqVLSYpXycdASuLKeN83WESN3AKH7admKVFw7zJAaQ/exec',
+        lineWebhookUrl: storeSettings.lineWebhookUrl || '',
+        lineNotifyToken: storeSettings.lineNotifyToken || 'F5oQJACUmI8/SB64i2W+SPKwCnUVTCIfA5fAbdiW3KqjiaVa7rZ3ikE2rjoeROJ6CdGtlw+Fm/4wv7PnCbIVHnigM+j9mT4V6UqbSwOJRqLFQAWPLqwDHFqzrqTIbcVUI4QXjau+CL7JsfCxxSHuFo9PbdgDzCFqoOLOYbqAITQ=',
+        lineChannelId: storeSettings.lineChannelId || '2011949895',
+        lineChannelSecret: storeSettings.lineChannelSecret || '45811e9faeabea629c67ebcbb52d8236',
       });
       setIsFormInitialized(true);
     }

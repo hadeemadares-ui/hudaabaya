@@ -184,6 +184,8 @@ export interface StoreSettings {
   // LINE Notification & Bot Settings
   lineNotifyEnabled?: boolean;
   lineNotifyToken?: string; // LINE Notify Token or Line Messaging API Channel Access Token
+  lineChannelId?: string; // LINE Channel ID
+  lineChannelSecret?: string; // LINE Channel Secret
   lineUserId?: string; // LINE Target User ID or Group ID
   lineWebhookUrl?: string; // LINE Webhook (e.g. Google Apps Script / Make / Discord)
   lineNotifyOnNewOrder?: boolean; // แจ้งเตือนเมื่อมีออเดอร์ใหม่
