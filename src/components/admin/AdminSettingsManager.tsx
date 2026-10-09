@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Store, CreditCard, MapPin, Megaphone, CheckCircle2, Save, AlertTriangle, QrCode, Building, Truck, Wallet, Lock, Camera, Image as ImageIcon, Link as LinkIcon, Trash2, RotateCcw } from 'lucide-react';
+import { Store, CreditCard, MapPin, Megaphone, CheckCircle2, Save, AlertTriangle, QrCode, Building, Truck, Wallet, Lock, Camera, Image as ImageIcon, Link as LinkIcon, Trash2, RotateCcw, FileSpreadsheet } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 
 export const AdminSettingsManager: React.FC = () => {
@@ -466,7 +466,31 @@ export const AdminSettingsManager: React.FC = () => {
             </div>
           </div>
 
-          {/* Section 7: Clear Browser Cache & Purge Stale Storage */}
+          {/* Section 7: Google Sheets Live Sync URL */}
+          <div className="space-y-3.5 p-4 sm:p-5 bg-stone-900 rounded-2xl border-2 border-emerald-500/50 shadow-md">
+            <h4 className="font-serif font-extrabold text-emerald-300 text-sm sm:text-base flex items-center gap-2">
+              <FileSpreadsheet className="w-5 h-5 text-emerald-400" />
+              <span>ลิงก์เชื่อมต่อสต๊อกสินค้ากับ Google Sheets (Google Sheets Live Sync)</span>
+            </h4>
+
+            <div>
+              <label className="block text-emerald-200 mb-1 font-extrabold text-xs sm:text-sm">
+                ลิงก์ตาราง Google Sheet หรือ ลิงก์ CSV
+              </label>
+              <input
+                type="text"
+                value={form.googleSheetUrl || ''}
+                onChange={(e) => setForm({ ...form, googleSheetUrl: e.target.value })}
+                placeholder="https://docs.google.com/spreadsheets/d/1WA1_fnTBdXe-ykTBNr1yOt3815uy-0hguA3n1kYDzkg/edit?gid=0#gid=0"
+                className="w-full bg-stone-950 border-2 border-emerald-400/60 rounded-xl p-3 text-amber-200 font-mono font-extrabold text-xs sm:text-sm focus:outline-none focus:border-amber-400 shadow-inner"
+              />
+              <p className="text-[11px] text-stone-300 font-bold mt-1">
+                * แอดมินสามารถกดปุ่ม "ซิงก์ดึงสต๊อกทันที" ได้ในแท็บ "จัดการสินค้า & สต๊อก"
+              </p>
+            </div>
+          </div>
+
+          {/* Section 8: Clear Browser Cache & Purge Stale Storage */}
           <div className="space-y-3.5 p-4 sm:p-5 bg-stone-900 rounded-2xl border-2 border-amber-500/50 shadow-md">
             <h4 className="font-serif font-extrabold text-amber-300 text-sm sm:text-base flex items-center gap-2">
               <RotateCcw className="w-5 h-5 text-amber-400" />

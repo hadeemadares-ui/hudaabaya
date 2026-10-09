@@ -37,6 +37,8 @@ const DEFAULT_SETTINGS: StoreSettings = {
   enableCreditCard: false,
   enableCOD: false,
   enableTrueMoney: false,
+  googleSheetUrl: 'https://docs.google.com/spreadsheets/d/1WA1_fnTBdXe-ykTBNr1yOt3815uy-0hguA3n1kYDzkg/edit?gid=0#gid=0',
+  googleSheetLastSync: '',
 };
 
 interface ShopContextType {
@@ -95,6 +97,7 @@ interface ShopContextType {
   syncStoreSettings: () => Promise<void>;
   syncOrders: () => Promise<void>;
   syncProducts: () => Promise<void>;
+  syncFromGoogleSheet: (url?: string) => Promise<{ success: boolean; count: number; error?: string; message?: string }>;
   clearBrowserCacheAndReload: () => Promise<void>;
 }
 
@@ -461,6 +464,227 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     } catch (e) {
       console.warn('Sync products notice:', e);
+    }
+  };
+
+  const syncFromGoogleSheet = async (sheetUrl?: string): Promise<{ success: boolean; count: number; error?: string; message?: string }> => {
+    const targetUrl = (sheetUrl || storeSettings.googleSheetUrl || 'https://docs.google.com/spreadsheets/d/1WA1_fnTBdXe-ykTBNr1yOt3815uy-0hguA3n1kYDzkg/edit?gid=0#gid=0').trim();
+    if (!targetUrl) {
+      return { success: false, count: 0, error: 'กรุณาระบุลิงก์ Google Sheets' };
+    }
+
+    try {
+      // 1. Convert any Google Sheet URL to direct CSV export URL
+      let csvUrl = targetUrl;
+      const sheetIdMatch = targetUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+      if (sheetIdMatch && sheetIdMatch[1]) {
+        const sheetId = sheetIdMatch[1];
+        const gidMatch = targetUrl.match(/[?&#]gid=([0-9]+)/);
+        const gidParam = gidMatch ? `&gid=${gidMatch[1]}` : '';
+        csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv${gidParam}`;
+      }
+
+      // 2. Fetch CSV text with fallback
+      let csvText = '';
+      try {
+        const res = await fetch(csvUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        csvText = await res.text();
+      } catch (err1) {
+        if (sheetIdMatch && sheetIdMatch[1]) {
+          try {
+            const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetIdMatch[1]}/gviz/tq?tqx=out:csv`;
+            const resGviz = await fetch(gvizUrl);
+            if (resGviz.ok) {
+              csvText = await resGviz.text();
+            }
+          } catch (e) {}
+        }
+        if (!csvText) {
+          const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(csvUrl)}`;
+          const resProxy = await fetch(proxyUrl);
+          if (!resProxy.ok) throw new Error(`ไม่สามารถเข้าถึง Google Sheets ได้ (${err1})`);
+          csvText = await resProxy.text();
+        }
+      }
+
+      if (!csvText || csvText.trim().length === 0) {
+        return { success: false, count: 0, error: 'ไม่พบข้อมูลในตาราง Google Sheets หรือไฟล์ว่างเปล่า' };
+      }
+
+      // 3. RFC4180 CSV parser
+      const parseCSV = (t: string): string[][] => {
+        const lines: string[][] = [];
+        let row: string[] = [''];
+        let inQuotes = false;
+        for (let i = 0; i < t.length; i++) {
+          const c = t[i];
+          const next = t[i + 1];
+          if (c === '"') {
+            if (inQuotes && next === '"') {
+              row[row.length - 1] += '"';
+              i++;
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (c === ',' && !inQuotes) {
+            row.push('');
+          } else if ((c === '\r' || c === '\n') && !inQuotes) {
+            if (c === '\r' && next === '\n') i++;
+            lines.push(row);
+            row = [''];
+          } else {
+            row[row.length - 1] += c;
+          }
+        }
+        if (row.length > 1 || (row.length === 1 && row[0].trim() !== '')) {
+          lines.push(row);
+        }
+        return lines;
+      };
+
+      const rows = parseCSV(csvText);
+      if (rows.length < 2) {
+        return { success: false, count: 0, error: 'Google Sheet มีเฉพาะหัวตาราง ยังไม่มีแถวข้อมูลสินค้า' };
+      }
+
+      const header = rows[0].map((h) => h.trim().toLowerCase());
+      const findCol = (keys: string[]) => header.findIndex((h) => keys.some((k) => h === k || h.includes(k)));
+
+      const idCol = findCol(['id', 'code', 'productid', 'รหัส', 'sku']);
+      const titleCol = findCol(['title', 'name', 'productname', 'ชื่อ', 'ชื่อสินค้า']);
+      const catCol = findCol(['category', 'cat', 'หมวด', 'หมวดหมู่']);
+      const descCol = findCol(['description', 'desc', 'รายละเอียด']);
+      const fabricCol = findCol(['fabric', 'เนื้อผ้า', 'ผ้า']);
+      const imageCol = findCol(['image', 'images', 'img', 'รูป', 'รูปภาพ']);
+      const sizeCol = findCol(['sizename', 'size', 'variant', 'ไซส์', 'ขนาด', 'ตัวเลือก']);
+      const priceCol = findCol(['price', 'ราคา', 'ราคาขาย']);
+      const stockCol = findCol(['stock', 'qty', 'quantity', 'สต๊อก', 'คงเหลือ']);
+      const costCol = findCol(['costprice', 'cost', 'ทุน', 'ต้นทุน']);
+      const colorCol = findCol(['color', 'สี']);
+
+      const productMap = new Map<string, Product>();
+
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row || row.length === 0 || row.every((c) => c.trim() === '')) continue;
+
+        const rawId = (idCol >= 0 ? row[idCol] : '')?.trim();
+        const rawTitle = (titleCol >= 0 ? row[titleCol] : '')?.trim();
+        if (!rawId && !rawTitle) continue;
+
+        const id = rawId || `prod-${r}`;
+        const title = rawTitle || `สินค้า ${id}`;
+
+        let rawCat = (catCol >= 0 ? row[catCol] : '')?.trim().toLowerCase();
+        let cat: CategoryType = 'abaya';
+        if (['abaya', 'kaftan', 'perfume', 'incense', 'combo', 'other'].includes(rawCat)) {
+          cat = rawCat as CategoryType;
+        } else if (rawCat.includes('อาบายะห์')) cat = 'abaya';
+        else if (rawCat.includes('คัฟทาน')) cat = 'kaftan';
+        else if (rawCat.includes('น้ำหอม') || rawCat.includes('oud') || rawCat.includes('perfume')) cat = 'perfume';
+        else if (rawCat.includes('เครื่องหอม') || rawCat.includes('bukhoor')) cat = 'incense';
+        else if (rawCat.includes('เซ็ต') || rawCat.includes('combo')) cat = 'combo';
+        else cat = 'other';
+
+        const desc = (descCol >= 0 ? row[descCol] : '')?.trim() || '';
+        const fabric = (fabricCol >= 0 ? row[fabricCol] : '')?.trim() || (cat === 'perfume' ? 'Dubai Oud Pure Oil' : 'Nida Silk Dubai');
+        const imgUrl = (imageCol >= 0 ? row[imageCol] : '')?.trim();
+
+        const sizeName = (sizeCol >= 0 ? row[sizeCol] : '')?.trim() || 'มาตรฐาน (Standard)';
+        const priceNum = (priceCol >= 0 ? parseFloat(row[priceCol].replace(/[^0-9.]/g, '')) : 0) || 0;
+        const stockNum = (stockCol >= 0 ? parseInt(row[stockCol].replace(/[^0-9-]/g, ''), 10) : 0) || 0;
+        const costNum = (costCol >= 0 && row[costCol]?.trim() ? parseFloat(row[costCol].replace(/[^0-9.]/g, '')) : Math.round(priceNum * 0.5));
+        const colorVal = (colorCol >= 0 ? row[colorCol] : '')?.trim();
+
+        if (!productMap.has(id)) {
+          const existing = products.find((p) => p.id === id);
+          productMap.set(id, {
+            id,
+            title,
+            category: cat,
+            description: desc || existing?.description || '',
+            fabric: fabric || existing?.fabric || '',
+            images: imgUrl
+              ? [imgUrl, ...(existing?.images?.filter((im) => im !== imgUrl) || [])]
+              : (existing?.images && existing.images.length > 0 ? existing.images : ['https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop']),
+            variants: [],
+            arabicTitle: existing?.arabicTitle,
+            origin: existing?.origin || 'Dubai, UAE',
+            has3DView: existing?.has3DView ?? (cat === 'perfume' || cat === 'abaya'),
+            hasARFit: existing?.hasARFit ?? (cat === 'abaya'),
+            fragranceNotes: existing?.fragranceNotes,
+            colors: existing?.colors,
+            rating: existing?.rating ?? 5,
+            reviewsCount: existing?.reviewsCount ?? 1,
+            updatedAt: Date.now(),
+          });
+        }
+
+        const prod = productMap.get(id)!;
+        if (imgUrl && !prod.images.includes(imgUrl)) {
+          prod.images.push(imgUrl);
+        }
+
+        const variantIndex = prod.variants.length + 1;
+        const variantId = `${id}-var-${variantIndex}`;
+
+        prod.variants.push({
+          id: variantId,
+          name: sizeName,
+          sku: `${id.toUpperCase()}-${variantIndex}`,
+          price: priceNum,
+          costPrice: costNum,
+          stockQuantity: Math.max(0, stockNum),
+          color: colorVal || (cat === 'perfume' ? 'กลิ่นดูไบออริจินัล' : 'สีดำ (Black)'),
+          updatedAt: Date.now(),
+        });
+      }
+
+      const syncedProducts = Array.from(productMap.values());
+      if (syncedProducts.length === 0) {
+        return { success: false, count: 0, error: 'ไม่พบรายการสินค้าที่ถูกต้องใน Google Sheet' };
+      }
+
+      const syncedIds = new Set(syncedProducts.map((p) => p.id));
+      const nonSyncedExisting = products.filter((p) => !syncedIds.has(p.id));
+      const mergedList = [...syncedProducts, ...nonSyncedExisting];
+
+      setProducts(mergedList);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_products', JSON.stringify(mergedList));
+      }
+      saveCloudProducts(mergedList);
+
+      const nowTh = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Bangkok' });
+      const syncTimeStr = `${new Date().toLocaleDateString('th-TH')} เวลา ${nowTh} น.`;
+
+      const updatedSettings: StoreSettings = {
+        ...storeSettings,
+        googleSheetUrl: targetUrl,
+        googleSheetLastSync: syncTimeStr,
+      };
+      setStoreSettings(updatedSettings);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_store_settings', JSON.stringify(updatedSettings));
+      }
+      saveCloudSettings(updatedSettings);
+
+      soundFx.playSuccess();
+
+      const totalVariants = syncedProducts.reduce((sum, p) => sum + p.variants.length, 0);
+      return {
+        success: true,
+        count: syncedProducts.length,
+        message: `ซิงก์สำเร็จ! ดึงสินค้า ${syncedProducts.length} รายการ (${totalVariants} ตัวเลือกไซส์/สต๊อก) จาก Google Sheet เข้าสู่คลังและหน้าร้านเรียบร้อยแล้ว`,
+      };
+    } catch (error: any) {
+      console.error('Google Sheet Sync Error:', error);
+      return {
+        success: false,
+        count: 0,
+        error: error?.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ Google Sheets',
+      };
     }
   };
 
@@ -1075,6 +1299,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         syncStoreSettings,
         syncOrders,
         syncProducts,
+        syncFromGoogleSheet,
         clearBrowserCacheAndReload,
       }}
     >

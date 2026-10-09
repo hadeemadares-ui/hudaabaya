@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp, FileSpreadsheet, ExternalLink, RefreshCw, CheckCircle, AlertCircle, HelpCircle } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CategoryType } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
@@ -16,11 +16,38 @@ export const AdminProductManager: React.FC = () => {
     selectedCategory,
     setSelectedCategory,
     syncProducts,
+    syncFromGoogleSheet,
+    storeSettings,
   } = useShop();
 
   const [adminSearch, setAdminSearch] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  // Google Sheets Live Sync State
+  const [sheetUrl, setSheetUrl] = useState(
+    storeSettings.googleSheetUrl || 'https://docs.google.com/spreadsheets/d/1WA1_fnTBdXe-ykTBNr1yOt3815uy-0hguA3n1kYDzkg/edit?gid=0#gid=0'
+  );
+  const [isSyncingSheet, setIsSyncingSheet] = useState(false);
+  const [syncFeedback, setSyncFeedback] = useState<{ success: boolean; message: string } | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
+
+  useEffect(() => {
+    if (storeSettings.googleSheetUrl) {
+      setSheetUrl(storeSettings.googleSheetUrl);
+    }
+  }, [storeSettings.googleSheetUrl]);
+
+  const handleSyncGoogleSheet = async () => {
+    setIsSyncingSheet(true);
+    setSyncFeedback(null);
+    const res = await syncFromGoogleSheet(sheetUrl);
+    setIsSyncingSheet(false);
+    setSyncFeedback({
+      success: res.success,
+      message: res.success ? (res.message || 'ซิงก์สำเร็จ') : (res.error || 'เกิดข้อผิดพลาดในการซิงก์'),
+    });
+  };
 
   // Form State for Add/Edit
   const [title, setTitle] = useState('');
@@ -383,6 +410,120 @@ export const AdminProductManager: React.FC = () => {
             <span>เพิ่มแบบสินค้าใหม่</span>
           </button>
         </div>
+      </div>
+
+      {/* 📊 กล่องสีเขียว: เชื่อมต่อสต๊อกสินค้ากับ Google Sheets (Google Sheets Live Sync) */}
+      <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-stone-950 border-2 border-emerald-400 rounded-3xl p-4 sm:p-6 shadow-2xl text-white space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-emerald-600/30 rounded-2xl border-2 border-emerald-400 text-emerald-300 shadow-inner shrink-0">
+              <FileSpreadsheet className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-300" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-serif font-black text-base sm:text-lg text-amber-300 flex items-center gap-1.5">
+                  <span>เชื่อมต่อสต๊อกสินค้ากับ Google Sheets</span>
+                  <span className="text-white text-xs sm:text-sm font-sans font-extrabold">(Live Cloud Sync)</span>
+                </h3>
+                <span className="px-2.5 py-0.5 bg-emerald-500/20 border border-emerald-400 text-emerald-200 text-[11px] font-black rounded-full flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  <span>พร้อมซิงก์เรียลไทม์ 100%</span>
+                </span>
+              </div>
+              <p className="text-xs text-stone-200 font-bold mt-1">
+                จัดการราคาและจำนวนสต๊อกสินค้าผ่าน Google Sheet แผ่นนี้ สต๊อกหน้าร้านค้าและระบบ POS จะอัปเดตตามตารางทันที!
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <a
+              href="https://docs.google.com/spreadsheets/d/1WA1_fnTBdXe-ykTBNr1yOt3815uy-0hguA3n1kYDzkg/edit?gid=0#gid=0"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3.5 py-2 bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 border border-emerald-400/80 font-black text-xs rounded-xl transition flex items-center gap-1.5 shadow-sm"
+              title="เปิดตาราง Google Sheet ของคุณในแท็บใหม่"
+            >
+              <span>เปิดตาราง Google Sheet ↗</span>
+            </a>
+            <button
+              type="button"
+              onClick={() => setShowGuide(!showGuide)}
+              className="px-3 py-2 bg-stone-800/90 hover:bg-stone-750 text-stone-200 border border-stone-600 font-black text-xs rounded-xl transition flex items-center gap-1 cursor-pointer"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+              <span>{showGuide ? 'ซ่อนวิธีเชื่อมต่อ' : 'วิธีเชื่อมต่อ'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Input URL & Sync Button */}
+        <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={sheetUrl}
+              onChange={(e) => setSheetUrl(e.target.value)}
+              placeholder="วางลิงก์ Google Sheet ที่นี่..."
+              className="w-full bg-stone-950 border-2 border-emerald-400/80 focus:border-amber-400 rounded-xl px-4 py-3 text-xs sm:text-sm text-amber-200 font-mono font-black placeholder-stone-500 focus:outline-none shadow-inner"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleSyncGoogleSheet}
+            disabled={isSyncingSheet}
+            className="px-6 py-3 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 active:scale-95 text-stone-950 font-black text-xs sm:text-sm rounded-xl shadow-lg border-2 border-amber-300 flex items-center justify-center gap-2 cursor-pointer transition disabled:opacity-50 shrink-0"
+            title="ดึงข้อมูลสต๊อกและราคาสินค้าจาก Google Sheets ทันที"
+          >
+            <RefreshCw className={`w-4 h-4 text-stone-950 ${isSyncingSheet ? 'animate-spin' : ''}`} />
+            <span>{isSyncingSheet ? 'กำลังดึงข้อมูลจากชีต...' : 'ซิงก์ดึงสต๊อกทันที'}</span>
+          </button>
+        </div>
+
+        {/* Sync Feedback Message */}
+        {syncFeedback && (
+          <div
+            className={`p-3.5 rounded-xl border-2 flex items-center gap-2.5 text-xs font-black shadow-md ${
+              syncFeedback.success
+                ? 'bg-emerald-950 border-emerald-400 text-emerald-200'
+                : 'bg-red-950 border-red-400 text-red-200'
+            }`}
+          >
+            {syncFeedback.success ? (
+              <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+            )}
+            <span>{syncFeedback.message}</span>
+          </div>
+        )}
+
+        {/* Last Sync Timestamp Indicator */}
+        {storeSettings.googleSheetLastSync && !syncFeedback && (
+          <div className="flex items-center gap-2 text-xs text-emerald-300/90 font-bold">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>ซิงก์ดึงข้อมูลสำเร็จล่าสุด: {storeSettings.googleSheetLastSync}</span>
+          </div>
+        )}
+
+        {/* Step-by-Step Instructions Collapsible */}
+        {showGuide && (
+          <div className="p-4 bg-stone-900/90 rounded-2xl border border-emerald-500/40 text-xs text-stone-200 space-y-2 mt-2">
+            <p className="font-serif font-black text-amber-300 text-sm">
+              📋 ขั้นตอนการเชื่อมต่อและอัปเดต Google Sheet ให้ซิงก์กับหน้าร้าน:
+            </p>
+            <ol className="list-decimal list-inside space-y-1.5 text-stone-200 font-bold leading-relaxed">
+              <li>เปิดตาราง Google Sheet ของคุณ: <a href="https://docs.google.com/spreadsheets/d/1WA1_fnTBdXe-ykTBNr1yOt3815uy-0hguA3n1kYDzkg/edit?gid=0#gid=0" target="_blank" rel="noopener noreferrer" className="text-amber-400 underline hover:text-amber-300">กดเปิดที่นี่</a></li>
+              <li>ไปที่เมนูมุมซ้ายบนของ Google Sheet: <span className="text-amber-300">ไฟล์ (File) ➔ แชร์ (Share) ➔ เผยแพร่ไปยังเว็บ (Publish to web)</span></li>
+              <li>เปลี่ยนช่องตัวเลือกจาก "หน้าเว็บ (Web page)" เป็น <span className="text-amber-300">"ค่าที่คั่นด้วยจุลภาค (.csv)"</span> แล้วกด <span className="text-emerald-400">เผยแพร่ (Publish)</span></li>
+              <li>คัดลอกลิงก์ที่ได้ นำมาวางในช่องด้านบน หรือใช้ลิงก์ Google Sheet ปกติได้เลย ระบบรองรับแปลงอัตโนมัติ 100%</li>
+              <li>กดปุ่ม <span className="text-amber-300 font-black">"ซิงก์ดึงสต๊อกทันที"</span> สต๊อกสินค้าและราคาในระบบ POS จะอัปเดตตรงตามตาราง Google Sheet ทันที!</li>
+            </ol>
+            <p className="text-[11px] text-amber-200/90 mt-2 font-medium">
+              💡 หมายเหตุ: คอลัมน์มาตรฐานใน Google Sheet ได้แก่: <span className="font-mono text-white">id | title | category | description | fabric | image | sizeName | price | stock</span>
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Admin Category Filter & Search Bar */}

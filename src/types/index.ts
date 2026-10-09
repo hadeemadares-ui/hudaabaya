@@ -178,6 +178,8 @@ export interface StoreSettings {
   lowStockThreshold?: number;
   adminPasscode?: string; // Password protection for Backoffice
   appsScriptWebhookUrl?: string; // Google Apps Script Webhook URL for 2-Way Sync
+  googleSheetUrl?: string; // Google Sheets CSV / Edit URL for 1-Click Live Stock Sync
+  googleSheetLastSync?: string; // Timestamp of last Google Sheet sync
   
   // Payment Toggles
   enablePromptPay?: boolean;
