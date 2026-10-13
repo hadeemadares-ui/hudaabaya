@@ -436,32 +436,32 @@ export const AdminProductManager: React.FC = () => {
 
   // Standard Dubai Abaya Default Sizes
   const DEFAULT_DUBAI_SIZES = [
-    { name: 'Size 52 (ส่วนสูง ~150-155 ซม. / ยาว 52")', sku: 'HD-ABY-52', price: 0, costPrice: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
-    { name: 'Size 54 (ส่วนสูง ~155-160 ซม. / ยาว 54")', sku: 'HD-ABY-54', price: 0, costPrice: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
-    { name: 'Size 56 (ส่วนสูง ~160-165 ซม. / ยาว 56")', sku: 'HD-ABY-56', price: 0, costPrice: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
-    { name: 'Size 58 (ส่วนสูง ~165-170 ซม. / ยาว 58")', sku: 'HD-ABY-58', price: 0, costPrice: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
-    { name: 'Size 60 (ส่วนสูง ~170-175 ซม. / ยาว 60")', sku: 'HD-ABY-60', price: 0, costPrice: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
+    { name: 'Size 52 (ส่วนสูง ~150-155 ซม. / ยาว 52")', sku: 'HD-ABY-52', price: 0, costPrice: 0, stockQuantity: 999, color: 'สีดำ (Black)' },
+    { name: 'Size 54 (ส่วนสูง ~155-160 ซม. / ยาว 54")', sku: 'HD-ABY-54', price: 0, costPrice: 0, stockQuantity: 999, color: 'สีดำ (Black)' },
+    { name: 'Size 56 (ส่วนสูง ~160-165 ซม. / ยาว 56")', sku: 'HD-ABY-56', price: 0, costPrice: 0, stockQuantity: 999, color: 'สีดำ (Black)' },
+    { name: 'Size 58 (ส่วนสูง ~165-170 ซม. / ยาว 58")', sku: 'HD-ABY-58', price: 0, costPrice: 0, stockQuantity: 999, color: 'สีดำ (Black)' },
+    { name: 'Size 60 (ส่วนสูง ~170-175 ซม. / ยาว 60")', sku: 'HD-ABY-60', price: 0, costPrice: 0, stockQuantity: 999, color: 'สีดำ (Black)' },
   ];
 
   // Standard Dubai Perfume Default Volumes/Sizes
   const DEFAULT_PERFUME_SIZES = [
-    { name: 'ขวดสเปรย์ 50 ml (EDP Spray)', sku: 'HD-PRF-50ML', price: 0, costPrice: 0, stockQuantity: 0, color: 'กลิ่นดูไบออริจินัล' },
-    { name: 'ขวดสเปรย์ 100 ml (EDP Premium Spray)', sku: 'HD-PRF-100ML', price: 0, costPrice: 0, stockQuantity: 0, color: 'กลิ่นดูไบออริจินัล' },
-    { name: 'ขวดแก้วคริสตัล 12 ml (Attar Pure Oil)', sku: 'HD-PRF-12ML', price: 0, costPrice: 0, stockQuantity: 0, color: 'กลิ่นดูไบออริจินัล' },
-    { name: 'ขวดเทสเตอร์ 3 ml (Sample Tester)', sku: 'HD-PRF-3ML', price: 0, costPrice: 0, stockQuantity: 0, color: 'กลิ่นดูไบออริจินัล' },
+    { name: 'ขวดสเปรย์ 50 ml (EDP Spray)', sku: 'HD-PRF-50ML', price: 0, costPrice: 0, stockQuantity: 999, color: 'กลิ่นดูไบออริจินัล' },
+    { name: 'ขวดสเปรย์ 100 ml (EDP Premium Spray)', sku: 'HD-PRF-100ML', price: 0, costPrice: 0, stockQuantity: 999, color: 'กลิ่นดูไบออริจินัล' },
+    { name: 'ขวดแก้วคริสตัล 12 ml (Attar Pure Oil)', sku: 'HD-PRF-12ML', price: 0, costPrice: 0, stockQuantity: 999, color: 'กลิ่นดูไบออริจินัล' },
+    { name: 'ขวดเทสเตอร์ 3 ml (Sample Tester)', sku: 'HD-PRF-3ML', price: 0, costPrice: 0, stockQuantity: 999, color: 'กลิ่นดูไบออริจินัล' },
   ];
 
   // Standard Dubai Incense Default Variants
   const DEFAULT_INCENSE_SIZES = [
-    { name: 'ขวด/กระปุก 50g (Standard Bukhoor)', sku: 'HD-INC-50G', price: 0, costPrice: 0, stockQuantity: 0, color: 'ไม้หอมอูดออริจินัล' },
-    { name: 'ขวด/กระปุก 100g (Premium Bukhoor)', sku: 'HD-INC-100G', price: 0, costPrice: 0, stockQuantity: 0, color: 'ไม้หอมอูดออริจินัล' },
-    { name: 'เซ็ตเตาเผาหอม + ถ่านหอมดูไบ', sku: 'HD-INC-SET', price: 0, costPrice: 0, stockQuantity: 0, color: 'สีทอง (Royal Gold)' },
+    { name: 'ขวด/กระปุก 50g (Standard Bukhoor)', sku: 'HD-INC-50G', price: 0, costPrice: 0, stockQuantity: 999, color: 'ไม้หอมอูดออริจินัล' },
+    { name: 'ขวด/กระปุก 100g (Premium Bukhoor)', sku: 'HD-INC-100G', price: 0, costPrice: 0, stockQuantity: 999, color: 'ไม้หอมอูดออริจินัล' },
+    { name: 'เซ็ตเตาเผาหอม + ถ่านหอมดูไบ', sku: 'HD-INC-SET', price: 0, costPrice: 0, stockQuantity: 999, color: 'สีทอง (Royal Gold)' },
   ];
 
   // Standard Other Items Default Variants
   const DEFAULT_OTHER_SIZES = [
-    { name: 'ชิ้น/กล่อง (Standard)', sku: 'HD-OTH-STD', price: 0, costPrice: 0, stockQuantity: 0, color: 'มาตรฐาน' },
-    { name: 'แพ็กสุดคุ้ม (Pack)', sku: 'HD-OTH-PACK', price: 0, costPrice: 0, stockQuantity: 0, color: 'มาตรฐาน' },
+    { name: 'ชิ้น/กล่อง (Standard)', sku: 'HD-OTH-STD', price: 0, costPrice: 0, stockQuantity: 999, color: 'มาตรฐาน' },
+    { name: 'แพ็กสุดคุ้ม (Pack)', sku: 'HD-OTH-PACK', price: 0, costPrice: 0, stockQuantity: 999, color: 'มาตรฐาน' },
   ];
 
   // Size & Color Variants State (เริ่มต้นเป็นค่าว่าง [] เพื่อให้ผู้ใช้กดเลือกเฉพาะขนาดที่ต้องการเอง)
@@ -592,7 +592,7 @@ export const AdminProductManager: React.FC = () => {
         sku: v.sku || `HD-SKU-${idx + 1}`,
         price: isNaN(Number(v.price)) ? 0 : Number(v.price),
         costPrice: isNaN(Number(v.costPrice)) ? (isNaN(Number(v.price)) ? 0 : Math.round(Number(v.price) * 0.5)) : Number(v.costPrice),
-        stockQuantity: isNaN(Number(v.stockQuantity)) ? 0 : Number(v.stockQuantity),
+        stockQuantity: isNaN(Number(v.stockQuantity)) || Number(v.stockQuantity) <= 0 ? 999 : Number(v.stockQuantity),
         color: v.color || '',
       })),
       rating: 5.0,
@@ -639,7 +639,7 @@ export const AdminProductManager: React.FC = () => {
         sku: skuCode || `SKU-${Date.now().toString().slice(-4)}`,
         price: 0,
         costPrice: 0,
-        stockQuantity: 0,
+        stockQuantity: 999,
         color: category === 'perfume' ? 'กลิ่นดูไบออริจินัล' : category === 'incense' ? 'ไม้หอมอูดออริจินัล' : category === 'other' ? 'มาตรฐาน' : 'สีดำ (Black)',
       },
     ]);
@@ -656,7 +656,7 @@ export const AdminProductManager: React.FC = () => {
         sku: `SKU-${variants.length + 1}`, 
         price: 0, 
         costPrice: 0,
-        stockQuantity: 0, 
+        stockQuantity: 999, 
         color: category === 'perfume' ? 'กลิ่นดูไบออริจินัล' : category === 'incense' ? 'ไม้หอมอูดออริจินัล' : category === 'other' ? 'มาตรฐาน' : 'สีดำ (Black)' 
       },
     ]);
@@ -961,7 +961,7 @@ export const AdminProductManager: React.FC = () => {
                             sku: v.sku,
                             price: v.price,
                             costPrice: v.costPrice ?? Math.round(v.price * 0.5),
-                            stockQuantity: v.stockQuantity,
+                            stockQuantity: (v.stockQuantity && v.stockQuantity > 0) ? v.stockQuantity : 999,
                             color: v.color || '',
                           }))
                         );
@@ -1475,8 +1475,8 @@ export const AdminProductManager: React.FC = () => {
                       <Sparkles className="w-5 h-5 text-amber-600" />
                       <span>
                         {category === 'perfume'
-                          ? 'กำหนดขนาดขวดน้ำหอม (ml), ราคา และสต๊อก:'
-                          : 'กำหนดสี, ไซส์, ราคา และสต๊อกสินค้า:'}
+                          ? 'กำหนดขนาดขวดน้ำหอม (ml), กลิ่น และราคาขาย:'
+                          : 'กำหนดสี, ไซส์ และราคาขายสินค้า:'}
                       </span>
                     </label>
                     
@@ -1754,25 +1754,12 @@ export const AdminProductManager: React.FC = () => {
                       variants.map((v, idx) => (
                       <div
                         key={idx}
-                        className={`p-4 rounded-2xl border-2 shadow-md space-y-3 transition-all bg-stone-50 ${
-                          v.stockQuantity > 0
-                            ? 'border-emerald-500'
-                            : 'border-red-400'
-                        }`}
+                        className="p-4 rounded-2xl border-2 border-stone-300 hover:border-amber-400 shadow-sm space-y-3 transition-all bg-white"
                       >
                         <div className="flex items-center justify-between border-b-2 border-amber-400/30 pb-2">
                           <div className="flex items-center gap-2">
                             <span className="text-xs sm:text-sm font-black text-stone-950 font-serif">
                               รายการที่ {idx + 1}: {v.name || 'ไซส์/รายการใหม่'}
-                            </span>
-                            <span
-                              className={`px-2.5 py-0.5 text-xs font-black rounded-full ${
-                                v.stockQuantity > 0
-                                  ? 'bg-emerald-600 text-white'
-                                  : 'bg-red-600 text-white'
-                              }`}
-                            >
-                              {v.stockQuantity > 0 ? `มีสต๊อก (${v.stockQuantity} ชิ้น)` : 'ไม่มีสต๊อก (0 ชิ้น)'}
                             </span>
                           </div>
                           <button
@@ -1883,8 +1870,8 @@ export const AdminProductManager: React.FC = () => {
                             )}
                           </div>
 
-                          {/* 3 Numeric Inputs Grid (Price, Cost Price, Stock) */}
-                          <div className="sm:col-span-6 grid grid-cols-3 gap-2">
+                          {/* 2 Numeric Inputs Grid (Price, Cost Price) */}
+                          <div className="sm:col-span-6 grid grid-cols-2 gap-3">
                             {/* Price Field */}
                             <div>
                               <div className="flex items-center justify-between mb-1">
@@ -1953,38 +1940,6 @@ export const AdminProductManager: React.FC = () => {
                                   setVariants(updated);
                                 }}
                                 className="w-full bg-white border-2 border-amber-400 rounded-lg p-2 text-stone-950 font-black font-mono text-sm sm:text-base text-right shadow-inner focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                              />
-                            </div>
-
-                            {/* Stock Field */}
-                            <div>
-                              <div className="flex items-center justify-between mb-1">
-                                <label className="text-xs text-stone-950 block font-black truncate">
-                                  สต๊อก (ชิ้น)
-                                </label>
-                                <VoiceInputButton
-                                  isNumber={true}
-                                  onNumberTranscript={(num) => {
-                                    const updated = [...variants];
-                                    updated[idx].stockQuantity = num;
-                                    setVariants(updated);
-                                  }}
-                                  onTranscript={() => {}}
-                                />
-                              </div>
-                              <input
-                                type="number"
-                                placeholder="0"
-                                value={v.stockQuantity === 0 ? '' : v.stockQuantity}
-                                onFocus={(e) => e.target.select()}
-                                onClick={(e) => (e.target as HTMLInputElement).select()}
-                                onChange={(e) => {
-                                  const updated = [...variants];
-                                  const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
-                                  updated[idx].stockQuantity = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
-                                  setVariants(updated);
-                                }}
-                                className="w-full bg-white border-2 border-emerald-400 rounded-xl p-2 text-stone-950 font-black font-mono text-sm sm:text-base text-right shadow-inner focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                               />
                             </div>
                           </div>
