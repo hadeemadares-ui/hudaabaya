@@ -376,6 +376,10 @@ export const AdminProductManager: React.FC = () => {
         setIsSizeDropdownOpen(false);
         setEditingSizeIdx(null);
       }
+      if (!(event.target as HTMLElement).closest('[data-color-dropdown]')) {
+        setOpenColorDropdownIdx(null);
+        setEditingColorIdx(null);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -388,51 +392,163 @@ export const AdminProductManager: React.FC = () => {
     return matched.length > 0 ? matched : currentCategoryFabricOptions;
   }, [currentCategoryFabricOptions, fabric]);
 
-  // Comprehensive Color List in Thai (English)
-  const PRODUCT_COLOR_PRESETS = [
-    'สีดำ (Black)',
-    'สีทอง (Gold)',
-    'สีขาว (White)',
-    'สีครีม (Cream)',
-    'สีไอวอรี่ (Ivory)',
-    'สีเบจ (Beige)',
-    'สีนู๊ด (Nude)',
-    'สีน้ำตาล (Brown)',
-    'สีช็อกโกแลต (Chocolate Brown)',
-    'สีน้ำตาลกาแฟ (Coffee / Latte)',
-    'สีเทา (Grey / Gray)',
-    'สีเทาเงิน (Silver)',
-    'สีชาโคล (Charcoal Grey)',
-    'สีเขียวมรกต (Emerald Green)',
-    'สีเขียวเข้ม (Dark Green / Pine)',
-    'สีเขียวมะกอก (Olive Green)',
-    'สีเขียวมินต์ (Mint Green)',
-    'สีเขียวเซจ (Sage Green)',
-    'สีน้ำเงินรอยัล (Royal Blue)',
-    'สีน้ำเงินกรมท่า (Navy Blue)',
-    'สีฟ้าสกายบลู (Sky Blue)',
-    'สีฟ้าพาสเทล (Baby Blue)',
-    'สีเทอร์ควอยซ์ (Turquoise)',
-    'สีม่วง (Purple / Violet)',
-    'สีม่วงเข้ม (Dark Plum)',
-    'สีม่วงลาเวนเดอร์ (Lavender)',
-    'สีแดง (Red)',
-    'สีแดงเลือดหมู (Burgundy / Wine)',
-    'สีแดงทับทิม (Ruby Red)',
-    'สีส้ม (Orange)',
-    'สีส้มอิฐ (Terracotta / Copper)',
-    'สีพีช (Peach)',
-    'สีชมพู (Pink)',
-    'สีโรสโกลด์ (Rose Gold)',
-    'สีชมพูบานเย็น (Fuchsia / Magenta)',
-    'สีชมพูพาสเทล (Baby Pink)',
-    'สีเหลือง (Yellow)',
-    'สีเหลืองมัสตาร์ด (Mustard Yellow)',
-    'สีทองแดง (Bronze)',
-    'สีแชมเปญ (Champagne)',
-    'สีทูโทน (Two-Tone)',
-    'สีมัลติคัลเลอร์ (Multicolor)',
-  ];
+  // Comprehensive Category-Bound Color & Scent Presets
+  const DEFAULT_CATEGORY_COLOR_PRESETS: Record<string, string[]> = {
+    abaya: [
+      'สีดำ (Black)',
+      'สีทอง (Gold)',
+      'สีขาว (White)',
+      'สีครีม (Cream)',
+      'สีเบจ (Beige)',
+      'สีนู๊ด (Nude)',
+      'สีน้ำตาล (Brown)',
+      'สีช็อกโกแลต (Chocolate Brown)',
+      'สีเขียวมรกต (Emerald Green)',
+      'สีเขียวเข้ม (Dark Green / Pine)',
+      'สีเขียวมะกอก (Olive Green)',
+      'สีน้ำเงินกรมท่า (Navy Blue)',
+      'สีฟ้าพาสเทล (Baby Blue)',
+      'สีม่วงเข้ม (Dark Plum)',
+      'สีแดงเลือดหมู (Burgundy / Wine)',
+      'สีชมพู (Pink)',
+      'สีเทาเงิน (Silver)',
+      'สีทูโทน (Two-Tone)',
+    ],
+    kaftan: [
+      'สีทองราชวงศ์ (Royal Gold)',
+      'สีดำ (Black)',
+      'สีขาว (White)',
+      'สีครีม (Cream)',
+      'สีมรกต (Emerald)',
+      'สีน้ำเงินรอยัล (Royal Blue)',
+      'สีแดงทับทิม (Ruby Red)',
+      'สีชมพูพาสเทล (Baby Pink)',
+      'สีเขียวมิ้นต์ (Mint Green)',
+      'สีทูโทน (Two-Tone)',
+    ],
+    perfume: [
+      'กลิ่นดูไบออริจินัล (Dubai Original)',
+      'กลิ่นอัมเบอร์ทอง (Royal Amber & Musk)',
+      'กลิ่นกุหลาบดามัสกัสผสมอูด (Rose Damascena & Oud)',
+      'กลิ่นไม้หอมอูดบริสุทธิ์ (Pure Oud Wood)',
+      'กลิ่นมัสก์ขาวบริสุทธิ์ (White Musk)',
+      'กลิ่นวานิลลาดูไบ (Sweet Vanilla Dubai)',
+      'กลิ่นฟรุตตี้อาหรับ (Fruity Arabic EDP)',
+      'กลิ่นสดชื่นซีตรัส & อูด (Fresh Citrus & Oud)',
+      'กลิ่นคาร์ดามอม & สไปซ์ (Cardamom Spice)',
+      'กลิ่นชาฮานะห์ (Shahana Floral)',
+    ],
+    incense: [
+      'ไม้หอมอูดออริจินัล (Original Oud Chips)',
+      'กลิ่นอัมเบอร์ทอง & มัสก์ (Amber Musk Bukhoor)',
+      'กลิ่นกุหลาบอาหรับพรีเมียม (Taif Rose Bukhoor)',
+      'กลิ่นกำยานแท้โอมาน (Pure Frankincense)',
+      'กลิ่นไม้กฤษณารอยัล (Royal Agarwood)',
+    ],
+    combo: [
+      'สีดำ (Black)',
+      'คละสี / คละกลิ่น (Assorted)',
+      'เซ็ตของขวัญมาตรฐาน',
+      'สีทอง (Gold)',
+    ],
+    other: [
+      'มาตรฐาน (Standard)',
+      'คละสี (Multicolor)',
+      'สีดำ (Black)',
+      'สีขาว (White)',
+    ],
+  };
+
+  // Category-specific Color / Scent Map State (Stored in localStorage)
+  const [categoryColorMap, setCategoryColorMap] = useState<Record<string, string[]>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('huda_category_color_map_v1');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed === 'object') return parsed;
+        }
+      } catch (err) {
+        console.error('Failed to parse saved category color map:', err);
+      }
+    }
+    return DEFAULT_CATEGORY_COLOR_PRESETS;
+  });
+
+  const currentCategoryColorOptions = useMemo(() => {
+    return categoryColorMap[activeCategoryKey] || DEFAULT_CATEGORY_COLOR_PRESETS[activeCategoryKey] || [];
+  }, [categoryColorMap, activeCategoryKey]);
+
+  // State for Color Dropdown and inline editing
+  const [openColorDropdownIdx, setOpenColorDropdownIdx] = useState<number | null>(null);
+  const [editingColorIdx, setEditingColorIdx] = useState<number | null>(null);
+  const [editingColorText, setEditingColorText] = useState<string>('');
+
+  const saveCategoryColorMap = (newMap: Record<string, string[]>) => {
+    setCategoryColorMap(newMap);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('huda_category_color_map_v1', JSON.stringify(newMap));
+      } catch (e) {
+        console.error('Error saving category color map:', e);
+      }
+    }
+  };
+
+  const handleAddNewColorOption = (newColorName: string) => {
+    const trimmed = newColorName.trim();
+    if (!trimmed) return;
+    const catList = currentCategoryColorOptions;
+    if (!catList.includes(trimmed)) {
+      const updatedCatList = [trimmed, ...catList];
+      const updatedMap = {
+        ...categoryColorMap,
+        [activeCategoryKey]: updatedCatList,
+      };
+      saveCategoryColorMap(updatedMap);
+    }
+  };
+
+  const handleDeleteColorOption = (colorToDelete: string) => {
+    if (confirm(`คุณต้องการลบตัวเลือกสี/กลิ่น "${colorToDelete}" ออกจากหมวดหมู่นี้ใช่หรือไม่?`)) {
+      const updatedCatList = currentCategoryColorOptions.filter((opt) => opt !== colorToDelete);
+      const updatedMap = {
+        ...categoryColorMap,
+        [activeCategoryKey]: updatedCatList,
+      };
+      saveCategoryColorMap(updatedMap);
+    }
+  };
+
+  const handleSaveEditColorOption = (idx: number, oldName: string) => {
+    const trimmed = editingColorText.trim();
+    if (!trimmed) return;
+    const updatedCatList = [...currentCategoryColorOptions];
+    updatedCatList[idx] = trimmed;
+    const updatedMap = {
+      ...categoryColorMap,
+      [activeCategoryKey]: updatedCatList,
+    };
+    saveCategoryColorMap(updatedMap);
+
+    // Also update any variants currently in the form that used the old color name
+    setVariants((prev) =>
+      prev.map((v) => (v.color === oldName ? { ...v, color: trimmed } : v))
+    );
+
+    setEditingColorIdx(null);
+    setEditingColorText('');
+  };
+
+  const handleResetColorDefaults = () => {
+    if (confirm(`คุณต้องการรีเซ็ตตัวเลือกสี/กลิ่นของหมวดหมู่นี้กลับเป็นค่าเริ่มต้นใช่หรือไม่?`)) {
+      const updatedMap = {
+        ...categoryColorMap,
+        [activeCategoryKey]: DEFAULT_CATEGORY_COLOR_PRESETS[activeCategoryKey] || [],
+      };
+      saveCategoryColorMap(updatedMap);
+    }
+  };
 
   // Standard Dubai Abaya Default Sizes
   const DEFAULT_DUBAI_SIZES = [
@@ -562,6 +678,12 @@ export const AdminProductManager: React.FC = () => {
     if (fabric.trim()) {
       handleAddNewFabricOption(fabric.trim());
     }
+
+    variants.forEach((v) => {
+      if (v.color && v.color.trim()) {
+        handleAddNewColorOption(v.color.trim());
+      }
+    });
 
     if (variants.length === 0) {
       alert('กรุณาระบุขนาด ปริมาณ หรือไซส์สินค้าอย่างน้อย 1 รายการครับ');
@@ -1774,8 +1896,8 @@ export const AdminProductManager: React.FC = () => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                           
-                          {/* Color / Scent Choice Field */}
-                          <div className="sm:col-span-3 space-y-1">
+                          {/* Color / Scent Combobox Field */}
+                          <div className="sm:col-span-3 space-y-1 relative" data-color-dropdown>
                             <div className="flex items-center justify-between mb-0.5">
                               <label className="text-xs text-stone-950 font-black block">
                                 {category === 'perfume' ? 'ตัวเลือกกลิ่น / สี' : 'สีสินค้า (Color)'}
@@ -1785,42 +1907,179 @@ export const AdminProductManager: React.FC = () => {
                                   const updated = [...variants];
                                   updated[idx].color = text;
                                   setVariants(updated);
+                                  setOpenColorDropdownIdx(idx);
                                 }}
                                 currentValue={v.color || ''}
                               />
                             </div>
-                            <input
-                              type="text"
-                              list="product-color-preset-list"
-                              placeholder={category === 'perfume' ? 'เช่น กลิ่นอัมเบอร์ทอง' : 'เลือก/พิมพ์สี เช่น สีดำ (Black)'}
-                              value={v.color || ''}
-                              onFocus={(e) => e.target.select()}
-                              onClick={(e) => (e.target as HTMLInputElement).select()}
-                              onChange={(e) => {
-                                const updated = [...variants];
-                                updated[idx].color = e.target.value;
-                                setVariants(updated);
-                              }}
-                              className="w-full bg-white border-2 border-stone-400 rounded-xl p-2 text-stone-950 font-black text-xs sm:text-sm focus:outline-none focus:border-amber-500 shadow-inner"
-                            />
-                            <select
-                              value=""
-                              onChange={(e) => {
-                                if (e.target.value) {
+
+                            <div className="relative">
+                              <input
+                                type="text"
+                                placeholder={
+                                  category === 'perfume'
+                                    ? 'คลิกเลือกกลิ่น หรือพิมพ์กลิ่นใหม่...'
+                                    : 'คลิกเลือกสี หรือพิมพ์สีใหม่...'
+                                }
+                                value={v.color || ''}
+                                onFocus={() => setOpenColorDropdownIdx(idx)}
+                                onClick={() => setOpenColorDropdownIdx(idx)}
+                                onChange={(e) => {
                                   const updated = [...variants];
                                   updated[idx].color = e.target.value;
                                   setVariants(updated);
-                                }
-                              }}
-                              className="w-full bg-white border border-stone-300 rounded-xl px-2 py-1.5 text-xs text-stone-950 font-black hover:border-amber-500 transition cursor-pointer"
-                            >
-                              <option value="" className="bg-white text-stone-950 font-bold">-- เลือกสีด่วน (Quick Select) --</option>
-                              {PRODUCT_COLOR_PRESETS.map((colorName) => (
-                                <option key={colorName} value={colorName} className="bg-white text-stone-950 font-bold py-1">
-                                  {colorName}
-                                </option>
-                              ))}
-                            </select>
+                                  setOpenColorDropdownIdx(idx);
+                                }}
+                                className="w-full bg-white border-2 border-stone-400 rounded-xl p-2 pr-8 text-stone-950 font-black text-xs sm:text-sm focus:outline-none focus:border-amber-500 shadow-inner"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setOpenColorDropdownIdx(openColorDropdownIdx === idx ? null : idx)}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-stone-600 hover:text-stone-950 transition cursor-pointer"
+                                title="เปิด/ปิดรายการสี/กลิ่น"
+                              >
+                                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${openColorDropdownIdx === idx ? 'rotate-180' : ''}`} />
+                              </button>
+                            </div>
+
+                            {/* Floating Dropdown for this variant's color */}
+                            {openColorDropdownIdx === idx && (
+                              <div className="absolute z-50 left-0 right-0 mt-1 bg-white border-2 border-amber-400 rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
+                                {/* Dropdown Header */}
+                                <div className="p-2 bg-amber-100/90 border-b border-amber-300 flex items-center justify-between text-[11px] font-black text-amber-950">
+                                  <span>
+                                    🎨 ตัวเลือกหมวด {category === 'perfume' ? 'น้ำหอม' : category === 'incense' ? 'เครื่องหอม' : category === 'kaftan' ? 'คัฟทาน' : category === 'combo' ? 'เซ็ต' : category === 'other' ? 'ทั่วไป' : 'อาบายะห์'}
+                                  </span>
+                                  <span className="text-[10px] text-stone-500 font-normal">✏️ แก้ไข | 🗑️ ลบ</span>
+                                </div>
+
+                                {/* Option to Add new typed color if not present */}
+                                {v.color && v.color.trim() && !currentCategoryColorOptions.includes(v.color.trim()) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleAddNewColorOption(v.color!.trim());
+                                      setOpenColorDropdownIdx(null);
+                                    }}
+                                    className="w-full text-left px-3 py-2 bg-amber-50 hover:bg-amber-100 border-b border-amber-300 text-xs font-black text-amber-950 flex items-center justify-between transition cursor-pointer"
+                                  >
+                                    <span className="truncate">➕ เพิ่ม <strong className="text-amber-900 underline">"{v.color.trim()}"</strong> เข้าหมวดนี้</span>
+                                    <span className="text-[10px] bg-amber-200 px-2 py-0.5 rounded-full border border-amber-400 font-bold shrink-0 ml-1">กดเพิ่ม</span>
+                                  </button>
+                                )}
+
+                                {/* Options List */}
+                                <div className="divide-y divide-stone-100">
+                                  {currentCategoryColorOptions
+                                    .filter((opt) => !v.color || !v.color.trim() || opt.toLowerCase().includes(v.color.trim().toLowerCase()))
+                                    .map((opt, colorIdx) => {
+                                      const isEditing = editingColorIdx === colorIdx;
+
+                                      if (isEditing) {
+                                        return (
+                                          <div key={colorIdx} className="p-1.5 bg-amber-50/90 flex items-center gap-1 border-b border-amber-300">
+                                            <input
+                                              type="text"
+                                              value={editingColorText}
+                                              onChange={(e) => setEditingColorText(e.target.value)}
+                                              onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                  e.preventDefault();
+                                                  handleSaveEditColorOption(colorIdx, opt);
+                                                } else if (e.key === 'Escape') {
+                                                  setEditingColorIdx(null);
+                                                }
+                                              }}
+                                              autoFocus
+                                              className="flex-1 bg-white border-2 border-amber-500 rounded-lg px-2 py-1 text-xs font-black text-stone-950 focus:outline-none shadow-inner"
+                                            />
+                                            <button
+                                              type="button"
+                                              onClick={() => handleSaveEditColorOption(colorIdx, opt)}
+                                              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black transition cursor-pointer"
+                                            >
+                                              บันทึก
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => setEditingColorIdx(null)}
+                                              className="px-2 py-1 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-lg text-xs font-black transition cursor-pointer"
+                                            >
+                                              ยกเลิก
+                                            </button>
+                                          </div>
+                                        );
+                                      }
+
+                                      return (
+                                        <div
+                                          key={opt}
+                                          className={`px-3 py-1.5 text-xs font-black transition flex items-center justify-between group ${
+                                            v.color === opt ? 'bg-amber-100 text-amber-950' : 'text-stone-900 hover:bg-stone-50'
+                                          }`}
+                                        >
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const updated = [...variants];
+                                              updated[idx].color = opt;
+                                              setVariants(updated);
+                                              setOpenColorDropdownIdx(null);
+                                            }}
+                                            className="flex-1 text-left flex items-center justify-between pr-2 cursor-pointer truncate"
+                                          >
+                                            <span className="truncate">{opt}</span>
+                                            {v.color === opt && (
+                                              <span className="text-amber-800 text-[10px] font-black shrink-0 ml-1">✓ เลือก</span>
+                                            )}
+                                          </button>
+
+                                          <div className="flex items-center gap-1 shrink-0">
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditingColorIdx(colorIdx);
+                                                setEditingColorText(opt);
+                                              }}
+                                              className="p-1 hover:bg-amber-200 text-stone-400 hover:text-amber-950 rounded transition cursor-pointer"
+                                              title={`แก้ไขชื่อ "${opt}"`}
+                                            >
+                                              <Edit2 className="w-3.5 h-3.5" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteColorOption(opt);
+                                              }}
+                                              className="p-1 hover:bg-red-100 text-stone-400 hover:text-red-700 rounded transition cursor-pointer"
+                                              title={`ลบ "${opt}" ออกจากรายการ`}
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                </div>
+
+                                {/* Footer Reset Button */}
+                                <div className="p-2 border-t border-stone-200 bg-stone-50 flex items-center justify-between text-[11px]">
+                                  <span className="text-stone-500 font-bold">
+                                    ผูกเฉพาะหมวด{category === 'perfume' ? 'น้ำหอม' : category === 'incense' ? 'เครื่องหอม' : category === 'kaftan' ? 'คัฟทาน' : category === 'combo' ? 'เซ็ต' : category === 'other' ? 'ทั่วไป' : 'อาบายะห์'}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={handleResetColorDefaults}
+                                    className="text-stone-600 hover:text-amber-800 font-bold underline cursor-pointer"
+                                    title="คืนค่าตัวเลือกสีเริ่มต้นเฉพาะหมวดนี้"
+                                  >
+                                    ↺ รีเซ็ตหมวดนี้
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           {/* Size / Volume Name Field */}
@@ -1979,7 +2238,7 @@ export const AdminProductManager: React.FC = () => {
         </div>
       )}
       <datalist id="product-color-preset-list">
-        {PRODUCT_COLOR_PRESETS.map((colorName) => (
+        {currentCategoryColorOptions.map((colorName) => (
           <option key={colorName} value={colorName} />
         ))}
       </datalist>
