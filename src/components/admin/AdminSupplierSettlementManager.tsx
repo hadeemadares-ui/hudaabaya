@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Truck, DollarSign, PackageCheck, Plus, Search, Calendar, FileText, CheckCircle2, AlertCircle, Sparkles, Filter, ChevronRight, X, Printer, ArrowDownLeft, ArrowUpRight, CheckSquare, Square, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Truck, DollarSign, PackageCheck, Plus, Search, Calendar, FileText, CheckCircle2, AlertCircle, Sparkles, Filter, ChevronRight, ChevronDown, X, Printer, ArrowDownLeft, ArrowUpRight, CheckSquare, Square, Check, Trash2 } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { StockMovement, SupplierSettlement } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
@@ -26,20 +26,6 @@ export const AdminSupplierSettlementManager: React.FC = () => {
   const [isSettlementModalOpen, setIsSettlementModalOpen] = useState<boolean>(false);
   const [viewingSettlementVoucher, setViewingSettlementVoucher] = useState<SupplierSettlement | null>(null);
 
-  // Stock In Form State
-  const [stockInProductId, setStockInProductId] = useState<string>('');
-  const [stockInVariantId, setStockInVariantId] = useState<string>('');
-  const [stockInQty, setStockInQty] = useState<number>(10);
-  const [stockInCostPrice, setStockInCostPrice] = useState<number>(0);
-  const [stockInSupplierName, setStockInSupplierName] = useState<string>('โรงงานอาบายะห์ดูไบ');
-  const [stockInNote, setStockInNote] = useState<string>('');
-
-  // Settlement Form & Selection State
-  const [settleSupplierName, setSettleSupplierName] = useState<string>('');
-  const [selectedMovementIds, setSelectedMovementIds] = useState<string[]>([]);
-  const [settlementPaymentRef, setSettlementPaymentRef] = useState<string>('');
-  const [settlementNote, setSettlementNote] = useState<string>('');
-
   // Default Known Suppliers
   const SUPPLIER_PRESETS = [
     'โรงงานอาบายะห์ดูไบ',
@@ -48,6 +34,88 @@ export const AdminSupplierSettlementManager: React.FC = () => {
     'ร้านฝากขาย B (Consignment B)',
     'โรงงานตัดเย็บเดรสอาหรับ UAE',
   ];
+
+  // Dynamic Supplier Options (Persisted in localStorage)
+  const [supplierOptions, setSupplierOptions] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('huda_custom_suppliers');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return Array.from(new Set([...SUPPLIER_PRESETS, ...parsed]));
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load custom suppliers:', e);
+      }
+    }
+    return SUPPLIER_PRESETS;
+  });
+
+  const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState<boolean>(false);
+  const supplierDropdownRef = useRef<HTMLDivElement>(null);
+
+  const saveSupplierOptions = (newList: string[]) => {
+    const cleaned = Array.from(new Set(newList.map((s) => s.trim()).filter(Boolean)));
+    setSupplierOptions(cleaned);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('huda_custom_suppliers', JSON.stringify(cleaned));
+      } catch (e) {
+        console.error('Failed to save custom suppliers:', e);
+      }
+    }
+  };
+
+  const handleAddNewSupplier = (rawName: string) => {
+    const trimmed = rawName.trim();
+    if (!trimmed) return;
+    const existing = supplierOptions.find((s) => s.toLowerCase() === trimmed.toLowerCase());
+    if (!existing) {
+      const updated = [trimmed, ...supplierOptions];
+      saveSupplierOptions(updated);
+    }
+    setStockInSupplierName(trimmed);
+    setIsSupplierDropdownOpen(false);
+  };
+
+  const handleDeleteSupplier = (supplierToDelete: string) => {
+    if (confirm(`คุณต้องการลบ "${supplierToDelete}" ออกจากรายการตัวเลือก Supplier ใช่หรือไม่?`)) {
+      const updated = supplierOptions.filter((s) => s !== supplierToDelete);
+      saveSupplierOptions(updated);
+      if (stockInSupplierName === supplierToDelete) {
+        setStockInSupplierName(updated[0] || '');
+      }
+    }
+  };
+
+  // Close supplier dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (supplierDropdownRef.current && !supplierDropdownRef.current.contains(event.target as Node)) {
+        setIsSupplierDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Stock In Form State
+  const [stockInProductId, setStockInProductId] = useState<string>('');
+  const [stockInVariantId, setStockInVariantId] = useState<string>('');
+  const [stockInQty, setStockInQty] = useState<number | ''>('');
+  const [stockInCostPrice, setStockInCostPrice] = useState<number | ''>('');
+  const [stockInSupplierName, setStockInSupplierName] = useState<string>('โรงงานอาบายะห์ดูไบ');
+  const [stockInNote, setStockInNote] = useState<string>('');
+
+  // Settlement Form & Selection State
+  const [settleSupplierName, setSettleSupplierName] = useState<string>('');
+  const [selectedMovementIds, setSelectedMovementIds] = useState<string[]>([]);
+  const [settlementPaymentRef, setSettlementPaymentRef] = useState<string>('');
+  const [settlementNote, setSettlementNote] = useState<string>('');
 
   // Derive Unsettled Sold Movements (Stock OUT items that are not yet settled)
   const unsettledMovements = stockMovements.filter((m) => m.type === 'OUT' && !m.isSettled);
@@ -74,18 +142,19 @@ export const AdminSupplierSettlementManager: React.FC = () => {
             setStockInVariantId(data.variantId);
             const targetV = prod.variants.find((v) => v.id === data.variantId);
             if (targetV && (data.costPrice === undefined || data.costPrice === 0)) {
-              setStockInCostPrice(targetV.costPrice || Math.round(targetV.price * 0.5));
+              setStockInCostPrice(targetV.costPrice ? targetV.costPrice : '');
             } else if (data.costPrice !== undefined) {
-              setStockInCostPrice(data.costPrice);
+              setStockInCostPrice(data.costPrice > 0 ? data.costPrice : '');
             }
           } else if (prod.variants.length > 0) {
             setStockInVariantId(prod.variants[0].id);
-            setStockInCostPrice(prod.variants[0].costPrice || Math.round(prod.variants[0].price * 0.5));
+            setStockInCostPrice(prod.variants[0].costPrice ? prod.variants[0].costPrice : '');
           }
         }
       } else if (data.costPrice !== undefined) {
-        setStockInCostPrice(data.costPrice);
+        setStockInCostPrice(data.costPrice > 0 ? data.costPrice : '');
       }
+      setStockInQty('');
       setIsStockInModalOpen(true);
     };
 
@@ -108,6 +177,8 @@ export const AdminSupplierSettlementManager: React.FC = () => {
       if (detail) {
         applyStockInData(detail);
       } else {
+        setStockInQty('');
+        setStockInCostPrice('');
         setIsStockInModalOpen(true);
       }
     };
@@ -118,9 +189,9 @@ export const AdminSupplierSettlementManager: React.FC = () => {
     };
   }, [products]);
 
-  // Unique list of suppliers found in movements
+  // Unique list of suppliers found in movements and custom options
   const allSuppliers = Array.from(
-    new Set([...SUPPLIER_PRESETS, ...stockMovements.map((m) => m.supplierName).filter(Boolean)])
+    new Set([...supplierOptions, ...stockMovements.map((m) => m.supplierName).filter(Boolean)])
   );
 
   // Filtered Unsettled Movements based on selected Supplier & Search
@@ -218,6 +289,15 @@ export const AdminSupplierSettlementManager: React.FC = () => {
     alert(`เคลียร์ยอดจ่ายให้ "${settleSupplierName}" จำนวน ${activeSupplierMovements.length} รายการ เรียบร้อยแล้ว!`);
   };
 
+  // Filtered Suppliers for Stock IN dropdown
+  const filteredSuppliers = supplierOptions.filter((s) =>
+    s.toLowerCase().includes(stockInSupplierName.trim().toLowerCase())
+  );
+
+  const isTypedSupplierNew =
+    stockInSupplierName.trim().length > 0 &&
+    !supplierOptions.some((s) => s.toLowerCase() === stockInSupplierName.trim().toLowerCase());
+
   // Handle Submit Stock IN Form
   const handleSaveStockIn = (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,17 +305,30 @@ export const AdminSupplierSettlementManager: React.FC = () => {
       alert('กรุณาเลือกสินค้าและไซส์/ตัวเลือกสินค้าก่อนครับ');
       return;
     }
-    if (stockInQty <= 0) {
-      alert('กรุณาระบุจำนวนสินค้าเข้าที่ถูกต้องครับ');
+
+    const finalQty = typeof stockInQty === 'number' ? stockInQty : parseInt(stockInQty, 10);
+    if (!finalQty || isNaN(finalQty) || finalQty <= 0) {
+      alert('กรุณาระบุจำนวนสินค้าเข้าที่ถูกต้อง (ต้องมากกว่า 0 ชิ้น) ครับ');
       return;
     }
+
+    const trimmedSupplier = stockInSupplierName.trim();
+    if (!trimmedSupplier) {
+      alert('กรุณาระบุชื่อ Supplier / โรงงานที่รับมาครับ');
+      return;
+    }
+
+    // Auto-save new supplier to dropdown list for future use
+    handleAddNewSupplier(trimmedSupplier);
+
+    const finalCost = typeof stockInCostPrice === 'number' ? stockInCostPrice : (parseInt(stockInCostPrice, 10) || 0);
 
     recordStockIn({
       productId: stockInProductId,
       variantId: stockInVariantId,
-      quantity: stockInQty,
-      costPrice: stockInCostPrice,
-      supplierName: stockInSupplierName,
+      quantity: finalQty,
+      costPrice: finalCost,
+      supplierName: trimmedSupplier,
       note: stockInNote,
     });
 
@@ -243,8 +336,8 @@ export const AdminSupplierSettlementManager: React.FC = () => {
     setIsStockInModalOpen(false);
     setStockInProductId('');
     setStockInVariantId('');
-    setStockInQty(10);
-    setStockInCostPrice(0);
+    setStockInQty('');
+    setStockInCostPrice('');
     setStockInNote('');
   };
 
@@ -265,7 +358,11 @@ export const AdminSupplierSettlementManager: React.FC = () => {
 
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <button
-            onClick={() => setIsStockInModalOpen(true)}
+            onClick={() => {
+              setStockInQty('');
+              setStockInCostPrice('');
+              setIsStockInModalOpen(true);
+            }}
             className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md transition flex items-center gap-1.5 border border-emerald-700 cursor-pointer"
           >
             <Plus className="w-4 h-4 text-white" />
@@ -629,7 +726,11 @@ export const AdminSupplierSettlementManager: React.FC = () => {
               </select>
 
               <button
-                onClick={() => setIsStockInModalOpen(true)}
+                onClick={() => {
+                  setStockInQty('');
+                  setStockInCostPrice('');
+                  setIsStockInModalOpen(true);
+                }}
                 className="px-3.5 py-1.5 bg-emerald-600 text-white font-black text-xs rounded-xl shadow hover:bg-emerald-500 transition flex items-center gap-1 cursor-pointer border border-emerald-700"
               >
                 <Plus className="w-4 h-4 text-white" />
@@ -833,50 +934,232 @@ export const AdminSupplierSettlementManager: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-stone-950 font-black mb-1">จำนวนสินค้าเข้า (ชิ้น) *</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-stone-950 font-black">จำนวนสินค้าเข้า (ชิ้น) *</label>
+                    <VoiceInputButton
+                      isNumber={true}
+                      onNumberTranscript={(num) => setStockInQty(num)}
+                      onTranscript={(text) => {
+                        const num = parseInt(text.replace(/[^0-9]/g, ''), 10);
+                        if (!isNaN(num) && num > 0) setStockInQty(num);
+                      }}
+                      className="scale-90"
+                      title="พูดบอกจำนวนสินค้าเข้า"
+                    />
+                  </div>
                   <input
                     type="number"
                     min={1}
                     required
                     value={stockInQty}
-                    onChange={(e) => setStockInQty(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                    className="w-full bg-white border-2 border-emerald-500 rounded-xl p-3 text-stone-950 font-mono font-black text-base focus:outline-none"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setStockInQty('');
+                      } else {
+                        const num = parseInt(val, 10);
+                        setStockInQty(isNaN(num) ? '' : num);
+                      }
+                    }}
+                    placeholder="เช่น 10"
+                    className="w-full bg-white border-2 border-emerald-500 rounded-xl p-3 text-stone-950 font-mono font-black text-base focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none shadow-sm"
                   />
+                  <span className="text-[10px] text-stone-500 font-bold mt-1 block">
+                    (ใส่ตัวเลขเอง ไม่มีปุ่มเพิ่ม/ลด)
+                  </span>
                 </div>
 
                 <div>
-                  <label className="block text-stone-950 font-black mb-1">ราคาต้นทุน/ชิ้น (บาท) *</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-stone-950 font-black">ราคาต้นทุน/ชิ้น (บาท) *</label>
+                    <VoiceInputButton
+                      isNumber={true}
+                      onNumberTranscript={(num) => setStockInCostPrice(num)}
+                      onTranscript={(text) => {
+                        const num = parseInt(text.replace(/[^0-9]/g, ''), 10);
+                        if (!isNaN(num)) setStockInCostPrice(num);
+                      }}
+                      className="scale-90"
+                      title="พูดบอกราคาต้นทุน"
+                    />
+                  </div>
                   <input
                     type="number"
                     min={0}
                     required
                     value={stockInCostPrice}
-                    onChange={(e) => setStockInCostPrice(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                    className="w-full bg-white border-2 border-amber-500 rounded-xl p-3 text-stone-950 font-mono font-black text-base focus:outline-none"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setStockInCostPrice('');
+                      } else {
+                        const num = parseInt(val, 10);
+                        setStockInCostPrice(isNaN(num) ? '' : num);
+                      }
+                    }}
+                    placeholder="เช่น 900"
+                    className="w-full bg-white border-2 border-amber-500 rounded-xl p-3 text-stone-950 font-mono font-black text-base focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none shadow-sm"
                   />
+                  <span className="text-[10px] text-stone-500 font-bold mt-1 block">
+                    (ใส่ตัวเลขเอง ไม่มีปุ่มเพิ่ม/ลด)
+                  </span>
+                </div>
+              </div>
+
+              {/* Supplier / Factory Dropdown with Custom Add & Persistent Storage */}
+              <div className="relative" ref={supplierDropdownRef}>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-stone-950 font-black">
+                    ชื่อ Supplier / โรงงานที่รับมา *
+                  </label>
+                  <span className="text-[10px] text-amber-800 font-extrabold">
+                    (เลือกจากรายการ หรือพิมพ์เพิ่มชื่อใหม่ได้อิสระ)
+                  </span>
+                </div>
+
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    required
+                    value={stockInSupplierName}
+                    onChange={(e) => {
+                      setStockInSupplierName(e.target.value);
+                      setIsSupplierDropdownOpen(true);
+                    }}
+                    onFocus={() => setIsSupplierDropdownOpen(true)}
+                    placeholder="คลิกเลือกจากรายการ หรือพิมพ์ชื่อ Supplier ใหม่..."
+                    className="w-full bg-white border-2 border-stone-400 rounded-xl p-3 pr-20 text-stone-950 font-black text-sm focus:outline-none focus:border-amber-500 shadow-sm"
+                  />
+
+                  <div className="absolute right-2 flex items-center gap-1">
+                    <VoiceInputButton
+                      onTranscript={(text) => {
+                        setStockInSupplierName(text);
+                        setIsSupplierDropdownOpen(true);
+                      }}
+                      className="scale-90"
+                      title="พูดพิมพ์ชื่อ Supplier"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsSupplierDropdownOpen((prev) => !prev)}
+                      className="p-1.5 text-stone-600 hover:text-stone-950 hover:bg-stone-100 rounded-lg transition cursor-pointer"
+                      title="เปิด/ปิดรายการตัวเลือก Supplier"
+                    >
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isSupplierDropdownOpen ? 'rotate-180 text-amber-600' : ''}`} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Dropdown Menu */}
+                {isSupplierDropdownOpen && (
+                  <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
+                    {/* Dropdown Header */}
+                    <div className="px-3 py-2 bg-amber-50 border-b border-amber-200 flex items-center justify-between text-[11px] font-black text-amber-950">
+                      <span>รายการ Supplier / โรงงาน ({supplierOptions.length} รายการ)</span>
+                      <button
+                        type="button"
+                        onClick={() => saveSupplierOptions(SUPPLIER_PRESETS)}
+                        className="text-[10px] text-stone-500 hover:text-amber-800 underline font-bold cursor-pointer"
+                        title="รีเซ็ตเป็นค่าเริ่มต้น"
+                      >
+                        รีเซ็ตค่าเริ่มต้น
+                      </button>
+                    </div>
+
+                    {/* Add new button if typed text is not yet in options */}
+                    {isTypedSupplierNew && (
+                      <button
+                        type="button"
+                        onClick={() => handleAddNewSupplier(stockInSupplierName.trim())}
+                        className="w-full text-left px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 border-b border-emerald-300 text-xs font-black text-emerald-950 flex items-center justify-between transition cursor-pointer"
+                      >
+                        <span>➕ เพิ่ม Supplier ใหม่: <strong className="text-emerald-900 underline">"{stockInSupplierName.trim()}"</strong></span>
+                        <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full border border-emerald-400 font-bold">กดเพื่อเพิ่มและบันทึก</span>
+                      </button>
+                    )}
+
+                    {/* List of items */}
+                    <div className="divide-y divide-stone-100">
+                      {filteredSuppliers.length === 0 && !isTypedSupplierNew ? (
+                        <div className="p-4 text-center text-xs text-stone-500 font-bold">
+                          ไม่พบ Supplier ที่ตรงกับ "{stockInSupplierName}"
+                        </div>
+                      ) : (
+                        filteredSuppliers.map((supp) => {
+                          const isSelected = stockInSupplierName === supp;
+                          return (
+                            <div
+                              key={supp}
+                              className={`px-3 py-2 text-xs font-black transition flex items-center justify-between group ${
+                                isSelected ? 'bg-amber-100 text-amber-950' : 'text-stone-900 hover:bg-stone-50'
+                              }`}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setStockInSupplierName(supp);
+                                  setIsSupplierDropdownOpen(false);
+                                }}
+                                className="flex-1 text-left flex items-center justify-between pr-2 cursor-pointer truncate"
+                              >
+                                <span className="truncate">{supp}</span>
+                                {isSelected && (
+                                  <span className="text-amber-800 text-[11px] font-black shrink-0 ml-1.5">✓ เลือกอยู่</span>
+                                )}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteSupplier(supp);
+                                }}
+                                className="p-1 hover:bg-red-100 text-stone-400 hover:text-red-600 rounded transition cursor-pointer opacity-70 group-hover:opacity-100"
+                                title={`ลบ "${supp}" ออกจากตัวเลือก`}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Quick chips below */}
+                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                  <span className="text-[11px] font-black text-stone-600">ตัวเลือกด่วน:</span>
+                  {supplierOptions.slice(0, 5).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => {
+                        setStockInSupplierName(s);
+                        setIsSupplierDropdownOpen(false);
+                      }}
+                      className={`px-2 py-0.5 rounded-lg text-[10px] font-black border transition cursor-pointer ${
+                        stockInSupplierName === s
+                          ? 'bg-amber-200 border-amber-400 text-amber-950 shadow-xs'
+                          : 'bg-stone-100 hover:bg-stone-200 border-stone-300 text-stone-700'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
                 </div>
               </div>
 
               <div>
-                <label className="block text-stone-950 font-black mb-1">ชื่อ Supplier / โรงงานที่รับมา *</label>
-                <input
-                  type="text"
-                  list="supplier-preset-list"
-                  required
-                  value={stockInSupplierName}
-                  onChange={(e) => setStockInSupplierName(e.target.value)}
-                  placeholder="เช่น โรงงานอาบายะห์ดูไบ"
-                  className="w-full bg-white border-2 border-stone-400 rounded-xl p-3 text-stone-950 font-black text-sm focus:outline-none focus:border-amber-500"
-                />
-                <datalist id="supplier-preset-list">
-                  {SUPPLIER_PRESETS.map((s) => (
-                    <option key={s} value={s} />
-                  ))}
-                </datalist>
-              </div>
-
-              <div>
-                <label className="block text-stone-950 font-black mb-1">หมายเหตุ / เลขที่ใบส่งของ (Optional)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-stone-950 font-black">หมายเหตุ / เลขที่ใบส่งของ (Optional)</label>
+                  <VoiceInputButton
+                    onTranscript={(text) => setStockInNote(text)}
+                    className="scale-90"
+                    title="พูดพิมพ์หมายเหตุ"
+                  />
+                </div>
                 <input
                   type="text"
                   value={stockInNote}
