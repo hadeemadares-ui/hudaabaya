@@ -12,6 +12,7 @@ interface VoiceInputButtonProps {
   title?: string;
   mode?: 'replace' | 'append';
   currentValue?: string | number;
+  iconOnly?: boolean;
 }
 
 export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
@@ -22,6 +23,7 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
   title = 'กดพูดแทนการพิมพ์ (พูดตัวเลข เช่น 1250 หรือ หกร้อยห้าสิบ)',
   mode = 'replace',
   currentValue = '',
+  iconOnly = false,
 }) => {
   const [isListening, setIsListening] = useState(false);
 
@@ -97,15 +99,15 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
     <button
       type="button"
       onClick={startListening}
-      className={`px-2 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer shrink-0 ${
+      className={`${iconOnly ? 'p-1.5 rounded-lg' : 'px-2 py-1 rounded-lg text-[11px]'} font-bold transition flex items-center justify-center gap-1 cursor-pointer shrink-0 ${
         isListening
           ? 'bg-red-600 text-white animate-pulse border border-red-400 shadow-lg shadow-red-500/50'
-          : 'bg-gradient-to-r from-amber-500/20 via-gold-400/20 to-yellow-500/20 text-amber-300 border border-amber-400/50 hover:bg-amber-400 hover:text-stone-950'
+          : 'bg-amber-100 text-amber-950 border border-amber-300 hover:bg-amber-200 hover:text-stone-950'
       } ${className}`}
       title={title}
     >
-      <Mic className={`w-3.5 h-3.5 ${isListening ? 'animate-bounce text-white' : 'text-amber-400'}`} />
-      <span>{isListening ? 'กำลังฟัง...' : 'พูดพิมพ์'}</span>
+      <Mic className={`w-3.5 h-3.5 ${isListening ? 'animate-bounce text-white' : 'text-amber-700'}`} />
+      {!iconOnly && <span>{isListening ? 'กำลังฟัง...' : 'พูดพิมพ์'}</span>}
     </button>
   );
 };

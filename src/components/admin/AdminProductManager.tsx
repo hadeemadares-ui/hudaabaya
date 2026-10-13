@@ -68,7 +68,7 @@ export const AdminProductManager: React.FC = () => {
   const [title, setTitle] = useState('');
   const [arabicTitle, setArabicTitle] = useState('');
   const [category, setCategory] = useState<CategoryType>('abaya');
-  const [categoryInput, setCategoryInput] = useState<string>('ชุดอาบายะห์ (Abaya)');
+  const [categoryInput, setCategoryInput] = useState<string>('');
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
@@ -911,7 +911,7 @@ export const AdminProductManager: React.FC = () => {
     setTitle('');
     setArabicTitle('');
     setCategory('abaya');
-    setCategoryInput(getCategoryLabel('abaya'));
+    setCategoryInput('');
     setDescription('');
     setIsDescriptionDropdownOpen(false);
     setEditingDescIdx(null);
@@ -926,6 +926,11 @@ export const AdminProductManager: React.FC = () => {
     e.preventDefault();
     if (!title.trim()) {
       alert('กรุณากรอก "ชื่อแบบสินค้า" ด้วยครับ');
+      return;
+    }
+
+    if (!categoryInput.trim()) {
+      alert('กรุณาเลือกหรือระบุ "หมวดหมู่สินค้า" ด้วยครับ');
       return;
     }
 
@@ -1665,16 +1670,32 @@ export const AdminProductManager: React.FC = () => {
                           }
                         }}
                         placeholder="คลิกเลือกหมวดหมู่ หรือพิมพ์เพิ่มหมวดหมู่ใหม่..."
-                        className="w-full bg-white border-2 border-stone-400 focus:border-amber-500 rounded-xl p-3 pr-10 text-stone-950 font-black text-sm placeholder-stone-400 focus:outline-none shadow-sm cursor-text"
+                        className="w-full bg-white border-2 border-stone-400 focus:border-amber-500 rounded-xl p-3 pr-16 text-stone-950 font-black text-sm placeholder-stone-400 focus:outline-none shadow-sm cursor-text"
                       />
-                      <button
-                        type="button"
-                        onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-stone-600 hover:text-amber-800 transition cursor-pointer"
-                        title="เปิด/ปิด รายการหมวดหมู่สินค้า"
-                      >
-                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180 text-amber-600' : ''}`} />
-                      </button>
+                      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                        {categoryInput && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCategoryInput('');
+                              setIsCategoryDropdownOpen(true);
+                            }}
+                            className="p-1 text-stone-400 hover:text-stone-800 hover:bg-stone-100 rounded-full transition cursor-pointer"
+                            title="เคลียร์ช่องให้ว่าง"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                          className="p-1.5 text-stone-600 hover:text-amber-800 transition cursor-pointer"
+                          title="เปิด/ปิด รายการหมวดหมู่สินค้า"
+                        >
+                          <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180 text-amber-600' : ''}`} />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Floating Dropdown List with Edit & Delete on each item */}
@@ -2665,60 +2686,80 @@ export const AdminProductManager: React.FC = () => {
                         </p>
                       </div>
                     ) : (
-                      variants.map((v, idx) => (
-                      <div
-                        key={idx}
-                        className="p-4 rounded-2xl border-2 border-stone-300 hover:border-amber-400 shadow-sm space-y-3 transition-all bg-white"
-                      >
-                        <div className="flex items-center justify-between border-b-2 border-amber-400/30 pb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs sm:text-sm font-black text-stone-950 font-serif">
-                              รายการที่ {idx + 1}: {v.name || 'ไซส์/รายการใหม่'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleSaveProductAndOpenStockIn(idx);
-                              }}
-                              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs flex items-center gap-1.5 shadow-md border border-emerald-700 transition cursor-pointer"
-                              title="บันทึกสินค้า และเปิดหน้าบันทึกรับสินค้าเข้าสต๊อก (Stock IN) สำหรับรายการนี้ทันที"
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                              <span>+ บันทึกรับสินค้าเข้า (Stock IN)</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveVariantField(idx)}
-                              className="px-2.5 py-1.5 text-red-950 hover:bg-red-200 bg-red-100 border border-red-400 rounded-xl text-xs font-black transition flex items-center gap-1 shadow-xs cursor-pointer"
-                              title="ลบรายการนี้"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 text-red-700" />
-                              <span>ลบรายการนี้</span>
-                            </button>
-                          </div>
-                        </div>
+                      variants.map((v, idx) => {
+                        const effectiveCost = v.costPrice ?? (v.price ? Math.round(v.price * 0.5) : 0);
+                        const profitPerUnit = v.price > 0 ? (v.price - effectiveCost) : 0;
 
-                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                          
-                          {/* Color / Scent Combobox Field - Widened for full text visibility */}
-                          <div className="sm:col-span-5 space-y-1 relative" data-color-dropdown>
-                            <div className="flex items-center justify-between mb-0.5">
-                              <label className="text-xs text-stone-950 font-black block">
-                                {category === 'perfume' ? 'ตัวเลือกกลิ่น / สี' : 'สีสินค้า (Color)'}
-                              </label>
-                              <VoiceInputButton
-                                onTranscript={(text) => {
-                                  const updated = [...variants];
-                                  updated[idx].color = text;
-                                  setVariants(updated);
-                                  setOpenColorDropdownIdx(idx);
-                                }}
-                                currentValue={v.color || ''}
-                              />
+                        return (
+                        <div
+                          key={idx}
+                          className="p-4 sm:p-5 rounded-2xl border-2 border-stone-300 hover:border-amber-400 shadow-sm space-y-3.5 transition-all bg-stone-50/60 hover:bg-white"
+                        >
+                          <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 border-b-2 border-amber-400/30 pb-3">
+                            <div className="flex items-center gap-2 flex-wrap min-w-0">
+                              <span className="px-2.5 py-1 rounded-xl bg-amber-400 text-stone-950 font-black text-xs font-serif shadow-xs shrink-0">
+                                รายการที่ {idx + 1}
+                              </span>
+                              <span className="text-xs sm:text-sm font-black text-stone-950 font-serif truncate max-w-[200px] sm:max-w-xs" title={v.name || 'ไซส์/รายการใหม่'}>
+                                {v.name || 'ไซส์/รายการใหม่'}
+                              </span>
+                              {v.color && (
+                                <span className="px-2 py-0.5 rounded-lg bg-white text-stone-800 text-[11px] font-black border border-stone-300 shrink-0">
+                                  สี: {v.color}
+                                </span>
+                              )}
+                              {v.price > 0 && (
+                                <span className="px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-950 border border-emerald-300 text-[11px] font-black shrink-0">
+                                  กำไร +฿{profitPerUnit.toLocaleString()}
+                                </span>
+                              )}
                             </div>
+
+                            <div className="flex items-center gap-2 shrink-0 ml-auto">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleSaveProductAndOpenStockIn(idx);
+                                }}
+                                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs flex items-center gap-1.5 shadow-sm border border-emerald-700 transition cursor-pointer"
+                                title="บันทึกสินค้า และเปิดหน้าบันทึกรับสินค้าเข้าสต๊อก (Stock IN) สำหรับรายการนี้ทันที"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
+                                <span className="whitespace-nowrap">+ บันทึกรับสินค้าเข้า (Stock IN)</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveVariantField(idx)}
+                                className="px-2.5 py-1.5 text-red-950 hover:bg-red-200 bg-red-100 border border-red-300 rounded-xl text-xs font-black transition flex items-center gap-1 shadow-xs cursor-pointer"
+                                title="ลบรายการนี้"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-red-700 shrink-0" />
+                                <span className="whitespace-nowrap">ลบรายการนี้</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3.5 items-start">
+                            
+                            {/* Color / Scent Combobox Field */}
+                            <div className="col-span-1 sm:col-span-1 lg:col-span-4 space-y-1 relative" data-color-dropdown>
+                              <div className="flex items-center justify-between mb-0.5">
+                                <label className="text-xs text-stone-950 font-black block truncate">
+                                  {category === 'perfume' ? 'ตัวเลือกกลิ่น / สี' : 'สีสินค้า (Color)'}
+                                </label>
+                                <VoiceInputButton
+                                  iconOnly={true}
+                                  onTranscript={(text) => {
+                                    const updated = [...variants];
+                                    updated[idx].color = text;
+                                    setVariants(updated);
+                                    setOpenColorDropdownIdx(idx);
+                                  }}
+                                  currentValue={v.color || ''}
+                                  title="พูดระบุสีสินค้า"
+                                />
+                              </div>
 
                             <div className="relative">
                               <input
@@ -2923,31 +2964,33 @@ export const AdminProductManager: React.FC = () => {
                             )}
                           </div>
 
-                          {/* Size / Volume Name Field - Expanded for long size labels */}
-                          <div className="sm:col-span-4 space-y-1">
+                          {/* Size / Volume Name Field */}
+                          <div className="col-span-1 sm:col-span-1 lg:col-span-4 space-y-1">
                             <div className="flex items-center justify-between mb-0.5">
                               <label className="text-xs text-stone-950 font-black block truncate">
                                 {category === 'perfume' ? 'ขนาดปริมาณ (ml / ขวด)' : 'ชื่อไซส์ / ความยาว'}
                               </label>
                               <VoiceInputButton
+                                iconOnly={true}
                                 onTranscript={(text) => {
                                   const updated = [...variants];
                                   updated[idx].name = text;
                                   setVariants(updated);
                                 }}
                                 currentValue={v.name}
+                                title="พูดระบุชื่อไซส์หรือความยาว"
                               />
                             </div>
                             <input
                               type="text"
-                              placeholder={category === 'perfume' ? 'เช่น ขวดสเปรย์ 50 ml' : 'เช่น Size 52 (ส่วนสูง ~150-155 ซม.)'}
+                              placeholder={category === 'perfume' ? 'เช่น ขวดสเปรย์ 50 ml' : 'เช่น Size 56 (ส่วนสูง ~160-165 ซม. / ยาว 56")'}
                               value={v.name}
                               onChange={(e) => {
                                 const updated = [...variants];
                                 updated[idx].name = e.target.value;
                                 setVariants(updated);
                               }}
-                              className="w-full bg-white border-2 border-stone-400 rounded-xl p-2 text-stone-950 font-black text-xs sm:text-sm focus:outline-none focus:border-amber-500 shadow-inner"
+                              className="w-full bg-white border-2 border-stone-400 focus:border-amber-500 rounded-xl p-2.5 text-stone-950 font-black text-xs sm:text-sm focus:outline-none shadow-sm placeholder-stone-400"
                             />
                             {category === 'perfume' && (
                               <select
@@ -2970,95 +3013,100 @@ export const AdminProductManager: React.FC = () => {
                             )}
                           </div>
 
-                          {/* 2 Compact Numeric Inputs (Price, Cost Price) */}
-                          <div className="sm:col-span-3 grid grid-cols-2 gap-2">
-                            {/* Price Field */}
-                            <div>
-                              <div className="flex items-center justify-between mb-0.5">
-                                <label className="text-[11px] text-stone-950 block font-black truncate" title="ราคาขาย (บาท)">
-                                  ราคาขาย
-                                </label>
-                                <VoiceInputButton
-                                  isNumber={true}
-                                  onNumberTranscript={(num) => {
-                                    const updated = [...variants];
-                                    updated[idx].price = num;
-                                    if (updated[idx].costPrice === undefined || updated[idx].costPrice === 0) {
-                                      updated[idx].costPrice = Math.round(num * 0.5);
-                                    }
-                                    setVariants(updated);
-                                  }}
-                                  onTranscript={() => {}}
-                                />
-                              </div>
-                              <div className="relative">
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  pattern="[0-9]*"
-                                  placeholder="0"
-                                  value={v.price === 0 ? '' : v.price}
-                                  onFocus={(e) => e.target.select()}
-                                  onClick={(e) => (e.target as HTMLInputElement).select()}
-                                  onChange={(e) => {
-                                    const rawVal = e.target.value.replace(/[^0-9]/g, '');
-                                    const cleanVal = rawVal.replace(/^0+(?=\d)/, '');
-                                    const newPrice = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
-                                    const updated = [...variants];
-                                    updated[idx].price = newPrice;
-                                    if (updated[idx].costPrice === undefined || updated[idx].costPrice === 0) {
-                                      updated[idx].costPrice = Math.round(newPrice * 0.5);
-                                    }
-                                    setVariants(updated);
-                                  }}
-                                  className="w-full bg-white border-2 border-stone-400 rounded-xl p-2 pr-5 text-stone-950 font-black font-mono text-xs sm:text-sm text-right shadow-inner focus:ring-2 focus:ring-amber-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                />
-                                <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-stone-400 font-bold pointer-events-none">฿</span>
-                              </div>
+                          {/* Price Field */}
+                          <div className="col-span-1 sm:col-span-1 lg:col-span-2 space-y-1">
+                            <div className="flex items-center justify-between mb-0.5">
+                              <label className="text-xs text-stone-950 font-black flex items-center gap-1 truncate" title="ราคาขาย (บาท)">
+                                <span>ราคาขาย</span>
+                                <span className="text-[10px] text-stone-600 font-bold">(฿)</span>
+                              </label>
+                              <VoiceInputButton
+                                iconOnly={true}
+                                isNumber={true}
+                                onNumberTranscript={(num) => {
+                                  const updated = [...variants];
+                                  updated[idx].price = num;
+                                  if (updated[idx].costPrice === undefined || updated[idx].costPrice === 0) {
+                                    updated[idx].costPrice = Math.round(num * 0.5);
+                                  }
+                                  setVariants(updated);
+                                }}
+                                onTranscript={() => {}}
+                                title="พูดราคาขาย เช่น 1290"
+                              />
                             </div>
-
-                            {/* Cost Price Field - High Visibility Badge Box */}
-                            <div className="bg-amber-50/80 p-1 rounded-xl border border-amber-400 shadow-xs flex flex-col justify-between">
-                              <div className="flex items-center justify-between mb-0.5">
-                                <label className="text-[10px] text-amber-950 block font-black text-center bg-amber-200 rounded px-1 py-0.5 border border-amber-400 truncate" title="ต้นทุน (บาท)">
-                                  ต้นทุน
-                                </label>
-                                <VoiceInputButton
-                                  isNumber={true}
-                                  onNumberTranscript={(num) => {
-                                    const updated = [...variants];
-                                    updated[idx].costPrice = num;
-                                    setVariants(updated);
-                                  }}
-                                  onTranscript={() => {}}
-                                />
-                              </div>
-                              <div className="relative">
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  pattern="[0-9]*"
-                                  placeholder="0"
-                                  value={v.costPrice === 0 ? '' : (v.costPrice ?? (v.price ? Math.round(v.price * 0.5) : 0))}
-                                  onFocus={(e) => e.target.select()}
-                                  onClick={(e) => (e.target as HTMLInputElement).select()}
-                                  onChange={(e) => {
-                                    const rawVal = e.target.value.replace(/[^0-9]/g, '');
-                                    const cleanVal = rawVal.replace(/^0+(?=\d)/, '');
-                                    const newCost = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
-                                    const updated = [...variants];
-                                    updated[idx].costPrice = newCost;
-                                    setVariants(updated);
-                                  }}
-                                  className="w-full bg-white border border-amber-400 rounded-lg p-1.5 pr-5 text-stone-950 font-black font-mono text-xs sm:text-sm text-right shadow-inner focus:ring-2 focus:ring-amber-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                />
-                                <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-amber-800/60 font-bold pointer-events-none">฿</span>
-                              </div>
+                            <div className="relative">
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                placeholder="0"
+                                value={v.price === 0 ? '' : v.price}
+                                onFocus={(e) => e.target.select()}
+                                onClick={(e) => (e.target as HTMLInputElement).select()}
+                                onChange={(e) => {
+                                  const rawVal = e.target.value.replace(/[^0-9]/g, '');
+                                  const cleanVal = rawVal.replace(/^0+(?=\d)/, '');
+                                  const newPrice = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
+                                  const updated = [...variants];
+                                  updated[idx].price = newPrice;
+                                  if (updated[idx].costPrice === undefined || updated[idx].costPrice === 0) {
+                                    updated[idx].costPrice = Math.round(newPrice * 0.5);
+                                  }
+                                  setVariants(updated);
+                                }}
+                                className="w-full bg-white border-2 border-stone-400 focus:border-amber-500 rounded-xl p-2.5 pr-7 text-stone-950 font-black font-mono text-xs sm:text-sm text-right shadow-sm focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+                              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-stone-600 font-black pointer-events-none">฿</span>
                             </div>
                           </div>
+
+                          {/* Cost Price Field */}
+                          <div className="col-span-1 sm:col-span-1 lg:col-span-2 space-y-1">
+                            <div className="flex items-center justify-between mb-0.5">
+                              <label className="text-xs text-amber-950 font-black flex items-center gap-1 truncate" title="ต้นทุนสินค้า (บาท)">
+                                <span>ต้นทุน</span>
+                                <span className="text-[10px] text-amber-800 font-bold">(฿)</span>
+                              </label>
+                              <VoiceInputButton
+                                iconOnly={true}
+                                isNumber={true}
+                                onNumberTranscript={(num) => {
+                                  const updated = [...variants];
+                                  updated[idx].costPrice = num;
+                                  setVariants(updated);
+                                }}
+                                onTranscript={() => {}}
+                                title="พูดต้นทุน เช่น 900"
+                              />
+                            </div>
+                            <div className="relative">
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                placeholder="0"
+                                value={v.costPrice === 0 ? '' : (v.costPrice ?? (v.price ? Math.round(v.price * 0.5) : 0))}
+                                onFocus={(e) => e.target.select()}
+                                onClick={(e) => (e.target as HTMLInputElement).select()}
+                                onChange={(e) => {
+                                  const rawVal = e.target.value.replace(/[^0-9]/g, '');
+                                  const cleanVal = rawVal.replace(/^0+(?=\d)/, '');
+                                  const newCost = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
+                                  const updated = [...variants];
+                                  updated[idx].costPrice = newCost;
+                                  setVariants(updated);
+                                }}
+                                className="w-full bg-amber-50/70 border-2 border-amber-400 focus:border-amber-600 rounded-xl p-2.5 pr-7 text-amber-950 font-black font-mono text-xs sm:text-sm text-right shadow-sm focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+                              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-amber-800 font-black pointer-events-none">฿</span>
+                            </div>
+                          </div>
+
                         </div>
                       </div>
-                    ))
+                    );
+                  })
                   )}
                   </div>
                 </div>

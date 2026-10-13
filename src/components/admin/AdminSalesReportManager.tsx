@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Calendar, TrendingUp, DollarSign, Package, PieChart, Download, ArrowUpRight, ArrowDownRight, Layers, FileSpreadsheet, RefreshCw, Sparkles, Filter, Edit2, Trash2, X, Save, Printer, CheckSquare, Square, Sliders, FileText, Check, ChevronRight } from 'lucide-react';
+import { Calendar, TrendingUp, DollarSign, Package, PieChart, Download, ArrowUpRight, ArrowDownRight, Layers, FileSpreadsheet, RefreshCw, Sparkles, Filter, Edit2, Trash2, X, Save, Printer, CheckSquare, Square, Sliders, FileText, Check, ChevronRight, Lock, KeyRound, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Product, Order, CartItem, CategoryType } from '../../types';
 import { VoiceNumberInput } from '../common/VoiceNumberInput';
+import { VoiceInputButton } from '../common/VoiceInputButton';
 
 export const AdminSalesReportManager: React.FC = () => {
-  const { orders, products, createOrder, deleteOrder, addProduct, updateProduct } = useShop();
+  const { orders, products, createOrder, deleteOrder, addProduct, updateProduct, verifyAdminPasscode } = useShop();
 
   // Filter Mode: 'today' | 'month' | 'year' | 'all' | 'custom'
   const [filterMode, setFilterMode] = useState<'today' | 'month' | 'year' | 'all' | 'custom'>('all');
@@ -438,6 +439,56 @@ export const AdminSalesReportManager: React.FC = () => {
     stockQuantity: number;
   } | null>(null);
 
+  // Admin Password Verification Modal for Deleting Sales & Orders
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
+    type: 'latest_for_product' | 'all_for_product' | 'single_order';
+    title: string;
+    subtitle: string;
+    details: { label: string; value: string; badge?: string }[];
+    warningText?: string;
+    execute: () => void;
+  } | null>(null);
+  const [adminPinInput, setAdminPinInput] = useState<string>('');
+  const [showAdminPin, setShowAdminPin] = useState<boolean>(false);
+  const [pinError, setPinError] = useState<string>('');
+
+  const openAdminDeleteModal = (modalData: {
+    type: 'latest_for_product' | 'all_for_product' | 'single_order';
+    title: string;
+    subtitle: string;
+    details: { label: string; value: string; badge?: string }[];
+    warningText?: string;
+    execute: () => void;
+  }) => {
+    setDeleteConfirmModal(modalData);
+    setAdminPinInput('');
+    setShowAdminPin(false);
+    setPinError('');
+  };
+
+  const handleConfirmAdminPin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deleteConfirmModal) return;
+
+    const trimmedPin = adminPinInput.trim();
+    if (!trimmedPin) {
+      setPinError('กรุณากรอกรหัสผ่าน Admin เพื่อยืนยันการลบ');
+      return;
+    }
+
+    const isValid = verifyAdminPasscode(trimmedPin);
+    if (!isValid) {
+      setPinError('รหัสผ่าน Admin ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+      return;
+    }
+
+    deleteConfirmModal.execute();
+    setDeleteConfirmModal(null);
+    setAdminPinInput('');
+    setPinError('');
+    setShowAdminPin(false);
+  };
+
   // Financial Calculations
   let totalRevenue = 0;
   let totalCost = 0;
@@ -523,19 +574,13 @@ export const AdminSalesReportManager: React.FC = () => {
   const profitMarginPercent = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0.0';
   const productSalesList = Array.from(productSalesMap.values()).sort((a, b) => b.revenue - a.revenue);
 
-  // Delete the latest sales order transaction for a specific product/variant
+  // Delete the latest sales order transaction for a specific product/variant (requires admin passcode)
   const handleDeleteLatestOrderForProduct = (item: {
     productId: string;
     variantId: string;
     productTitle: string;
     variantName: string;
   }) => {
-    const confirmed = window.confirm(
-      `คุณต้องการลบ "ประวัติรายการขายล่าสุด (1 รายการ)" ของสินค้า "${item.productTitle}" (${item.variantName}) ใช่หรือไม่?\n\n*ระบบจะลบออเดอร์ขายล่าสุดออก 1 รายการเพื่อปรับปรุงรายงาน (สินค้าในคลังหลักจะไม่ถูกลบ)`
-    );
-
-    if (!confirmed) return;
-
     // Find the latest order containing this product/variant item
     const matchingOrder = orders.find((o) =>
       o.items.some((i) => {
@@ -554,34 +599,40 @@ export const AdminSalesReportManager: React.FC = () => {
 
         return matchProd && matchVar;
       })
-    );
+    ) || (orders.length > 0 ? orders[0] : null);
 
-    if (matchingOrder) {
-      deleteOrder(matchingOrder.id);
-      alert(`ลบประวัติรายการขายล่าสุด (ออเดอร์ #${matchingOrder.id}) เรียบร้อยแล้ว!`);
-    } else if (orders.length > 0) {
-      // Fallback if matching logic was slightly loose: delete the newest order in system
-      const newestOrder = orders[0];
-      deleteOrder(newestOrder.id);
-      alert(`ลบประวัติรายการขายล่าสุด (ออเดอร์ #${newestOrder.id}) เรียบร้อยแล้ว!`);
-    } else {
+    if (!matchingOrder) {
       alert('ไม่พบรายการออเดอร์ขายในระบบครับ');
+      return;
     }
+
+    openAdminDeleteModal({
+      type: 'latest_for_product',
+      title: 'ยืนยันลบรายการขายล่าสุด (1 รายการ)',
+      subtitle: 'Security Passcode Required - ต้องใส่รหัสผ่าน Admin',
+      details: [
+        { label: 'ประเภทการลบ', value: 'ลบรายการขายล่าสุด 1 รายการ', badge: 'bg-red-100 text-red-950 border-red-300' },
+        { label: 'สินค้า / แบบ', value: item.productTitle },
+        { label: 'ไซส์ / ปริมาณ', value: item.variantName || '-' },
+        { label: 'เลขที่ออเดอร์ที่จะลบ', value: `#${matchingOrder.id}` },
+        { label: 'วันที่ออเดอร์', value: new Date(matchingOrder.createdAt).toLocaleString('th-TH') },
+        { label: 'ยอดขายออเดอร์', value: `฿${matchingOrder.netAmount.toLocaleString()}` },
+      ],
+      warningText: '*ระบบจะลบออเดอร์ขายล่าสุดออก 1 รายการเพื่อปรับปรุงรายงาน (สินค้าในคลังหลักจะไม่ถูกลบ)',
+      execute: () => {
+        deleteOrder(matchingOrder.id);
+        alert(`ลบประวัติรายการขายล่าสุด (ออเดอร์ #${matchingOrder.id}) เรียบร้อยแล้ว!`);
+      },
+    });
   };
 
-  // Delete all order history records for a specific product/variant
+  // Delete all order history records for a specific product/variant (requires admin passcode)
   const handleDeleteAllProductSalesHistory = (item: {
     productId: string;
     variantId: string;
     productTitle: string;
     variantName: string;
   }) => {
-    const confirmed = window.confirm(
-      `คุณต้องการลบ "ประวัติรายการขายทั้งหมด" ของสินค้า "${item.productTitle}" (${item.variantName}) ออกจากรายงานใช่หรือไม่?\n\n*หมายเหตุ: สินค้าในคลัง (Product Catalog) จะยังคงอยู่ตามปกติ 100%`
-    );
-
-    if (!confirmed) return;
-
     const matchingOrders = orders.filter((o) =>
       o.items.some((i) => {
         const matchProd =
@@ -601,17 +652,53 @@ export const AdminSalesReportManager: React.FC = () => {
       })
     );
 
-    if (matchingOrders.length > 0) {
-      matchingOrders.forEach((o) => deleteOrder(o.id));
-      alert(`ลบประวัติรายการขายทั้งหมดของ "${item.productTitle}" ออกจากรายงานเรียบร้อยแล้วครับ!`);
-    } else if (orders.length > 0) {
-      // Fallback: Delete latest order
-      const newestOrder = orders[0];
-      deleteOrder(newestOrder.id);
-      alert(`ลบประวัติรายการขายล่าสุด (ออเดอร์ #${newestOrder.id}) เรียบร้อยแล้ว!`);
-    } else {
+    const ordersToDelete = matchingOrders.length > 0 ? matchingOrders : (orders.length > 0 ? [orders[0]] : []);
+
+    if (ordersToDelete.length === 0) {
       alert('ไม่พบประวัติรายการขายของสินค้านี้ในระบบครับ');
+      return;
     }
+
+    openAdminDeleteModal({
+      type: 'all_for_product',
+      title: 'ยืนยันลบประวัติรายการขายทั้งหมด',
+      subtitle: 'Security Passcode Required - ต้องใส่รหัสผ่าน Admin',
+      details: [
+        { label: 'ประเภทการลบ', value: 'ลบประวัติขายทั้งหมดของสินค้านี้', badge: 'bg-red-100 text-red-950 border-red-300' },
+        { label: 'สินค้า / แบบ', value: item.productTitle },
+        { label: 'ไซส์ / ปริมาณ', value: item.variantName || '-' },
+        { label: 'จำนวนออเดอร์ที่ถูกลบ', value: `${ordersToDelete.length} รายการ` },
+      ],
+      warningText: '*หมายเหตุ: สินค้าในคลังหลัก (Product Catalog) จะยังคงอยู่ตามปกติ 100%',
+      execute: () => {
+        ordersToDelete.forEach((o) => deleteOrder(o.id));
+        alert(`ลบประวัติรายการขายทั้งหมด (${ordersToDelete.length} รายการ) ของ "${item.productTitle}" เรียบร้อยแล้วครับ!`);
+      },
+    });
+  };
+
+  // Delete single specific order from recent orders table (requires admin passcode)
+  const handleDeleteSpecificOrder = (o: Order) => {
+    const itemsStr = o.items.map((it) => `${it.productTitle} (${it.variantName}) x${it.quantity}`).join(', ');
+
+    openAdminDeleteModal({
+      type: 'single_order',
+      title: 'ยืนยันลบรายการคำสั่งซื้อ & ใบเสร็จ',
+      subtitle: 'Security Passcode Required - ต้องใส่รหัสผ่าน Admin',
+      details: [
+        { label: 'ประเภทการลบ', value: 'ลบคำสั่งซื้อขาย', badge: 'bg-red-100 text-red-950 border-red-300' },
+        { label: 'เลขที่ออเดอร์ (ID)', value: `#${o.id}` },
+        { label: 'วันที่ / เวลา', value: new Date(o.createdAt).toLocaleString('th-TH') },
+        { label: 'ลูกค้า', value: `${o.customerName || 'ลูกค้าหน้าร้าน'}${o.customerPhone ? ` (${o.customerPhone})` : ''}` },
+        { label: 'รายการสินค้า', value: itemsStr },
+        { label: 'ยอดขายสุทธิ', value: `฿${o.netAmount.toLocaleString()} (${o.paymentMethod || 'เงินสด'})` },
+      ],
+      warningText: '*คำเตือน: ข้อมูลคำสั่งซื้อและประวัติการชำระเงินของออเดอร์นี้จะถูกลบออกจากระบบอย่างถาวร',
+      execute: () => {
+        deleteOrder(o.id);
+        alert(`ลบออเดอร์ #${o.id} เรียบร้อยแล้ว!`);
+      },
+    });
   };
 
   // Open Edit Product Modal from Sales Report table
@@ -1307,14 +1394,9 @@ export const AdminSalesReportManager: React.FC = () => {
                       </td>
                       <td className="p-3 text-center">
                         <button
-                          onClick={() => {
-                            if (window.confirm(`คุณต้องการลบรายการออเดอร์ #${o.id} ออกจากระบบใช่หรือไม่?`)) {
-                              deleteOrder(o.id);
-                              alert(`ลบออเดอร์ #${o.id} เรียบร้อยแล้ว!`);
-                            }
-                          }}
+                          onClick={() => handleDeleteSpecificOrder(o)}
                           className="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-950 border border-red-400 rounded-lg text-[11px] font-black flex items-center gap-1 transition mx-auto cursor-pointer"
-                          title="ลบรายการออเดอร์นี้ออกจากระบบ"
+                          title="ลบรายการออเดอร์นี้ออกจากระบบ (ต้องใส่รหัส Admin)"
                         >
                           <Trash2 className="w-3.5 h-3.5 text-red-700" />
                           <span>ลบออเดอร์นี้</span>
@@ -1328,6 +1410,154 @@ export const AdminSalesReportManager: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Admin Passcode Confirmation Modal for All Deletions */}
+      {deleteConfirmModal && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white border-2 border-red-500 rounded-3xl max-w-md w-full p-5 sm:p-6 text-stone-950 shadow-2xl space-y-4 text-left animate-scale-up">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center border-b-2 border-red-200 pb-3">
+              <div className="flex items-center gap-2.5 text-red-600">
+                <div className="p-2 bg-red-100 rounded-xl border border-red-300">
+                  <Lock className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-black text-base text-stone-950">
+                    {deleteConfirmModal.title}
+                  </h3>
+                  <span className="text-[10px] text-red-600 font-extrabold block">
+                    {deleteConfirmModal.subtitle}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteConfirmModal(null);
+                  setAdminPinInput('');
+                  setPinError('');
+                }}
+                className="text-stone-500 hover:text-stone-950 p-1.5 rounded-full border border-stone-300 hover:bg-stone-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Details Card */}
+            <div className="bg-red-50/70 border border-red-200 rounded-2xl p-4 text-xs space-y-2">
+              {deleteConfirmModal.details.map((d, i) => (
+                <div key={i} className={`flex items-start justify-between gap-2 ${i > 0 ? 'border-t border-red-200/60 pt-1.5' : ''}`}>
+                  <span className="text-stone-600 font-bold shrink-0">{d.label}:</span>
+                  <div className="text-right">
+                    {d.badge ? (
+                      <span className={`px-2 py-0.5 rounded-lg border font-black text-[11px] inline-block ${d.badge}`}>
+                        {d.value}
+                      </span>
+                    ) : (
+                      <span className="font-black text-stone-950 block max-w-[240px] truncate" title={d.value}>
+                        {d.value}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {deleteConfirmModal.warningText && (
+              <p className="text-[11px] text-amber-900 bg-amber-50 p-2.5 rounded-xl border border-amber-200 font-bold">
+                {deleteConfirmModal.warningText}
+              </p>
+            )}
+
+            {/* Admin Password Form */}
+            <form onSubmit={handleConfirmAdminPin} className="space-y-3 pt-1">
+              <div>
+                <label className="block text-stone-950 font-black mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <KeyRound className="w-4 h-4 text-red-600" />
+                    <span>ใส่รหัสผ่าน Admin เพื่อยืนยันการลบ *</span>
+                  </span>
+                  <span className="text-[10px] text-stone-500 font-bold">
+                    (รหัสเริ่มต้น: 1077)
+                  </span>
+                </label>
+
+                <div className="relative flex items-center">
+                  <input
+                    type={showAdminPin ? 'text' : 'password'}
+                    required
+                    autoFocus
+                    value={adminPinInput}
+                    onChange={(e) => {
+                      setAdminPinInput(e.target.value);
+                      setPinError('');
+                    }}
+                    placeholder="กรอกรหัส Admin เช่น 1077"
+                    className="w-full bg-white border-2 border-red-400 rounded-xl p-3 pr-20 text-stone-950 font-mono font-black text-center text-lg tracking-widest focus:outline-none focus:border-red-600 shadow-inner"
+                  />
+
+                  <div className="absolute right-2 flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminPin((prev) => !prev)}
+                      className="p-1.5 text-stone-500 hover:text-stone-950 rounded-lg cursor-pointer"
+                      title={showAdminPin ? 'ซ่อนรหัส' : 'แสดงรหัส'}
+                    >
+                      {showAdminPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                    <VoiceInputButton
+                      isNumber={true}
+                      onTranscript={(text) => {
+                        const num = text.replace(/[^0-9]/g, '');
+                        if (num) {
+                          setAdminPinInput(num);
+                          setPinError('');
+                        }
+                      }}
+                      onNumberTranscript={(num) => {
+                        setAdminPinInput(String(num));
+                        setPinError('');
+                      }}
+                      className="scale-90"
+                      title="พูดรหัสผ่าน Admin"
+                    />
+                  </div>
+                </div>
+
+                {pinError && (
+                  <p className="text-xs font-black text-red-600 mt-1.5 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{pinError}</span>
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteConfirmModal(null);
+                    setAdminPinInput('');
+                    setPinError('');
+                  }}
+                  className="px-4 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-950 font-black rounded-xl text-xs transition cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer border border-red-700"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>ยืนยันลบรายการ</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Edit Product Modal for Sales Report Table */}
       {editingProduct && (
