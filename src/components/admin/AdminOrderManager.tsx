@@ -1,16 +1,47 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Package, Truck, CheckCircle, Clock, Eye, Edit3, X, ExternalLink, ShieldCheck, Trash2 } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, Eye, EyeOff, Edit3, X, ExternalLink, ShieldCheck, Trash2, Lock, KeyRound, AlertCircle } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Order } from '../../types';
+import { VoiceInputButton } from '../common/VoiceInputButton';
 
 export const AdminOrderManager: React.FC = () => {
-  const { orders, updateOrderStatus, updateOrderPaymentStatus, deleteOrder } = useShop();
+  const { orders, updateOrderStatus, updateOrderPaymentStatus, deleteOrder, verifyAdminPasscode } = useShop();
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [trackingInput, setTrackingInput] = useState('');
   const [courierInput, setCourierInput] = useState('Flash Express');
+
+  // Admin PIN verification modal for deleting order
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+  const [adminPinInput, setAdminPinInput] = useState('');
+  const [showAdminPin, setShowAdminPin] = useState(false);
+  const [pinError, setPinError] = useState('');
+
+  const handleConfirmDeleteOrder = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!orderToDelete) return;
+
+    const trimmedPin = adminPinInput.trim();
+    if (!trimmedPin) {
+      setPinError('กรุณากรอกรหัสผ่าน Admin เพื่อยืนยันการลบ');
+      return;
+    }
+
+    const isValid = verifyAdminPasscode(trimmedPin);
+    if (!isValid) {
+      setPinError('รหัสผ่าน Admin ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+      return;
+    }
+
+    deleteOrder(orderToDelete.id);
+    alert(`ลบคำสั่งซื้อ #${orderToDelete.id} เรียบร้อยแล้ว!`);
+    setOrderToDelete(null);
+    setAdminPinInput('');
+    setPinError('');
+    setShowAdminPin(false);
+  };
 
   const handleUpdateTracking = (orderId: string) => {
     if (!trackingInput.trim()) {
@@ -131,12 +162,13 @@ export const AdminOrderManager: React.FC = () => {
                         </button>
                         <button
                           onClick={() => {
-                            if (confirm(`คุณต้องการลบคำสั่งซื้อ #${order.id} ออกจากระบบใช่หรือไม่?\n\n*หมายเหตุ: ข้อมูลสินค้าในคลัง (Product Catalog) จะยังคงอยู่ตามปกติไม่ถูกลบ`)) {
-                              deleteOrder(order.id);
-                            }
+                            setOrderToDelete(order);
+                            setAdminPinInput('');
+                            setShowAdminPin(false);
+                            setPinError('');
                           }}
                           className="p-2 bg-red-950 border-2 border-red-600/70 text-red-200 hover:text-white rounded-xl text-xs transition cursor-pointer"
-                          title="ลบเฉพาะคำสั่งซื้อนี้ออกจากระบบ (ไม่กระทบสินค้าในคลัง)"
+                          title="ลบเฉพาะคำสั่งซื้อนี้ออกจากระบบ (ต้องใส่รหัส Admin)"
                         >
                           <Trash2 className="w-4 h-4 text-red-400" />
                         </button>
@@ -278,6 +310,157 @@ export const AdminOrderManager: React.FC = () => {
                 ปิดหน้าต่าง
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Passcode Verification Modal for Deleting Order */}
+      {orderToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white border-2 border-red-500 rounded-3xl max-w-md w-full p-5 sm:p-6 text-stone-950 shadow-2xl space-y-4 text-left animate-scale-up">
+            <div className="flex justify-between items-center border-b-2 border-red-200 pb-3">
+              <div className="flex items-center gap-2.5 text-red-600">
+                <div className="p-2 bg-red-100 rounded-xl border border-red-300">
+                  <Lock className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-black text-base text-stone-950">
+                    ยืนยันลบคำสั่งซื้อ (ต้องใส่รหัส Admin)
+                  </h3>
+                  <span className="text-[10px] text-red-600 font-extrabold block">
+                    Security Passcode Required
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setOrderToDelete(null);
+                  setAdminPinInput('');
+                  setPinError('');
+                }}
+                className="text-stone-500 hover:text-stone-950 p-1.5 rounded-full border border-stone-300 hover:bg-stone-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Details Preview Card */}
+            <div className="bg-red-50/70 border border-red-200 rounded-2xl p-4 text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-stone-600 font-bold">เลขที่ออเดอร์ (ID):</span>
+                <span className="font-black text-amber-950 font-mono text-sm">#{orderToDelete.id}</span>
+              </div>
+              <div className="flex items-center justify-between border-t border-red-200/60 pt-1.5">
+                <span className="text-stone-600 font-bold">วันที่ / เวลา:</span>
+                <span className="font-bold text-stone-900">{new Date(orderToDelete.createdAt).toLocaleString('th-TH')}</span>
+              </div>
+              <div className="flex items-center justify-between border-t border-red-200/60 pt-1.5">
+                <span className="text-stone-600 font-bold">ลูกค้า:</span>
+                <span className="font-black text-stone-950">{orderToDelete.customerName || 'ลูกค้าหน้าร้าน'}</span>
+              </div>
+              <div className="flex items-start justify-between gap-2 border-t border-red-200/60 pt-1.5">
+                <span className="text-stone-600 font-bold shrink-0">รายการสินค้า:</span>
+                <span className="font-bold text-stone-900 text-right truncate max-w-[200px]" title={orderToDelete.items.map((it) => `${it.productTitle} (${it.variantName}) x${it.quantity}`).join(', ')}>
+                  {orderToDelete.items.map((it) => `${it.productTitle} (${it.variantName}) x${it.quantity}`).join(', ')}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-t border-red-200/60 pt-1.5">
+                <span className="text-stone-600 font-bold">ยอดขายสุทธิ:</span>
+                <span className="font-black text-amber-900 text-sm font-serif">฿{orderToDelete.netAmount.toLocaleString()} ({orderToDelete.paymentMethod || 'เงินสด'})</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-amber-900 bg-amber-50 p-2.5 rounded-xl border border-amber-200 font-bold">
+              *คำเตือน: ข้อมูลคำสั่งซื้อและประวัติการชำระเงินของออเดอร์นี้จะถูกลบออกจากระบบอย่างถาวร (ไม่กระทบสินค้าในคลัง)
+            </p>
+
+            {/* Admin Password Form */}
+            <form onSubmit={handleConfirmDeleteOrder} className="space-y-3 pt-1">
+              <div>
+                <label className="block text-stone-950 font-black mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <KeyRound className="w-4 h-4 text-red-600" />
+                    <span>ใส่รหัสผ่าน Admin เพื่อยืนยันการลบ *</span>
+                  </span>
+                  <span className="text-[10px] text-stone-500 font-bold">
+                    (รหัสเริ่มต้น: 1077)
+                  </span>
+                </label>
+
+                <div className="relative flex items-center">
+                  <input
+                    type={showAdminPin ? 'text' : 'password'}
+                    required
+                    autoFocus
+                    value={adminPinInput}
+                    onChange={(e) => {
+                      setAdminPinInput(e.target.value);
+                      setPinError('');
+                    }}
+                    placeholder="กรอกรหัส Admin เช่น 1077"
+                    className="w-full bg-white border-2 border-red-400 rounded-xl p-3 pr-20 text-stone-950 font-mono font-black text-center text-lg tracking-widest focus:outline-none focus:border-red-600 shadow-inner"
+                  />
+
+                  <div className="absolute right-2 flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminPin((prev) => !prev)}
+                      className="p-1.5 text-stone-500 hover:text-stone-950 rounded-lg cursor-pointer"
+                      title={showAdminPin ? 'ซ่อนรหัส' : 'แสดงรหัส'}
+                    >
+                      {showAdminPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                    <VoiceInputButton
+                      isNumber={true}
+                      onTranscript={(text) => {
+                        const num = text.replace(/[^0-9]/g, '');
+                        if (num) {
+                          setAdminPinInput(num);
+                          setPinError('');
+                        }
+                      }}
+                      onNumberTranscript={(num) => {
+                        setAdminPinInput(String(num));
+                        setPinError('');
+                      }}
+                      className="scale-90"
+                      title="พูดรหัสผ่าน Admin"
+                    />
+                  </div>
+                </div>
+
+                {pinError && (
+                  <p className="text-xs font-black text-red-600 mt-1.5 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{pinError}</span>
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOrderToDelete(null);
+                    setAdminPinInput('');
+                    setPinError('');
+                  }}
+                  className="px-4 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-950 font-black rounded-xl text-xs transition cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer border border-red-700"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>ยืนยันลบคำสั่งซื้อ</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
