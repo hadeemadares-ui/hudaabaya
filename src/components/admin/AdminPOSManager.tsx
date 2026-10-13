@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Search, Plus, Minus, Trash2, QrCode, CreditCard, Banknote, Printer, CheckCircle, Sparkles, Layers, RotateCcw, Box, User, Phone, DollarSign, Receipt, Check, ZoomIn, Eye, Maximize2, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ShoppingBag, Search, Plus, Minus, Trash2, QrCode, CreditCard, Banknote, Printer, CheckCircle, Sparkles, Layers, RotateCcw, Box, User, Phone, DollarSign, Receipt, Check, ZoomIn, Eye, Maximize2, X, Upload, Camera, Image as ImageIcon } from 'lucide-react';
 import QRCode from 'qrcode';
 import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CartItem, Order } from '../../types';
@@ -22,6 +22,55 @@ export const AdminPOSManager: React.FC = () => {
   const [customerPhone, setCustomerPhone] = useState<string>('000-000-0000');
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [completedPOSOrder, setCompletedPOSOrder] = useState<Order | null>(null);
+
+  // POS Slip / Payment Proof Image Attachment State
+  const [posSlipImage, setPosSlipImage] = useState<string>('');
+  const [previewSlipModalUrl, setPreviewSlipModalUrl] = useState<string | null>(null);
+  const slipFileInputRef = useRef<HTMLInputElement>(null);
+  const slipCameraInputRef = useRef<HTMLInputElement>(null);
+
+  // Client-side image compression for POS slip
+  const handleSlipFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 12 * 1024 * 1024) {
+        alert('ไฟล์รูปภาพมีขนาดใหญ่เกิน 12MB กรุณาเลือกไฟล์ที่มีขนาดเล็กลงค่ะ');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const rawBase64 = event.target?.result as string;
+        const img = new Image();
+        img.src = rawBase64;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 1200;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.82);
+          setPosSlipImage(compressed);
+        };
+        img.onerror = () => {
+          setPosSlipImage(rawBase64);
+        };
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
 
   // Full Image View Modal State
   const [previewImageProduct, setPreviewImageProduct] = useState<Product | null>(null);
@@ -164,6 +213,7 @@ export const AdminPOSManager: React.FC = () => {
       netAmount,
       paymentMethod: pm,
       paymentStatus: 'paid',
+      slipImage: posSlipImage || undefined,
       orderStatus: 'delivered',
     });
 
@@ -174,6 +224,7 @@ export const AdminPOSManager: React.FC = () => {
     setPosCart([]);
     setDiscountInput(0);
     setCashReceived('');
+    setPosSlipImage('');
     setCompletedPOSOrder(null);
   };
 
@@ -690,6 +741,119 @@ export const AdminPOSManager: React.FC = () => {
               )}
             </div>
 
+            {/* Payment Slip / Proof Image Attachment (ถ่ายภาพ หรือ แนบไฟล์ภาพ) */}
+            <div className="space-y-1.5 pt-2 border-t border-stone-200">
+              <div className="flex items-center justify-between">
+                <label className="text-stone-950 font-black text-xs flex items-center gap-1.5">
+                  <ImageIcon className="w-4 h-4 text-amber-700" />
+                  <span>หลักฐานการโอน / สลิป (ถ้ามี):</span>
+                </label>
+                {posSlipImage && (
+                  <span className="text-[10px] text-emerald-700 font-black bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                    ✓ แนบสลิปแล้ว
+                  </span>
+                )}
+              </div>
+
+              {/* Hidden file and camera inputs */}
+              <input
+                type="file"
+                ref={slipFileInputRef}
+                accept="image/*"
+                onChange={handleSlipFileUpload}
+                className="hidden"
+              />
+              <input
+                type="file"
+                ref={slipCameraInputRef}
+                accept="image/*"
+                capture="environment"
+                onChange={handleSlipFileUpload}
+                className="hidden"
+              />
+
+              {!posSlipImage ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => slipCameraInputRef.current?.click()}
+                    className="p-2.5 bg-amber-50 hover:bg-amber-100 border-2 border-dashed border-amber-400 rounded-xl text-stone-900 font-black text-xs flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer group"
+                    title="ถ่ายภาพสลิปจากกล้องมือถือ/แท็บเล็ต"
+                  >
+                    <Camera className="w-4 h-4 text-amber-700 group-hover:scale-110 transition" />
+                    <span>📷 ถ่ายภาพสลิป</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => slipFileInputRef.current?.click()}
+                    className="p-2.5 bg-stone-50 hover:bg-stone-100 border-2 border-dashed border-stone-300 rounded-xl text-stone-900 font-black text-xs flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer group"
+                    title="แนบรูปภาพจากไฟล์ภาพ / อัลบั้ม"
+                  >
+                    <Upload className="w-4 h-4 text-stone-700 group-hover:scale-110 transition" />
+                    <span>📁 แนบไฟล์ภาพ</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-2 bg-stone-50 border-2 border-emerald-400 rounded-xl shadow-xs gap-2">
+                  <div className="flex items-center gap-2">
+                    <div
+                      onClick={() => setPreviewSlipModalUrl(posSlipImage)}
+                      className="relative w-12 h-12 rounded-lg overflow-hidden border border-emerald-500 shrink-0 cursor-pointer shadow-xs hover:opacity-90 group bg-stone-200"
+                      title="คลิกเพื่อดูรูปสลิปขนาดเต็ม"
+                    >
+                      <img
+                        src={posSlipImage}
+                        alt="สลิปโอนเงิน"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                        <Eye className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    </div>
+
+                    <div className="text-left space-y-0.5">
+                      <span className="text-xs font-black text-emerald-950 block">
+                        แนบรูปสลิปแล้ว
+                      </span>
+                      <span className="text-[10px] text-stone-500 block font-bold">
+                        รูปบันทึกติดออเดอร์ทันที
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewSlipModalUrl(posSlipImage)}
+                      className="px-2 py-1 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-lg text-xs font-black border border-stone-300 transition flex items-center gap-1 cursor-pointer"
+                      title="ดูรูปขนาดเต็ม"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>ดูรูป</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => slipFileInputRef.current?.click()}
+                      className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-lg text-xs font-black border border-amber-400 transition flex items-center gap-1 cursor-pointer"
+                      title="เปลี่ยนรูปภาพใหม่"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>เปลี่ยน</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPosSlipImage('')}
+                      className="p-1 hover:bg-red-100 text-stone-400 hover:text-red-600 rounded-lg transition cursor-pointer"
+                      title="ลบรูปภาพนี้"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Total Summary & Complete Action */}
             <div className="pt-3 border-t-2 border-amber-400/40 space-y-3">
               <div className="flex justify-between items-baseline font-serif">
@@ -896,6 +1060,34 @@ export const AdminPOSManager: React.FC = () => {
                   <span>ชำระโดย: {completedPOSOrder.paymentMethod === 'cod' ? 'เงินสด (Cash)' : completedPOSOrder.paymentMethod}</span>
                   <span>{completedPOSOrder.note}</span>
                 </div>
+
+                {completedPOSOrder.slipImage && (
+                  <div className="pt-2 border-t border-black/20 space-y-1.5 text-left">
+                    <div className="flex items-center justify-between text-[11px] font-bold">
+                      <span className="flex items-center gap-1 text-stone-900 font-sans">
+                        <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>สลิป / หลักฐานการโอนเงิน:</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewSlipModalUrl(completedPOSOrder.slipImage || null)}
+                        className="text-amber-800 underline hover:text-amber-950 font-sans text-xs cursor-pointer font-black"
+                      >
+                        ดูรูปขยาย
+                      </button>
+                    </div>
+                    <div
+                      onClick={() => setPreviewSlipModalUrl(completedPOSOrder.slipImage || null)}
+                      className="max-w-[200px] mx-auto border border-black/30 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition p-1 bg-white shadow-xs"
+                    >
+                      <img
+                        src={completedPOSOrder.slipImage}
+                        alt="สลิปโอนเงิน POS"
+                        className="w-full max-h-40 object-contain rounded mx-auto"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="text-center pt-3 border-t border-black/30 text-[10px] text-gray-600">
@@ -920,6 +1112,40 @@ export const AdminPOSManager: React.FC = () => {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* FULLSCREEN SLIP IMAGE PREVIEW MODAL */}
+      {previewSlipModalUrl && (
+        <div
+          onClick={() => setPreviewSlipModalUrl(null)}
+          className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-lg max-h-[90vh] bg-white p-3 rounded-2xl shadow-2xl flex flex-col items-center"
+          >
+            <div className="w-full flex items-center justify-between pb-2 px-2 border-b border-stone-200">
+              <span className="font-serif font-black text-sm text-stone-900 flex items-center gap-1.5">
+                <ImageIcon className="w-4 h-4 text-emerald-600" />
+                <span>รูปภาพหลักฐานการโอนเงิน / สลิป POS</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setPreviewSlipModalUrl(null)}
+                className="p-1 rounded-full text-stone-600 hover:text-stone-950 hover:bg-stone-100 border border-stone-300 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="overflow-auto max-h-[80vh] p-2">
+              <img
+                src={previewSlipModalUrl}
+                alt="สลิปหลักฐานการโอนเงิน POS"
+                className="max-h-[75vh] w-auto object-contain rounded-xl mx-auto shadow-md"
+              />
+            </div>
           </div>
         </div>
       )}
