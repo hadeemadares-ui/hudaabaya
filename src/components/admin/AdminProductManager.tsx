@@ -552,32 +552,32 @@ export const AdminProductManager: React.FC = () => {
 
   // Standard Dubai Abaya Default Sizes
   const DEFAULT_DUBAI_SIZES = [
-    { name: 'Size 52 (ส่วนสูง ~150-155 ซม. / ยาว 52")', sku: 'HD-ABY-52', price: 0, costPrice: 0, stockQuantity: 999, color: 'สีดำ (Black)' },
-    { name: 'Size 54 (ส่วนสูง ~155-160 ซม. / ยาว 54")', sku: 'HD-ABY-54', price: 0, costPrice: 0, stockQuantity: 999, color: 'สีดำ (Black)' },
-    { name: 'Size 56 (ส่วนสูง ~160-165 ซม. / ยาว 56")', sku: 'HD-ABY-56', price: 0, costPrice: 0, stockQuantity: 999, color: 'สีดำ (Black)' },
-    { name: 'Size 58 (ส่วนสูง ~165-170 ซม. / ยาว 58")', sku: 'HD-ABY-58', price: 0, costPrice: 0, stockQuantity: 999, color: 'สีดำ (Black)' },
-    { name: 'Size 60 (ส่วนสูง ~170-175 ซม. / ยาว 60")', sku: 'HD-ABY-60', price: 0, costPrice: 0, stockQuantity: 999, color: 'สีดำ (Black)' },
+    { name: 'Size 52 (ส่วนสูง ~150-155 ซม. / ยาว 52")', sku: 'HD-ABY-52', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
+    { name: 'Size 54 (ส่วนสูง ~155-160 ซม. / ยาว 54")', sku: 'HD-ABY-54', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
+    { name: 'Size 56 (ส่วนสูง ~160-165 ซม. / ยาว 56")', sku: 'HD-ABY-56', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
+    { name: 'Size 58 (ส่วนสูง ~165-170 ซม. / ยาว 58")', sku: 'HD-ABY-58', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
+    { name: 'Size 60 (ส่วนสูง ~170-175 ซม. / ยาว 60")', sku: 'HD-ABY-60', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
   ];
 
   // Standard Dubai Perfume Default Volumes/Sizes
   const DEFAULT_PERFUME_SIZES = [
-    { name: 'ขวดสเปรย์ 50 ml (EDP Spray)', sku: 'HD-PRF-50ML', price: 0, costPrice: 0, stockQuantity: 999, color: 'กลิ่นดูไบออริจินัล' },
-    { name: 'ขวดสเปรย์ 100 ml (EDP Premium Spray)', sku: 'HD-PRF-100ML', price: 0, costPrice: 0, stockQuantity: 999, color: 'กลิ่นดูไบออริจินัล' },
-    { name: 'ขวดแก้วคริสตัล 12 ml (Attar Pure Oil)', sku: 'HD-PRF-12ML', price: 0, costPrice: 0, stockQuantity: 999, color: 'กลิ่นดูไบออริจินัล' },
-    { name: 'ขวดเทสเตอร์ 3 ml (Sample Tester)', sku: 'HD-PRF-3ML', price: 0, costPrice: 0, stockQuantity: 999, color: 'กลิ่นดูไบออริจินัล' },
+    { name: 'ขวดสเปรย์ 50 ml (EDP Spray)', sku: 'HD-PRF-50ML', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
+    { name: 'ขวดสเปรย์ 100 ml (EDP Premium Spray)', sku: 'HD-PRF-100ML', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
+    { name: 'ขวดแก้วคริสตัล 12 ml (Attar Pure Oil)', sku: 'HD-PRF-12ML', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
+    { name: 'ขวดเทสเตอร์ 3 ml (Sample Tester)', sku: 'HD-PRF-3ML', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
   ];
 
   // Standard Dubai Incense Default Variants
   const DEFAULT_INCENSE_SIZES = [
-    { name: 'ขวด/กระปุก 50g (Standard Bukhoor)', sku: 'HD-INC-50G', price: 0, costPrice: 0, stockQuantity: 999, color: 'ไม้หอมอูดออริจินัล' },
-    { name: 'ขวด/กระปุก 100g (Premium Bukhoor)', sku: 'HD-INC-100G', price: 0, costPrice: 0, stockQuantity: 999, color: 'ไม้หอมอูดออริจินัล' },
-    { name: 'เซ็ตเตาเผาหอม + ถ่านหอมดูไบ', sku: 'HD-INC-SET', price: 0, costPrice: 0, stockQuantity: 999, color: 'สีทอง (Royal Gold)' },
+    { name: 'ขวด/กระปุก 50g (Standard Bukhoor)', sku: 'HD-INC-50G', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
+    { name: 'ขวด/กระปุก 100g (Premium Bukhoor)', sku: 'HD-INC-100G', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
+    { name: 'เซ็ตเตาเผาหอม + ถ่านหอมดูไบ', sku: 'HD-INC-SET', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
   ];
 
   // Standard Other Items Default Variants
   const DEFAULT_OTHER_SIZES = [
-    { name: 'ชิ้น/กล่อง (Standard)', sku: 'HD-OTH-STD', price: 0, costPrice: 0, stockQuantity: 999, color: 'มาตรฐาน' },
-    { name: 'แพ็กสุดคุ้ม (Pack)', sku: 'HD-OTH-PACK', price: 0, costPrice: 0, stockQuantity: 999, color: 'มาตรฐาน' },
+    { name: 'ชิ้น/กล่อง (Standard)', sku: 'HD-OTH-STD', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
+    { name: 'แพ็กสุดคุ้ม (Pack)', sku: 'HD-OTH-PACK', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
   ];
 
   // Size & Color Variants State (เริ่มต้นเป็นค่าว่าง [] เพื่อให้ผู้ใช้กดเลือกเฉพาะขนาดที่ต้องการเอง)
@@ -762,7 +762,7 @@ export const AdminProductManager: React.FC = () => {
         price: 0,
         costPrice: 0,
         stockQuantity: 999,
-        color: category === 'perfume' ? 'กลิ่นดูไบออริจินัล' : category === 'incense' ? 'ไม้หอมอูดออริจินัล' : category === 'other' ? 'มาตรฐาน' : 'สีดำ (Black)',
+        color: '',
       },
     ]);
     if (andSaveOption) {
@@ -779,7 +779,7 @@ export const AdminProductManager: React.FC = () => {
         price: 0, 
         costPrice: 0,
         stockQuantity: 999, 
-        color: category === 'perfume' ? 'กลิ่นดูไบออริจินัล' : category === 'incense' ? 'ไม้หอมอูดออริจินัล' : category === 'other' ? 'มาตรฐาน' : 'สีดำ (Black)' 
+        color: '', 
       },
     ]);
   };
@@ -1930,16 +1930,34 @@ export const AdminProductManager: React.FC = () => {
                                   setVariants(updated);
                                   setOpenColorDropdownIdx(idx);
                                 }}
-                                className="w-full bg-white border-2 border-stone-400 rounded-xl p-2 pr-8 text-stone-950 font-black text-xs sm:text-sm focus:outline-none focus:border-amber-500 shadow-inner"
+                                className="w-full bg-white border-2 border-stone-400 rounded-xl p-2 pr-14 text-stone-950 font-black text-xs sm:text-sm focus:outline-none focus:border-amber-500 shadow-inner"
                               />
-                              <button
-                                type="button"
-                                onClick={() => setOpenColorDropdownIdx(openColorDropdownIdx === idx ? null : idx)}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-stone-600 hover:text-stone-950 transition cursor-pointer"
-                                title="เปิด/ปิดรายการสี/กลิ่น"
-                              >
-                                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${openColorDropdownIdx === idx ? 'rotate-180' : ''}`} />
-                              </button>
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                                {v.color && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const updated = [...variants];
+                                      updated[idx].color = '';
+                                      setVariants(updated);
+                                      setOpenColorDropdownIdx(idx);
+                                    }}
+                                    className="p-1 text-stone-400 hover:text-red-600 rounded-full hover:bg-stone-100 transition cursor-pointer"
+                                    title="เคลียร์ช่องสีให้ว่าง"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenColorDropdownIdx(openColorDropdownIdx === idx ? null : idx)}
+                                  className="p-1 text-stone-600 hover:text-stone-950 transition cursor-pointer"
+                                  title="เปิด/ปิดรายการสี/กลิ่น"
+                                >
+                                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${openColorDropdownIdx === idx ? 'rotate-180' : ''}`} />
+                                </button>
+                              </div>
                             </div>
 
                             {/* Floating Dropdown for this variant's color */}
@@ -1952,6 +1970,22 @@ export const AdminProductManager: React.FC = () => {
                                   </span>
                                   <span className="text-[10px] text-stone-500 font-normal">✏️ แก้ไข | 🗑️ ลบ</span>
                                 </div>
+
+                                {/* Quick Option to Clear / Leave Blank */}
+                                {v.color && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = [...variants];
+                                      updated[idx].color = '';
+                                      setVariants(updated);
+                                      setOpenColorDropdownIdx(null);
+                                    }}
+                                    className="w-full text-left px-3 py-1.5 text-xs text-stone-600 hover:bg-red-50 hover:text-red-700 font-bold border-b border-stone-200 flex items-center gap-1.5 cursor-pointer transition"
+                                  >
+                                    <span>⚪ ไม่ระบุสี / เคลียร์ช่องให้ว่าง</span>
+                                  </button>
+                                )}
 
                                 {/* Option to Add new typed color if not present */}
                                 {v.color && v.color.trim() && !currentCategoryColorOptions.includes(v.color.trim()) && (
