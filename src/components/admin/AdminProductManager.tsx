@@ -54,7 +54,7 @@ export const AdminProductManager: React.FC = () => {
   const [arabicTitle, setArabicTitle] = useState('');
   const [category, setCategory] = useState<CategoryType>('abaya');
   const [description, setDescription] = useState('');
-  const [fabric, setFabric] = useState('Nida Silk Dubai Original (ผ้านิดาดูไบแท้)');
+  const [fabric, setFabric] = useState('');
   const [imagesList, setImagesList] = useState<string[]>([]);
   const [newImageUrlInput, setNewImageUrlInput] = useState<string>('');
   const [customVariantInput, setCustomVariantInput] = useState<string>('');
@@ -223,18 +223,9 @@ export const AdminProductManager: React.FC = () => {
     { name: string; sku: string; price: number; costPrice?: number; stockQuantity: number; color?: string }[]
   >([]);
 
-  // Handle Category Change (Auto Switch Fabric label, keep variants manual unless preset requested)
+  // Handle Category Change (keep fabric and variants clean for user to choose freely)
   const handleCategoryChange = (newCat: CategoryType) => {
     setCategory(newCat);
-    if (newCat === 'perfume') {
-      setFabric('Oud Oil & Attar Perfume Dubai (หัวน้ำหอมและออยล์ดูไบแท้)');
-    } else if (newCat === 'incense') {
-      setFabric('ไม้หอมอูดดูไบ (Bukhoor Dubai Original)');
-    } else if (newCat === 'other') {
-      setFabric('สินค้าทั่วไป (General Item)');
-    } else {
-      setFabric('Nida Silk Dubai Original (ผ้านิดาดูไบแท้)');
-    }
   };
 
   const handleForceSync = async () => {
@@ -308,7 +299,7 @@ export const AdminProductManager: React.FC = () => {
     setArabicTitle('');
     setCategory('abaya');
     setDescription('');
-    setFabric('Nida Silk Dubai Original (ผ้านิดาดูไบแท้)');
+    setFabric('');
     setImagesList([]);
     setNewImageUrlInput('');
     setVariants([]);
@@ -345,7 +336,7 @@ export const AdminProductManager: React.FC = () => {
       arabicTitle: arabicTitle.trim(),
       category,
       description: description.trim() || 'สินค้าคุณภาพสูง นำเข้าจากเมืองดูไบ UAE แท้ 100%',
-      fabric: fabric.trim() || (category === 'perfume' ? 'Oud Oil & Attar Perfume Dubai' : 'Nida Silk Dubai Original'),
+      fabric: fabric.trim() || '',
       origin: 'เมืองดูไบ, UAE',
       images: finalImages,
       colors: uniqueColors,
