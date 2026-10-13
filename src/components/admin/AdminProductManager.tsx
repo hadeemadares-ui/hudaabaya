@@ -111,6 +111,7 @@ export const AdminProductManager: React.FC = () => {
     { name: 'Size 54 (ส่วนสูง ~155-160 ซม. / ยาว 54")', sku: 'HD-ABY-54', price: 0, costPrice: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
     { name: 'Size 56 (ส่วนสูง ~160-165 ซม. / ยาว 56")', sku: 'HD-ABY-56', price: 0, costPrice: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
     { name: 'Size 58 (ส่วนสูง ~165-170 ซม. / ยาว 58")', sku: 'HD-ABY-58', price: 0, costPrice: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
+    { name: 'Size 60 (ส่วนสูง ~170-175 ซม. / ยาว 60")', sku: 'HD-ABY-60', price: 0, costPrice: 0, stockQuantity: 0, color: 'สีดำ (Black)' },
   ];
 
   // Standard Dubai Perfume Default Volumes/Sizes
@@ -134,26 +135,22 @@ export const AdminProductManager: React.FC = () => {
     { name: 'แพ็กสุดคุ้ม (Pack)', sku: 'HD-OTH-PACK', price: 0, costPrice: 0, stockQuantity: 0, color: 'มาตรฐาน' },
   ];
 
-  // Size & Color Variants State
+  // Size & Color Variants State (เริ่มต้นเป็นค่าว่าง [] เพื่อให้ผู้ใช้กดเลือกเฉพาะขนาดที่ต้องการเอง)
   const [variants, setVariants] = useState<
     { name: string; sku: string; price: number; costPrice?: number; stockQuantity: number; color?: string }[]
-  >(DEFAULT_DUBAI_SIZES);
+  >([]);
 
-  // Handle Category Change (Auto Switch Variants between Abaya Sizes, Perfume, Incense & Others)
+  // Handle Category Change (Auto Switch Fabric label, keep variants manual unless preset requested)
   const handleCategoryChange = (newCat: CategoryType) => {
     setCategory(newCat);
     if (newCat === 'perfume') {
       setFabric('Oud Oil & Attar Perfume Dubai');
-      setVariants(DEFAULT_PERFUME_SIZES);
     } else if (newCat === 'incense') {
       setFabric('เครื่องหอม / ไม้หอมดูไบ (Bukhoor Dubai)');
-      setVariants(DEFAULT_INCENSE_SIZES);
     } else if (newCat === 'other') {
       setFabric('สินค้าทั่วไป (General Item)');
-      setVariants(DEFAULT_OTHER_SIZES);
     } else {
       setFabric('Nida Silk Dubai Original');
-      setVariants(DEFAULT_DUBAI_SIZES);
     }
   };
 
@@ -231,7 +228,7 @@ export const AdminProductManager: React.FC = () => {
     setFabric('Nida Silk Dubai');
     setImagesList([]);
     setNewImageUrlInput('');
-    setVariants(DEFAULT_DUBAI_SIZES);
+    setVariants([]);
     setEditingProduct(null);
   };
 
@@ -955,25 +952,28 @@ export const AdminProductManager: React.FC = () => {
                     </label>
                     
                     <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setVariants([])}
-                        className="px-3 py-1.5 bg-red-100 text-red-950 border border-red-400 rounded-xl text-xs font-black hover:bg-red-200 transition cursor-pointer"
-                        title="ล้างรายการทั้งหมดเพื่อเลือกเฉพาะขนาดที่ต้องการ"
-                      >
-                        ล้างรายการทั้งหมด (เลือกเอง)
-                      </button>
+                      {variants.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setVariants([])}
+                          className="px-3 py-1.5 bg-red-100 text-red-950 border border-red-400 rounded-xl text-xs font-black hover:bg-red-200 transition cursor-pointer"
+                          title="ล้างรายการทั้งหมดเพื่อเลือกเฉพาะขนาดที่ต้องการ"
+                        >
+                          ล้างรายการทั้งหมด
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={handleApplyDefaultPreset}
-                        className="px-3 py-1.5 bg-amber-400 text-stone-950 rounded-xl text-xs font-black shadow hover:bg-amber-300 transition border border-amber-500 cursor-pointer"
+                        className="px-3 py-1.5 bg-stone-100 text-stone-950 border-2 border-stone-300 rounded-xl text-xs font-black shadow-sm hover:bg-amber-100 transition cursor-pointer"
+                        title="คลิกหากต้องการใส่ชุดมาตรฐานทั้งหมดในครั้งเดียว"
                       >
-                        {category === 'perfume' ? 'ปริมาณขวดมาตรฐานน้ำหอม' : 'ไซส์มาตรฐานอาบายะห์ดูไบ'}
+                        {category === 'perfume' ? '⚡ ใส่ทุกปริมาณขวดมาตรฐาน' : '⚡ ใส่ทุกไซส์มาตรฐาน (52-60)'}
                       </button>
                       <button
                         type="button"
                         onClick={handleAddVariantField}
-                        className="px-3 py-1.5 bg-stone-100 text-stone-950 border-2 border-stone-300 rounded-xl text-xs font-black hover:bg-stone-200 transition cursor-pointer"
+                        className="px-3 py-1.5 bg-amber-400 text-stone-950 border border-amber-500 rounded-xl text-xs font-black hover:bg-amber-300 transition cursor-pointer shadow-sm"
                       >
                         {category === 'perfume' ? '+ เพิ่มขนาดขวดอื่น' : '+ เพิ่มไซส์/สีอื่น'}
                       </button>
@@ -1095,7 +1095,14 @@ export const AdminProductManager: React.FC = () => {
                           ? ['กระปุก 50g', 'กระปุก 100g', 'เซ็ตเตาเผา + ถ่านหอม', 'ขนาดมาตรฐาน (Free Size)']
                           : category === 'other'
                           ? ['ชิ้น/กล่อง (Standard)', 'แพ็กสุดคุ้ม (Pack)', 'ขนาดมาตรฐาน (Free Size)']
-                          : ['Size 52 (ส่วนสูง ~150-155 ซม.)', 'Size 54 (ส่วนสูง ~155-160 ซม.)', 'Size 56 (ส่วนสูง ~160-165 ซม.)', 'Size 58 (ส่วนสูง ~165-170 ซม.)', 'Size 60 (ส่วนสูง ~170-175 ซม.)']
+                          : [
+                              'Size 52 (ส่วนสูง ~150-155 ซม.)',
+                              'Size 54 (ส่วนสูง ~155-160 ซม.)',
+                              'Size 56 (ส่วนสูง ~160-165 ซม.)',
+                              'Size 58 (ส่วนสูง ~165-170 ซม.)',
+                              'Size 60 (ส่วนสูง ~170-175 ซม.)',
+                              'Free Size (ฟรีไซส์)',
+                            ]
                         ).map((sz) => (
                           <button
                             key={sz}
@@ -1111,7 +1118,20 @@ export const AdminProductManager: React.FC = () => {
                   </div>
 
                   <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1 no-scrollbar">
-                    {variants.map((v, idx) => (
+                    {variants.length === 0 ? (
+                      <div className="p-8 text-center bg-amber-50/50 rounded-2xl border-2 border-dashed border-amber-400 text-stone-900 space-y-2">
+                        <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-200/80 flex items-center justify-center text-amber-900 text-xl font-black border border-amber-400 shadow-sm">
+                          ✨
+                        </div>
+                        <p className="font-serif font-black text-base text-stone-950">
+                          ยังไม่มีรายการไซส์ / ตัวเลือก
+                        </p>
+                        <p className="text-xs text-stone-700 font-extrabold max-w-md mx-auto leading-relaxed">
+                          คลิกเลือกที่ <span className="text-amber-950 bg-amber-200 px-2 py-0.5 rounded-lg border border-amber-400 font-black">"ปุ่มกดเพิ่มเร็ว"</span> ด้านบน หรือพิมพ์ชื่อไซส์แล้วกด <span className="text-amber-950 bg-amber-200 px-2 py-0.5 rounded-lg border border-amber-400 font-black">+ เพิ่มขนาดนี้</span> เพื่อเพิ่มเฉพาะขนาดที่ต้องการขายได้เลยครับ
+                        </p>
+                      </div>
+                    ) : (
+                      variants.map((v, idx) => (
                       <div
                         key={idx}
                         className={`p-4 rounded-2xl border-2 shadow-md space-y-3 transition-all bg-stone-50 ${
@@ -1348,10 +1368,10 @@ export const AdminProductManager: React.FC = () => {
                               />
                             </div>
                           </div>
-
                         </div>
                       </div>
-                    ))}
+                    ))
+                  )}
                   </div>
                 </div>
               </div>
