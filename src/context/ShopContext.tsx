@@ -21,6 +21,7 @@ import {
   formatSlipUploadMessage,
   formatLowStockMessage,
 } from '../lib/lineNotification';
+import { sortProductsNatural } from '../utils/productUtils';
 
 const DEFAULT_SETTINGS: StoreSettings = {
   storeName: 'HUDA ABAYA DUBAI',
@@ -323,7 +324,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 parsedProds.forEach((p) => {
                   if (!deletedSet.has(p.id)) mergedMap.set(p.id, p);
                 });
-                return Array.from(mergedMap.values()).filter((p) => !deletedSet.has(p.id));
+                return Array.from(mergedMap.values())
+                  .filter((p) => !deletedSet.has(p.id))
+                  .sort(sortProductsNatural);
               });
             } else if (Array.isArray(parsedProds) && parsedProds.length === 0) {
               localStorage.removeItem('huda_products');
@@ -437,7 +440,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         let cleanCloudProds = (cloudProds || []).filter((p) => !deletedSet.has(p.id));
 
         if (cleanCloudProds.length > 0) {
-          cleanCloudProds.sort((a, b) => getTimestampMs(b.updatedAt) - getTimestampMs(a.updatedAt));
+          cleanCloudProds.sort(sortProductsNatural);
           if (typeof window !== 'undefined') {
             localStorage.setItem('huda_products', JSON.stringify(cleanCloudProds));
           }
@@ -457,7 +460,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           const candidate = localBackup.length > 0 ? localBackup : prev;
-          const fallbackProds = candidate.filter((p) => !deletedSet.has(p.id));
+          const fallbackProds = candidate.filter((p) => !deletedSet.has(p.id)).sort(sortProductsNatural);
 
           if (fallbackProds.length > 0) {
             saveCloudProducts(fallbackProds);
@@ -664,7 +667,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const syncedIds = new Set(syncedProducts.map((p) => p.id));
       const nonSyncedExisting = products.filter((p) => !syncedIds.has(p.id));
-      const mergedList = [...syncedProducts, ...nonSyncedExisting];
+      const mergedList = [...syncedProducts, ...nonSyncedExisting].sort(sortProductsNatural);
 
       setProducts(mergedList);
       if (typeof window !== 'undefined') {
@@ -1214,7 +1217,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const timestamped = { ...newProduct, updatedAt: Date.now() };
 
     setProducts((prev) => {
-      const updated = [timestamped, ...prev.filter((p) => p.id !== timestamped.id)];
+      const updated = [timestamped, ...prev.filter((p) => p.id !== timestamped.id)].sort(sortProductsNatural);
       if (typeof window !== 'undefined') {
         localStorage.setItem('huda_products', JSON.stringify(updated));
       }
@@ -1228,7 +1231,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const timestamped = { ...updatedProduct, updatedAt: Date.now() };
 
     setProducts((prev) => {
-      const updated = prev.map((p) => (p.id === timestamped.id ? timestamped : p));
+      const updated = prev.map((p) => (p.id === timestamped.id ? timestamped : p)).sort(sortProductsNatural);
       if (typeof window !== 'undefined') {
         localStorage.setItem('huda_products', JSON.stringify(updated));
       }

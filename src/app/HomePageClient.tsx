@@ -12,23 +12,29 @@ import { AIConciergeModal } from '../components/common/AIConciergeModal';
 import { Hologram3DViewerModal } from '../components/common/Hologram3DViewerModal';
 import { MOCK_REVIEWS } from '../data/mockProducts';
 
+import { sortProductsNatural } from '../utils/productUtils';
+
 export default function HomePageClient() {
   const { products, selectedCategory, searchQuery, isAdminMode, setIsAdminMode, isAdminAuthenticated, setIsAdminLoginModalOpen } = useShop();
 
-  // Filter products by category & search query
-  const filteredProducts = products.filter((product) => {
-    const matchesCategory =
-      selectedCategory === 'all' || product.category === selectedCategory;
+  // Filter products by category & search query, sorted naturally by product code (A001 -> A002 -> ...)
+  const filteredProducts = React.useMemo(() => {
+    return products
+      .filter((product) => {
+        const matchesCategory =
+          selectedCategory === 'all' || product.category === selectedCategory;
 
-    const matchesSearch =
-      !searchQuery ||
-      product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (product.arabicTitle && product.arabicTitle.includes(searchQuery)) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.variants.some((v) => v.name.toLowerCase().includes(searchQuery.toLowerCase()));
+        const matchesSearch =
+          !searchQuery ||
+          product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (product.arabicTitle && product.arabicTitle.includes(searchQuery)) ||
+          product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.variants.some((v) => v.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    return matchesCategory && matchesSearch;
-  });
+        return matchesCategory && matchesSearch;
+      })
+      .sort(sortProductsNatural);
+  }, [products, selectedCategory, searchQuery]);
 
   return (
     <div className="space-y-0 relative bg-[#FAF9F6] text-[#1C1917]">
@@ -66,8 +72,11 @@ export default function HomePageClient() {
                   </h2>
                 </div>
 
-                <div className="text-xs text-stone-900 bg-white px-3.5 py-1.5 rounded-full border border-stone-300 font-bold self-start md:self-auto">
-                  ทั้งหมด <span className="text-amber-900 font-extrabold">{filteredProducts.length}</span> รายการ
+                <div className="text-xs text-stone-900 bg-white px-3.5 py-1.5 rounded-full border border-stone-300 font-bold self-start md:self-auto flex items-center gap-2 shadow-sm">
+                  <span>ทั้งหมด <span className="text-amber-900 font-extrabold">{filteredProducts.length}</span> รายการ</span>
+                  <span className="text-[10px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 font-bold">
+                    เรียงตามรหัสแบบ A001 ➔
+                  </span>
                 </div>
               </div>
 

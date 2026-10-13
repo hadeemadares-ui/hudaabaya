@@ -5,6 +5,7 @@ import { Plus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageI
 import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CategoryType } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
+import { sortProductsNatural } from '../../utils/productUtils';
 
 export interface CategoryOptionItem {
   id: string;
@@ -1169,16 +1170,20 @@ export const AdminProductManager: React.FC = () => {
     setVariants(variants.filter((_, i) => i !== idx));
   };
 
-  // Filter products by category & search in Admin Manager
-  const filteredAdminProducts = products.filter((product) => {
-    const matchesCat =
-      selectedCategory === 'all' || product.category === selectedCategory;
-    const matchesSearch =
-      !adminSearch ||
-      product.title.toLowerCase().includes(adminSearch.toLowerCase()) ||
-      product.description.toLowerCase().includes(adminSearch.toLowerCase());
-    return matchesCat && matchesSearch;
-  });
+  // Filter products by category & search in Admin Manager, sorted naturally by product code (A001 -> A002 -> ...)
+  const filteredAdminProducts = useMemo(() => {
+    return products
+      .filter((product) => {
+        const matchesCat =
+          selectedCategory === 'all' || product.category === selectedCategory;
+        const matchesSearch =
+          !adminSearch ||
+          product.title.toLowerCase().includes(adminSearch.toLowerCase()) ||
+          product.description.toLowerCase().includes(adminSearch.toLowerCase());
+        return matchesCat && matchesSearch;
+      })
+      .sort(sortProductsNatural);
+  }, [products, selectedCategory, adminSearch]);
 
   const categories: { id: CategoryType; label: string }[] = useMemo(() => [
     { id: 'all', label: 'ทั้งหมด (All)' },

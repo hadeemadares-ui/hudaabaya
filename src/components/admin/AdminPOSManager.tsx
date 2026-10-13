@@ -6,6 +6,7 @@ import QRCode from 'qrcode';
 import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CartItem, Order } from '../../types';
 import { DEFAULT_LOGO_BASE64 } from '../../data/logoData';
+import { sortProductsNatural } from '../../utils/productUtils';
 
 export const AdminPOSManager: React.FC = () => {
   const { products, createOrder, formatPrice, storeSettings } = useShop();
@@ -76,15 +77,19 @@ export const AdminPOSManager: React.FC = () => {
   const [previewImageProduct, setPreviewImageProduct] = useState<Product | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
 
-  // Filter products for POS
-  const filteredProducts = products.filter((p) => {
-    const matchCat = selectedCategory === 'all' || p.category === selectedCategory;
-    const matchSearch =
-      !searchQuery ||
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.variants.some((v) => v.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchCat && matchSearch;
-  });
+  // Filter products for POS, sorted naturally by product code (A001 -> A002 -> ...)
+  const filteredProducts = React.useMemo(() => {
+    return products
+      .filter((p) => {
+        const matchCat = selectedCategory === 'all' || p.category === selectedCategory;
+        const matchSearch =
+          !searchQuery ||
+          p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.variants.some((v) => v.name.toLowerCase().includes(searchQuery.toLowerCase()));
+        return matchCat && matchSearch;
+      })
+      .sort(sortProductsNatural);
+  }, [products, selectedCategory, searchQuery]);
 
   // Calculate Subtotal & Totals
   const subtotal = posCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
