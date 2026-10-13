@@ -59,7 +59,7 @@ export const AdminProductManager: React.FC = () => {
   const [newImageUrlInput, setNewImageUrlInput] = useState<string>('');
   const [customVariantInput, setCustomVariantInput] = useState<string>('');
 
-  // Comprehensive Fabric / Material List
+  // Comprehensive Fabric / Material Default List
   const DEFAULT_FABRIC_PRESETS = [
     'Nida Silk Dubai Original (ผ้านิดาดูไบแท้)',
     'Nida Premium (ผ้านิดาพรีเมียม นุ่มทิ้งตัว)',
@@ -76,49 +76,84 @@ export const AdminProductManager: React.FC = () => {
     'สินค้าทั่วไป (General Item)',
   ];
 
-  // Saved Fabrics State (Sync with localStorage)
-  const [customFabrics, setCustomFabrics] = useState<string[]>(() => {
+  // Customizable Fabric Options List (Loaded from localStorage or defaults)
+  const [fabricOptions, setFabricOptions] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem('huda_saved_fabrics');
+        const stored = localStorage.getItem('huda_fabric_options_v2');
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+        // Fallback / migration from earlier saved fabrics
+        const legacyStored = localStorage.getItem('huda_saved_fabrics');
+        if (legacyStored) {
+          const legacyParsed = JSON.parse(legacyStored);
+          if (Array.isArray(legacyParsed)) {
+            const set = new Set<string>([...legacyParsed, ...DEFAULT_FABRIC_PRESETS]);
+            return Array.from(set).filter(Boolean);
+          }
         }
       } catch (err) {
         console.error('Failed to parse saved fabrics:', err);
       }
     }
-    return [];
+    return DEFAULT_FABRIC_PRESETS;
   });
 
-  const allFabricOptions = useMemo(() => {
-    const set = new Set<string>();
-    DEFAULT_FABRIC_PRESETS.forEach((f) => {
-      if (f && f.trim()) set.add(f.trim());
-    });
-    customFabrics.forEach((f) => {
-      if (f && f.trim()) set.add(f.trim());
-    });
-    products.forEach((p) => {
-      if (p.fabric && p.fabric.trim()) set.add(p.fabric.trim());
-    });
-    return Array.from(set).filter(Boolean);
-  }, [customFabrics, products]);
+  // State for inline editing of a fabric option
+  const [editingFabricIdx, setEditingFabricIdx] = useState<number | null>(null);
+  const [editingFabricText, setEditingFabricText] = useState<string>('');
+
+  // Helper to persist fabric options
+  const saveFabricOptions = (newList: string[]) => {
+    setFabricOptions(newList);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('huda_fabric_options_v2', JSON.stringify(newList));
+      } catch (e) {
+        console.error('Error saving fabric options:', e);
+      }
+    }
+  };
 
   const handleAddNewFabricOption = (newFabricName: string) => {
     const trimmed = newFabricName.trim();
     if (!trimmed) return;
-    if (!customFabrics.includes(trimmed)) {
-      const updated = [...customFabrics, trimmed];
-      setCustomFabrics(updated);
-      try {
-        localStorage.setItem('huda_saved_fabrics', JSON.stringify(updated));
-      } catch (e) {
-        console.error('Error saving fabric option:', e);
-      }
+    if (!fabricOptions.includes(trimmed)) {
+      const updated = [trimmed, ...fabricOptions];
+      saveFabricOptions(updated);
     }
     setFabric(trimmed);
+  };
+
+  const handleDeleteFabricOption = (fabricToDelete: string) => {
+    if (confirm(`คุณต้องการลบตัวเลือก "${fabricToDelete}" ออกจากรายการใช่หรือไม่?`)) {
+      const updated = fabricOptions.filter((opt) => opt !== fabricToDelete);
+      saveFabricOptions(updated);
+      if (fabric === fabricToDelete) {
+        setFabric('');
+      }
+    }
+  };
+
+  const handleSaveEditFabricOption = (idx: number, oldName: string) => {
+    const trimmed = editingFabricText.trim();
+    if (!trimmed) return;
+    const updated = [...fabricOptions];
+    updated[idx] = trimmed;
+    saveFabricOptions(updated);
+    if (fabric === oldName) {
+      setFabric(trimmed);
+    }
+    setEditingFabricIdx(null);
+    setEditingFabricText('');
+  };
+
+  const handleResetFabricDefaults = () => {
+    if (confirm('คุณต้องการรีเซ็ตรายการชนิดผ้ากลับเป็นค่ามาตรฐานเริ่มต้นทั้งหมดใช่หรือไม่?')) {
+      saveFabricOptions(DEFAULT_FABRIC_PRESETS);
+    }
   };
 
   // Unified Fabric Dropdown State & Click-Outside Handling
@@ -129,6 +164,7 @@ export const AdminProductManager: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (fabricDropdownRef.current && !fabricDropdownRef.current.contains(event.target as Node)) {
         setIsFabricDropdownOpen(false);
+        setEditingFabricIdx(null);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -136,11 +172,11 @@ export const AdminProductManager: React.FC = () => {
   }, []);
 
   const filteredFabricOptions = useMemo(() => {
-    if (!fabric.trim()) return allFabricOptions;
+    if (!fabric.trim()) return fabricOptions;
     const query = fabric.trim().toLowerCase();
-    const matched = allFabricOptions.filter((opt) => opt.toLowerCase().includes(query));
-    return matched.length > 0 ? matched : allFabricOptions;
-  }, [allFabricOptions, fabric]);
+    const matched = fabricOptions.filter((opt) => opt.toLowerCase().includes(query));
+    return matched.length > 0 ? matched : fabricOptions;
+  }, [fabricOptions, fabric]);
 
   // Comprehensive Color List in Thai (English)
   const PRODUCT_COLOR_PRESETS = [
@@ -910,10 +946,17 @@ export const AdminProductManager: React.FC = () => {
                       </button>
                     </div>
 
-                    {/* Floating Dropdown List in the same field */}
+                    {/* Floating Dropdown List with Edit & Delete on each item */}
                     {isFabricDropdownOpen && (
-                      <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl max-h-60 overflow-y-auto no-scrollbar py-1">
-                        {fabric.trim() && !allFabricOptions.some((opt) => opt.toLowerCase() === fabric.trim().toLowerCase()) && (
+                      <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl max-h-72 overflow-y-auto no-scrollbar py-1">
+                        {/* Header info in dropdown */}
+                        <div className="px-3 py-1.5 bg-stone-100 border-b border-stone-200 flex items-center justify-between text-[11px] font-black text-stone-700">
+                          <span>รายการชนิดผ้า ({fabricOptions.length} ตัวเลือก)</span>
+                          <span className="text-[10px] text-stone-500 font-bold">กด ✏️ แก้ไข หรือ 🗑️ ลบได้อิสระ</span>
+                        </div>
+
+                        {/* Add new button if typed text is not yet in options */}
+                        {fabric.trim() && !fabricOptions.some((opt) => opt.toLowerCase() === fabric.trim().toLowerCase()) && (
                           <button
                             type="button"
                             onClick={() => {
@@ -923,30 +966,118 @@ export const AdminProductManager: React.FC = () => {
                             className="w-full text-left px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 border-b border-amber-300 text-xs font-black text-amber-950 flex items-center justify-between transition cursor-pointer"
                           >
                             <span>➕ เพิ่ม <strong className="text-amber-900 underline">"{fabric.trim()}"</strong> เป็นตัวเลือกใหม่</span>
-                            <span className="text-[10px] bg-amber-200 px-2 py-0.5 rounded-full border border-amber-400 font-bold">บันทึกอัตโนมัติ</span>
+                            <span className="text-[10px] bg-amber-200 px-2 py-0.5 rounded-full border border-amber-400 font-bold">กดเพื่อเพิ่ม</span>
                           </button>
                         )}
 
-                        {filteredFabricOptions.map((opt) => (
+                        {/* List of fabric options */}
+                        <div className="divide-y divide-stone-100">
+                          {filteredFabricOptions.map((opt, idx) => {
+                            const isEditing = editingFabricIdx === idx;
+
+                            if (isEditing) {
+                              return (
+                                <div key={idx} className="p-2 bg-amber-50/90 flex items-center gap-1.5 border-b border-amber-300">
+                                  <input
+                                    type="text"
+                                    value={editingFabricText}
+                                    onChange={(e) => setEditingFabricText(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleSaveEditFabricOption(idx, opt);
+                                      } else if (e.key === 'Escape') {
+                                        setEditingFabricIdx(null);
+                                      }
+                                    }}
+                                    autoFocus
+                                    className="flex-1 bg-white border-2 border-amber-500 rounded-lg px-2.5 py-1 text-xs font-black text-stone-950 focus:outline-none shadow-inner"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSaveEditFabricOption(idx, opt)}
+                                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black shadow transition cursor-pointer"
+                                    title="บันทึกการแก้ไข"
+                                  >
+                                    บันทึก
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingFabricIdx(null)}
+                                    className="px-2 py-1 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-lg text-xs font-black transition cursor-pointer"
+                                    title="ยกเลิก"
+                                  >
+                                    ยกเลิก
+                                  </button>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div
+                                key={opt}
+                                className={`px-3 py-2 text-xs font-black transition flex items-center justify-between group ${
+                                  fabric === opt
+                                    ? 'bg-amber-100 text-amber-950'
+                                    : 'text-stone-900 hover:bg-stone-50'
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setFabric(opt);
+                                    setIsFabricDropdownOpen(false);
+                                  }}
+                                  className="flex-1 text-left flex items-center justify-between pr-2 cursor-pointer truncate"
+                                >
+                                  <span className="truncate">{opt}</span>
+                                  {fabric === opt && (
+                                    <span className="text-amber-800 text-[11px] font-black shrink-0 ml-1.5">✓ เลือกอยู่</span>
+                                  )}
+                                </button>
+
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingFabricIdx(idx);
+                                      setEditingFabricText(opt);
+                                    }}
+                                    className="p-1 hover:bg-amber-200 text-stone-500 hover:text-amber-950 rounded transition cursor-pointer"
+                                    title={`แก้ไขชื่อ "${opt}"`}
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteFabricOption(opt);
+                                    }}
+                                    className="p-1 hover:bg-red-100 text-stone-400 hover:text-red-700 rounded transition cursor-pointer"
+                                    title={`ลบ "${opt}" ออกจากรายการ`}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Footer Reset Button */}
+                        <div className="p-2 border-t border-stone-200 bg-stone-50 flex items-center justify-between text-[11px]">
+                          <span className="text-stone-500 font-bold">จัดการตัวเลือกได้ตามต้องการ</span>
                           <button
-                            key={opt}
                             type="button"
-                            onClick={() => {
-                              setFabric(opt);
-                              setIsFabricDropdownOpen(false);
-                            }}
-                            className={`w-full text-left px-3.5 py-2.5 text-xs font-black transition cursor-pointer flex items-center justify-between ${
-                              fabric === opt
-                                ? 'bg-amber-100 text-amber-950 font-bold'
-                                : 'text-stone-900 hover:bg-stone-100'
-                            }`}
+                            onClick={handleResetFabricDefaults}
+                            className="text-stone-600 hover:text-amber-800 font-bold underline cursor-pointer"
+                            title="คืนค่าตัวเลือกเริ่มต้นของระบบ"
                           >
-                            <span>{opt}</span>
-                            {fabric === opt && (
-                              <span className="text-amber-700 text-xs font-black">✓ เลือกอยู่</span>
-                            )}
+                            ↺ รีเซ็ตรายการมาตรฐาน
                           </button>
-                        ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1556,7 +1687,7 @@ export const AdminProductManager: React.FC = () => {
         ))}
       </datalist>
       <datalist id="fabric-preset-datalist">
-        {allFabricOptions.map((fab) => (
+        {fabricOptions.map((fab) => (
           <option key={fab} value={fab} />
         ))}
       </datalist>
