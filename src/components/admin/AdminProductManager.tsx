@@ -206,15 +206,175 @@ export const AdminProductManager: React.FC = () => {
     }
   };
 
-  // Unified Fabric Dropdown State & Click-Outside Handling
+  // Comprehensive Default Size/Volume Presets Per Category
+  const DEFAULT_CATEGORY_SIZE_PRESETS: Record<string, string[]> = {
+    abaya: [
+      'Size 52 (ส่วนสูง ~150-155 ซม. / ยาว 52")',
+      'Size 54 (ส่วนสูง ~155-160 ซม. / ยาว 54")',
+      'Size 56 (ส่วนสูง ~160-165 ซม. / ยาว 56")',
+      'Size 58 (ส่วนสูง ~165-170 ซม. / ยาว 58")',
+      'Size 60 (ส่วนสูง ~170-175 ซม. / ยาว 60")',
+      'Free Size (ฟรีไซส์)',
+    ],
+    kaftan: [
+      'Free Size (อก 32-46" ยาว 54")',
+      'Size S/M (อก 32-38")',
+      'Size L/XL (อก 40-46")',
+      'Plus Size (อก 48-54")',
+      'ขนาดมาตรฐาน (Free Size)',
+    ],
+    perfume: [
+      'ขวดสเปรย์ 10 ml',
+      'ขวดสเปรย์ 15 ml',
+      'ขวดสเปรย์ 30 ml',
+      'ขวดสเปรย์ 50 ml',
+      'ขวดสเปรย์ 100 ml',
+      'ขวดลูกกลิ้ง 3 ml',
+      'ขวดลูกกลิ้ง 6 ml',
+      'ขวดลูกกลิ้ง 10 ml',
+      'ขวดลูกกลิ้ง 12 ml',
+      'ขวดลูกกลิ้ง 15 ml',
+      'Attar Oil 12 ml',
+      'ขวดแก้วคริสตัล 6 ml',
+      'ขวดแก้วคริสตัล 12 ml',
+      'ขวดเทสเตอร์ 3 ml',
+      'ขวดเทสเตอร์ 5 ml',
+      'ขนาดมาตรฐาน (Free Size)',
+    ],
+    incense: [
+      'กระปุก 50g',
+      'กระปุก 100g',
+      'ไม้หอมอูด 20g',
+      'เซ็ตเตาเผา + ถ่านหอม',
+      'ขนาดมาตรฐาน (Free Size)',
+    ],
+    combo: [
+      'เซ็ต 2 ชิ้น (Set of 2)',
+      'เซ็ต 3 ชิ้น (Set of 3)',
+      'เซ็ตกล่องของขวัญ (Gift Box Set)',
+      'ขนาดมาตรฐาน (Standard Set)',
+    ],
+    other: [
+      'ชิ้น/กล่อง (Standard)',
+      'แพ็กสุดคุ้ม (Pack)',
+      'ขนาดมาตรฐาน (Free Size)',
+    ],
+  };
+
+  // Category-specific Size / Volume Options Map State (Stored in localStorage)
+  const [categorySizeMap, setCategorySizeMap] = useState<Record<string, string[]>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('huda_category_size_map_v1');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed === 'object') return parsed;
+        }
+      } catch (err) {
+        console.error('Failed to parse saved category size map:', err);
+      }
+    }
+    return DEFAULT_CATEGORY_SIZE_PRESETS;
+  });
+
+  const currentCategorySizeOptions = useMemo(() => {
+    return categorySizeMap[activeCategoryKey] || DEFAULT_CATEGORY_SIZE_PRESETS[activeCategoryKey] || [];
+  }, [categorySizeMap, activeCategoryKey]);
+
+  const filteredCategorySizeOptions = useMemo(() => {
+    if (!customVariantInput.trim()) return currentCategorySizeOptions;
+    const query = customVariantInput.trim().toLowerCase();
+    const matched = currentCategorySizeOptions.filter((opt) => opt.toLowerCase().includes(query));
+    return matched.length > 0 ? matched : currentCategorySizeOptions;
+  }, [currentCategorySizeOptions, customVariantInput]);
+
+  // State for inline editing of a size option
+  const [editingSizeIdx, setEditingSizeIdx] = useState<number | null>(null);
+  const [editingSizeText, setEditingSizeText] = useState<string>('');
+
+  // Helper to persist category size map
+  const saveCategorySizeMap = (newMap: Record<string, string[]>) => {
+    setCategorySizeMap(newMap);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('huda_category_size_map_v1', JSON.stringify(newMap));
+      } catch (e) {
+        console.error('Error saving category size map:', e);
+      }
+    }
+  };
+
+  const handleAddNewSizeOption = (newSizeName: string) => {
+    const trimmed = newSizeName.trim();
+    if (!trimmed) return;
+    const catList = currentCategorySizeOptions;
+    if (!catList.includes(trimmed)) {
+      const updatedCatList = [trimmed, ...catList];
+      const updatedMap = {
+        ...categorySizeMap,
+        [activeCategoryKey]: updatedCatList,
+      };
+      saveCategorySizeMap(updatedMap);
+    }
+  };
+
+  const handleDeleteSizeOption = (sizeToDelete: string) => {
+    if (confirm(`คุณต้องการลบตัวเลือกขนาด "${sizeToDelete}" ออกจากหมวดหมู่นี้ใช่หรือไม่?`)) {
+      const updatedCatList = currentCategorySizeOptions.filter((opt) => opt !== sizeToDelete);
+      const updatedMap = {
+        ...categorySizeMap,
+        [activeCategoryKey]: updatedCatList,
+      };
+      saveCategorySizeMap(updatedMap);
+    }
+  };
+
+  const handleSaveEditSizeOption = (idx: number, oldName: string) => {
+    const trimmed = editingSizeText.trim();
+    if (!trimmed) return;
+    const updatedCatList = [...currentCategorySizeOptions];
+    updatedCatList[idx] = trimmed;
+    const updatedMap = {
+      ...categorySizeMap,
+      [activeCategoryKey]: updatedCatList,
+    };
+    saveCategorySizeMap(updatedMap);
+
+    // Also update any variants currently in the form that used the old name
+    setVariants((prev) =>
+      prev.map((v) => (v.name === oldName ? { ...v, name: trimmed } : v))
+    );
+
+    setEditingSizeIdx(null);
+    setEditingSizeText('');
+  };
+
+  const handleResetSizeDefaults = () => {
+    if (confirm(`คุณต้องการรีเซ็ตตัวเลือกขนาดของหมวดหมู่นี้กลับเป็นค่าเริ่มต้นใช่หรือไม่?`)) {
+      const updatedMap = {
+        ...categorySizeMap,
+        [activeCategoryKey]: DEFAULT_CATEGORY_SIZE_PRESETS[activeCategoryKey] || [],
+      };
+      saveCategorySizeMap(updatedMap);
+    }
+  };
+
+  // Unified Fabric & Size Dropdown State & Click-Outside Handling
   const [isFabricDropdownOpen, setIsFabricDropdownOpen] = useState(false);
   const fabricDropdownRef = useRef<HTMLDivElement>(null);
+
+  const [isSizeDropdownOpen, setIsSizeDropdownOpen] = useState(false);
+  const sizeDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (fabricDropdownRef.current && !fabricDropdownRef.current.contains(event.target as Node)) {
         setIsFabricDropdownOpen(false);
         setEditingFabricIdx(null);
+      }
+      if (sizeDropdownRef.current && !sizeDropdownRef.current.contains(event.target as Node)) {
+        setIsSizeDropdownOpen(false);
+        setEditingSizeIdx(null);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -468,19 +628,24 @@ export const AdminProductManager: React.FC = () => {
     }
   };
 
-  const handleAddSingleSize = (sizeName: string) => {
-    const skuCode = `HD-${category.toUpperCase()}-${sizeName.replace(/[^0-9A-Z]/gi, '')}`;
+  const handleAddSingleSize = (sizeName: string, andSaveOption: boolean = true) => {
+    const trimmed = sizeName.trim();
+    if (!trimmed) return;
+    const skuCode = `HD-${category.toUpperCase()}-${trimmed.replace(/[^0-9A-Z]/gi, '')}`;
     setVariants((prev) => [
       ...prev,
       {
-        name: sizeName,
-        sku: skuCode,
+        name: trimmed,
+        sku: skuCode || `SKU-${Date.now().toString().slice(-4)}`,
         price: 0,
         costPrice: 0,
         stockQuantity: 0,
         color: category === 'perfume' ? 'กลิ่นดูไบออริจินัล' : category === 'incense' ? 'ไม้หอมอูดออริจินัล' : category === 'other' ? 'มาตรฐาน' : 'สีดำ (Black)',
       },
     ]);
+    if (andSaveOption) {
+      handleAddNewSizeOption(trimmed);
+    }
   };
 
   const handleAddVariantField = () => {
@@ -1344,141 +1509,232 @@ export const AdminProductManager: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Custom Size / Volume Input Field & Quick Add Buttons */}
-                  <div className="space-y-3 bg-stone-50 p-4 rounded-2xl border-2 border-amber-400/40 text-stone-950">
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  {/* Custom Size / Volume Combobox & Quick Add Buttons */}
+                  <div className="space-y-3 bg-stone-50 p-4 rounded-2xl border-2 border-amber-400/50 text-stone-950">
+                    <div className="flex items-center justify-between">
                       <span className="text-xs text-amber-950 font-black shrink-0 flex items-center gap-1">
-                        ➕ เพิ่มขนาดกำหนดเอง:
+                        ➕ เพิ่มขนาดกำหนดเอง / เลือกจากรายการ:
                       </span>
-                      <div className="flex-1 flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={customVariantInput}
-                          onChange={(e) => setCustomVariantInput(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              if (customVariantInput.trim()) {
-                                handleAddSingleSize(customVariantInput.trim());
-                                setCustomVariantInput('');
+                      <VoiceInputButton
+                        mode="append"
+                        onTranscript={(text) => {
+                          setCustomVariantInput(text);
+                          setIsSizeDropdownOpen(true);
+                        }}
+                        currentValue={customVariantInput}
+                      />
+                    </div>
+
+                    {/* Combobox Input with Dropdown Arrow */}
+                    <div className="relative" ref={sizeDropdownRef}>
+                      <div className="flex items-stretch gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="text"
+                            value={customVariantInput}
+                            onChange={(e) => {
+                              setCustomVariantInput(e.target.value);
+                              setIsSizeDropdownOpen(true);
+                            }}
+                            onFocus={() => setIsSizeDropdownOpen(true)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (customVariantInput.trim()) {
+                                  handleAddSingleSize(customVariantInput.trim(), true);
+                                  setCustomVariantInput('');
+                                  setIsSizeDropdownOpen(false);
+                                }
                               }
+                            }}
+                            placeholder={
+                              category === 'perfume'
+                                ? 'คลิกเลือกขนาดขวด หรือพิมพ์ขนาดใหม่ (เช่น ขวดลูกกลิ้ง 6 ml หรือ ขวดสเปรย์พกพา 15 ml)...'
+                                : 'คลิกเลือกขนาด หรือพิมพ์ไซส์ใหม่ (เช่น Size 60, Free Size, อก 44" ยาว 56")...'
                             }
-                          }}
-                          placeholder={
-                            category === 'perfume'
-                              ? 'เช่น ขวดลูกกลิ้ง 6 ml หรือ ขวดสเปรย์พกพา 15 ml'
-                              : 'เช่น Size 60 (ส่วนสูง ~170-175 ซม.) หรือ Free Size'
-                          }
-                          className="w-full bg-white border-2 border-stone-400 rounded-xl px-3 py-1.5 text-xs font-black text-stone-950 placeholder-stone-400 focus:outline-none focus:border-amber-500 shadow-inner"
-                        />
+                            className="w-full bg-white border-2 border-stone-400 rounded-xl px-3 py-2 pr-9 text-xs font-black text-stone-950 placeholder-stone-400 focus:outline-none focus:border-amber-500 shadow-inner"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setIsSizeDropdownOpen((prev) => !prev)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-stone-600 hover:text-stone-950 transition cursor-pointer"
+                            title="เปิด/ปิดรายการขนาด"
+                          >
+                            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isSizeDropdownOpen ? 'rotate-180' : ''}`} />
+                          </button>
+                        </div>
+
                         <button
                           type="button"
                           onClick={() => {
                             if (customVariantInput.trim()) {
-                              handleAddSingleSize(customVariantInput.trim());
+                              handleAddSingleSize(customVariantInput.trim(), true);
                               setCustomVariantInput('');
+                              setIsSizeDropdownOpen(false);
                             }
                           }}
-                          className="px-4 py-1.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow transition border border-amber-500 cursor-pointer shrink-0"
+                          className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow transition border border-amber-500 cursor-pointer shrink-0 flex items-center gap-1"
                         >
-                          + เพิ่มขนาดนี้
+                          <span>+ เพิ่มขนาดนี้</span>
                         </button>
                       </div>
+
+                      {/* Floating Dropdown Menu */}
+                      {isSizeDropdownOpen && (
+                        <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border-2 border-amber-400 rounded-xl shadow-2xl overflow-hidden max-h-64 overflow-y-auto">
+                          {/* Header */}
+                          <div className="p-2 bg-amber-100/90 border-b border-amber-300 flex items-center justify-between text-[11px] font-black text-amber-950">
+                            <span>
+                              📦 รายการขนาด/ปริมาณหมวด {category === 'perfume' ? 'น้ำหอมดูไบ' : category === 'incense' ? 'เครื่องหอม' : category === 'kaftan' ? 'ชุดคัฟทาน' : category === 'combo' ? 'เซ็ตสุดคุ้ม' : category === 'other' ? 'สินค้าอื่นๆ' : 'ชุดอาบายะห์'} ({filteredCategorySizeOptions.length})
+                            </span>
+                            <span className="text-[10px] text-stone-500 font-normal">คลิกเพื่อใส่ | ✏️ แก้ไข | 🗑️ ลบ</span>
+                          </div>
+
+                          {/* Quick Add Custom typed size option if not already in list */}
+                          {customVariantInput.trim() && !currentCategorySizeOptions.includes(customVariantInput.trim()) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleAddSingleSize(customVariantInput.trim(), true);
+                                setCustomVariantInput('');
+                                setIsSizeDropdownOpen(false);
+                              }}
+                              className="w-full text-left px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 border-b border-amber-300 text-xs font-black text-amber-950 flex items-center justify-between transition cursor-pointer"
+                            >
+                              <span>➕ เพิ่มและใช้ขนาด <strong className="text-amber-900 underline">"{customVariantInput.trim()}"</strong></span>
+                              <span className="text-[10px] bg-amber-200 px-2 py-0.5 rounded-full border border-amber-400 font-bold">กดเพื่อเพิ่ม</span>
+                            </button>
+                          )}
+
+                          {/* List of size options */}
+                          <div className="divide-y divide-stone-100">
+                            {filteredCategorySizeOptions.map((opt, idx) => {
+                              const isEditing = editingSizeIdx === idx;
+
+                              if (isEditing) {
+                                return (
+                                  <div key={idx} className="p-2 bg-amber-50/90 flex items-center gap-1.5 border-b border-amber-300">
+                                    <input
+                                      type="text"
+                                      value={editingSizeText}
+                                      onChange={(e) => setEditingSizeText(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          handleSaveEditSizeOption(idx, opt);
+                                        } else if (e.key === 'Escape') {
+                                          setEditingSizeIdx(null);
+                                        }
+                                      }}
+                                      autoFocus
+                                      className="flex-1 bg-white border-2 border-amber-500 rounded-lg px-2.5 py-1 text-xs font-black text-stone-950 focus:outline-none shadow-inner"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSaveEditSizeOption(idx, opt)}
+                                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black shadow transition cursor-pointer"
+                                      title="บันทึกการแก้ไข"
+                                    >
+                                      บันทึก
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingSizeIdx(null)}
+                                      className="px-2 py-1 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-lg text-xs font-black transition cursor-pointer"
+                                      title="ยกเลิก"
+                                    >
+                                      ยกเลิก
+                                    </button>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <div
+                                  key={opt}
+                                  className="px-3 py-2 text-xs font-black transition flex items-center justify-between group hover:bg-amber-50/60"
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleAddSingleSize(opt, false);
+                                      setIsSizeDropdownOpen(false);
+                                    }}
+                                    className="flex-1 text-left flex items-center justify-between pr-2 cursor-pointer truncate"
+                                    title={`คลิกเพื่อใส่ ${opt}`}
+                                  >
+                                    <span className="truncate">{opt}</span>
+                                    <span className="text-[10px] text-amber-700 font-bold opacity-0 group-hover:opacity-100 transition shrink-0 ml-1.5">+ ใส่ขนาดนี้</span>
+                                  </button>
+
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingSizeIdx(idx);
+                                        setEditingSizeText(opt);
+                                      }}
+                                      className="p-1 hover:bg-amber-200 text-stone-500 hover:text-amber-950 rounded transition cursor-pointer"
+                                      title={`แก้ไขชื่อขนาด "${opt}"`}
+                                    >
+                                      <Edit2 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteSizeOption(opt);
+                                      }}
+                                      className="p-1 hover:bg-red-100 text-stone-400 hover:text-red-700 rounded transition cursor-pointer"
+                                      title={`ลบ "${opt}" ออกจากรายการ`}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Footer Reset Button */}
+                          <div className="p-2 border-t border-stone-200 bg-stone-50 flex items-center justify-between text-[11px]">
+                            <span className="text-stone-500 font-bold">
+                              ผูกเฉพาะหมวด{category === 'perfume' ? 'น้ำหอม' : category === 'incense' ? 'เครื่องหอม' : category === 'kaftan' ? 'คัฟทาน' : category === 'combo' ? 'เซ็ต' : category === 'other' ? 'ทั่วไป' : 'อาบายะห์'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={handleResetSizeDefaults}
+                              className="text-stone-600 hover:text-amber-800 font-bold underline cursor-pointer"
+                              title="คืนค่าตัวเลือกเริ่มต้นเฉพาะหมวดนี้"
+                            >
+                              ↺ รีเซ็ตขนาดหมวดนี้
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Categorized Quick Add Preset Buttons */}
-                    {category === 'perfume' ? (
-                      <div className="space-y-2 pt-2 border-t border-amber-400/30 text-xs">
-                        {/* Spray Bottles */}
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="font-black text-stone-900 shrink-0">🧴 ขวดสเปรย์ (Spray):</span>
-                          {[
-                            'ขวดสเปรย์ 10 ml',
-                            'ขวดสเปรย์ 15 ml',
-                            'ขวดสเปรย์ 30 ml',
-                            'ขวดสเปรย์ 50 ml',
-                            'ขวดสเปรย์ 100 ml',
-                          ].map((sz) => (
-                            <button
-                              key={sz}
-                              type="button"
-                              onClick={() => handleAddSingleSize(sz)}
-                              className="px-2.5 py-0.5 bg-white hover:bg-amber-400 text-stone-950 border border-stone-300 rounded-lg text-xs font-mono font-black transition cursor-pointer"
-                            >
-                              + {sz}
-                            </button>
-                          ))}
-                        </div>
-
-                        {/* Roller Bottles */}
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="font-black text-stone-900 shrink-0">🧪 ขวดลูกกลิ้ง (Roller):</span>
-                          {[
-                            'ขวดลูกกลิ้ง 3 ml',
-                            'ขวดลูกกลิ้ง 6 ml',
-                            'ขวดลูกกลิ้ง 10 ml',
-                            'ขวดลูกกลิ้ง 12 ml',
-                            'ขวดลูกกลิ้ง 15 ml',
-                          ].map((sz) => (
-                            <button
-                              key={sz}
-                              type="button"
-                              onClick={() => handleAddSingleSize(sz)}
-                              className="px-2.5 py-0.5 bg-white hover:bg-amber-400 text-stone-950 border border-stone-300 rounded-lg text-xs font-mono font-black transition cursor-pointer"
-                            >
-                              + {sz}
-                            </button>
-                          ))}
-                        </div>
-
-                        {/* Tester & Crystal Bottles */}
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="font-black text-stone-900 shrink-0">🎁 คริสตัล & เทสเตอร์:</span>
-                          {[
-                            'Attar Oil 12 ml',
-                            'ขวดแก้วคริสตัล 6 ml',
-                            'ขวดเทสเตอร์ 3 ml',
-                            'ขวดเทสเตอร์ 5 ml',
-                            'ขนาดมาตรฐาน (Free Size)',
-                          ].map((sz) => (
-                            <button
-                              key={sz}
-                              type="button"
-                              onClick={() => handleAddSingleSize(sz)}
-                              className="px-2.5 py-0.5 bg-white hover:bg-amber-400 text-stone-950 border border-stone-300 rounded-lg text-xs font-mono font-black transition cursor-pointer"
-                            >
-                              + {sz}
-                            </button>
-                          ))}
-                        </div>
+                    {/* Dynamic Quick Add Buttons mapped from currentCategorySizeOptions */}
+                    <div className="space-y-1.5 pt-2 border-t border-amber-400/30 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-stone-900 shrink-0">⚡ ปุ่มกดเพิ่มเร็ว (คลิกเพื่อเพิ่มลงรายการทันที):</span>
+                        <span className="text-[11px] text-stone-600 font-bold">({currentCategorySizeOptions.length} ขนาด)</span>
                       </div>
-                    ) : (
-                      <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-amber-400/30 text-xs">
-                        <span className="font-black text-stone-900 shrink-0">ปุ่มกดเพิ่มเร็ว:</span>
-                        {(category === 'incense'
-                          ? ['กระปุก 50g', 'กระปุก 100g', 'เซ็ตเตาเผา + ถ่านหอม', 'ขนาดมาตรฐาน (Free Size)']
-                          : category === 'other'
-                          ? ['ชิ้น/กล่อง (Standard)', 'แพ็กสุดคุ้ม (Pack)', 'ขนาดมาตรฐาน (Free Size)']
-                          : [
-                              'Size 52 (ส่วนสูง ~150-155 ซม.)',
-                              'Size 54 (ส่วนสูง ~155-160 ซม.)',
-                              'Size 56 (ส่วนสูง ~160-165 ซม.)',
-                              'Size 58 (ส่วนสูง ~165-170 ซม.)',
-                              'Size 60 (ส่วนสูง ~170-175 ซม.)',
-                              'Free Size (ฟรีไซส์)',
-                            ]
-                        ).map((sz) => (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {currentCategorySizeOptions.map((sz) => (
                           <button
                             key={sz}
                             type="button"
-                            onClick={() => handleAddSingleSize(sz)}
-                            className="px-2.5 py-1 bg-white hover:bg-amber-400 text-stone-950 border border-stone-300 rounded-lg text-xs font-mono font-black transition cursor-pointer"
+                            onClick={() => handleAddSingleSize(sz, false)}
+                            className="px-2.5 py-1 bg-white hover:bg-amber-400 text-stone-950 border border-stone-300 hover:border-amber-500 rounded-lg text-xs font-mono font-black transition cursor-pointer shadow-xs"
+                            title={`คลิกเพื่อเพิ่ม ${sz}`}
                           >
                             + {sz}
                           </button>
                         ))}
                       </div>
-                    )}
+                    </div>
                   </div>
 
                   <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1 no-scrollbar">
