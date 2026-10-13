@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp, FileSpreadsheet, ExternalLink, RefreshCw, CheckCircle, AlertCircle, HelpCircle, ChevronDown, Check } from 'lucide-react';
+import { Plus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp, FileSpreadsheet, ExternalLink, RefreshCw, CheckCircle, AlertCircle, HelpCircle, ChevronDown, Check, Lock, Unlock, KeyRound, Eye, EyeOff, ShieldAlert } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CategoryType } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
@@ -34,11 +34,83 @@ export const AdminProductManager: React.FC = () => {
     syncProducts,
     syncFromGoogleSheet,
     storeSettings,
+    verifyAdminPasscode,
   } = useShop();
 
   const [adminSearch, setAdminSearch] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  // Stock Editing Lock & PIN Modal State
+  const [isStockEditUnlocked, setIsStockEditUnlocked] = useState(false);
+  const [stockPinModalOpen, setStockPinModalOpen] = useState(false);
+  const [stockPinInput, setStockPinInput] = useState('');
+  const [stockPinError, setStockPinError] = useState('');
+  const [showStockPin, setShowStockPin] = useState(false);
+  const [pendingStockAction, setPendingStockAction] = useState<(() => void) | null>(null);
+
+  // Quick Stock Adjust from Catalog Card State
+  const [quickStockAdjustItem, setQuickStockAdjustItem] = useState<{
+    productId: string;
+    productTitle: string;
+    variantId: string;
+    variantName: string;
+    currentStock: number;
+    color?: string;
+  } | null>(null);
+  const [newStockInput, setNewStockInput] = useState<number>(0);
+
+  const handleRequestStockUnlock = (onSuccessAction?: () => void) => {
+    if (isStockEditUnlocked) {
+      if (onSuccessAction) onSuccessAction();
+      return;
+    }
+    setStockPinInput('');
+    setStockPinError('');
+    setShowStockPin(false);
+    setPendingStockAction(() => onSuccessAction || null);
+    setStockPinModalOpen(true);
+  };
+
+  const handleConfirmStockPin = () => {
+    const trimmed = stockPinInput.trim();
+    if (!trimmed) {
+      setStockPinError('กรุณากรอกรหัสผ่าน Admin');
+      return;
+    }
+    const isValid = verifyAdminPasscode(trimmed);
+    if (!isValid) {
+      setStockPinError('รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+      setStockPinInput('');
+      return;
+    }
+
+    setIsStockEditUnlocked(true);
+    setStockPinModalOpen(false);
+    setStockPinInput('');
+    setStockPinError('');
+    if (pendingStockAction) {
+      pendingStockAction();
+      setPendingStockAction(null);
+    }
+  };
+
+  const handleOpenQuickStockAdjust = (
+    prod: Product,
+    v: ProductVariant
+  ) => {
+    handleRequestStockUnlock(() => {
+      setQuickStockAdjustItem({
+        productId: prod.id,
+        productTitle: prod.title,
+        variantId: v.id,
+        variantName: v.name,
+        currentStock: v.stockQuantity,
+        color: v.color,
+      });
+      setNewStockInput(v.stockQuantity);
+    });
+  };
 
   // Google Sheets Live Sync State
   const [sheetUrl, setSheetUrl] = useState(
@@ -921,6 +993,7 @@ export const AdminProductManager: React.FC = () => {
     setNewImageUrlInput('');
     setVariants([]);
     setEditingProduct(null);
+    setIsStockEditUnlocked(false);
   };
 
   const handleSaveProduct = (e: React.FormEvent) => {
@@ -984,12 +1057,12 @@ export const AdminProductManager: React.FC = () => {
       images: finalImages,
       colors: uniqueColors,
       variants: variants.map((v, idx) => ({
-        id: `var-${Date.now()}-${idx}`,
+        id: (editingProduct && editingProduct.variants[idx]?.id) ? editingProduct.variants[idx].id : `var-${Date.now()}-${idx}`,
         name: v.name.trim() || (category === 'perfume' ? `ขนาด ${idx + 1}` : `Size ${idx + 1}`),
         sku: v.sku || `HD-SKU-${idx + 1}`,
         price: isNaN(Number(v.price)) ? 0 : Number(v.price),
         costPrice: isNaN(Number(v.costPrice)) ? (isNaN(Number(v.price)) ? 0 : Math.round(Number(v.price) * 0.5)) : Number(v.costPrice),
-        stockQuantity: isNaN(Number(v.stockQuantity)) || Number(v.stockQuantity) <= 0 ? 999 : Number(v.stockQuantity),
+        stockQuantity: isNaN(Number(v.stockQuantity)) ? 0 : Math.max(0, Number(v.stockQuantity)),
         color: v.color || '',
       })),
       rating: 5.0,
@@ -1060,7 +1133,7 @@ export const AdminProductManager: React.FC = () => {
       sku: v.sku || `HD-SKU-${idx + 1}`,
       price: isNaN(Number(v.price)) ? 0 : Number(v.price),
       costPrice: isNaN(Number(v.costPrice)) ? (isNaN(Number(v.price)) ? 0 : Math.round(Number(v.price) * 0.5)) : Number(v.costPrice),
-      stockQuantity: isNaN(Number(v.stockQuantity)) || Number(v.stockQuantity) <= 0 ? 999 : Number(v.stockQuantity),
+      stockQuantity: isNaN(Number(v.stockQuantity)) ? 0 : Math.max(0, Number(v.stockQuantity)),
       color: v.color || '',
     }));
 
@@ -1470,7 +1543,7 @@ export const AdminProductManager: React.FC = () => {
                             sku: v.sku,
                             price: v.price,
                             costPrice: v.costPrice ?? Math.round(v.price * 0.5),
-                            stockQuantity: (v.stockQuantity && v.stockQuantity > 0) ? v.stockQuantity : 999,
+                            stockQuantity: (v.stockQuantity !== undefined && !isNaN(v.stockQuantity)) ? v.stockQuantity : 0,
                             color: v.color || '',
                           }))
                         );
@@ -1518,16 +1591,27 @@ export const AdminProductManager: React.FC = () => {
                         >
                           <div>
                             <div className="flex items-center justify-between gap-1 mb-1">
-                              <span className="font-black text-stone-950 text-xs sm:text-sm">{variant.name}</span>
-                              <span
-                                className={`px-2 py-0.5 text-[10px] font-black rounded-full ${
-                                  variant.stockQuantity > 0
-                                    ? 'bg-emerald-600 text-white'
-                                    : 'bg-red-600 text-white'
-                                }`}
-                              >
-                                {variant.stockQuantity > 0 ? `สต๊อก ${variant.stockQuantity} ชิ้น` : 'สต๊อกหมด (0)'}
-                              </span>
+                              <span className="font-black text-stone-950 text-xs sm:text-sm truncate" title={variant.name}>{variant.name}</span>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <span
+                                  className={`px-2 py-0.5 text-[10px] font-black rounded-full ${
+                                    variant.stockQuantity > 0
+                                      ? 'bg-emerald-600 text-white'
+                                      : 'bg-red-600 text-white'
+                                  }`}
+                                >
+                                  {variant.stockQuantity > 0 ? `สต๊อก ${variant.stockQuantity} ชิ้น` : 'สต๊อกหมด (0)'}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenQuickStockAdjust(product, variant)}
+                                  className="px-1.5 py-0.5 text-[10px] bg-amber-100 hover:bg-amber-200 text-amber-950 font-black rounded-lg border border-amber-400 flex items-center gap-0.5 transition cursor-pointer shadow-xs"
+                                  title="ปรับยอดสต๊อกชิ้นนี้โดยตรง (ต้องใส่รหัส Admin PIN)"
+                                >
+                                  <Lock className="w-2.5 h-2.5 text-amber-800" />
+                                  <span>ปรับยอด</span>
+                                </button>
+                              </div>
                             </div>
                             {variant.color && (
                               <span className="text-xs text-amber-950 block font-black mb-1.5">
@@ -2749,7 +2833,7 @@ export const AdminProductManager: React.FC = () => {
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3.5 items-start">
                             
                             {/* Color / Scent Combobox Field */}
-                            <div className="col-span-1 sm:col-span-1 lg:col-span-4 space-y-1 relative" data-color-dropdown>
+                            <div className="col-span-1 sm:col-span-1 lg:col-span-3 space-y-1 relative" data-color-dropdown>
                               <div className="flex items-center justify-between mb-0.5">
                                 <label className="text-xs text-stone-950 font-black block truncate">
                                   {category === 'perfume' ? 'ตัวเลือกกลิ่น / สี' : 'สีสินค้า (Color)'}
@@ -2971,7 +3055,7 @@ export const AdminProductManager: React.FC = () => {
                           </div>
 
                           {/* Size / Volume Name Field */}
-                          <div className="col-span-1 sm:col-span-1 lg:col-span-4 space-y-1">
+                          <div className="col-span-1 sm:col-span-1 lg:col-span-3 space-y-1">
                             <div className="flex items-center justify-between mb-0.5">
                               <label className="text-xs text-stone-950 font-black block truncate">
                                 {category === 'perfume' ? 'ขนาดปริมาณ (ml / ขวด)' : 'ชื่อไซส์ / ความยาว'}
@@ -3109,6 +3193,106 @@ export const AdminProductManager: React.FC = () => {
                             </div>
                           </div>
 
+                          {/* Stock Quantity Field with Admin PIN Lock */}
+                          <div className="col-span-1 sm:col-span-1 lg:col-span-2 space-y-1">
+                            <div className="flex items-center justify-between mb-0.5">
+                              <label className="text-xs text-stone-950 font-black flex items-center gap-1 truncate" title="สต๊อกสินค้า (ชิ้น) - ต้องใส่รหัสผ่านเพื่อแก้ไข">
+                                <span>สต๊อก</span>
+                                <span className="text-[10px] text-stone-600 font-bold">(ชิ้น)</span>
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!isStockEditUnlocked) {
+                                    handleRequestStockUnlock();
+                                  } else {
+                                    setIsStockEditUnlocked(false);
+                                  }
+                                }}
+                                className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold flex items-center gap-1 transition cursor-pointer border ${
+                                  isStockEditUnlocked
+                                    ? 'bg-emerald-100 text-emerald-950 border-emerald-400 hover:bg-emerald-200'
+                                    : 'bg-amber-100 text-amber-950 border-amber-400 hover:bg-amber-200'
+                                }`}
+                                title={isStockEditUnlocked ? 'คลิกเพื่อล็อกสต๊อก' : 'คลิกเพื่อใส่รหัส Admin ปลดล็อกแก้ไขสต๊อก'}
+                              >
+                                {isStockEditUnlocked ? (
+                                  <>
+                                    <Unlock className="w-2.5 h-2.5 text-emerald-700" />
+                                    <span>ปลดล็อก</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Lock className="w-2.5 h-2.5 text-amber-800" />
+                                    <span>ล็อก</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+
+                            <div className="relative flex items-center">
+                              {isStockEditUnlocked ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = [...variants];
+                                      const cur = updated[idx].stockQuantity ?? 0;
+                                      updated[idx].stockQuantity = Math.max(0, cur - 1);
+                                      setVariants(updated);
+                                    }}
+                                    className="w-7 h-10 bg-stone-100 hover:bg-stone-200 active:bg-amber-300 border-2 border-r-0 border-stone-400 rounded-l-xl flex items-center justify-center font-black text-stone-800 text-sm cursor-pointer select-none"
+                                    title="ลดสต๊อก -1"
+                                  >
+                                    -
+                                  </button>
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    value={v.stockQuantity ?? 0}
+                                    onFocus={(e) => e.target.select()}
+                                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                                    onChange={(e) => {
+                                      const rawVal = e.target.value.replace(/[^0-9]/g, '');
+                                      const cleanVal = rawVal.replace(/^0+(?=\d)/, '');
+                                      const newQty = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
+                                      const updated = [...variants];
+                                      updated[idx].stockQuantity = newQty;
+                                      setVariants(updated);
+                                    }}
+                                    className="w-full bg-white border-y-2 border-stone-400 focus:border-amber-500 h-10 text-stone-950 font-black font-mono text-xs sm:text-sm text-center shadow-inner focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = [...variants];
+                                      const cur = updated[idx].stockQuantity ?? 0;
+                                      updated[idx].stockQuantity = cur + 1;
+                                      setVariants(updated);
+                                    }}
+                                    className="w-7 h-10 bg-stone-100 hover:bg-stone-200 active:bg-amber-300 border-2 border-l-0 border-stone-400 rounded-r-xl flex items-center justify-center font-black text-stone-800 text-sm cursor-pointer select-none"
+                                    title="เพิ่มสต๊อก +1"
+                                  >
+                                    +
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRequestStockUnlock()}
+                                  className="w-full h-10 bg-stone-100/90 hover:bg-amber-100/90 border-2 border-stone-400 hover:border-amber-500 rounded-xl px-2 text-center text-stone-950 font-mono font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-xs transition cursor-pointer group"
+                                  title="คลิกเพื่อใส่รหัสผ่านและปรับยอดสต๊อก"
+                                >
+                                  <Lock className="w-3.5 h-3.5 text-amber-700 group-hover:scale-110 transition shrink-0" />
+                                  <span>{v.stockQuantity ?? 0}</span>
+                                  <span className="text-[10px] text-stone-600 font-bold">ชิ้น</span>
+                                  <span className="text-[9px] text-amber-950 bg-amber-300/80 border border-amber-400 px-1 py-0.2 rounded font-black ml-0.5">แก้</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
                         </div>
                       </div>
                     );
@@ -3154,6 +3338,247 @@ export const AdminProductManager: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Admin Passcode Modal for Stock Adjustment */}
+      {stockPinModalOpen && (
+        <div className="fixed inset-0 z-[70] overflow-y-auto bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4">
+          <div className="relative bg-[#14120f] border-2 border-amber-400/80 rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl text-white p-6 my-8 space-y-5 animate-scale-up">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-amber-500/20 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center text-amber-400 shadow-md">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-base text-white tracking-wide">
+                    ยืนยันรหัสผ่านปรับสต๊อก (Admin PIN)
+                  </h3>
+                  <p className="text-[10px] text-amber-200/80">
+                    ต้องใส่รหัสผู้ดูแลร้านเพื่อปลดล็อกแก้ไขสต๊อกสินค้า
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setStockPinModalOpen(false);
+                  setStockPinInput('');
+                  setStockPinError('');
+                  setPendingStockAction(null);
+                }}
+                className="text-amber-400 hover:text-white p-2 rounded-full border border-amber-400/30 transition cursor-pointer"
+                title="ปิดหน้าต่าง"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleConfirmStockPin();
+              }}
+              className="space-y-4 text-xs"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-gray-300 font-serif font-bold flex items-center gap-1">
+                    <KeyRound className="w-4 h-4 text-amber-400" />
+                    <span>รหัสผ่าน Admin</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowStockPin(!showStockPin)}
+                    className="text-[11px] text-amber-400/80 hover:text-amber-300 flex items-center gap-1 cursor-pointer"
+                  >
+                    {showStockPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    <span>{showStockPin ? 'ซ่อนรหัส' : 'แสดงรหัส'}</span>
+                  </button>
+                </div>
+                <input
+                  type={showStockPin ? 'text' : 'password'}
+                  required
+                  autoFocus
+                  placeholder="••••"
+                  value={stockPinInput}
+                  onChange={(e) => {
+                    setStockPinInput(e.target.value);
+                    setStockPinError('');
+                  }}
+                  className="w-full bg-[#0a0907] border-2 border-amber-400/50 rounded-xl p-3 text-center text-amber-300 font-mono font-black text-2xl tracking-[0.3em] focus:border-amber-400 focus:outline-none shadow-inner"
+                />
+              </div>
+
+              {/* Quick Keypad */}
+              <div className="space-y-1.5 pt-1">
+                <div className="grid grid-cols-3 gap-2">
+                  {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
+                    <button
+                      key={digit}
+                      type="button"
+                      onClick={() => {
+                        setStockPinInput((prev) => prev + digit);
+                        setStockPinError('');
+                      }}
+                      className="py-3 bg-stone-900/90 hover:bg-stone-800 active:bg-amber-400 active:text-stone-950 border border-amber-400/30 rounded-xl text-xl font-mono font-black text-amber-200 transition shadow-sm cursor-pointer select-none"
+                    >
+                      {digit}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setStockPinInput('')}
+                    className="py-3 bg-red-950/40 hover:bg-red-900/60 border border-red-500/30 rounded-xl text-xs font-bold text-red-300 transition cursor-pointer select-none"
+                  >
+                    ล้าง (C)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStockPinInput((prev) => prev + '0');
+                      setStockPinError('');
+                    }}
+                    className="py-3 bg-stone-900/90 hover:bg-stone-800 active:bg-amber-400 active:text-stone-950 border border-amber-400/30 rounded-xl text-xl font-mono font-black text-amber-200 transition shadow-sm cursor-pointer select-none"
+                  >
+                    0
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStockPinInput((prev) => prev.slice(0, -1))}
+                    className="py-3 bg-stone-900/90 hover:bg-stone-800 border border-amber-400/30 rounded-xl text-sm font-bold text-amber-300 transition flex items-center justify-center cursor-pointer select-none"
+                    title="ลบตัวเลขตัวล่าสุด"
+                  >
+                    ⌫
+                  </button>
+                </div>
+              </div>
+
+              {stockPinError && (
+                <div className="p-3 bg-red-950/80 border border-red-500/50 rounded-xl text-red-300 flex items-center gap-2 text-xs font-bold animate-bounce">
+                  <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" />
+                  <span>{stockPinError}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 text-stone-950 font-black text-sm tracking-wider rounded-xl shadow-lg hover:brightness-110 active:scale-98 transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Check className="w-5 h-5 text-stone-950" />
+                <span>ยืนยันปลดล็อกปรับยอดสต๊อก</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Stock Adjust Modal for Catalog Cards */}
+      {quickStockAdjustItem && (
+        <div className="fixed inset-0 z-[75] overflow-y-auto bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4">
+          <div className="relative bg-white border-2 border-amber-400 rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl text-stone-950 p-6 my-8 space-y-4 animate-scale-up">
+            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-amber-100 border border-amber-400 flex items-center justify-center text-amber-900">
+                  <Sparkles className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-black text-sm text-stone-950">
+                    ปรับยอดสต๊อกโดยตรง
+                  </h3>
+                  <p className="text-[11px] text-stone-600 truncate max-w-[200px]" title={quickStockAdjustItem.productTitle}>
+                    {quickStockAdjustItem.productTitle}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQuickStockAdjustItem(null)}
+                className="text-stone-400 hover:text-stone-900 p-1.5 rounded-full hover:bg-stone-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 space-y-1.5">
+              <div className="text-xs font-black text-amber-950 flex items-center justify-between">
+                <span>ไซส์ / รายการ:</span>
+                <span className="font-extrabold text-stone-900">{quickStockAdjustItem.variantName}</span>
+              </div>
+              {quickStockAdjustItem.color && (
+                <div className="text-xs font-bold text-stone-700 flex items-center justify-between">
+                  <span>สี:</span>
+                  <span>{quickStockAdjustItem.color}</span>
+                </div>
+              )}
+              <div className="text-xs font-bold text-stone-700 flex items-center justify-between pt-1 border-t border-amber-200/60">
+                <span>สต๊อกปัจจุบัน:</span>
+                <span className="font-black text-amber-900 bg-amber-200/70 px-2 py-0.5 rounded-lg border border-amber-300">
+                  {quickStockAdjustItem.currentStock} ชิ้น
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-stone-950 block">
+                จำนวนสต๊อกใหม่ที่ต้องการตั้งค่า (ชิ้น):
+              </label>
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => setNewStockInput(Math.max(0, newStockInput - 1))}
+                  className="w-10 h-11 bg-stone-100 hover:bg-stone-200 active:bg-amber-300 border-2 border-r-0 border-stone-400 rounded-l-xl flex items-center justify-center font-black text-lg text-stone-800 cursor-pointer select-none"
+                  title="ลดสต๊อก -1"
+                >
+                  -
+                </button>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={newStockInput}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => {
+                    const rawVal = e.target.value.replace(/[^0-9]/g, '');
+                    const cleanVal = rawVal.replace(/^0+(?=\d)/, '');
+                    setNewStockInput(cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0));
+                  }}
+                  className="w-full bg-white border-y-2 border-stone-400 focus:border-amber-500 h-11 text-stone-950 font-black font-mono text-xl text-center shadow-inner focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setNewStockInput(newStockInput + 1)}
+                  className="w-10 h-11 bg-stone-100 hover:bg-stone-200 active:bg-amber-300 border-2 border-l-0 border-stone-400 rounded-r-xl flex items-center justify-center font-black text-lg text-stone-800 cursor-pointer select-none"
+                  title="เพิ่มสต๊อก +1"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setQuickStockAdjustItem(null)}
+                className="flex-1 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold rounded-xl text-xs transition cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  updateVariantStock(quickStockAdjustItem.productId, quickStockAdjustItem.variantId, newStockInput);
+                  setQuickStockAdjustItem(null);
+                  alert(`อัปเดตสต๊อก ${quickStockAdjustItem.variantName} เป็น ${newStockInput} ชิ้น เรียบร้อยแล้ว!`);
+                }}
+                className="flex-1 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black rounded-xl text-xs transition shadow-md border border-amber-500 cursor-pointer"
+              >
+                บันทึกสต๊อกใหม่
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <datalist id="product-color-preset-list">
         {currentCategoryColorOptions.map((colorName) => (
           <option key={colorName} value={colorName} />
