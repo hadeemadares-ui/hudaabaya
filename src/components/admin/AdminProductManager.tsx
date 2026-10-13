@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp, FileSpreadsheet, ExternalLink, RefreshCw, CheckCircle, AlertCircle, HelpCircle, ChevronDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp, FileSpreadsheet, ExternalLink, RefreshCw, CheckCircle, AlertCircle, HelpCircle, ChevronDown, Check } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CategoryType } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
@@ -203,6 +203,99 @@ export const AdminProductManager: React.FC = () => {
   }, [categoryOptions, categoryInput]);
 
   const [description, setDescription] = useState('');
+
+  // Default Description Presets (Persisted in localStorage)
+  const DEFAULT_DESCRIPTION_PRESETS: string[] = [
+    'ชุดอาบายะห์นำเข้าแท้จากดูไบ ดีไซน์หรูหราทันสมัย เนื้อผ้าพรีเมียม สวมใส่สบาย ไม่ร้อน ทิ้งตัวสวย',
+    'ชุดเซ็ตอาบายะห์พร้อมผ้าคลุมชีฟองเข้าชุด ดีไซน์พรีเมียม สวมใส่ได้ทุกโอกาสสำคัญ',
+    'น้ำหอมแท้นำเข้าจากดูไบ กลิ่นหอมติดทนนาน 24 ชม. หอมละมุน มีเสน่ห์เฉพาะตัว',
+    'เครื่องหอมและไม้กฤษณาแท้จากดูไบ กลิ่นหอมอบอวล สร้างบรรยากาศอบอุ่น ผ่อนคลาย',
+    'ชุดคัฟทานอาหรับพรีเมียม ดีไซน์สวยหรู งานตัดเย็บประณีต ผ้าพริ้วทิ้งตัวงดงาม',
+    'สินค้าพร้อมส่ง นำเข้าแท้ 100% มีบริการเก็บเงินปลายทาง',
+    'กรอกหรือไม่กรอกก็ได้ (ไม่บังคับ)',
+  ];
+
+  const [descriptionOptions, setDescriptionOptions] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('huda_custom_description_options_v1');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (err) {
+        console.error('Failed to parse saved descriptions:', err);
+      }
+    }
+    return DEFAULT_DESCRIPTION_PRESETS;
+  });
+
+  const [isDescriptionDropdownOpen, setIsDescriptionDropdownOpen] = useState(false);
+  const descriptionDropdownRef = useRef<HTMLDivElement>(null);
+  const [editingDescIdx, setEditingDescIdx] = useState<number | null>(null);
+  const [editingDescText, setEditingDescText] = useState<string>('');
+
+  const saveDescriptionOptions = (newList: string[]) => {
+    setDescriptionOptions(newList);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('huda_custom_description_options_v1', JSON.stringify(newList));
+      } catch (e) {
+        console.error('Failed to save descriptions:', e);
+      }
+    }
+  };
+
+  const handleAddNewDescriptionOption = (rawText: string, autoSelect: boolean = true) => {
+    const trimmed = rawText.trim();
+    if (!trimmed) return;
+    const exists = descriptionOptions.some((opt) => opt.toLowerCase() === trimmed.toLowerCase());
+    if (!exists) {
+      const updated = [trimmed, ...descriptionOptions];
+      saveDescriptionOptions(updated);
+    }
+    if (autoSelect) {
+      setDescription(trimmed);
+      setIsDescriptionDropdownOpen(false);
+    }
+  };
+
+  const handleUpdateDescriptionOption = (index: number, newText: string) => {
+    const trimmed = newText.trim();
+    if (!trimmed) return;
+    const updated = [...descriptionOptions];
+    updated[index] = trimmed;
+    saveDescriptionOptions(updated);
+    setEditingDescIdx(null);
+    setEditingDescText('');
+  };
+
+  const handleDeleteDescriptionOption = (optToDelete: string) => {
+    if (confirm(`คุณต้องการลบข้อความตัวเลือกนี้ออกจากรายการใช่หรือไม่?\n\n"${optToDelete.slice(0, 45)}..."`)) {
+      const updated = descriptionOptions.filter((opt) => opt !== optToDelete);
+      saveDescriptionOptions(updated);
+    }
+  };
+
+  const handleResetDescriptionOptions = () => {
+    if (confirm('คุณต้องการรีเซ็ตตัวเลือกรายละเอียดสินค้ากลับเป็นค่าเริ่มต้นใช่หรือไม่?')) {
+      saveDescriptionOptions(DEFAULT_DESCRIPTION_PRESETS);
+    }
+  };
+
+  const isTypedDescriptionNew = useMemo(() => {
+    const trimmed = description.trim();
+    if (!trimmed) return false;
+    return !descriptionOptions.some((opt) => opt.toLowerCase() === trimmed.toLowerCase());
+  }, [description, descriptionOptions]);
+
+  const filteredDescriptionOptions = useMemo(() => {
+    const trimmed = description.trim().toLowerCase();
+    if (!trimmed) return descriptionOptions;
+    const matched = descriptionOptions.filter((opt) => opt.toLowerCase().includes(trimmed));
+    return matched.length > 0 ? matched : descriptionOptions;
+  }, [description, descriptionOptions]);
+
   const [fabric, setFabric] = useState('');
   const [imagesList, setImagesList] = useState<string[]>([]);
   const [newImageUrlInput, setNewImageUrlInput] = useState<string>('');
@@ -529,6 +622,10 @@ export const AdminProductManager: React.FC = () => {
         setIsSizeDropdownOpen(false);
         setEditingSizeIdx(null);
       }
+      if (descriptionDropdownRef.current && !descriptionDropdownRef.current.contains(event.target as Node)) {
+        setIsDescriptionDropdownOpen(false);
+        setEditingDescIdx(null);
+      }
       if (!(event.target as HTMLElement).closest('[data-color-dropdown]')) {
         setOpenColorDropdownIdx(null);
         setEditingColorIdx(null);
@@ -816,6 +913,8 @@ export const AdminProductManager: React.FC = () => {
     setCategory('abaya');
     setCategoryInput(getCategoryLabel('abaya'));
     setDescription('');
+    setIsDescriptionDropdownOpen(false);
+    setEditingDescIdx(null);
     setFabric('');
     setImagesList([]);
     setNewImageUrlInput('');
@@ -828,6 +927,10 @@ export const AdminProductManager: React.FC = () => {
     if (!title.trim()) {
       alert('กรุณากรอก "ชื่อแบบสินค้า" ด้วยครับ');
       return;
+    }
+
+    if (description.trim()) {
+      handleAddNewDescriptionOption(description.trim(), false);
     }
 
     if (fabric.trim()) {
@@ -2043,22 +2146,239 @@ export const AdminProductManager: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="sm:col-span-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-stone-950 font-black text-xs sm:text-sm">รายละเอียดสินค้า (ถ้ามี / ไม่บังคับกรอก)</label>
-                      <VoiceInputButton
-                        mode="append"
-                        onTranscript={(text) => setDescription(text)}
-                        currentValue={description}
-                      />
+                  <div className="sm:col-span-2 relative" ref={descriptionDropdownRef}>
+                    <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <label className="block text-stone-950 font-black text-xs sm:text-sm">
+                          รายละเอียดสินค้า (ถ้ามี / ไม่บังคับกรอก)
+                        </label>
+                        <span className="text-[10px] text-amber-800 font-extrabold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-300">
+                          (เลือกจาก dropdown หรือพิมพ์เพิ่มได้อิสระ)
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setIsDescriptionDropdownOpen((prev) => !prev)}
+                          className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-stone-950 font-black rounded-lg text-[11px] border border-amber-400 transition flex items-center gap-1 shadow-xs cursor-pointer"
+                          title="คลิกเลือกรายละเอียดจากตัวเลือก Dropdown"
+                        >
+                          <span>ตัวเลือกสำเร็จรูป ({descriptionOptions.length})</span>
+                          <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isDescriptionDropdownOpen ? 'rotate-180 text-amber-700' : ''}`} />
+                        </button>
+                        <VoiceInputButton
+                          mode="append"
+                          onTranscript={(text) => {
+                            setDescription((prev) => (prev ? `${prev} ${text}` : text));
+                            setIsDescriptionDropdownOpen(true);
+                          }}
+                          currentValue={description}
+                          title="พูดพิมพ์รายละเอียดสินค้า"
+                        />
+                      </div>
                     </div>
-                    <textarea
-                      rows={3}
-                      placeholder={category === 'perfume' ? 'เช่น กลิ่นหอมติดทนนาน 24 ชม. นำเข้าจากดูไบแท้' : 'กรอกหรือไม่กรอกก็ได้ (ไม่บังคับ)'}
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      className="w-full bg-white border-2 border-stone-400 rounded-xl p-3 text-stone-950 font-black placeholder-stone-400 focus:outline-none focus:border-amber-500"
-                    />
+
+                    <div className="relative">
+                      <textarea
+                        rows={3}
+                        placeholder={
+                          category === 'perfume'
+                            ? 'เช่น กลิ่นหอมติดทนนาน 24 ชม. นำเข้าจากดูไบแท้ (กรอกหรือไม่กรอกก็ได้ ไม่บังคับ)'
+                            : 'กรอกหรือไม่กรอกก็ได้ (ไม่บังคับ) — คลิกเพื่อเลือกตัวเลือก หรือพิมพ์รายละเอียดใหม่'
+                        }
+                        value={description}
+                        onFocus={() => setIsDescriptionDropdownOpen(true)}
+                        onClick={() => setIsDescriptionDropdownOpen(true)}
+                        onChange={(e) => {
+                          setDescription(e.target.value);
+                          setIsDescriptionDropdownOpen(true);
+                        }}
+                        className="w-full bg-white border-2 border-stone-400 focus:border-amber-500 rounded-xl p-3 pr-10 text-stone-950 font-black placeholder-stone-400 focus:outline-none shadow-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setIsDescriptionDropdownOpen((prev) => !prev)}
+                        className="absolute right-2.5 top-3 p-1.5 text-stone-600 hover:text-amber-800 transition cursor-pointer"
+                        title="เปิด/ปิด รายการตัวเลือกรายละเอียด"
+                      >
+                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isDescriptionDropdownOpen ? 'rotate-180 text-amber-600' : ''}`} />
+                      </button>
+                    </div>
+
+                    {/* Quick chips below */}
+                    <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                      <span className="text-[11px] font-black text-stone-600 shrink-0">ตัวเลือกด่วน:</span>
+                      {descriptionOptions.slice(0, 4).map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => {
+                            setDescription(opt);
+                            setIsDescriptionDropdownOpen(false);
+                          }}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-black border transition cursor-pointer max-w-[220px] truncate ${
+                            description === opt
+                              ? 'bg-amber-200 border-amber-400 text-amber-950 shadow-xs'
+                              : 'bg-stone-100 hover:bg-stone-200 border-stone-300 text-stone-700'
+                          }`}
+                          title={opt}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                      {isTypedDescriptionNew && (
+                        <button
+                          type="button"
+                          onClick={() => handleAddNewDescriptionOption(description.trim())}
+                          className="px-2 py-1 rounded-lg text-[10px] font-black bg-emerald-100 hover:bg-emerald-200 border border-emerald-400 text-emerald-900 flex items-center gap-1 cursor-pointer transition shadow-xs"
+                          title="กดเพื่อบันทึกข้อความนี้เป็นตัวเลือกใน Dropdown"
+                        >
+                          <Plus className="w-3 h-3 text-emerald-700" />
+                          <span>บันทึกข้อความนี้เป็นตัวเลือก</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Floating Dropdown Menu */}
+                    {isDescriptionDropdownOpen && (
+                      <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl overflow-hidden max-h-72 overflow-y-auto">
+                        {/* Header */}
+                        <div className="px-3.5 py-2 bg-amber-50 border-b border-amber-200 flex items-center justify-between text-[11px] font-black text-amber-950">
+                          <span className="flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                            <span>ตัวเลือกรายละเอียดสินค้า ({descriptionOptions.length} รายการ)</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleResetDescriptionOptions}
+                            className="text-[10px] text-stone-500 hover:text-amber-800 underline font-bold cursor-pointer"
+                            title="รีเซ็ตเป็นค่าเริ่มต้น"
+                          >
+                            รีเซ็ตค่าเริ่มต้น
+                          </button>
+                        </div>
+
+                        {/* Add new button if typed text is not yet in options */}
+                        {isTypedDescriptionNew && (
+                          <button
+                            type="button"
+                            onClick={() => handleAddNewDescriptionOption(description.trim())}
+                            className="w-full text-left px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 border-b border-emerald-300 text-xs font-black text-emerald-950 flex items-center justify-between transition cursor-pointer"
+                          >
+                            <span className="truncate pr-2">
+                              ➕ เพิ่มเป็นตัวเลือกใหม่: <strong className="text-emerald-900 underline">"{description.trim()}"</strong>
+                            </span>
+                            <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full border border-emerald-400 font-bold shrink-0">
+                              กดบันทึกตัวเลือก
+                            </span>
+                          </button>
+                        )}
+
+                        {/* Options List */}
+                        <div className="divide-y divide-stone-100">
+                          {filteredDescriptionOptions.length === 0 && !isTypedDescriptionNew ? (
+                            <div className="p-4 text-center text-xs text-stone-500 font-bold">
+                              ไม่พบตัวเลือกรายละเอียดที่ตรงกับ "{description}"
+                            </div>
+                          ) : (
+                            filteredDescriptionOptions.map((opt, idx) => {
+                              const isSelected = description === opt;
+                              const isEditing = editingDescIdx === idx;
+
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`px-3 py-2 text-xs flex items-start justify-between gap-2 transition ${
+                                    isSelected
+                                      ? 'bg-amber-100/70 text-amber-950 font-black'
+                                      : 'hover:bg-amber-50/60 text-stone-900 font-medium'
+                                  }`}
+                                >
+                                  {isEditing ? (
+                                    <div className="flex-1 flex items-center gap-1.5">
+                                      <input
+                                        type="text"
+                                        value={editingDescText}
+                                        onChange={(e) => setEditingDescText(e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleUpdateDescriptionOption(idx, editingDescText);
+                                          }
+                                        }}
+                                        className="flex-1 px-2 py-1 border-2 border-amber-500 rounded-lg text-xs font-black text-stone-950 bg-white"
+                                        autoFocus
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUpdateDescriptionOption(idx, editingDescText)}
+                                        className="p-1 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 cursor-pointer"
+                                        title="บันทึก"
+                                      >
+                                        <Check className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditingDescIdx(null);
+                                          setEditingDescText('');
+                                        }}
+                                        className="p-1 bg-stone-200 text-stone-700 rounded-lg hover:bg-stone-300 cursor-pointer"
+                                        title="ยกเลิก"
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <div
+                                        onClick={() => {
+                                          setDescription(opt);
+                                          setIsDescriptionDropdownOpen(false);
+                                        }}
+                                        className="flex-1 flex items-start gap-2 cursor-pointer text-left py-0.5"
+                                      >
+                                        <span className="mt-0.5 shrink-0">
+                                          {isSelected ? (
+                                            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                                          ) : (
+                                            <span className="w-4 h-4 block" />
+                                          )}
+                                        </span>
+                                        <span className="leading-snug break-words">{opt}</span>
+                                      </div>
+
+                                      <div className="flex items-center gap-1 shrink-0 mt-0.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setEditingDescIdx(idx);
+                                            setEditingDescText(opt);
+                                          }}
+                                          className="p-1 text-stone-400 hover:text-amber-700 hover:bg-stone-100 rounded-lg transition cursor-pointer"
+                                          title="แก้ไขข้อความตัวเลือกนี้"
+                                        >
+                                          <span className="text-xs">✏️</span>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteDescriptionOption(opt)}
+                                          className="p-1 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                                          title="ลบตัวเลือกนี้"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
