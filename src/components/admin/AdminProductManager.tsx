@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp, FileSpreadsheet, ExternalLink, RefreshCw, CheckCircle, AlertCircle, HelpCircle } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CategoryType } from '../../types';
@@ -54,10 +54,72 @@ export const AdminProductManager: React.FC = () => {
   const [arabicTitle, setArabicTitle] = useState('');
   const [category, setCategory] = useState<CategoryType>('abaya');
   const [description, setDescription] = useState('');
-  const [fabric, setFabric] = useState('Nida Silk Dubai');
+  const [fabric, setFabric] = useState('Nida Silk Dubai Original (ผ้านิดาดูไบแท้)');
   const [imagesList, setImagesList] = useState<string[]>([]);
   const [newImageUrlInput, setNewImageUrlInput] = useState<string>('');
   const [customVariantInput, setCustomVariantInput] = useState<string>('');
+
+  // Comprehensive Fabric / Material List
+  const DEFAULT_FABRIC_PRESETS = [
+    'Nida Silk Dubai Original (ผ้านิดาดูไบแท้)',
+    'Nida Premium (ผ้านิดาพรีเมียม นุ่มทิ้งตัว)',
+    'Chiffon Dubai (ผ้าชีฟองดูไบ สองชั้นพริ้วสวย)',
+    'Zoom Fabric (ผ้าซูมดูไบ ทรงสวยยับยาก)',
+    'Crepe Dubai (ผ้าเครปดูไบ เกรดนำเข้า)',
+    'Firdous Fabric (ผ้าฟิรเดาส์ นุ่มสบาย)',
+    'Linen Dubai (ผ้าลินินดูไบ ระบายอากาศดี)',
+    'Satin Silk (ผ้าซาตินดูไบ ผิวสัมผัสเงางาม)',
+    'Velvet Dubai (ผ้ากำมะหยี่ดูไบ หรูหราพรีเมียม)',
+    'Cotton Silk (ผ้าคอตตอนซิลค์ นุ่มเบาสบาย)',
+    'Oud Oil & Attar Perfume Dubai (หัวน้ำหอมและออยล์ดูไบแท้)',
+    'ไม้หอมอูดดูไบ (Bukhoor Dubai Original)',
+    'สินค้าทั่วไป (General Item)',
+  ];
+
+  // Saved Fabrics State (Sync with localStorage)
+  const [customFabrics, setCustomFabrics] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('huda_saved_fabrics');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (err) {
+        console.error('Failed to parse saved fabrics:', err);
+      }
+    }
+    return [];
+  });
+
+  const allFabricOptions = useMemo(() => {
+    const set = new Set<string>();
+    DEFAULT_FABRIC_PRESETS.forEach((f) => {
+      if (f && f.trim()) set.add(f.trim());
+    });
+    customFabrics.forEach((f) => {
+      if (f && f.trim()) set.add(f.trim());
+    });
+    products.forEach((p) => {
+      if (p.fabric && p.fabric.trim()) set.add(p.fabric.trim());
+    });
+    return Array.from(set).filter(Boolean);
+  }, [customFabrics, products]);
+
+  const handleAddNewFabricOption = (newFabricName: string) => {
+    const trimmed = newFabricName.trim();
+    if (!trimmed) return;
+    if (!customFabrics.includes(trimmed)) {
+      const updated = [...customFabrics, trimmed];
+      setCustomFabrics(updated);
+      try {
+        localStorage.setItem('huda_saved_fabrics', JSON.stringify(updated));
+      } catch (e) {
+        console.error('Error saving fabric option:', e);
+      }
+    }
+    setFabric(trimmed);
+  };
 
   // Comprehensive Color List in Thai (English)
   const PRODUCT_COLOR_PRESETS = [
@@ -144,13 +206,13 @@ export const AdminProductManager: React.FC = () => {
   const handleCategoryChange = (newCat: CategoryType) => {
     setCategory(newCat);
     if (newCat === 'perfume') {
-      setFabric('Oud Oil & Attar Perfume Dubai');
+      setFabric('Oud Oil & Attar Perfume Dubai (หัวน้ำหอมและออยล์ดูไบแท้)');
     } else if (newCat === 'incense') {
-      setFabric('เครื่องหอม / ไม้หอมดูไบ (Bukhoor Dubai)');
+      setFabric('ไม้หอมอูดดูไบ (Bukhoor Dubai Original)');
     } else if (newCat === 'other') {
       setFabric('สินค้าทั่วไป (General Item)');
     } else {
-      setFabric('Nida Silk Dubai Original');
+      setFabric('Nida Silk Dubai Original (ผ้านิดาดูไบแท้)');
     }
   };
 
@@ -225,7 +287,7 @@ export const AdminProductManager: React.FC = () => {
     setArabicTitle('');
     setCategory('abaya');
     setDescription('');
-    setFabric('Nida Silk Dubai');
+    setFabric('Nida Silk Dubai Original (ผ้านิดาดูไบแท้)');
     setImagesList([]);
     setNewImageUrlInput('');
     setVariants([]);
@@ -237,6 +299,10 @@ export const AdminProductManager: React.FC = () => {
     if (!title.trim()) {
       alert('กรุณากรอก "ชื่อแบบสินค้า" ด้วยครับ');
       return;
+    }
+
+    if (fabric.trim()) {
+      handleAddNewFabricOption(fabric.trim());
     }
 
     if (variants.length === 0) {
@@ -785,23 +851,69 @@ export const AdminProductManager: React.FC = () => {
                     </select>
                   </div>
 
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between mb-0.5">
                       <label className="block text-stone-950 font-black text-xs sm:text-sm">
                         {category === 'perfume' ? 'ประเภทน้ำหอม / ส่วนผสม' : category === 'incense' ? 'ชนิดเครื่องหอม / ส่วนผสม' : category === 'other' ? 'ประเภทสินค้า / รายละเอียด' : 'ชนิดเนื้อผ้า (Fabric)'}
                       </label>
                       <VoiceInputButton
-                        onTranscript={(text) => setFabric(text)}
+                        onTranscript={(text) => {
+                          setFabric(text);
+                          handleAddNewFabricOption(text);
+                        }}
                         currentValue={fabric}
                       />
                     </div>
-                    <input
-                      type="text"
-                      value={fabric}
-                      onChange={(e) => setFabric(e.target.value)}
-                      placeholder={category === 'perfume' ? 'เช่น Oud Oil & Royal Amber' : 'เช่น Nida Silk Dubai Original'}
-                      className="w-full bg-white border-2 border-stone-400 focus:border-amber-500 rounded-xl p-3 text-stone-950 font-black text-sm placeholder-stone-400 focus:outline-none"
-                    />
+                    
+                    {/* Dropdown Selector */}
+                    <select
+                      value={allFabricOptions.includes(fabric) ? fabric : ''}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setFabric(e.target.value);
+                        }
+                      }}
+                      className="w-full bg-white border-2 border-amber-400 focus:border-amber-600 rounded-xl p-2.5 text-stone-950 font-black text-xs sm:text-sm transition cursor-pointer shadow-sm"
+                    >
+                      <option value="" className="text-stone-500 font-bold">
+                        -- 📋 เลือกชนิดเนื้อผ้าจาก Dropdown ({allFabricOptions.length} ตัวเลือก) --
+                      </option>
+                      {allFabricOptions.map((opt) => (
+                        <option key={opt} value={opt} className="text-stone-950 font-bold py-1">
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Free-text input to type new fabric + Quick Save Button */}
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        list="fabric-preset-datalist"
+                        value={fabric}
+                        onChange={(e) => setFabric(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (fabric.trim()) {
+                              handleAddNewFabricOption(fabric.trim());
+                            }
+                          }
+                        }}
+                        placeholder="หรือพิมพ์ชื่อเนื้อผ้าใหม่เพื่อบันทึก..."
+                        className="w-full bg-white border-2 border-stone-400 focus:border-amber-500 rounded-xl p-2.5 text-stone-950 font-black text-xs placeholder-stone-400 focus:outline-none shadow-inner"
+                      />
+                      {fabric.trim() && !allFabricOptions.includes(fabric.trim()) && (
+                        <button
+                          type="button"
+                          onClick={() => handleAddNewFabricOption(fabric.trim())}
+                          className="px-3 py-2 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow border border-amber-500 transition cursor-pointer shrink-0 whitespace-nowrap"
+                          title="บันทึกเข้าสู่ตัวเลือก Dropdown"
+                        >
+                          + เพิ่มเข้า Dropdown
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Compressed Multi-Image Upload Section */}
@@ -1406,6 +1518,11 @@ export const AdminProductManager: React.FC = () => {
       <datalist id="product-color-preset-list">
         {PRODUCT_COLOR_PRESETS.map((colorName) => (
           <option key={colorName} value={colorName} />
+        ))}
+      </datalist>
+      <datalist id="fabric-preset-datalist">
+        {allFabricOptions.map((fab) => (
+          <option key={fab} value={fab} />
         ))}
       </datalist>
     </div>
