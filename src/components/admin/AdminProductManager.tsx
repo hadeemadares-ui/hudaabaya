@@ -903,6 +903,113 @@ export const AdminProductManager: React.FC = () => {
     resetForm();
   };
 
+  const handleSaveProductAndOpenStockIn = (variantIdx?: number) => {
+    if (!title.trim()) {
+      alert('กรุณากรอก "ชื่อแบบสินค้า" ก่อนบันทึกรับสินค้าเข้าสต๊อกครับ');
+      return;
+    }
+
+    if (fabric.trim()) {
+      handleAddNewFabricOption(fabric.trim());
+    }
+
+    if (categoryInput.trim() && isTypedCategoryNew) {
+      handleAddNewCategoryOption(categoryInput.trim());
+    }
+
+    const matchedOpt = categoryOptions.find(
+      (c) => c.label.toLowerCase() === categoryInput.trim().toLowerCase() || c.id.toLowerCase() === categoryInput.trim().toLowerCase()
+    );
+    const effectiveCategory = isTypedCategoryNew
+      ? (categoryInput.trim() as CategoryType)
+      : (matchedOpt ? (matchedOpt.id as CategoryType) : category);
+
+    variants.forEach((v) => {
+      if (v.color && v.color.trim()) {
+        handleAddNewColorOption(v.color.trim());
+      }
+    });
+
+    if (variants.length === 0) {
+      alert('กรุณาระบุขนาด ปริมาณ หรือไซส์สินค้าอย่างน้อย 1 รายการครับ');
+      return;
+    }
+
+    const uniqueColors = Array.from(new Set(variants.map((v) => v.color).filter(Boolean))) as string[];
+    const fallbackImage = (effectiveCategory === 'perfume' || category === 'perfume')
+      ? 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop'
+      : 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop';
+
+    const validImages = imagesList.filter((img) => img && typeof img === 'string' && img.trim() !== '');
+    const finalImages = validImages.length > 0 ? validImages : [fallbackImage];
+
+    const prodId = editingProduct ? editingProduct.id : `huda-prod-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    const savedVariants = variants.map((v, idx) => ({
+      id: (editingProduct && editingProduct.variants[idx]?.id) ? editingProduct.variants[idx].id : `var-${Date.now()}-${idx}`,
+      name: v.name.trim() || (category === 'perfume' ? `ขนาด ${idx + 1}` : `Size ${idx + 1}`),
+      sku: v.sku || `HD-SKU-${idx + 1}`,
+      price: isNaN(Number(v.price)) ? 0 : Number(v.price),
+      costPrice: isNaN(Number(v.costPrice)) ? (isNaN(Number(v.price)) ? 0 : Math.round(Number(v.price) * 0.5)) : Number(v.costPrice),
+      stockQuantity: isNaN(Number(v.stockQuantity)) || Number(v.stockQuantity) <= 0 ? 999 : Number(v.stockQuantity),
+      color: v.color || '',
+    }));
+
+    const newProductObj: Product = {
+      id: prodId,
+      title: title.trim(),
+      arabicTitle: arabicTitle.trim(),
+      category: effectiveCategory,
+      description: description.trim() || 'สินค้าคุณภาพสูง นำเข้าจากเมืองดูไบ UAE แท้ 100%',
+      fabric: fabric.trim() || '',
+      origin: 'เมืองดูไบ, UAE',
+      images: finalImages,
+      colors: uniqueColors,
+      variants: savedVariants,
+      rating: 5.0,
+      reviewsCount: 1,
+      isNew: true,
+      updatedAt: Date.now(),
+    };
+
+    if (editingProduct) {
+      updateProduct(newProductObj);
+    } else {
+      addProduct(newProductObj);
+      setSelectedCategory('all');
+      setAdminSearch('');
+    }
+
+    const targetIdx = (variantIdx !== undefined && savedVariants[variantIdx]) ? variantIdx : 0;
+    const targetVar = savedVariants[targetIdx] || savedVariants[0];
+
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('huda_pending_stock_in', JSON.stringify({
+          productId: newProductObj.id,
+          variantId: targetVar?.id || '',
+          costPrice: targetVar?.costPrice ?? (targetVar?.price ? Math.round(targetVar.price * 0.5) : 0),
+          timestamp: Date.now(),
+        }));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    setIsAddModalOpen(false);
+    resetForm();
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('switch_admin_tab_suppliers_stock_in', {
+        detail: {
+          productId: newProductObj.id,
+          variantId: targetVar?.id || '',
+          costPrice: targetVar?.costPrice ?? (targetVar?.price ? Math.round(targetVar.price * 0.5) : 0),
+        },
+      }));
+    }
+  };
+
   // Quick Preset Handlers
   const handleApplyDefaultPreset = () => {
     if (category === 'perfume') {
@@ -1321,10 +1428,32 @@ export const AdminProductManager: React.FC = () => {
                               <span className="font-black text-amber-950 bg-amber-100 px-2 py-1 rounded-lg border border-amber-400">
                                 ต้นทุน ฿{costVal.toLocaleString()}
                               </span>
+                            </div>
 
-                              <span className="font-black text-emerald-900 bg-emerald-100 px-2 py-1 rounded-lg border border-emerald-400">
+                            <div className="flex items-center justify-between gap-1.5 text-xs mt-2 pt-2 border-t border-stone-200">
+                              <span className="font-black text-emerald-900 bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-400 text-[11px]">
                                 กำไร {profitVal >= 0 ? '+' : ''}฿{profitVal.toLocaleString()}
                               </span>
+                              <button
+                                onClick={() => {
+                                  if (typeof window !== 'undefined') {
+                                    sessionStorage.setItem('huda_pending_stock_in', JSON.stringify({
+                                      productId: product.id,
+                                      variantId: variant.id,
+                                      costPrice: costVal,
+                                      timestamp: Date.now(),
+                                    }));
+                                    window.dispatchEvent(new CustomEvent('switch_admin_tab_suppliers_stock_in', {
+                                      detail: { productId: product.id, variantId: variant.id, costPrice: costVal }
+                                    }));
+                                  }
+                                }}
+                                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-[11px] shadow-xs flex items-center gap-1 cursor-pointer transition border border-emerald-700"
+                                title={`บันทึกรับสต๊อกเข้าสำหรับ ${variant.name}`}
+                              >
+                                <Plus className="w-3 h-3 text-white" />
+                                <span>+ รับเข้า (Stock IN)</span>
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -1358,13 +1487,13 @@ export const AdminProductManager: React.FC = () => {
               </h3>
               <div className="flex items-center gap-2">
                 <button
-                  type="submit"
-                  form="admin-product-form"
+                  type="button"
+                  onClick={() => handleSaveProductAndOpenStockIn()}
                   className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-md border border-emerald-700 transition flex items-center gap-1.5 cursor-pointer"
-                  title="กดบันทึกรับสินค้านี้เข้าสู่ระบบทันที"
+                  title="บันทึกสินค้า และเปิดหน้าบันทึกรับสินค้าเข้าสต๊อก (Stock IN) ที่หน้าสินค้าเข้า-ออก & เคลียร์ Supplier ทันที"
                 >
                   <CheckCircle2 className="w-4 h-4 text-white" />
-                  <span>+ บันทึกรับสินค้าเข้า</span>
+                  <span>+ บันทึกรับสินค้าเข้า (Stock IN)</span>
                 </button>
                 <button
                   type="button"
@@ -2229,12 +2358,16 @@ export const AdminProductManager: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-2">
                             <button
-                              type="submit"
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleSaveProductAndOpenStockIn(idx);
+                              }}
                               className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs flex items-center gap-1.5 shadow-md border border-emerald-700 transition cursor-pointer"
-                              title="กดเพื่อบันทึกรับสินค้านี้เข้าสู่ระบบทันที (ไม่ต้องเลื่อนลงล่าง)"
+                              title="บันทึกสินค้า และเปิดหน้าบันทึกรับสินค้าเข้าสต๊อก (Stock IN) สำหรับรายการนี้ทันที"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                              <span>+ บันทึกรับสินค้าเข้า</span>
+                              <span>+ บันทึกรับสินค้าเข้า (Stock IN)</span>
                             </button>
                             <button
                               type="button"
@@ -2616,7 +2749,7 @@ export const AdminProductManager: React.FC = () => {
                 <span className="text-xs text-amber-950 font-black hidden sm:block">
                   ตรวจสอบความถูกต้อง แล้วกดปุ่มบันทึกสินค้า
                 </span>
-                <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end flex-wrap">
                   <button
                     type="button"
                     onClick={() => setIsAddModalOpen(false)}
@@ -2626,10 +2759,19 @@ export const AdminProductManager: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 cursor-pointer font-sans w-full sm:w-auto border border-emerald-700"
+                    className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black rounded-xl text-xs sm:text-sm shadow-sm transition cursor-pointer border border-amber-500"
+                    title="บันทึกข้อมูลสินค้าอย่างเดียว"
+                  >
+                    บันทึกข้อมูลสินค้า
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSaveProductAndOpenStockIn()}
+                    className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 cursor-pointer font-sans w-full sm:w-auto border border-emerald-700"
+                    title="บันทึกสินค้า และเปิดหน้าบันทึกรับสินค้าเข้าสต๊อก (Stock IN) ที่หน้าสินค้าเข้า-ออก & เคลียร์ Supplier ทันที"
                   >
                     <CheckCircle2 className="w-5 h-5 text-white shrink-0" />
-                    <span>+ บันทึกรับสินค้าเข้า (Save Product)</span>
+                    <span>+ บันทึกรับสินค้าเข้า (Stock IN)</span>
                   </button>
                 </div>
               </div>

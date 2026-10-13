@@ -89,9 +89,14 @@ export const AdminDashboard: React.FC = () => {
       const handleSwitchEvent = () => {
         setActiveTab('reports');
       };
+      const handleSwitchSuppliersStockIn = () => {
+        setActiveTab('suppliers');
+      };
       window.addEventListener('switch_admin_tab_reports', handleSwitchEvent);
+      window.addEventListener('switch_admin_tab_suppliers_stock_in', handleSwitchSuppliersStockIn);
       return () => {
         window.removeEventListener('switch_admin_tab_reports', handleSwitchEvent);
+        window.removeEventListener('switch_admin_tab_suppliers_stock_in', handleSwitchSuppliersStockIn);
       };
     }
   }, []);

@@ -58,6 +58,66 @@ export const AdminSupplierSettlementManager: React.FC = () => {
     setSelectedMovementIds(unsettledIds);
   }, [stockMovements]);
 
+  // Auto-listen and pick up pending Stock IN requests from AdminProductManager
+  useEffect(() => {
+    const applyStockInData = (data: { productId?: string; variantId?: string; costPrice?: number }) => {
+      if (data.productId) {
+        setStockInProductId(data.productId);
+        const prod = products.find((p) => p.id === data.productId);
+        if (prod) {
+          if (prod.category === 'perfume' || prod.category === 'incense') {
+            setStockInSupplierName('ซัพพลายเออร์น้ำหอมดูไบ');
+          } else {
+            setStockInSupplierName('โรงงานอาบายะห์ดูไบ');
+          }
+          if (data.variantId && prod.variants.some((v) => v.id === data.variantId)) {
+            setStockInVariantId(data.variantId);
+            const targetV = prod.variants.find((v) => v.id === data.variantId);
+            if (targetV && (data.costPrice === undefined || data.costPrice === 0)) {
+              setStockInCostPrice(targetV.costPrice || Math.round(targetV.price * 0.5));
+            } else if (data.costPrice !== undefined) {
+              setStockInCostPrice(data.costPrice);
+            }
+          } else if (prod.variants.length > 0) {
+            setStockInVariantId(prod.variants[0].id);
+            setStockInCostPrice(prod.variants[0].costPrice || Math.round(prod.variants[0].price * 0.5));
+          }
+        }
+      } else if (data.costPrice !== undefined) {
+        setStockInCostPrice(data.costPrice);
+      }
+      setIsStockInModalOpen(true);
+    };
+
+    // Check sessionStorage
+    try {
+      const pendingStr = sessionStorage.getItem('huda_pending_stock_in');
+      if (pendingStr) {
+        const parsed = JSON.parse(pendingStr);
+        if (parsed && Date.now() - (parsed.timestamp || 0) < 120000) {
+          applyStockInData(parsed);
+        }
+        sessionStorage.removeItem('huda_pending_stock_in');
+      }
+    } catch (err) {
+      console.error('Failed reading pending stock in:', err);
+    }
+
+    const handleStockInEvent = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      if (detail) {
+        applyStockInData(detail);
+      } else {
+        setIsStockInModalOpen(true);
+      }
+    };
+
+    window.addEventListener('switch_admin_tab_suppliers_stock_in', handleStockInEvent);
+    return () => {
+      window.removeEventListener('switch_admin_tab_suppliers_stock_in', handleStockInEvent);
+    };
+  }, [products]);
+
   // Unique list of suppliers found in movements
   const allSuppliers = Array.from(
     new Set([...SUPPLIER_PRESETS, ...stockMovements.map((m) => m.supplierName).filter(Boolean)])
