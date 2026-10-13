@@ -106,6 +106,7 @@ interface ShopContextType {
   setIsCartOpen: (open: boolean) => void;
   setIsOrderTrackingOpen: (open: boolean) => void;
   setIsAdminMode: (admin: boolean) => void;
+  setIsAdminAuthenticated: (auth: boolean) => void;
   setIsAdminLoginModalOpen: (open: boolean) => void;
   verifyAdminPasscode: (passcode: string) => boolean;
   logoutAdmin: () => void;
@@ -279,27 +280,23 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const validPass = storeSettings.adminPasscode || '1077';
         const isUrlAuth = urlPass === validPass || urlPass === '1077';
 
-        const savedAuth =
-          localStorage.getItem('huda_admin_authenticated') === 'true' ||
-          sessionStorage.getItem('huda_admin_authenticated') === 'true' ||
-          isUrlAuth;
+        // Ensure stale admin auth is cleared so entering backoffice strictly requires passcode every time
+        localStorage.removeItem('huda_admin_authenticated');
+        sessionStorage.removeItem('huda_admin_authenticated');
 
-        if (savedAuth) {
+        if (isUrlAuth) {
           setIsAdminAuthenticated(true);
-          sessionStorage.setItem('huda_admin_authenticated', 'true');
-          localStorage.setItem('huda_admin_authenticated', 'true');
+          setIsAdminMode(true);
+        } else {
+          setIsAdminAuthenticated(false);
+          setIsAdminMode(false);
         }
 
-        const isAdminQuery = params.get('admin') === 'true' || params.get('mode') === 'admin' || params.get('backoffice') === 'true' || isUrlAuth;
+        const isAdminQuery = params.get('admin') === 'true' || params.get('mode') === 'admin' || params.get('backoffice') === 'true';
         const isReportQuery = params.get('tab') === 'reports' || params.get('report') === 'true' || params.get('analytics') === 'true' || params.get('sales') === 'true';
         
-        if (isAdminQuery || isReportQuery) {
-          setIsAdminMode(true);
-          if (savedAuth) {
-            setIsAdminAuthenticated(true);
-          } else {
-            setIsAdminLoginModalOpen(true);
-          }
+        if (!isUrlAuth && (isAdminQuery || isReportQuery)) {
+          setIsAdminLoginModalOpen(true);
         }
 
         // Restore saved products from local memory if available
@@ -409,8 +406,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAdminAuthenticated(true);
       setIsAdminMode(true);
       setIsAdminLoginModalOpen(false);
-      sessionStorage.setItem('huda_admin_authenticated', 'true');
-      localStorage.setItem('huda_admin_authenticated', 'true');
       return true;
     }
     return false;
@@ -419,8 +414,11 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logoutAdmin = () => {
     setIsAdminAuthenticated(false);
     setIsAdminMode(false);
-    sessionStorage.removeItem('huda_admin_authenticated');
-    localStorage.removeItem('huda_admin_authenticated');
+    setIsAdminLoginModalOpen(false);
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('huda_admin_authenticated');
+      localStorage.removeItem('huda_admin_authenticated');
+    }
   };
 
   useEffect(() => {
@@ -1358,6 +1356,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsCartOpen,
         setIsOrderTrackingOpen,
         setIsAdminMode,
+        setIsAdminAuthenticated,
         setIsAdminLoginModalOpen,
         verifyAdminPasscode,
         logoutAdmin,

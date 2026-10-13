@@ -15,7 +15,9 @@ export const Navbar: React.FC = () => {
     isAdminMode,
     setIsAdminMode,
     isAdminAuthenticated,
+    setIsAdminAuthenticated,
     setIsAdminLoginModalOpen,
+    logoutAdmin,
     selectedCategory,
     setSelectedCategory,
     searchQuery,
@@ -75,9 +77,16 @@ export const Navbar: React.FC = () => {
   const defaultMapUrl = 'https://www.google.com/maps/dir//%E0%B8%A3%E0%B9%89%E0%B8%B2%E0%B8%99+HUDA+ABAYA+DUBAI+11%2F2+%E0%B8%96%E0%B8%99%E0%B8%99+%E0%B8%84%E0%B8%A5%E0%B8%AD%E0%B8%87%E0%B8%AA%E0%B8%B4%E0%B8%9A%E0%B8%AA%E0%B8%B2%E0%B8%A1+%E0%B9%81%E0%B8%82%E0%B8%A7%E0%B8%87%E0%B8%AB%E0%B8%99%E0%B8%AD%E0%B8%87%E0%B8%88%E0%B8%AD%E0%B8%81+%E0%B9%80%E0%B8%82%E0%B8%95%E0%B8%AB%E0%B8%99%E0%B8%AD%E0%B8%87%E0%B8%88%E0%B8%AD%E0%B8%81+%E0%B8%81%E0%B8%A3%E0%B8%B8%E0%B8%87%E0%B9%80%E0%B8%97%E0%B8%9E%E0%B8%A1%E0%B8%AB%E0%B8%B2%E0%B8%99%E0%B8%84%E0%B8%A3+10530/@13.8461503,100.8564361,4592m/data=!3m1!1e3!4m8!4m7!1m0!1m5!1m1!1s0x311d73004172d045:0xca04d1c0a845986e!2m2!1d100.894964!2d13.8839807';
 
   const handleAdminBtnClick = () => {
-    if (isAdminAuthenticated) {
-      setIsAdminMode(!isAdminMode);
+    if (isAdminMode && isAdminAuthenticated) {
+      // If currently inside backoffice, clicking this button returns to storefront & locks backoffice
+      logoutAdmin();
     } else {
+      // If at storefront and clicks to enter backoffice ("กดเข้า หลังบ้าน") -> ALWAYS prompt for passcode!
+      setIsAdminAuthenticated(false);
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('huda_admin_authenticated');
+        localStorage.removeItem('huda_admin_authenticated');
+      }
       setIsAdminLoginModalOpen(true);
     }
   };
@@ -246,15 +255,15 @@ export const Navbar: React.FC = () => {
             {/* Admin Management Button */}
             <button
               onClick={handleAdminBtnClick}
-              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition border font-bold ${
-                isAdminMode
-                  ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                  : 'bg-white text-stone-900 border-stone-300 hover:border-black'
+              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition border font-bold cursor-pointer ${
+                isAdminMode && isAdminAuthenticated
+                  ? 'bg-[#0A0A0A] text-white border-[#0A0A0A] hover:bg-stone-800 shadow-sm'
+                  : 'bg-white text-stone-900 border-stone-300 hover:border-black shadow-xs'
               }`}
-              title="เข้าสู่ระบบหลังบ้านผู้ดูแลร้านค้า"
+              title={isAdminMode && isAdminAuthenticated ? 'คลิกเพื่อออกจากหลังบ้านกลับสู่หน้าร้าน' : 'เข้าสู่ระบบหลังบ้าน (ต้องใส่รหัสผ่านทุกครั้ง)'}
             >
-              {isAdminAuthenticated ? <User className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5 text-amber-700" />}
-              <span className="hidden sm:inline">{isAdminMode ? 'จัดการหลังบ้าน' : 'หลังบ้าน'}</span>
+              {isAdminMode && isAdminAuthenticated ? <User className="w-3.5 h-3.5 text-amber-400" /> : <Lock className="w-3.5 h-3.5 text-amber-700" />}
+              <span className="hidden sm:inline">{isAdminMode && isAdminAuthenticated ? 'กลับหน้าร้าน' : 'หลังบ้าน'}</span>
             </button>
 
             {/* Shopping Cart Button */}
