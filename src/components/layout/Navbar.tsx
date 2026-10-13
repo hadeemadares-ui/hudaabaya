@@ -172,21 +172,21 @@ export const Navbar: React.FC = () => {
             </div>
           </div>
 
-          {/* Desktop Search Input */}
-          <div className="hidden lg:flex flex-1 max-w-md mx-6 items-center gap-2">
+          {/* Desktop Search Input - Widened & Luxurious */}
+          <div className="hidden md:flex flex-1 max-w-xl xl:max-w-3xl mx-3 sm:mx-6 items-center gap-2.5">
             <div className="relative flex-1">
               <input
                 type="text"
                 placeholder="ค้นหาชุดอาบายะห์, เดรส, น้ำหอมดูไบ..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white border border-stone-300 focus:border-black focus:ring-1 focus:ring-black rounded-full py-2 pl-10 pr-12 text-xs text-[#0A0A0A] font-semibold placeholder-stone-500 transition-all outline-none"
+                className="w-full bg-white border-2 border-stone-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 rounded-full py-2.5 sm:py-3 pl-11 pr-14 text-sm text-stone-950 font-bold placeholder-stone-400 transition-all outline-none shadow-sm"
               />
-              <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-stone-700" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-2.5 text-xs text-stone-700 hover:text-black font-bold"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-stone-500 hover:text-black font-bold bg-stone-100 hover:bg-stone-200 px-2 py-0.5 rounded-full transition"
                 >
                   ล้าง
                 </button>
@@ -195,6 +195,7 @@ export const Navbar: React.FC = () => {
             <VoiceInputButton
               onTranscript={(text) => setSearchQuery(text)}
               currentValue={searchQuery}
+              className="py-2.5 px-3.5 rounded-full text-xs shadow-xs font-bold shrink-0 border-2"
             />
           </div>
 
@@ -273,16 +274,31 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* Mobile Search Input */}
-        <div className="lg:hidden pb-3 space-y-2">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="ค้นหาชุดอาบายะห์, เดรส, น้ำหอมดูไบ..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-stone-300 rounded-full py-2 pl-9 pr-4 text-xs text-[#0A0A0A] font-semibold placeholder-stone-500 focus:outline-none focus:border-black"
+        <div className="md:hidden pb-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="ค้นหาชุดอาบายะห์, เดรส, น้ำหอมดูไบ..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white border-2 border-stone-300 focus:border-amber-500 rounded-full py-2.5 pl-10 pr-12 text-sm text-stone-950 font-bold placeholder-stone-400 focus:outline-none shadow-sm"
+              />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-stone-500 hover:text-black font-bold bg-stone-100 px-2 py-0.5 rounded-full"
+                >
+                  ล้าง
+                </button>
+              )}
+            </div>
+            <VoiceInputButton
+              onTranscript={(text) => setSearchQuery(text)}
+              currentValue={searchQuery}
+              className="py-2.5 px-3 rounded-full text-xs shadow-xs shrink-0 border-2"
             />
-            <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-stone-700" />
           </div>
 
           <div className="flex items-center justify-between text-[11px] text-stone-900 font-semibold">

@@ -1369,20 +1369,21 @@ export const AdminProductManager: React.FC = () => {
           ))}
         </div>
 
-        <div className="relative w-full md:w-72 flex items-center gap-1.5">
+        <div className="relative w-full md:w-96 flex items-center gap-2">
           <div className="relative flex-1">
             <input
               type="text"
               placeholder="ค้นหาชื่อสินค้าในหลังบ้าน..."
               value={adminSearch}
               onChange={(e) => setAdminSearch(e.target.value)}
-              className="w-full bg-white border-2 border-stone-400 rounded-xl py-1.5 pl-8 pr-3 text-xs text-stone-950 font-black placeholder-stone-400 focus:outline-none focus:border-amber-500"
+              className="w-full bg-white border-2 border-stone-400 rounded-xl py-2 pl-9 pr-3 text-xs sm:text-sm text-stone-950 font-black placeholder-stone-400 focus:outline-none focus:border-amber-500 shadow-sm"
             />
-            <Search className="w-3.5 h-3.5 text-amber-600 absolute left-2.5 top-2.5" />
+            <Search className="w-4 h-4 text-amber-600 absolute left-3 top-1/2 -translate-y-1/2" />
           </div>
           <VoiceInputButton
             onTranscript={(text) => setAdminSearch(text)}
             currentValue={adminSearch}
+            className="py-2 px-3 rounded-xl text-xs font-bold shrink-0"
           />
         </div>
       </div>
