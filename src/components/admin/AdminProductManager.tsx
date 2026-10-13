@@ -59,60 +59,93 @@ export const AdminProductManager: React.FC = () => {
   const [newImageUrlInput, setNewImageUrlInput] = useState<string>('');
   const [customVariantInput, setCustomVariantInput] = useState<string>('');
 
-  // Comprehensive Fabric / Material Default List
-  const DEFAULT_FABRIC_PRESETS = [
-    'Nida Silk Dubai Original (ผ้านิดาดูไบแท้)',
-    'Nida Premium (ผ้านิดาพรีเมียม นุ่มทิ้งตัว)',
-    'Chiffon Dubai (ผ้าชีฟองดูไบ สองชั้นพริ้วสวย)',
-    'Zoom Fabric (ผ้าซูมดูไบ ทรงสวยยับยาก)',
-    'Crepe Dubai (ผ้าเครปดูไบ เกรดนำเข้า)',
-    'Firdous Fabric (ผ้าฟิรเดาส์ นุ่มสบาย)',
-    'Linen Dubai (ผ้าลินินดูไบ ระบายอากาศดี)',
-    'Satin Silk (ผ้าซาตินดูไบ ผิวสัมผัสเงางาม)',
-    'Velvet Dubai (ผ้ากำมะหยี่ดูไบ หรูหราพรีเมียม)',
-    'Cotton Silk (ผ้าคอตตอนซิลค์ นุ่มเบาสบาย)',
-    'Oud Oil & Attar Perfume Dubai (หัวน้ำหอมและออยล์ดูไบแท้)',
-    'ไม้หอมอูดดูไบ (Bukhoor Dubai Original)',
-    'สินค้าทั่วไป (General Item)',
-  ];
+  // Comprehensive Default Presets Per Category
+  const DEFAULT_CATEGORY_FABRIC_PRESETS: Record<string, string[]> = {
+    abaya: [
+      'Nida Silk Dubai Original (ผ้านิดาดูไบแท้)',
+      'Nida Premium (ผ้านิดาพรีเมียม นุ่มทิ้งตัว)',
+      'Chiffon Dubai (ผ้าชีฟองดูไบ สองชั้นพริ้วสวย)',
+      'Zoom Fabric (ผ้าซูมดูไบ ทรงสวยยับยาก)',
+      'Crepe Dubai (ผ้าเครปดูไบ เกรดนำเข้า)',
+      'Firdous Fabric (ผ้าฟิรเดาส์ นุ่มสบาย)',
+      'Linen Dubai (ผ้าลินินดูไบ ระบายอากาศดี)',
+      'Satin Silk (ผ้าซาตินดูไบ ผิวสัมผัสเงางาม)',
+      'Velvet Dubai (ผ้ากำมะหยี่ดูไบ หรูหราพรีเมียม)',
+      'Cotton Silk (ผ้าคอตตอนซิลค์ นุ่มเบาสบาย)',
+      'ผ้าไหม (Silk Dubai)',
+    ],
+    kaftan: [
+      'Nida Silk Dubai Original (ผ้านิดาดูไบแท้)',
+      'Chiffon Silk Dubai (ผ้าชีฟองซิลค์ดูไบ)',
+      'Satin Silk (ผ้าซาตินดูไบ ผิวสัมผัสเงางาม)',
+      'Georgette Silk (ผ้าจอร์เจียดูไบพริ้วสวย)',
+      'Cotton Linen Dubai (ผ้าคอตตอนลินินใส่สบาย)',
+      'Crepe Dubai (ผ้าเครปดูไบ เกรดนำเข้า)',
+    ],
+    perfume: [
+      'Oud Oil & Attar Perfume Dubai (หัวน้ำหอมและออยล์ดูไบแท้)',
+      'Pure Oud Oil (น้ำมันอูดบริสุทธิ์ 100%)',
+      'EDP Concentrated Spray (หัวน้ำหอมเข้มข้นสเปรย์)',
+      'Royal Amber & Musk (กลิ่นอัมเบอร์ทองผสมมัสก์)',
+      'Rose Damascena & Oud (กุหลาบดามัสกัสผสมอูด)',
+      'Sweet Vanilla & Amber Dubai (วานิลลาดูไบผสมอัมเบอร์)',
+    ],
+    incense: [
+      'ไม้หอมอูดดูไบ (Bukhoor Dubai Original)',
+      'ไม้กฤษณาแท้ดูไบ (Agarwood / Oud Chips)',
+      'ผงไม้หอมหมักน้ำมันอูด (Bukhoor Powder / Tablets)',
+      'ถ่านหอมไร้ควันดูไบ (Quick-Light Charcoal)',
+      'เซ็ตเตาเผาไฟฟ้า + ไม้หอมดูไบ',
+      'กำยานอาหรับพรีเมียม (Frankincense / Luban)',
+    ],
+    combo: [
+      'เซ็ตชุดอาบายะห์ + ผ้าคลุมฮิญาบเข้าชุด',
+      'เซ็ตอาบายะห์ดูไบ + น้ำหอมพกพา',
+      'เซ็ตน้ำหอมดูไบ + ไม้หอมอูด Bukhoor',
+      'กิฟต์เซ็ตกล่องของขวัญพรีเมียมดูไบ',
+    ],
+    other: [
+      'สินค้าทั่วไป (General Item)',
+      'สินค้านำเข้าดูไบ UAE แท้',
+      'ขนม / อินทผลัมนำเข้าดูไบ',
+      'ของเล่นและของใช้เด็ก',
+    ],
+  };
 
-  // Customizable Fabric Options List (Loaded from localStorage or defaults)
-  const [fabricOptions, setFabricOptions] = useState<string[]>(() => {
+  // Category-specific Fabric / Details Map State (Stored in localStorage)
+  const [categoryFabricMap, setCategoryFabricMap] = useState<Record<string, string[]>>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem('huda_fabric_options_v2');
+        const stored = localStorage.getItem('huda_category_fabric_map_v3');
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-        // Fallback / migration from earlier saved fabrics
-        const legacyStored = localStorage.getItem('huda_saved_fabrics');
-        if (legacyStored) {
-          const legacyParsed = JSON.parse(legacyStored);
-          if (Array.isArray(legacyParsed)) {
-            const set = new Set<string>([...legacyParsed, ...DEFAULT_FABRIC_PRESETS]);
-            return Array.from(set).filter(Boolean);
-          }
+          if (parsed && typeof parsed === 'object') return parsed;
         }
       } catch (err) {
-        console.error('Failed to parse saved fabrics:', err);
+        console.error('Failed to parse saved category fabric map:', err);
       }
     }
-    return DEFAULT_FABRIC_PRESETS;
+    return DEFAULT_CATEGORY_FABRIC_PRESETS;
   });
+
+  const activeCategoryKey = (category && category !== 'all') ? category : 'abaya';
+  
+  const currentCategoryFabricOptions = useMemo(() => {
+    return categoryFabricMap[activeCategoryKey] || DEFAULT_CATEGORY_FABRIC_PRESETS[activeCategoryKey] || [];
+  }, [categoryFabricMap, activeCategoryKey]);
 
   // State for inline editing of a fabric option
   const [editingFabricIdx, setEditingFabricIdx] = useState<number | null>(null);
   const [editingFabricText, setEditingFabricText] = useState<string>('');
 
-  // Helper to persist fabric options
-  const saveFabricOptions = (newList: string[]) => {
-    setFabricOptions(newList);
+  // Helper to persist category fabric map
+  const saveCategoryFabricMap = (newMap: Record<string, string[]>) => {
+    setCategoryFabricMap(newMap);
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('huda_fabric_options_v2', JSON.stringify(newList));
+        localStorage.setItem('huda_category_fabric_map_v3', JSON.stringify(newMap));
       } catch (e) {
-        console.error('Error saving fabric options:', e);
+        console.error('Error saving category fabric map:', e);
       }
     }
   };
@@ -120,17 +153,26 @@ export const AdminProductManager: React.FC = () => {
   const handleAddNewFabricOption = (newFabricName: string) => {
     const trimmed = newFabricName.trim();
     if (!trimmed) return;
-    if (!fabricOptions.includes(trimmed)) {
-      const updated = [trimmed, ...fabricOptions];
-      saveFabricOptions(updated);
+    const catList = currentCategoryFabricOptions;
+    if (!catList.includes(trimmed)) {
+      const updatedCatList = [trimmed, ...catList];
+      const updatedMap = {
+        ...categoryFabricMap,
+        [activeCategoryKey]: updatedCatList,
+      };
+      saveCategoryFabricMap(updatedMap);
     }
     setFabric(trimmed);
   };
 
   const handleDeleteFabricOption = (fabricToDelete: string) => {
-    if (confirm(`คุณต้องการลบตัวเลือก "${fabricToDelete}" ออกจากรายการใช่หรือไม่?`)) {
-      const updated = fabricOptions.filter((opt) => opt !== fabricToDelete);
-      saveFabricOptions(updated);
+    if (confirm(`คุณต้องการลบตัวเลือก "${fabricToDelete}" ออกจากหมวดหมู่นี้ใช่หรือไม่?`)) {
+      const updatedCatList = currentCategoryFabricOptions.filter((opt) => opt !== fabricToDelete);
+      const updatedMap = {
+        ...categoryFabricMap,
+        [activeCategoryKey]: updatedCatList,
+      };
+      saveCategoryFabricMap(updatedMap);
       if (fabric === fabricToDelete) {
         setFabric('');
       }
@@ -140,9 +182,13 @@ export const AdminProductManager: React.FC = () => {
   const handleSaveEditFabricOption = (idx: number, oldName: string) => {
     const trimmed = editingFabricText.trim();
     if (!trimmed) return;
-    const updated = [...fabricOptions];
-    updated[idx] = trimmed;
-    saveFabricOptions(updated);
+    const updatedCatList = [...currentCategoryFabricOptions];
+    updatedCatList[idx] = trimmed;
+    const updatedMap = {
+      ...categoryFabricMap,
+      [activeCategoryKey]: updatedCatList,
+    };
+    saveCategoryFabricMap(updatedMap);
     if (fabric === oldName) {
       setFabric(trimmed);
     }
@@ -151,8 +197,12 @@ export const AdminProductManager: React.FC = () => {
   };
 
   const handleResetFabricDefaults = () => {
-    if (confirm('คุณต้องการรีเซ็ตรายการชนิดผ้ากลับเป็นค่ามาตรฐานเริ่มต้นทั้งหมดใช่หรือไม่?')) {
-      saveFabricOptions(DEFAULT_FABRIC_PRESETS);
+    if (confirm(`คุณต้องการรีเซ็ตตัวเลือกของหมวดหมู่นี้กลับเป็นค่าเริ่มต้นใช่หรือไม่?`)) {
+      const updatedMap = {
+        ...categoryFabricMap,
+        [activeCategoryKey]: DEFAULT_CATEGORY_FABRIC_PRESETS[activeCategoryKey] || [],
+      };
+      saveCategoryFabricMap(updatedMap);
     }
   };
 
@@ -172,11 +222,11 @@ export const AdminProductManager: React.FC = () => {
   }, []);
 
   const filteredFabricOptions = useMemo(() => {
-    if (!fabric.trim()) return fabricOptions;
+    if (!fabric.trim()) return currentCategoryFabricOptions;
     const query = fabric.trim().toLowerCase();
-    const matched = fabricOptions.filter((opt) => opt.toLowerCase().includes(query));
-    return matched.length > 0 ? matched : fabricOptions;
-  }, [fabricOptions, fabric]);
+    const matched = currentCategoryFabricOptions.filter((opt) => opt.toLowerCase().includes(query));
+    return matched.length > 0 ? matched : currentCategoryFabricOptions;
+  }, [currentCategoryFabricOptions, fabric]);
 
   // Comprehensive Color List in Thai (English)
   const PRODUCT_COLOR_PRESETS = [
@@ -902,7 +952,17 @@ export const AdminProductManager: React.FC = () => {
                   <div className="relative" ref={fabricDropdownRef}>
                     <div className="flex items-center justify-between mb-1">
                       <label className="block text-stone-950 font-black text-xs sm:text-sm">
-                        {category === 'perfume' ? 'ประเภทน้ำหอม / ส่วนผสม' : category === 'incense' ? 'ชนิดเครื่องหอม / ส่วนผสม' : category === 'other' ? 'ประเภทสินค้า / รายละเอียด' : 'ชนิดเนื้อผ้า (Fabric)'}
+                        {category === 'perfume' 
+                          ? 'ประเภทน้ำหอม / กลิ่น (Fragrance Type / Scents)' 
+                          : category === 'incense' 
+                          ? 'ชนิดเครื่องหอม / ส่วนผสม (Bukhoor Type)' 
+                          : category === 'kaftan'
+                          ? 'ชนิดเนื้อผ้าชุดคัฟทาน (Kaftan Fabric)'
+                          : category === 'other' 
+                          ? 'ประเภทสินค้า / รายละเอียด' 
+                          : category === 'combo'
+                          ? 'รายละเอียดเซ็ตสินค้า (Combo Set Details)'
+                          : 'ชนิดเนื้อผ้า (Fabric)'}
                       </label>
                       <VoiceInputButton
                         onTranscript={(text) => {
@@ -933,14 +993,26 @@ export const AdminProductManager: React.FC = () => {
                             }
                           }
                         }}
-                        placeholder="คลิกเลือกจากรายการ หรือพิมพ์ชนิดผ้าใหม่..."
+                        placeholder={
+                          category === 'perfume'
+                            ? 'คลิกเลือกกลิ่น/ประเภทน้ำหอม หรือพิมพ์กลิ่นใหม่...'
+                            : category === 'incense'
+                            ? 'คลิกเลือกชนิดเครื่องหอม หรือพิมพ์ใหม่ เช่น ไม้กฤษณาดูไบ...'
+                            : category === 'other'
+                            ? 'คลิกเลือกประเภท หรือพิมพ์รายละเอียดสินค้า...'
+                            : category === 'combo'
+                            ? 'คลิกเลือกรูปแบบเซ็ต หรือพิมพ์รายละเอียดเซ็ต...'
+                            : category === 'kaftan'
+                            ? 'คลิกเลือกชนิดเนื้อผ้า หรือพิมพ์ชนิดผ้าใหม่ เช่น ผ้าไหม...'
+                            : 'คลิกเลือกชนิดเนื้อผ้า หรือพิมพ์ชนิดผ้าใหม่ เช่น ผ้าไหม, ผ้านิดา...'
+                        }
                         className="w-full bg-white border-2 border-stone-400 focus:border-amber-500 rounded-xl p-3 pr-10 text-stone-950 font-black text-sm placeholder-stone-400 focus:outline-none shadow-sm cursor-text"
                       />
                       <button
                         type="button"
                         onClick={() => setIsFabricDropdownOpen(!isFabricDropdownOpen)}
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-stone-600 hover:text-amber-800 transition cursor-pointer"
-                        title="เปิด/ปิด รายการเลือกชนิดผ้า"
+                        title="เปิด/ปิด รายการตัวเลือก"
                       >
                         <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isFabricDropdownOpen ? 'rotate-180 text-amber-600' : ''}`} />
                       </button>
@@ -951,12 +1023,24 @@ export const AdminProductManager: React.FC = () => {
                       <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl max-h-72 overflow-y-auto no-scrollbar py-1">
                         {/* Header info in dropdown */}
                         <div className="px-3 py-1.5 bg-stone-100 border-b border-stone-200 flex items-center justify-between text-[11px] font-black text-stone-700">
-                          <span>รายการชนิดผ้า ({fabricOptions.length} ตัวเลือก)</span>
+                          <span>
+                            {category === 'perfume'
+                              ? 'ตัวเลือกน้ำหอมดูไบ'
+                              : category === 'incense'
+                              ? 'ตัวเลือกเครื่องหอมดูไบ'
+                              : category === 'kaftan'
+                              ? 'ตัวเลือกผ้าชุดคัฟทาน'
+                              : category === 'combo'
+                              ? 'ตัวเลือกเซ็ตสินค้า'
+                              : category === 'other'
+                              ? 'ตัวเลือกสินค้าทั่วไป'
+                              : 'ตัวเลือกชนิดผ้าอาบายะห์'} ({currentCategoryFabricOptions.length} ตัวเลือก)
+                          </span>
                           <span className="text-[10px] text-stone-500 font-bold">กด ✏️ แก้ไข หรือ 🗑️ ลบได้อิสระ</span>
                         </div>
 
                         {/* Add new button if typed text is not yet in options */}
-                        {fabric.trim() && !fabricOptions.some((opt) => opt.toLowerCase() === fabric.trim().toLowerCase()) && (
+                        {fabric.trim() && !currentCategoryFabricOptions.some((opt) => opt.toLowerCase() === fabric.trim().toLowerCase()) && (
                           <button
                             type="button"
                             onClick={() => {
@@ -965,7 +1049,7 @@ export const AdminProductManager: React.FC = () => {
                             }}
                             className="w-full text-left px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 border-b border-amber-300 text-xs font-black text-amber-950 flex items-center justify-between transition cursor-pointer"
                           >
-                            <span>➕ เพิ่ม <strong className="text-amber-900 underline">"{fabric.trim()}"</strong> เป็นตัวเลือกใหม่</span>
+                            <span>➕ เพิ่ม <strong className="text-amber-900 underline">"{fabric.trim()}"</strong> เข้าหมวดนี้</span>
                             <span className="text-[10px] bg-amber-200 px-2 py-0.5 rounded-full border border-amber-400 font-bold">กดเพื่อเพิ่ม</span>
                           </button>
                         )}
@@ -1068,14 +1152,16 @@ export const AdminProductManager: React.FC = () => {
 
                         {/* Footer Reset Button */}
                         <div className="p-2 border-t border-stone-200 bg-stone-50 flex items-center justify-between text-[11px]">
-                          <span className="text-stone-500 font-bold">จัดการตัวเลือกได้ตามต้องการ</span>
+                          <span className="text-stone-500 font-bold">
+                            ผูกเฉพาะหมวด{category === 'perfume' ? 'น้ำหอม' : category === 'incense' ? 'เครื่องหอม' : category === 'kaftan' ? 'คัฟทาน' : category === 'combo' ? 'เซ็ต' : category === 'other' ? 'ทั่วไป' : 'อาบายะห์'}
+                          </span>
                           <button
                             type="button"
                             onClick={handleResetFabricDefaults}
                             className="text-stone-600 hover:text-amber-800 font-bold underline cursor-pointer"
-                            title="คืนค่าตัวเลือกเริ่มต้นของระบบ"
+                            title="คืนค่าตัวเลือกเริ่มต้นเฉพาะหมวดนี้"
                           >
-                            ↺ รีเซ็ตรายการมาตรฐาน
+                            ↺ รีเซ็ตหมวดนี้
                           </button>
                         </div>
                       </div>
@@ -1687,7 +1773,7 @@ export const AdminProductManager: React.FC = () => {
         ))}
       </datalist>
       <datalist id="fabric-preset-datalist">
-        {fabricOptions.map((fab) => (
+        {currentCategoryFabricOptions.map((fab) => (
           <option key={fab} value={fab} />
         ))}
       </datalist>
