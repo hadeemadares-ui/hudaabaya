@@ -100,6 +100,7 @@ interface ShopContextType {
   updateVariantStock: (productId: string, variantId: string, newStock: number) => void;
   deleteProduct: (productId: string) => void;
   recordStockIn: (data: { productId: string; variantId: string; quantity: number; costPrice: number; supplierName: string; note?: string }) => void;
+  deleteStockMovement: (movementId: string, revertStock?: boolean) => boolean;
   createSupplierSettlement: (data: { supplierName: string; periodStart: string; periodEnd: string; movementIds: string[]; paymentRef?: string; note?: string }) => SupplierSettlement;
   setIsCartOpen: (open: boolean) => void;
   setIsOrderTrackingOpen: (open: boolean) => void;
@@ -1024,6 +1025,31 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const deleteStockMovement = (movementId: string, revertStock: boolean = true): boolean => {
+    soundFx.playDelete();
+    const targetMovement = stockMovements.find((m) => m.id === movementId);
+
+    // If it was a Stock IN movement and revertStock is true, reduce stock back
+    if (targetMovement && targetMovement.type === 'IN' && revertStock && targetMovement.productId && targetMovement.variantId) {
+      const prod = products.find((p) => p.id === targetMovement.productId);
+      const variant = prod?.variants.find((v) => v.id === targetMovement.variantId);
+      if (prod && variant) {
+        const newStock = Math.max(0, (variant.stockQuantity || 0) - targetMovement.quantity);
+        updateVariantStock(targetMovement.productId, targetMovement.variantId, newStock);
+      }
+    }
+
+    setStockMovements((prev) => {
+      const updated = prev.filter((m) => m.id !== movementId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updated));
+      }
+      return updated;
+    });
+
+    return true;
+  };
+
   const createSupplierSettlement = (data: {
     supplierName: string;
     periodStart: string;
@@ -1322,6 +1348,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateVariantStock,
         deleteProduct,
         recordStockIn,
+        deleteStockMovement,
         createSupplierSettlement,
         setIsCartOpen,
         setIsOrderTrackingOpen,

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Truck, DollarSign, PackageCheck, Plus, Search, Calendar, FileText, CheckCircle2, AlertCircle, Sparkles, Filter, ChevronRight, ChevronDown, X, Printer, ArrowDownLeft, ArrowUpRight, CheckSquare, Square, Check, Trash2 } from 'lucide-react';
+import { Truck, DollarSign, PackageCheck, Plus, Search, Calendar, FileText, CheckCircle2, AlertCircle, Sparkles, Filter, ChevronRight, ChevronDown, X, Printer, ArrowDownLeft, ArrowUpRight, CheckSquare, Square, Check, Trash2, Lock, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { StockMovement, SupplierSettlement } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
@@ -12,6 +12,8 @@ export const AdminSupplierSettlementManager: React.FC = () => {
     stockMovements,
     supplierSettlements,
     recordStockIn,
+    deleteStockMovement,
+    verifyAdminPasscode,
     createSupplierSettlement,
     storeSettings,
   } = useShop();
@@ -25,6 +27,13 @@ export const AdminSupplierSettlementManager: React.FC = () => {
   const [isStockInModalOpen, setIsStockInModalOpen] = useState<boolean>(false);
   const [isSettlementModalOpen, setIsSettlementModalOpen] = useState<boolean>(false);
   const [viewingSettlementVoucher, setViewingSettlementVoucher] = useState<SupplierSettlement | null>(null);
+
+  // Delete Stock Movement State & Admin Passcode Confirmation
+  const [movementToDelete, setMovementToDelete] = useState<StockMovement | null>(null);
+  const [adminPinInput, setAdminPinInput] = useState<string>('');
+  const [pinError, setPinError] = useState<string>('');
+  const [showAdminPin, setShowAdminPin] = useState<boolean>(false);
+  const [revertStockOnDelete, setRevertStockOnDelete] = useState<boolean>(true);
 
   // Default Known Suppliers
   const SUPPLIER_PRESETS = [
@@ -421,6 +430,39 @@ export const AdminSupplierSettlementManager: React.FC = () => {
     setStockInQty('');
     setStockInCostPrice('');
     setStockInNote('');
+  };
+
+  // Open Admin Passcode Confirmation for Deleting Movement
+  const handleRequestDeleteMovement = (m: StockMovement) => {
+    setMovementToDelete(m);
+    setAdminPinInput('');
+    setPinError('');
+    setShowAdminPin(false);
+    setRevertStockOnDelete(true);
+  };
+
+  // Confirm Deletion with Admin Passcode Verification
+  const handleConfirmDeleteMovement = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!movementToDelete) return;
+
+    const trimmedPin = adminPinInput.trim();
+    if (!trimmedPin) {
+      setPinError('กรุณากรอกรหัสผ่าน Admin เพื่อยืนยันการลบ');
+      return;
+    }
+
+    const isValid = verifyAdminPasscode(trimmedPin);
+    if (!isValid) {
+      setPinError('รหัสผ่าน Admin ไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+      return;
+    }
+
+    deleteStockMovement(movementToDelete.id, revertStockOnDelete);
+    alert(`ลบรายการ ${movementToDelete.type === 'IN' ? 'รับสินค้าเข้า' : 'สินค้าออก'} "${movementToDelete.productTitle} (${movementToDelete.variantName})" เรียบร้อยแล้ว!`);
+    setMovementToDelete(null);
+    setAdminPinInput('');
+    setPinError('');
   };
 
   return (
@@ -833,12 +875,13 @@ export const AdminSupplierSettlementManager: React.FC = () => {
                   <th className="py-3 px-3 font-black text-right">ต้นทุน/ชิ้น</th>
                   <th className="py-3 px-3 font-black text-right">ต้นทุนรวม</th>
                   <th className="py-3 px-3 font-black">หมายเหตุ / อ้างอิง</th>
+                  <th className="py-3 px-3 font-black text-center w-24">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-200">
                 {stockMovements.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-stone-700 font-black">
+                    <td colSpan={9} className="py-8 text-center text-stone-700 font-black">
                       ยังไม่มีประวัติสินค้าเข้า-ออกในระบบ (เมื่อขายสินค้าออกหรือรับสินค้าเข้า ระบบจะบันทึกประวัติที่นี่อัตโนมัติ)
                     </td>
                   </tr>
@@ -872,6 +915,17 @@ export const AdminSupplierSettlementManager: React.FC = () => {
                         <td className="py-3 px-3 text-right font-mono font-bold text-stone-800">฿{m.costPrice.toLocaleString()}</td>
                         <td className="py-3 px-3 text-right font-serif font-black text-amber-900">฿{m.totalCost.toLocaleString()}</td>
                         <td className="py-3 px-3 text-stone-800 font-bold">{m.note || '-'}</td>
+                        <td className="py-3 px-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleRequestDeleteMovement(m)}
+                            className="px-2.5 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 hover:text-red-950 border border-red-300 rounded-xl text-xs font-black transition flex items-center gap-1 mx-auto cursor-pointer shadow-xs"
+                            title="ลบรายการนี้ (ต้องใส่รหัส Admin)"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                            <span>ลบ</span>
+                          </button>
+                        </td>
                       </tr>
                     ))
                 )}
@@ -1573,6 +1627,188 @@ export const AdminSupplierSettlementManager: React.FC = () => {
                 ปิดหน้าต่างนี้
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: ADMIN PASSCODE CONFIRMATION FOR DELETING STOCK MOVEMENT */}
+      {movementToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative bg-white border-2 border-red-500 rounded-3xl max-w-md w-full p-6 text-stone-950 shadow-2xl space-y-4 text-left animate-in fade-in zoom-in-95 duration-150">
+            
+            <div className="flex justify-between items-center border-b-2 border-red-200 pb-3">
+              <div className="flex items-center gap-2 text-red-600">
+                <div className="p-2 bg-red-100 rounded-xl">
+                  <Lock className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-black text-base text-stone-950">
+                    ยืนยันลบรายการ (ต้องใส่รหัส Admin)
+                  </h3>
+                  <span className="text-[10px] text-red-600 font-extrabold block">
+                    Security Passcode Required
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMovementToDelete(null);
+                  setAdminPinInput('');
+                  setPinError('');
+                }}
+                className="text-stone-500 hover:text-stone-950 p-1 rounded-full border border-stone-300 hover:bg-stone-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Movement Details Preview Card */}
+            <div className="bg-red-50/70 border border-red-200 rounded-2xl p-4 text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-stone-600 font-bold">ประเภทรายการ:</span>
+                {movementToDelete.type === 'IN' ? (
+                  <span className="px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-950 border border-emerald-400 font-black text-[11px] flex items-center gap-1">
+                    <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-700" /> สินค้าเข้า (Stock IN)
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-950 border border-amber-400 font-black text-[11px] flex items-center gap-1">
+                    <ArrowUpRight className="w-3.5 h-3.5 text-amber-700" /> สินค้าออก (Stock OUT)
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-start justify-between gap-2 border-t border-red-200/60 pt-1.5">
+                <span className="text-stone-600 font-bold shrink-0">สินค้า / ไซส์:</span>
+                <span className="font-black text-stone-950 text-right">
+                  {movementToDelete.productTitle}
+                  <span className="block text-[11px] text-stone-700 font-bold">{movementToDelete.variantName}</span>
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-red-200/60 pt-1.5">
+                <span className="text-stone-600 font-bold">จำนวน:</span>
+                <span className="font-black text-stone-950 font-mono text-sm">
+                  {movementToDelete.type === 'IN' ? `+${movementToDelete.quantity}` : `-${movementToDelete.quantity}`} ชิ้น
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-red-200/60 pt-1.5">
+                <span className="text-stone-600 font-bold">Supplier / ต้นทุนรวม:</span>
+                <span className="font-black text-amber-950">
+                  {movementToDelete.supplierName} (฿{movementToDelete.totalCost.toLocaleString()})
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-red-200/60 pt-1.5">
+                <span className="text-stone-600 font-bold">หมายเหตุ / DO:</span>
+                <span className="font-bold text-stone-800 font-mono">
+                  {movementToDelete.note || '-'}
+                </span>
+              </div>
+            </div>
+
+            {/* If Stock IN: Option to automatically revert/deduct stock back */}
+            {movementToDelete.type === 'IN' && (
+              <label className="flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-300 rounded-xl cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={revertStockOnDelete}
+                  onChange={(e) => setRevertStockOnDelete(e.target.checked)}
+                  className="w-4 h-4 rounded text-amber-600 border-stone-300 focus:ring-amber-500 cursor-pointer"
+                />
+                <span className="text-xs font-black text-amber-950">
+                  ปรับลดสต๊อกสินค้าคืนตามจำนวนที่รับเข้า (-{movementToDelete.quantity} ชิ้น)
+                </span>
+              </label>
+            )}
+
+            {/* Admin Password Form */}
+            <form onSubmit={handleConfirmDeleteMovement} className="space-y-3 pt-1">
+              <div>
+                <label className="block text-stone-950 font-black mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <KeyRound className="w-4 h-4 text-red-600" />
+                    <span>ใส่รหัสผ่าน Admin เพื่อยืนยันการลบ *</span>
+                  </span>
+                  <span className="text-[10px] text-stone-500 font-bold">
+                    (รหัสเริ่มต้น: 1077)
+                  </span>
+                </label>
+
+                <div className="relative flex items-center">
+                  <input
+                    type={showAdminPin ? 'text' : 'password'}
+                    required
+                    autoFocus
+                    value={adminPinInput}
+                    onChange={(e) => {
+                      setAdminPinInput(e.target.value);
+                      setPinError('');
+                    }}
+                    placeholder="กรอกรหัส Admin เช่น 1077"
+                    className="w-full bg-white border-2 border-red-400 rounded-xl p-3 pr-20 text-stone-950 font-mono font-black text-center text-lg tracking-widest focus:outline-none focus:border-red-600 shadow-inner"
+                  />
+
+                  <div className="absolute right-2 flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminPin((prev) => !prev)}
+                      className="p-1.5 text-stone-500 hover:text-stone-950 rounded-lg cursor-pointer"
+                      title={showAdminPin ? 'ซ่อนรหัส' : 'แสดงรหัส'}
+                    >
+                      {showAdminPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                    <VoiceInputButton
+                      isNumber={true}
+                      onTranscript={(text) => {
+                        const num = text.replace(/[^0-9]/g, '');
+                        if (num) {
+                          setAdminPinInput(num);
+                          setPinError('');
+                        }
+                      }}
+                      onNumberTranscript={(num) => {
+                        setAdminPinInput(String(num));
+                        setPinError('');
+                      }}
+                      className="scale-90"
+                      title="พูดรหัสผ่าน Admin"
+                    />
+                  </div>
+                </div>
+
+                {pinError && (
+                  <p className="text-xs font-black text-red-600 mt-1.5 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{pinError}</span>
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMovementToDelete(null);
+                    setAdminPinInput('');
+                    setPinError('');
+                  }}
+                  className="px-4 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-950 font-black rounded-xl text-xs transition cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer border border-red-700"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>ยืนยันลบรายการนี้</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
