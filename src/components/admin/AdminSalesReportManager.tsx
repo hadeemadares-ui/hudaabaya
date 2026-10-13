@@ -1365,12 +1365,33 @@ export const AdminSalesReportManager: React.FC = () => {
                     onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value as CategoryType })}
                     className="w-full bg-white border-2 border-stone-400 rounded-xl p-2.5 text-stone-950 font-black focus:border-amber-500 focus:outline-none"
                   >
-                    <option value="abaya" className="bg-white text-stone-950 font-bold">ชุดอาบายะห์ (Abaya)</option>
-                    <option value="kaftan" className="bg-white text-stone-950 font-bold">ชุดคัฟทาน (Kaftan)</option>
-                    <option value="perfume" className="bg-white text-stone-950 font-bold">น้ำหอมดูไบ (Perfume)</option>
-                    <option value="incense" className="bg-white text-stone-950 font-bold">ไม้หอม & บุคคูร์ (Oud)</option>
-                    <option value="combo" className="bg-white text-stone-950 font-bold">เซตสุดคุ้ม (Combo)</option>
-                    <option value="other" className="bg-white text-stone-950 font-bold">สินค้าอื่นๆ</option>
+                    {(() => {
+                      let opts = [
+                        { id: 'abaya', label: 'ชุดอาบายะห์ (Abaya)' },
+                        { id: 'kaftan', label: 'ชุดคัฟทาน (Kaftan)' },
+                        { id: 'perfume', label: 'น้ำหอมดูไบ (Perfume)' },
+                        { id: 'incense', label: 'ไม้หอม & บุคคูร์ (Oud)' },
+                        { id: 'combo', label: 'เซตสุดคุ้ม (Combo)' },
+                        { id: 'other', label: 'สินค้าอื่นๆ' },
+                      ];
+                      if (typeof window !== 'undefined') {
+                        try {
+                          const stored = localStorage.getItem('huda_custom_category_list_v1');
+                          if (stored) {
+                            const parsed = JSON.parse(stored);
+                            if (Array.isArray(parsed) && parsed.length > 0) opts = parsed;
+                          }
+                        } catch {}
+                      }
+                      if (editingProduct.category && !opts.some((o: any) => o.id === editingProduct.category)) {
+                        opts.push({ id: editingProduct.category, label: editingProduct.category });
+                      }
+                      return opts.map((opt: any) => (
+                        <option key={opt.id} value={opt.id} className="bg-white text-stone-950 font-bold">
+                          {opt.label}
+                        </option>
+                      ));
+                    })()}
                   </select>
                 </div>
 

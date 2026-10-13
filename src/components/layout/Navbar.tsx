@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShoppingBag, Search, Sparkles, User, PackageSearch, Bot, Globe, Lock, QrCode, Compass, Volume2, VolumeX } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { CategoryType, CurrencyType } from '../../types';
@@ -30,7 +30,7 @@ export const Navbar: React.FC = () => {
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const categories: { id: CategoryType; label: string }[] = [
+  const DEFAULT_CATEGORIES: { id: CategoryType; label: string }[] = [
     { id: 'all', label: 'ทั้งหมด (All)' },
     { id: 'abaya', label: 'ชุดอาบายะห์ (Abaya)' },
     { id: 'kaftan', label: 'ชุดคัฟทาน (Kaftan)' },
@@ -39,6 +39,31 @@ export const Navbar: React.FC = () => {
     { id: 'combo', label: 'เซ็ตสุดคุ้ม (Combo Set)' },
     { id: 'other', label: 'อื่นๆ (ของเล่นเด็ก ขนม ฯลฯ)' },
   ];
+
+  const [categories, setCategories] = useState<{ id: CategoryType; label: string }[]>(DEFAULT_CATEGORIES);
+
+  useEffect(() => {
+    const loadCategories = () => {
+      try {
+        const stored = localStorage.getItem('huda_custom_category_list_v1');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setCategories([
+              { id: 'all', label: 'ทั้งหมด (All)' },
+              ...parsed.map((item: any) => ({ id: item.id as CategoryType, label: item.label })),
+            ]);
+            return;
+          }
+        }
+      } catch (e) {
+        console.error('Navbar category load error:', e);
+      }
+    };
+    loadCategories();
+    window.addEventListener('huda_categories_updated', loadCategories);
+    return () => window.removeEventListener('huda_categories_updated', loadCategories);
+  }, []);
 
   const currencies: { id: CurrencyType; label: string }[] = [
     { id: 'THB', label: '฿ THB' },

@@ -6,6 +6,21 @@ import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CategoryType } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
 
+export interface CategoryOptionItem {
+  id: string;
+  label: string;
+  isBuiltin?: boolean;
+}
+
+export const DEFAULT_CATEGORY_OPTIONS: CategoryOptionItem[] = [
+  { id: 'abaya', label: 'ชุดอาบายะห์ (Abaya)', isBuiltin: true },
+  { id: 'kaftan', label: 'ชุดคัฟทาน (Kaftan)', isBuiltin: true },
+  { id: 'perfume', label: 'น้ำหอมดูไบ (Dubai Perfume / Oud)', isBuiltin: true },
+  { id: 'incense', label: 'เครื่องหอม / ไม้หอมดูไบ (Bukhoor / Incense)', isBuiltin: true },
+  { id: 'combo', label: 'เซ็ตสุดคุ้ม (Combo Set)', isBuiltin: true },
+  { id: 'other', label: 'อื่นๆ (ของเล่นเด็ก ขนม สินค้าทั่วไป)', isBuiltin: true },
+];
+
 export const AdminProductManager: React.FC = () => {
   const {
     products,
@@ -53,6 +68,140 @@ export const AdminProductManager: React.FC = () => {
   const [title, setTitle] = useState('');
   const [arabicTitle, setArabicTitle] = useState('');
   const [category, setCategory] = useState<CategoryType>('abaya');
+  const [categoryInput, setCategoryInput] = useState<string>('ชุดอาบายะห์ (Abaya)');
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [editingCatLabel, setEditingCatLabel] = useState<string>('');
+
+  // Category Options List with localStorage persistence
+  const [categoryOptions, setCategoryOptions] = useState<CategoryOptionItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('huda_custom_category_list_v1');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (err) {
+        console.error('Failed to parse saved categories:', err);
+      }
+    }
+    return DEFAULT_CATEGORY_OPTIONS;
+  });
+
+  const saveCategoryOptions = (newList: CategoryOptionItem[]) => {
+    setCategoryOptions(newList);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('huda_custom_category_list_v1', JSON.stringify(newList));
+        window.dispatchEvent(new CustomEvent('huda_categories_updated'));
+      } catch (e) {
+        console.error('Failed to save categories:', e);
+      }
+    }
+  };
+
+  const getCategoryLabel = (catId: string, list: CategoryOptionItem[] = categoryOptions): string => {
+    const found = list.find((c) => c.id === catId);
+    return found ? found.label : catId;
+  };
+
+  const handleSelectCategory = (catItem: CategoryOptionItem) => {
+    setCategory(catItem.id as CategoryType);
+    setCategoryInput(catItem.label);
+    setIsCategoryDropdownOpen(false);
+    setEditingCatId(null);
+  };
+
+  const handleAddNewCategoryOption = (rawName: string) => {
+    const trimmed = rawName.trim();
+    if (!trimmed) return;
+
+    // Check if item already exists by label or id (case-insensitive)
+    const existing = categoryOptions.find(
+      (c) => c.id.toLowerCase() === trimmed.toLowerCase() || c.label.toLowerCase() === trimmed.toLowerCase()
+    );
+
+    if (existing) {
+      setCategory(existing.id as CategoryType);
+      setCategoryInput(existing.label);
+      setIsCategoryDropdownOpen(false);
+      return;
+    }
+
+    const newCatItem: CategoryOptionItem = {
+      id: trimmed,
+      label: trimmed,
+      isBuiltin: false,
+    };
+
+    const updated = [...categoryOptions, newCatItem];
+    saveCategoryOptions(updated);
+    setCategory(trimmed as CategoryType);
+    setCategoryInput(trimmed);
+    setIsCategoryDropdownOpen(false);
+  };
+
+  const handleDeleteCategoryOption = (catToDelete: CategoryOptionItem) => {
+    if (confirm(`คุณต้องการลบหมวดหมู่ "${catToDelete.label}" ออกจากระบบใช่หรือไม่?\n\n*หมายเหตุ: สามารถกด "รีเซ็ตหมวดหมู่เริ่มต้น" ด้านล่างเพื่อนำหมวดหมู่มาตรฐานกลับมาได้ตลอดเวลา`)) {
+      const updated = categoryOptions.filter((c) => c.id !== catToDelete.id);
+      saveCategoryOptions(updated);
+
+      if (category === catToDelete.id) {
+        const fallback = updated[0] || DEFAULT_CATEGORY_OPTIONS[0];
+        setCategory(fallback.id as CategoryType);
+        setCategoryInput(fallback.label);
+      }
+    }
+  };
+
+  const handleSaveEditCategoryOption = (catId: string) => {
+    const trimmed = editingCatLabel.trim();
+    if (!trimmed) return;
+
+    const updated = categoryOptions.map((c) => {
+      if (c.id === catId) {
+        return { ...c, label: trimmed };
+      }
+      return c;
+    });
+
+    saveCategoryOptions(updated);
+
+    if (category === catId) {
+      setCategoryInput(trimmed);
+    }
+
+    setEditingCatId(null);
+    setEditingCatLabel('');
+  };
+
+  const handleResetCategoryDefaults = () => {
+    if (confirm('คุณต้องการรีเซ็ตหมวดหมู่สินค้าทั้งหมดกลับเป็นค่าเริ่มต้นมาตรฐานใช่หรือไม่?')) {
+      saveCategoryOptions(DEFAULT_CATEGORY_OPTIONS);
+      setCategory('abaya');
+      setCategoryInput(DEFAULT_CATEGORY_OPTIONS[0].label);
+    }
+  };
+
+  const filteredCategoryOptions = useMemo(() => {
+    if (!categoryInput.trim()) return categoryOptions;
+    const q = categoryInput.trim().toLowerCase();
+    const matched = categoryOptions.filter(
+      (c) => c.label.toLowerCase().includes(q) || c.id.toLowerCase().includes(q)
+    );
+    return matched.length > 0 ? matched : categoryOptions;
+  }, [categoryOptions, categoryInput]);
+
+  const isTypedCategoryNew = useMemo(() => {
+    const q = categoryInput.trim().toLowerCase();
+    if (!q) return false;
+    return !categoryOptions.some(
+      (c) => c.label.toLowerCase() === q || c.id.toLowerCase() === q
+    );
+  }, [categoryOptions, categoryInput]);
+
   const [description, setDescription] = useState('');
   const [fabric, setFabric] = useState('');
   const [imagesList, setImagesList] = useState<string[]>([]);
@@ -368,6 +517,10 @@ export const AdminProductManager: React.FC = () => {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
+        setIsCategoryDropdownOpen(false);
+        setEditingCatId(null);
+      }
       if (fabricDropdownRef.current && !fabricDropdownRef.current.contains(event.target as Node)) {
         setIsFabricDropdownOpen(false);
         setEditingFabricIdx(null);
@@ -588,6 +741,7 @@ export const AdminProductManager: React.FC = () => {
   // Handle Category Change (keep fabric and variants clean for user to choose freely)
   const handleCategoryChange = (newCat: CategoryType) => {
     setCategory(newCat);
+    setCategoryInput(getCategoryLabel(newCat));
   };
 
   const handleForceSync = async () => {
@@ -660,6 +814,7 @@ export const AdminProductManager: React.FC = () => {
     setTitle('');
     setArabicTitle('');
     setCategory('abaya');
+    setCategoryInput(getCategoryLabel('abaya'));
     setDescription('');
     setFabric('');
     setImagesList([]);
@@ -679,6 +834,17 @@ export const AdminProductManager: React.FC = () => {
       handleAddNewFabricOption(fabric.trim());
     }
 
+    if (categoryInput.trim() && isTypedCategoryNew) {
+      handleAddNewCategoryOption(categoryInput.trim());
+    }
+
+    const matchedOpt = categoryOptions.find(
+      (c) => c.label.toLowerCase() === categoryInput.trim().toLowerCase() || c.id.toLowerCase() === categoryInput.trim().toLowerCase()
+    );
+    const effectiveCategory = isTypedCategoryNew
+      ? (categoryInput.trim() as CategoryType)
+      : (matchedOpt ? (matchedOpt.id as CategoryType) : category);
+
     variants.forEach((v) => {
       if (v.color && v.color.trim()) {
         handleAddNewColorOption(v.color.trim());
@@ -691,7 +857,7 @@ export const AdminProductManager: React.FC = () => {
     }
 
     const uniqueColors = Array.from(new Set(variants.map((v) => v.color).filter(Boolean))) as string[];
-    const fallbackImage = category === 'perfume' 
+    const fallbackImage = (effectiveCategory === 'perfume' || category === 'perfume')
       ? 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop'
       : 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop';
 
@@ -702,7 +868,7 @@ export const AdminProductManager: React.FC = () => {
       id: editingProduct ? editingProduct.id : `huda-prod-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       title: title.trim(),
       arabicTitle: arabicTitle.trim(),
-      category,
+      category: effectiveCategory,
       description: description.trim() || 'สินค้าคุณภาพสูง นำเข้าจากเมืองดูไบ UAE แท้ 100%',
       fabric: fabric.trim() || '',
       origin: 'เมืองดูไบ, UAE',
@@ -799,15 +965,10 @@ export const AdminProductManager: React.FC = () => {
     return matchesCat && matchesSearch;
   });
 
-  const categories: { id: CategoryType; label: string }[] = [
+  const categories: { id: CategoryType; label: string }[] = useMemo(() => [
     { id: 'all', label: 'ทั้งหมด (All)' },
-    { id: 'abaya', label: 'ชุดอาบายะห์ (Abaya)' },
-    { id: 'kaftan', label: 'ชุดคัฟทาน (Kaftan)' },
-    { id: 'perfume', label: 'น้ำหอมดูไบ (Dubai Oud)' },
-    { id: 'incense', label: 'เครื่องหอมดูไบ (Bukhoor)' },
-    { id: 'combo', label: 'เซ็ตสุดคุ้ม (Combo Set)' },
-    { id: 'other', label: 'อื่นๆ (ของเล่น ขนม ฯลฯ)' },
-  ];
+    ...categoryOptions.map((c) => ({ id: c.id as CategoryType, label: c.label })),
+  ], [categoryOptions]);
 
   return (
     <div className="space-y-6 text-xs text-stone-950">
@@ -1048,7 +1209,7 @@ export const AdminProductManager: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-black uppercase text-amber-950 bg-amber-100 px-2.5 py-0.5 rounded-lg border border-amber-400">
-                          {product.category === 'perfume' ? 'น้ำหอมดูไบ' : product.category}
+                          {getCategoryLabel(product.category)}
                         </span>
                         {product.colors && product.colors.length > 0 && (
                           <span className="text-xs font-black text-emerald-950 bg-emerald-100 px-2.5 py-0.5 rounded-lg border border-emerald-400 flex items-center gap-1">
@@ -1073,6 +1234,11 @@ export const AdminProductManager: React.FC = () => {
                         setTitle(product.title);
                         setArabicTitle(product.arabicTitle || '');
                         setCategory(product.category);
+                        setCategoryInput(getCategoryLabel(product.category));
+                        if (!categoryOptions.some((c) => c.id === product.category)) {
+                          const newCatItem = { id: product.category, label: product.category, isBuiltin: false };
+                          saveCategoryOptions([...categoryOptions, newCatItem]);
+                        }
                         setDescription(product.description || '');
                         setFabric(product.fabric || '');
                         setImagesList(Array.isArray(product.images) && product.images.length > 0 ? product.images : []);
@@ -1220,20 +1386,184 @@ export const AdminProductManager: React.FC = () => {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-stone-950 mb-1 font-black text-xs sm:text-sm">เลือกหมวดหมู่สินค้า *</label>
-                    <select
-                      value={category}
-                      onChange={(e) => handleCategoryChange(e.target.value as CategoryType)}
-                      className="w-full bg-white border-2 border-stone-400 rounded-xl p-3 text-stone-950 font-black text-sm focus:border-amber-500 shadow-md cursor-pointer focus:outline-none"
-                    >
-                      <option value="abaya" className="bg-white text-stone-950 font-bold py-2">ชุดอาบายะห์ (Abaya)</option>
-                      <option value="kaftan" className="bg-white text-stone-950 font-bold py-2">ชุดคัฟทาน (Kaftan)</option>
-                      <option value="perfume" className="bg-white text-stone-950 font-bold py-2">น้ำหอมดูไบ (Dubai Perfume / Oud)</option>
-                      <option value="incense" className="bg-white text-stone-950 font-bold py-2">เครื่องหอม / ไม้หอมดูไบ (Bukhoor / Incense)</option>
-                      <option value="combo" className="bg-white text-stone-950 font-bold py-2">เซ็ตสุดคุ้ม (Combo Set)</option>
-                      <option value="other" className="bg-white text-stone-950 font-bold py-2">อื่นๆ (ของเล่นเด็ก ขนม สินค้าทั่วไป)</option>
-                    </select>
+                  <div className="relative" ref={categoryDropdownRef}>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-stone-950 font-black text-xs sm:text-sm">
+                        เลือกหมวดหมู่สินค้า *
+                      </label>
+                      <VoiceInputButton
+                        onTranscript={(text) => {
+                          setCategoryInput(text);
+                          handleAddNewCategoryOption(text);
+                        }}
+                        currentValue={categoryInput}
+                      />
+                    </div>
+
+                    {/* Single Unified Input with Dropdown Arrow */}
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={categoryInput}
+                        onFocus={() => setIsCategoryDropdownOpen(true)}
+                        onClick={() => setIsCategoryDropdownOpen(true)}
+                        onChange={(e) => {
+                          setCategoryInput(e.target.value);
+                          setIsCategoryDropdownOpen(true);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (categoryInput.trim()) {
+                              handleAddNewCategoryOption(categoryInput.trim());
+                            }
+                          }
+                        }}
+                        placeholder="คลิกเลือกหมวดหมู่ หรือพิมพ์เพิ่มหมวดหมู่ใหม่..."
+                        className="w-full bg-white border-2 border-stone-400 focus:border-amber-500 rounded-xl p-3 pr-10 text-stone-950 font-black text-sm placeholder-stone-400 focus:outline-none shadow-sm cursor-text"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-stone-600 hover:text-amber-800 transition cursor-pointer"
+                        title="เปิด/ปิด รายการหมวดหมู่สินค้า"
+                      >
+                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180 text-amber-600' : ''}`} />
+                      </button>
+                    </div>
+
+                    {/* Floating Dropdown List with Edit & Delete on each item */}
+                    {isCategoryDropdownOpen && (
+                      <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl max-h-72 overflow-y-auto no-scrollbar py-1">
+                        {/* Header info in dropdown */}
+                        <div className="px-3 py-1.5 bg-stone-100 border-b border-stone-200 flex items-center justify-between text-[11px] font-black text-stone-700">
+                          <span>รายการหมวดหมู่สินค้า ({categoryOptions.length} หมวด)</span>
+                          <span className="text-[10px] text-stone-500 font-bold">กด ✏️ แก้ไข หรือ 🗑️ ลบได้อิสระ</span>
+                        </div>
+
+                        {/* Add new button if typed text is not yet in options */}
+                        {isTypedCategoryNew && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleAddNewCategoryOption(categoryInput.trim());
+                            }}
+                            className="w-full text-left px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 border-b border-amber-300 text-xs font-black text-amber-950 flex items-center justify-between transition cursor-pointer"
+                          >
+                            <span>➕ เพิ่มหมวดหมู่ใหม่: <strong className="text-amber-900 underline">"{categoryInput.trim()}"</strong></span>
+                            <span className="text-[10px] bg-amber-200 px-2 py-0.5 rounded-full border border-amber-400 font-bold">กดเพื่อเพิ่มตัวเลือก</span>
+                          </button>
+                        )}
+
+                        {/* List of category options */}
+                        <div className="divide-y divide-stone-100">
+                          {filteredCategoryOptions.map((catItem) => {
+                            const isEditing = editingCatId === catItem.id;
+
+                            if (isEditing) {
+                              return (
+                                <div key={catItem.id} className="p-2 bg-amber-50/90 flex items-center gap-1.5 border-b border-amber-300">
+                                  <input
+                                    type="text"
+                                    value={editingCatLabel}
+                                    onChange={(e) => setEditingCatLabel(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleSaveEditCategoryOption(catItem.id);
+                                      } else if (e.key === 'Escape') {
+                                        setEditingCatId(null);
+                                      }
+                                    }}
+                                    autoFocus
+                                    className="flex-1 bg-white border-2 border-amber-500 rounded-lg px-2.5 py-1 text-xs font-black text-stone-950 focus:outline-none shadow-inner"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSaveEditCategoryOption(catItem.id)}
+                                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black shadow transition cursor-pointer"
+                                    title="บันทึกการแก้ไขชื่อหมวดหมู่นี้"
+                                  >
+                                    บันทึก
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingCatId(null)}
+                                    className="px-2 py-1 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-lg text-xs font-black transition cursor-pointer"
+                                    title="ยกเลิก"
+                                  >
+                                    ยกเลิก
+                                  </button>
+                                </div>
+                              );
+                            }
+
+                            const isSelected = category === catItem.id;
+
+                            return (
+                              <div
+                                key={catItem.id}
+                                className={`px-3 py-2 text-xs font-black transition flex items-center justify-between group ${
+                                  isSelected
+                                    ? 'bg-amber-100 text-amber-950'
+                                    : 'text-stone-900 hover:bg-stone-50'
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => handleSelectCategory(catItem)}
+                                  className="flex-1 text-left flex items-center justify-between pr-2 cursor-pointer truncate"
+                                >
+                                  <span className="truncate">{catItem.label}</span>
+                                  {isSelected && (
+                                    <span className="text-amber-800 text-[11px] font-black shrink-0 ml-1.5">✓ เลือกอยู่</span>
+                                  )}
+                                </button>
+
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingCatId(catItem.id);
+                                      setEditingCatLabel(catItem.label);
+                                    }}
+                                    className="p-1 hover:bg-amber-200 text-stone-500 hover:text-amber-950 rounded transition cursor-pointer"
+                                    title={`แก้ไขชื่อหมวดหมู่ "${catItem.label}"`}
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteCategoryOption(catItem);
+                                    }}
+                                    className="p-1 hover:bg-red-100 text-stone-400 hover:text-red-700 rounded transition cursor-pointer"
+                                    title={`ลบหมวดหมู่ "${catItem.label}" ออกจากรายการ`}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Footer Reset Button */}
+                        <div className="p-2 border-t border-stone-200 bg-stone-50 flex items-center justify-between text-[11px]">
+                          <span className="text-stone-500 font-bold">บันทึกตัวเลือกลงระบบถาวร</span>
+                          <button
+                            type="button"
+                            onClick={handleResetCategoryDefaults}
+                            className="text-stone-600 hover:text-red-700 underline font-black cursor-pointer transition flex items-center gap-1"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>รีเซ็ตหมวดหมู่เริ่มต้น</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="relative" ref={fabricDropdownRef}>

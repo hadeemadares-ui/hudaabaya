@@ -1,4 +1,4 @@
-export type CategoryType = 'all' | 'abaya' | 'kaftan' | 'perfume' | 'combo' | 'incense' | 'other';
+export type CategoryType = 'all' | 'abaya' | 'kaftan' | 'perfume' | 'combo' | 'incense' | 'other' | (string & {});
 export type CurrencyType = 'THB' | 'AED' | 'USD' | 'EUR';
 
 export interface ProductVariant {
