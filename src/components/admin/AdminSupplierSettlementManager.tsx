@@ -90,11 +90,78 @@ export const AdminSupplierSettlementManager: React.FC = () => {
     }
   };
 
-  // Close supplier dropdown on click outside
+  // Default Known Notes / DO numbers
+  const DEFAULT_NOTE_PRESETS = [
+    '00001/69',
+    'รับสินค้าล็อตแรก / เปิดร้าน',
+    'รับสินค้าล็อตทดลอง',
+    'ล็อตสั่งตัดพิเศษ UAE',
+    'รับเติมสต๊อกขายดีหน้าร้าน',
+  ];
+
+  // Dynamic Note Options (Persisted in localStorage)
+  const [noteOptions, setNoteOptions] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('huda_custom_stock_in_notes');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return Array.from(new Set([...DEFAULT_NOTE_PRESETS, ...parsed]));
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load custom notes:', e);
+      }
+    }
+    return DEFAULT_NOTE_PRESETS;
+  });
+
+  const [isNoteDropdownOpen, setIsNoteDropdownOpen] = useState<boolean>(false);
+  const noteDropdownRef = useRef<HTMLDivElement>(null);
+
+  const saveNoteOptions = (newList: string[]) => {
+    const cleaned = Array.from(new Set(newList.map((s) => s.trim()).filter(Boolean)));
+    setNoteOptions(cleaned);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('huda_custom_stock_in_notes', JSON.stringify(cleaned));
+      } catch (e) {
+        console.error('Failed to save custom notes:', e);
+      }
+    }
+  };
+
+  const handleAddNewNote = (rawNote: string) => {
+    const trimmed = rawNote.trim();
+    if (!trimmed) return;
+    const existing = noteOptions.find((s) => s.toLowerCase() === trimmed.toLowerCase());
+    if (!existing) {
+      const updated = [trimmed, ...noteOptions];
+      saveNoteOptions(updated);
+    }
+    setStockInNote(trimmed);
+    setIsNoteDropdownOpen(false);
+  };
+
+  const handleDeleteNote = (noteToDelete: string) => {
+    if (confirm(`คุณต้องการลบ "${noteToDelete}" ออกจากรายการตัวเลือกหมายเหตุใช่หรือไม่?`)) {
+      const updated = noteOptions.filter((s) => s !== noteToDelete);
+      saveNoteOptions(updated);
+      if (stockInNote === noteToDelete) {
+        setStockInNote('');
+      }
+    }
+  };
+
+  // Close dropdowns on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (supplierDropdownRef.current && !supplierDropdownRef.current.contains(event.target as Node)) {
         setIsSupplierDropdownOpen(false);
+      }
+      if (noteDropdownRef.current && !noteDropdownRef.current.contains(event.target as Node)) {
+        setIsNoteDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -298,6 +365,15 @@ export const AdminSupplierSettlementManager: React.FC = () => {
     stockInSupplierName.trim().length > 0 &&
     !supplierOptions.some((s) => s.toLowerCase() === stockInSupplierName.trim().toLowerCase());
 
+  // Filtered Notes / DO numbers for Stock IN dropdown
+  const filteredNotes = noteOptions.filter((s) =>
+    s.toLowerCase().includes(stockInNote.trim().toLowerCase())
+  );
+
+  const isTypedNoteNew =
+    stockInNote.trim().length > 0 &&
+    !noteOptions.some((s) => s.toLowerCase() === stockInNote.trim().toLowerCase());
+
   // Handle Submit Stock IN Form
   const handleSaveStockIn = (e: React.FormEvent) => {
     e.preventDefault();
@@ -321,6 +397,12 @@ export const AdminSupplierSettlementManager: React.FC = () => {
     // Auto-save new supplier to dropdown list for future use
     handleAddNewSupplier(trimmedSupplier);
 
+    // Auto-save note / DO to dropdown list for future use if provided
+    const trimmedNote = stockInNote.trim();
+    if (trimmedNote) {
+      handleAddNewNote(trimmedNote);
+    }
+
     const finalCost = typeof stockInCostPrice === 'number' ? stockInCostPrice : (parseInt(stockInCostPrice, 10) || 0);
 
     recordStockIn({
@@ -329,7 +411,7 @@ export const AdminSupplierSettlementManager: React.FC = () => {
       quantity: finalQty,
       costPrice: finalCost,
       supplierName: trimmedSupplier,
-      note: stockInNote,
+      note: trimmedNote,
     });
 
     alert('บันทึกรับสินค้าเข้าสต๊อกเรียบร้อยแล้ว! สต๊อกในระบบอัปเดตทันที');
@@ -1151,22 +1233,148 @@ export const AdminSupplierSettlementManager: React.FC = () => {
                 </div>
               </div>
 
-              <div>
+              {/* Note / DO Number Dropdown with Custom Add & Persistent Storage */}
+              <div className="relative" ref={noteDropdownRef}>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-stone-950 font-black">หมายเหตุ / เลขที่ใบส่งของ (Optional)</label>
-                  <VoiceInputButton
-                    onTranscript={(text) => setStockInNote(text)}
-                    className="scale-90"
-                    title="พูดพิมพ์หมายเหตุ"
-                  />
+                  <label className="block text-stone-950 font-black">
+                    หมายเหตุ / เลขที่ใบส่งของ (Optional)
+                  </label>
+                  <span className="text-[10px] text-amber-800 font-extrabold">
+                    (เลือกจากรายการ หรือพิมพ์เพิ่มเลขที่ใหม่ได้อิสระ)
+                  </span>
                 </div>
-                <input
-                  type="text"
-                  value={stockInNote}
-                  onChange={(e) => setStockInNote(e.target.value)}
-                  placeholder="เช่น รับสินค้าล็อตทดลอง / ล็อตที่ 5"
-                  className="w-full bg-white border-2 border-stone-300 rounded-xl p-2.5 text-stone-950 font-black focus:outline-none focus:border-amber-500"
-                />
+
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={stockInNote}
+                    onChange={(e) => {
+                      setStockInNote(e.target.value);
+                      setIsNoteDropdownOpen(true);
+                    }}
+                    onFocus={() => setIsNoteDropdownOpen(true)}
+                    placeholder="คลิกเลือกจากรายการ หรือพิมพ์เลขที่ใบส่งของ เช่น 00001/69..."
+                    className="w-full bg-white border-2 border-stone-300 rounded-xl p-3 pr-20 text-stone-950 font-black text-sm focus:outline-none focus:border-amber-500 shadow-sm"
+                  />
+
+                  <div className="absolute right-2 flex items-center gap-1">
+                    <VoiceInputButton
+                      onTranscript={(text) => {
+                        setStockInNote(text);
+                        setIsNoteDropdownOpen(true);
+                      }}
+                      className="scale-90"
+                      title="พูดพิมพ์หมายเหตุ / เลขที่ใบส่งของ"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsNoteDropdownOpen((prev) => !prev)}
+                      className="p-1.5 text-stone-600 hover:text-stone-950 hover:bg-stone-100 rounded-lg transition cursor-pointer"
+                      title="เปิด/ปิดรายการตัวเลือกหมายเหตุ / เลขที่ใบส่งของ"
+                    >
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isNoteDropdownOpen ? 'rotate-180 text-amber-600' : ''}`} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Note Dropdown Menu */}
+                {isNoteDropdownOpen && (
+                  <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
+                    {/* Dropdown Header */}
+                    <div className="px-3 py-2 bg-amber-50 border-b border-amber-200 flex items-center justify-between text-[11px] font-black text-amber-950">
+                      <span>รายการหมายเหตุ / เลขที่ใบส่งของ ({noteOptions.length} รายการ)</span>
+                      <button
+                        type="button"
+                        onClick={() => saveNoteOptions(DEFAULT_NOTE_PRESETS)}
+                        className="text-[10px] text-stone-500 hover:text-amber-800 underline font-bold cursor-pointer"
+                        title="รีเซ็ตเป็นค่าเริ่มต้น"
+                      >
+                        รีเซ็ตค่าเริ่มต้น
+                      </button>
+                    </div>
+
+                    {/* Add new button if typed text is not yet in options */}
+                    {isTypedNoteNew && (
+                      <button
+                        type="button"
+                        onClick={() => handleAddNewNote(stockInNote.trim())}
+                        className="w-full text-left px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 border-b border-emerald-300 text-xs font-black text-emerald-950 flex items-center justify-between transition cursor-pointer"
+                      >
+                        <span>➕ เพิ่มตัวเลือกใหม่: <strong className="text-emerald-900 underline">"{stockInNote.trim()}"</strong></span>
+                        <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full border border-emerald-400 font-bold">กดเพื่อเพิ่มและบันทึก</span>
+                      </button>
+                    )}
+
+                    {/* List of items */}
+                    <div className="divide-y divide-stone-100">
+                      {filteredNotes.length === 0 && !isTypedNoteNew ? (
+                        <div className="p-4 text-center text-xs text-stone-500 font-bold">
+                          ไม่พบรายการที่ตรงกับ "{stockInNote}"
+                        </div>
+                      ) : (
+                        filteredNotes.map((item) => {
+                          const isSelected = stockInNote === item;
+                          return (
+                            <div
+                              key={item}
+                              className={`px-3 py-2 text-xs font-black transition flex items-center justify-between group ${
+                                isSelected ? 'bg-amber-100 text-amber-950' : 'text-stone-900 hover:bg-stone-50'
+                              }`}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setStockInNote(item);
+                                  setIsNoteDropdownOpen(false);
+                                }}
+                                className="flex-1 text-left flex items-center justify-between pr-2 cursor-pointer truncate"
+                              >
+                                <span className="truncate">{item}</span>
+                                {isSelected && (
+                                  <span className="text-amber-800 text-[11px] font-black shrink-0 ml-1.5">✓ เลือกอยู่</span>
+                                )}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteNote(item);
+                                }}
+                                className="p-1 hover:bg-red-100 text-stone-400 hover:text-red-600 rounded transition cursor-pointer opacity-70 group-hover:opacity-100"
+                                title={`ลบ "${item}" ออกจากตัวเลือก`}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Quick chips below */}
+                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                  <span className="text-[11px] font-black text-stone-600">ตัวเลือกด่วน:</span>
+                  {noteOptions.slice(0, 5).map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => {
+                        setStockInNote(n);
+                        setIsNoteDropdownOpen(false);
+                      }}
+                      className={`px-2 py-0.5 rounded-lg text-[10px] font-black border transition cursor-pointer ${
+                        stockInNote === n
+                          ? 'bg-amber-200 border-amber-400 text-amber-950 shadow-xs'
+                          : 'bg-stone-100 hover:bg-stone-200 border-stone-300 text-stone-700'
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-amber-400/30">
