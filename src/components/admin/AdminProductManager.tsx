@@ -2185,22 +2185,25 @@ export const AdminProductManager: React.FC = () => {
                                 />
                               </div>
                               <input
-                                type="number"
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 placeholder="0"
                                 value={v.price === 0 ? '' : v.price}
                                 onFocus={(e) => e.target.select()}
                                 onClick={(e) => (e.target as HTMLInputElement).select()}
                                 onChange={(e) => {
-                                  const updated = [...variants];
-                                  const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
+                                  const rawVal = e.target.value.replace(/[^0-9]/g, '');
+                                  const cleanVal = rawVal.replace(/^0+(?=\d)/, '');
                                   const newPrice = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
+                                  const updated = [...variants];
                                   updated[idx].price = newPrice;
                                   if (updated[idx].costPrice === undefined || updated[idx].costPrice === 0) {
                                     updated[idx].costPrice = Math.round(newPrice * 0.5);
                                   }
                                   setVariants(updated);
                                 }}
-                                className="w-full bg-white border-2 border-stone-400 rounded-xl p-2 text-stone-950 font-black font-mono text-sm sm:text-base text-right shadow-inner focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                                className="w-full bg-white border-2 border-stone-400 rounded-xl p-2 text-stone-950 font-black font-mono text-sm sm:text-base text-right shadow-inner focus:ring-2 focus:ring-amber-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
                             </div>
 
@@ -2221,18 +2224,22 @@ export const AdminProductManager: React.FC = () => {
                                 />
                               </div>
                               <input
-                                type="number"
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 placeholder="0"
                                 value={v.costPrice === 0 ? '' : (v.costPrice ?? (v.price ? Math.round(v.price * 0.5) : 0))}
                                 onFocus={(e) => e.target.select()}
                                 onClick={(e) => (e.target as HTMLInputElement).select()}
                                 onChange={(e) => {
+                                  const rawVal = e.target.value.replace(/[^0-9]/g, '');
+                                  const cleanVal = rawVal.replace(/^0+(?=\d)/, '');
+                                  const newCost = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
                                   const updated = [...variants];
-                                  const cleanVal = e.target.value.replace(/^0+(?=\d)/, '');
-                                  updated[idx].costPrice = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
+                                  updated[idx].costPrice = newCost;
                                   setVariants(updated);
                                 }}
-                                className="w-full bg-white border-2 border-amber-400 rounded-lg p-2 text-stone-950 font-black font-mono text-sm sm:text-base text-right shadow-inner focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                                className="w-full bg-white border-2 border-amber-400 rounded-lg p-2 text-stone-950 font-black font-mono text-sm sm:text-base text-right shadow-inner focus:ring-2 focus:ring-amber-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
                             </div>
                           </div>
