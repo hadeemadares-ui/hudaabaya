@@ -92,11 +92,41 @@ export const AdminDashboard: React.FC = () => {
       const handleSwitchSuppliersStockIn = () => {
         setActiveTab('suppliers');
       };
+      const handleSwitchProducts = (e: Event) => {
+        const detail = (e as CustomEvent)?.detail;
+        setActiveTab('products');
+        if (detail) {
+          const attemptScroll = (attemptsLeft: number) => {
+            if (detail.productId) {
+              const el = document.getElementById(`product-card-${detail.productId}`);
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.add('ring-4', 'ring-amber-400', 'transition-all');
+                setTimeout(() => {
+                  el.classList.remove('ring-4', 'ring-amber-400');
+                }, 3500);
+                return;
+              }
+            }
+            if (attemptsLeft > 0) {
+              setTimeout(() => attemptScroll(attemptsLeft - 1), 150);
+              return;
+            }
+            if (typeof detail.scrollY === 'number') {
+              window.scrollTo({ top: detail.scrollY, behavior: 'smooth' });
+            }
+          };
+          setTimeout(() => attemptScroll(3), 100);
+        }
+      };
+
       window.addEventListener('switch_admin_tab_reports', handleSwitchEvent);
       window.addEventListener('switch_admin_tab_suppliers_stock_in', handleSwitchSuppliersStockIn);
+      window.addEventListener('switch_admin_tab_products', handleSwitchProducts);
       return () => {
         window.removeEventListener('switch_admin_tab_reports', handleSwitchEvent);
         window.removeEventListener('switch_admin_tab_suppliers_stock_in', handleSwitchSuppliersStockIn);
+        window.removeEventListener('switch_admin_tab_products', handleSwitchProducts);
       };
     }
   }, []);

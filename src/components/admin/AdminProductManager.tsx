@@ -1182,6 +1182,15 @@ export const AdminProductManager: React.FC = () => {
     resetForm();
 
     if (typeof window !== 'undefined') {
+      sessionStorage.setItem(
+        'huda_stock_in_return_state',
+        JSON.stringify({
+          tab: 'products',
+          scrollY: window.scrollY,
+          productId: newProductObj.id,
+          variantId: targetVar?.id || '',
+        })
+      );
       window.dispatchEvent(new CustomEvent('switch_admin_tab_suppliers_stock_in', {
         detail: {
           productId: newProductObj.id,
@@ -1489,7 +1498,8 @@ export const AdminProductManager: React.FC = () => {
             return (
               <div
                 key={product.id}
-                className="bg-white border-2 border-amber-400/60 rounded-2xl p-5 space-y-4 shadow-xl text-stone-950 transition"
+                id={`product-card-${product.id}`}
+                className="bg-white border-2 border-amber-400/60 rounded-2xl p-5 space-y-4 shadow-xl text-stone-950 transition scroll-mt-24"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-3">
                   <div className="flex items-center gap-3.5">
@@ -1635,6 +1645,12 @@ export const AdminProductManager: React.FC = () => {
                               <button
                                 onClick={() => {
                                   if (typeof window !== 'undefined') {
+                                    sessionStorage.setItem('huda_stock_in_return_state', JSON.stringify({
+                                      tab: 'products',
+                                      scrollY: window.scrollY,
+                                      productId: product.id,
+                                      variantId: variant.id,
+                                    }));
                                     sessionStorage.setItem('huda_pending_stock_in', JSON.stringify({
                                       productId: product.id,
                                       variantId: variant.id,

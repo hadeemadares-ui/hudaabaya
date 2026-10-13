@@ -471,13 +471,47 @@ export const AdminSupplierSettlementManager: React.FC = () => {
       note: trimmedNote,
     });
 
-    alert('บันทึกรับสินค้าเข้าสต๊อกเรียบร้อยแล้ว! สต๊อกในระบบอัปเดตทันที');
     setIsStockInModalOpen(false);
     setStockInProductId('');
     setStockInVariantId('');
     setStockInQty('');
     setStockInCostPrice('');
     setStockInNote('');
+
+    // Return to previous tab and exact position if originated from product screen
+    let returnData: any = null;
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('huda_stock_in_return_state');
+      if (saved) {
+        try {
+          returnData = JSON.parse(saved);
+          sessionStorage.removeItem('huda_stock_in_return_state');
+        } catch (e) {}
+      }
+    }
+
+    if (returnData && returnData.tab) {
+      alert(`บันทึกรับสินค้าเข้าสต๊อก (+${finalQty} ชิ้น) เรียบร้อยแล้ว!\nระบบจะพากลับไปยังหน้ารายการสินค้าเดิมที่ตำแหน่งเดิมทันทีค่ะ`);
+      window.dispatchEvent(new CustomEvent('switch_admin_tab_products', { detail: returnData }));
+    } else {
+      alert(`บันทึกรับสินค้าเข้าสต๊อก (+${finalQty} ชิ้น) เรียบร้อยแล้ว! สต๊อกในระบบอัปเดตทันที`);
+    }
+  };
+
+  const handleCloseStockInModal = () => {
+    setIsStockInModalOpen(false);
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('huda_stock_in_return_state');
+      if (saved) {
+        try {
+          const returnData = JSON.parse(saved);
+          sessionStorage.removeItem('huda_stock_in_return_state');
+          if (returnData && returnData.tab) {
+            window.dispatchEvent(new CustomEvent('switch_admin_tab_products', { detail: returnData }));
+          }
+        } catch (e) {}
+      }
+    }
   };
 
   // Open Admin Passcode Confirmation for Deleting Movement
@@ -1070,7 +1104,7 @@ export const AdminSupplierSettlementManager: React.FC = () => {
                 <span>บันทึกรับสินค้าเข้าสต๊อก (Stock IN)</span>
               </h3>
               <button
-                onClick={() => setIsStockInModalOpen(false)}
+                onClick={handleCloseStockInModal}
                 className="text-stone-700 hover:text-stone-950 p-1 rounded-full border border-stone-300 cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -1497,7 +1531,7 @@ export const AdminSupplierSettlementManager: React.FC = () => {
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-amber-400/30">
                 <button
                   type="button"
-                  onClick={() => setIsStockInModalOpen(false)}
+                  onClick={handleCloseStockInModal}
                   className="px-4 py-2 bg-stone-100 border border-stone-300 text-stone-950 font-black rounded-xl hover:bg-stone-200 cursor-pointer"
                 >
                   ยกเลิก
