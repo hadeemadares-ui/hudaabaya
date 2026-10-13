@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Truck, DollarSign, PackageCheck, Plus, Search, Calendar, FileText, CheckCircle2, AlertCircle, Sparkles, Filter, ChevronRight, ChevronDown, X, Printer, ArrowDownLeft, ArrowUpRight, CheckSquare, Square, Check, Trash2, Lock, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { Truck, DollarSign, PackageCheck, Plus, Search, Calendar, FileText, CheckCircle2, AlertCircle, Sparkles, Filter, ChevronRight, ChevronDown, X, Printer, ArrowDownLeft, ArrowUpRight, CheckSquare, Square, Check, Trash2, Lock, KeyRound, Eye, EyeOff, Upload, Image as ImageIcon, Camera } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { StockMovement, SupplierSettlement } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
@@ -192,6 +192,52 @@ export const AdminSupplierSettlementManager: React.FC = () => {
   const [selectedMovementIds, setSelectedMovementIds] = useState<string[]>([]);
   const [settlementPaymentRef, setSettlementPaymentRef] = useState<string>('');
   const [settlementNote, setSettlementNote] = useState<string>('');
+  const [settlementSlipImage, setSettlementSlipImage] = useState<string>('');
+  const slipFileInputRef = useRef<HTMLInputElement>(null);
+  const [previewSlipModalUrl, setPreviewSlipModalUrl] = useState<string | null>(null);
+
+  // Client-side image compression and reader for payment slips
+  const handleSlipFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 12 * 1024 * 1024) {
+        alert('ไฟล์รูปภาพมีขนาดใหญ่เกิน 12MB กรุณาเลือกไฟล์ที่มีขนาดเล็กลงครับ');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const rawBase64 = event.target?.result as string;
+        const img = new Image();
+        img.src = rawBase64;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 1200;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.82);
+          setSettlementSlipImage(compressed);
+        };
+        img.onerror = () => {
+          setSettlementSlipImage(rawBase64);
+        };
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
 
   // Derive Unsettled Sold Movements (Stock OUT items that are not yet settled)
   const unsettledMovements = stockMovements.filter((m) => m.type === 'OUT' && !m.isSettled);
@@ -335,6 +381,7 @@ export const AdminSupplierSettlementManager: React.FC = () => {
     setSettleSupplierName(supplierName);
     setSettlementPaymentRef('โอนเงินผ่านแอปธนาคาร / PromptPay');
     setSettlementNote(`เคลียร์ยอดต้นทุนสินค้าประจำรอบ ${new Date().toLocaleDateString('th-TH', { month: 'long', year: 'numeric' })}`);
+    setSettlementSlipImage('');
     setIsSettlementModalOpen(true);
   };
 
@@ -358,6 +405,7 @@ export const AdminSupplierSettlementManager: React.FC = () => {
       movementIds: activeSupplierMovements.map((m) => m.id),
       paymentRef: settlementPaymentRef,
       note: settlementNote,
+      slipImageUrl: settlementSlipImage || undefined,
     });
 
     setIsSettlementModalOpen(false);
@@ -977,7 +1025,22 @@ export const AdminSupplierSettlementManager: React.FC = () => {
                       <td className="py-3 px-3 text-right font-serif font-black text-amber-900 text-sm">
                         ฿{s.totalCostAmount.toLocaleString()}
                       </td>
-                      <td className="py-3 px-3 text-stone-800 font-bold">{s.paymentRef || 'โอนผ่านบัญชี'}</td>
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-stone-800 font-bold">{s.paymentRef || 'โอนผ่านบัญชี'}</span>
+                          {s.slipImageUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewSlipModalUrl(s.slipImageUrl || null)}
+                              className="px-2 py-0.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-400 rounded-lg text-[10px] font-black transition flex items-center gap-1 cursor-pointer shadow-xs"
+                              title="คลิกดูสลิปหลักฐานโอนเงิน"
+                            >
+                              <ImageIcon className="w-3 h-3 text-emerald-700" />
+                              <span>มีสลิป</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
                       <td className="py-3 px-3 text-center">
                         <button
                           onClick={() => setViewingSettlementVoucher(s)}
@@ -1520,6 +1583,104 @@ export const AdminSupplierSettlementManager: React.FC = () => {
                 />
               </div>
 
+              {/* Slip / Payment Proof Image Attachment */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <label className="block text-stone-950 font-black flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-amber-700" />
+                    <span>แนบรูปภาพหลักฐานการโอนเงิน / สลิป (Optional)</span>
+                  </label>
+                  {settlementSlipImage && (
+                    <span className="text-[10px] text-emerald-700 font-black bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                      ✓ แนบรูปภาพแล้ว
+                    </span>
+                  )}
+                </div>
+
+                <input
+                  type="file"
+                  ref={slipFileInputRef}
+                  accept="image/*"
+                  onChange={handleSlipFileUpload}
+                  className="hidden"
+                />
+
+                {!settlementSlipImage ? (
+                  <button
+                    type="button"
+                    onClick={() => slipFileInputRef.current?.click()}
+                    className="w-full border-2 border-dashed border-amber-400 hover:border-amber-600 bg-amber-50/60 hover:bg-amber-100/70 rounded-2xl p-4 text-center transition flex flex-col items-center justify-center gap-1.5 cursor-pointer group"
+                  >
+                    <div className="p-2.5 bg-white rounded-xl shadow-xs group-hover:scale-110 transition border border-amber-300">
+                      <Upload className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <span className="text-xs font-black text-amber-950">
+                      + คลิกเลือกไฟล์รูปภาพหลักฐานการโอนเงิน หรือรูปจากไฟล์ภาพ
+                    </span>
+                    <span className="text-[10px] text-stone-600 font-bold">
+                      รองรับไฟล์ภาพ JPG, PNG, WEBP (ระบบบีบอัดขนาดให้อัตโนมัติ)
+                    </span>
+                  </button>
+                ) : (
+                  <div className="flex items-center justify-between p-3 bg-stone-50 border-2 border-emerald-400 rounded-2xl shadow-sm gap-3">
+                    <div className="flex items-center gap-3">
+                      <div
+                        onClick={() => setPreviewSlipModalUrl(settlementSlipImage)}
+                        className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-emerald-500 shrink-0 cursor-pointer shadow-xs hover:opacity-90 group bg-stone-200"
+                        title="คลิกเพื่อดูรูปขนาดเต็ม"
+                      >
+                        <img
+                          src={settlementSlipImage}
+                          alt="สลิปโอนเงิน"
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                          <Eye className="w-4 h-4 text-white" />
+                        </div>
+                      </div>
+
+                      <div className="text-left space-y-0.5">
+                        <span className="text-xs font-black text-emerald-950 block">
+                          แนบรูปภาพสลิปเรียบร้อยแล้ว
+                        </span>
+                        <span className="text-[10px] text-stone-600 block font-bold">
+                          รูปจะปรากฏในใบสรุปยอดเคลียร์เงิน Supplier ทันที
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewSlipModalUrl(settlementSlipImage)}
+                        className="px-2.5 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-black border border-stone-300 transition flex items-center gap-1 cursor-pointer"
+                        title="ดูรูปขนาดเต็ม"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>ดูรูป</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => slipFileInputRef.current?.click()}
+                        className="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-950 rounded-xl text-xs font-black border border-amber-400 transition flex items-center gap-1 cursor-pointer"
+                        title="เปลี่ยนรูปภาพใหม่"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>เปลี่ยน</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSettlementSlipImage('')}
+                        className="p-1.5 hover:bg-red-100 text-stone-400 hover:text-red-600 rounded-xl transition cursor-pointer"
+                        title="ลบรูปภาพนี้"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-amber-400/40">
                 <button
                   type="button"
@@ -1607,6 +1768,37 @@ export const AdminSupplierSettlementManager: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Attached Slip Image Proof */}
+            {viewingSettlementVoucher.slipImageUrl && (
+              <div className="bg-white border-2 border-emerald-400 p-4 rounded-2xl space-y-2 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-emerald-600" />
+                    <span>รูปภาพหลักฐานการโอนเงิน / สลิปที่แนบไว้:</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewSlipModalUrl(viewingSettlementVoucher.slipImageUrl || null)}
+                    className="text-xs text-amber-700 hover:text-amber-900 font-black underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>ขยายดูรูปสลิปเต็มจอ</span>
+                  </button>
+                </div>
+
+                <div
+                  onClick={() => setPreviewSlipModalUrl(viewingSettlementVoucher.slipImageUrl || null)}
+                  className="max-w-xs mx-auto border border-stone-200 rounded-xl overflow-hidden shadow-xs cursor-pointer hover:opacity-95 transition bg-stone-50 p-1"
+                >
+                  <img
+                    src={viewingSettlementVoucher.slipImageUrl}
+                    alt="สลิปโอนเงิน Supplier"
+                    className="w-full max-h-60 object-contain rounded-lg mx-auto"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Voucher Footer Action */}
             <div className="flex items-center justify-between pt-2">
@@ -1809,6 +2001,40 @@ export const AdminSupplierSettlementManager: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* FULLSCREEN IMAGE PREVIEW MODAL */}
+      {previewSlipModalUrl && (
+        <div
+          onClick={() => setPreviewSlipModalUrl(null)}
+          className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-3xl max-h-[90vh] bg-white p-3 rounded-2xl shadow-2xl flex flex-col items-center"
+          >
+            <div className="w-full flex items-center justify-between pb-2 px-2 border-b border-stone-200">
+              <span className="font-serif font-black text-sm text-stone-900 flex items-center gap-1.5">
+                <ImageIcon className="w-4 h-4 text-emerald-600" />
+                <span>รูปภาพหลักฐานการโอนเงิน / สลิป Supplier</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setPreviewSlipModalUrl(null)}
+                className="p-1 rounded-full text-stone-600 hover:text-stone-950 hover:bg-stone-100 border border-stone-300 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="overflow-auto max-h-[80vh] p-2">
+              <img
+                src={previewSlipModalUrl}
+                alt="สลิปหลักฐานการโอนเงิน"
+                className="max-h-[75vh] w-auto object-contain rounded-xl mx-auto shadow-md"
+              />
+            </div>
           </div>
         </div>
       )}

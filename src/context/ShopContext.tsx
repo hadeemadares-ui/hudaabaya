@@ -101,7 +101,7 @@ interface ShopContextType {
   deleteProduct: (productId: string) => void;
   recordStockIn: (data: { productId: string; variantId: string; quantity: number; costPrice: number; supplierName: string; note?: string }) => void;
   deleteStockMovement: (movementId: string, revertStock?: boolean) => boolean;
-  createSupplierSettlement: (data: { supplierName: string; periodStart: string; periodEnd: string; movementIds: string[]; paymentRef?: string; note?: string }) => SupplierSettlement;
+  createSupplierSettlement: (data: { supplierName: string; periodStart: string; periodEnd: string; movementIds: string[]; paymentRef?: string; note?: string; slipImageUrl?: string }) => SupplierSettlement;
   setIsCartOpen: (open: boolean) => void;
   setIsOrderTrackingOpen: (open: boolean) => void;
   setIsAdminMode: (admin: boolean) => void;
@@ -1057,6 +1057,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     movementIds: string[];
     paymentRef?: string;
     note?: string;
+    slipImageUrl?: string;
   }): SupplierSettlement => {
     const targetMovements = stockMovements.filter((m) => data.movementIds.includes(m.id));
     const totalCostAmount = targetMovements.reduce((sum, m) => sum + m.totalCost, 0);
@@ -1076,6 +1077,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       paymentRef: data.paymentRef || 'โอนเงินบัญชีซัพพลายเออร์',
       note: data.note || 'เคลียร์ยอดต้นทุนประจำรอบขายสำเร็จ',
       movementIds: data.movementIds,
+      slipImageUrl: data.slipImageUrl || undefined,
     };
 
     setStockMovements((prev) => {

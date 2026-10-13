@@ -142,6 +142,7 @@ export interface SupplierSettlement {
   paymentRef?: string;
   note?: string;
   movementIds: string[];
+  slipImageUrl?: string;
 }
 
 export interface EventSchedule {
