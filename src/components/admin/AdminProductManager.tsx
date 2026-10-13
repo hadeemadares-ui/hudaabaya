@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp, FileSpreadsheet, ExternalLink, RefreshCw, CheckCircle, AlertCircle, HelpCircle } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Plus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp, FileSpreadsheet, ExternalLink, RefreshCw, CheckCircle, AlertCircle, HelpCircle, ChevronDown } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CategoryType } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
@@ -120,6 +120,27 @@ export const AdminProductManager: React.FC = () => {
     }
     setFabric(trimmed);
   };
+
+  // Unified Fabric Dropdown State & Click-Outside Handling
+  const [isFabricDropdownOpen, setIsFabricDropdownOpen] = useState(false);
+  const fabricDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (fabricDropdownRef.current && !fabricDropdownRef.current.contains(event.target as Node)) {
+        setIsFabricDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredFabricOptions = useMemo(() => {
+    if (!fabric.trim()) return allFabricOptions;
+    const query = fabric.trim().toLowerCase();
+    const matched = allFabricOptions.filter((opt) => opt.toLowerCase().includes(query));
+    return matched.length > 0 ? matched : allFabricOptions;
+  }, [allFabricOptions, fabric]);
 
   // Comprehensive Color List in Thai (English)
   const PRODUCT_COLOR_PRESETS = [
@@ -851,8 +872,8 @@ export const AdminProductManager: React.FC = () => {
                     </select>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between mb-0.5">
+                  <div className="relative" ref={fabricDropdownRef}>
+                    <div className="flex items-center justify-between mb-1">
                       <label className="block text-stone-950 font-black text-xs sm:text-sm">
                         {category === 'perfume' ? 'ประเภทน้ำหอม / ส่วนผสม' : category === 'incense' ? 'ชนิดเครื่องหอม / ส่วนผสม' : category === 'other' ? 'ประเภทสินค้า / รายละเอียด' : 'ชนิดเนื้อผ้า (Fabric)'}
                       </label>
@@ -865,55 +886,78 @@ export const AdminProductManager: React.FC = () => {
                       />
                     </div>
                     
-                    {/* Dropdown Selector */}
-                    <select
-                      value={allFabricOptions.includes(fabric) ? fabric : ''}
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          setFabric(e.target.value);
-                        }
-                      }}
-                      className="w-full bg-white border-2 border-amber-400 focus:border-amber-600 rounded-xl p-2.5 text-stone-950 font-black text-xs sm:text-sm transition cursor-pointer shadow-sm"
-                    >
-                      <option value="" className="text-stone-500 font-bold">
-                        -- 📋 เลือกชนิดเนื้อผ้าจาก Dropdown ({allFabricOptions.length} ตัวเลือก) --
-                      </option>
-                      {allFabricOptions.map((opt) => (
-                        <option key={opt} value={opt} className="text-stone-950 font-bold py-1">
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
-
-                    {/* Free-text input to type new fabric + Quick Save Button */}
-                    <div className="flex items-center gap-1.5">
+                    {/* Single Unified Input with Dropdown Arrow */}
+                    <div className="relative">
                       <input
                         type="text"
-                        list="fabric-preset-datalist"
                         value={fabric}
-                        onChange={(e) => setFabric(e.target.value)}
+                        onFocus={() => setIsFabricDropdownOpen(true)}
+                        onClick={() => setIsFabricDropdownOpen(true)}
+                        onChange={(e) => {
+                          setFabric(e.target.value);
+                          setIsFabricDropdownOpen(true);
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
                             if (fabric.trim()) {
                               handleAddNewFabricOption(fabric.trim());
+                              setIsFabricDropdownOpen(false);
                             }
                           }
                         }}
-                        placeholder="หรือพิมพ์ชื่อเนื้อผ้าใหม่เพื่อบันทึก..."
-                        className="w-full bg-white border-2 border-stone-400 focus:border-amber-500 rounded-xl p-2.5 text-stone-950 font-black text-xs placeholder-stone-400 focus:outline-none shadow-inner"
+                        placeholder="คลิกเลือกจากรายการ หรือพิมพ์ชนิดผ้าใหม่..."
+                        className="w-full bg-white border-2 border-stone-400 focus:border-amber-500 rounded-xl p-3 pr-10 text-stone-950 font-black text-sm placeholder-stone-400 focus:outline-none shadow-sm cursor-text"
                       />
-                      {fabric.trim() && !allFabricOptions.includes(fabric.trim()) && (
-                        <button
-                          type="button"
-                          onClick={() => handleAddNewFabricOption(fabric.trim())}
-                          className="px-3 py-2 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow border border-amber-500 transition cursor-pointer shrink-0 whitespace-nowrap"
-                          title="บันทึกเข้าสู่ตัวเลือก Dropdown"
-                        >
-                          + เพิ่มเข้า Dropdown
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => setIsFabricDropdownOpen(!isFabricDropdownOpen)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-stone-600 hover:text-amber-800 transition cursor-pointer"
+                        title="เปิด/ปิด รายการเลือกชนิดผ้า"
+                      >
+                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isFabricDropdownOpen ? 'rotate-180 text-amber-600' : ''}`} />
+                      </button>
                     </div>
+
+                    {/* Floating Dropdown List in the same field */}
+                    {isFabricDropdownOpen && (
+                      <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl max-h-60 overflow-y-auto no-scrollbar py-1">
+                        {fabric.trim() && !allFabricOptions.some((opt) => opt.toLowerCase() === fabric.trim().toLowerCase()) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleAddNewFabricOption(fabric.trim());
+                              setIsFabricDropdownOpen(false);
+                            }}
+                            className="w-full text-left px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 border-b border-amber-300 text-xs font-black text-amber-950 flex items-center justify-between transition cursor-pointer"
+                          >
+                            <span>➕ เพิ่ม <strong className="text-amber-900 underline">"{fabric.trim()}"</strong> เป็นตัวเลือกใหม่</span>
+                            <span className="text-[10px] bg-amber-200 px-2 py-0.5 rounded-full border border-amber-400 font-bold">บันทึกอัตโนมัติ</span>
+                          </button>
+                        )}
+
+                        {filteredFabricOptions.map((opt) => (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => {
+                              setFabric(opt);
+                              setIsFabricDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-3.5 py-2.5 text-xs font-black transition cursor-pointer flex items-center justify-between ${
+                              fabric === opt
+                                ? 'bg-amber-100 text-amber-950 font-bold'
+                                : 'text-stone-900 hover:bg-stone-100'
+                            }`}
+                          >
+                            <span>{opt}</span>
+                            {fabric === opt && (
+                              <span className="text-amber-700 text-xs font-black">✓ เลือกอยู่</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Compressed Multi-Image Upload Section */}
