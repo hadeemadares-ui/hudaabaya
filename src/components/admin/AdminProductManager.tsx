@@ -1342,7 +1342,7 @@ export const AdminProductManager: React.FC = () => {
       {/* Add / Edit Product Modal with Sticky Header & Sticky Bottom Footer */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
-          <div className="relative bg-white border-2 border-amber-500 rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl text-stone-950 my-4 max-h-[90vh] flex flex-col">
+          <div className="relative bg-white border-2 border-amber-500 rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl text-stone-950 my-4 max-h-[90vh] flex flex-col">
             
             {/* Sticky Header */}
             <div className="sticky top-0 z-30 bg-white px-5 py-4 border-b-2 border-amber-400/40 flex justify-between items-center shrink-0">
@@ -2226,8 +2226,8 @@ export const AdminProductManager: React.FC = () => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                           
-                          {/* Color / Scent Combobox Field */}
-                          <div className="sm:col-span-3 space-y-1 relative" data-color-dropdown>
+                          {/* Color / Scent Combobox Field - Widened for full text visibility */}
+                          <div className="sm:col-span-5 space-y-1 relative" data-color-dropdown>
                             <div className="flex items-center justify-between mb-0.5">
                               <label className="text-xs text-stone-950 font-black block">
                                 {category === 'perfume' ? 'ตัวเลือกกลิ่น / สี' : 'สีสินค้า (Color)'}
@@ -2446,10 +2446,10 @@ export const AdminProductManager: React.FC = () => {
                             )}
                           </div>
 
-                          {/* Size / Volume Name Field */}
-                          <div className="sm:col-span-3 space-y-1">
+                          {/* Size / Volume Name Field - Expanded for long size labels */}
+                          <div className="sm:col-span-4 space-y-1">
                             <div className="flex items-center justify-between mb-0.5">
-                              <label className="text-xs text-stone-950 font-black block">
+                              <label className="text-xs text-stone-950 font-black block truncate">
                                 {category === 'perfume' ? 'ขนาดปริมาณ (ml / ขวด)' : 'ชื่อไซส์ / ความยาว'}
                               </label>
                               <VoiceInputButton
@@ -2493,13 +2493,13 @@ export const AdminProductManager: React.FC = () => {
                             )}
                           </div>
 
-                          {/* 2 Numeric Inputs Grid (Price, Cost Price) */}
-                          <div className="sm:col-span-6 grid grid-cols-2 gap-3">
+                          {/* 2 Compact Numeric Inputs (Price, Cost Price) */}
+                          <div className="sm:col-span-3 grid grid-cols-2 gap-2">
                             {/* Price Field */}
                             <div>
-                              <div className="flex items-center justify-between mb-1">
-                                <label className="text-xs text-stone-950 block font-black truncate">
-                                  ราคาขาย (บาท)
+                              <div className="flex items-center justify-between mb-0.5">
+                                <label className="text-[11px] text-stone-950 block font-black truncate" title="ราคาขาย (บาท)">
+                                  ราคาขาย
                                 </label>
                                 <VoiceInputButton
                                   isNumber={true}
@@ -2514,34 +2514,37 @@ export const AdminProductManager: React.FC = () => {
                                   onTranscript={() => {}}
                                 />
                               </div>
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                placeholder="0"
-                                value={v.price === 0 ? '' : v.price}
-                                onFocus={(e) => e.target.select()}
-                                onClick={(e) => (e.target as HTMLInputElement).select()}
-                                onChange={(e) => {
-                                  const rawVal = e.target.value.replace(/[^0-9]/g, '');
-                                  const cleanVal = rawVal.replace(/^0+(?=\d)/, '');
-                                  const newPrice = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
-                                  const updated = [...variants];
-                                  updated[idx].price = newPrice;
-                                  if (updated[idx].costPrice === undefined || updated[idx].costPrice === 0) {
-                                    updated[idx].costPrice = Math.round(newPrice * 0.5);
-                                  }
-                                  setVariants(updated);
-                                }}
-                                className="w-full bg-white border-2 border-stone-400 rounded-xl p-2 text-stone-950 font-black font-mono text-sm sm:text-base text-right shadow-inner focus:ring-2 focus:ring-amber-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              />
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  placeholder="0"
+                                  value={v.price === 0 ? '' : v.price}
+                                  onFocus={(e) => e.target.select()}
+                                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                                  onChange={(e) => {
+                                    const rawVal = e.target.value.replace(/[^0-9]/g, '');
+                                    const cleanVal = rawVal.replace(/^0+(?=\d)/, '');
+                                    const newPrice = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
+                                    const updated = [...variants];
+                                    updated[idx].price = newPrice;
+                                    if (updated[idx].costPrice === undefined || updated[idx].costPrice === 0) {
+                                      updated[idx].costPrice = Math.round(newPrice * 0.5);
+                                    }
+                                    setVariants(updated);
+                                  }}
+                                  className="w-full bg-white border-2 border-stone-400 rounded-xl p-2 pr-5 text-stone-950 font-black font-mono text-xs sm:text-sm text-right shadow-inner focus:ring-2 focus:ring-amber-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                />
+                                <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-stone-400 font-bold pointer-events-none">฿</span>
+                              </div>
                             </div>
 
                             {/* Cost Price Field - High Visibility Badge Box */}
-                            <div className="bg-amber-50 p-1.5 rounded-xl border-2 border-amber-400 shadow-sm">
-                              <div className="flex items-center justify-between mb-1">
-                                <label className="text-[11px] text-amber-950 block font-black text-center bg-amber-200 rounded px-1.5 py-0.5 border border-amber-400 truncate">
-                                  ต้นทุน (บาท)
+                            <div className="bg-amber-50/80 p-1 rounded-xl border border-amber-400 shadow-xs flex flex-col justify-between">
+                              <div className="flex items-center justify-between mb-0.5">
+                                <label className="text-[10px] text-amber-950 block font-black text-center bg-amber-200 rounded px-1 py-0.5 border border-amber-400 truncate" title="ต้นทุน (บาท)">
+                                  ต้นทุน
                                 </label>
                                 <VoiceInputButton
                                   isNumber={true}
@@ -2553,24 +2556,27 @@ export const AdminProductManager: React.FC = () => {
                                   onTranscript={() => {}}
                                 />
                               </div>
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                placeholder="0"
-                                value={v.costPrice === 0 ? '' : (v.costPrice ?? (v.price ? Math.round(v.price * 0.5) : 0))}
-                                onFocus={(e) => e.target.select()}
-                                onClick={(e) => (e.target as HTMLInputElement).select()}
-                                onChange={(e) => {
-                                  const rawVal = e.target.value.replace(/[^0-9]/g, '');
-                                  const cleanVal = rawVal.replace(/^0+(?=\d)/, '');
-                                  const newCost = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
-                                  const updated = [...variants];
-                                  updated[idx].costPrice = newCost;
-                                  setVariants(updated);
-                                }}
-                                className="w-full bg-white border-2 border-amber-400 rounded-lg p-2 text-stone-950 font-black font-mono text-sm sm:text-base text-right shadow-inner focus:ring-2 focus:ring-amber-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              />
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  placeholder="0"
+                                  value={v.costPrice === 0 ? '' : (v.costPrice ?? (v.price ? Math.round(v.price * 0.5) : 0))}
+                                  onFocus={(e) => e.target.select()}
+                                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                                  onChange={(e) => {
+                                    const rawVal = e.target.value.replace(/[^0-9]/g, '');
+                                    const cleanVal = rawVal.replace(/^0+(?=\d)/, '');
+                                    const newCost = cleanVal === '' ? 0 : Math.max(0, parseInt(cleanVal, 10) || 0);
+                                    const updated = [...variants];
+                                    updated[idx].costPrice = newCost;
+                                    setVariants(updated);
+                                  }}
+                                  className="w-full bg-white border border-amber-400 rounded-lg p-1.5 pr-5 text-stone-950 font-black font-mono text-xs sm:text-sm text-right shadow-inner focus:ring-2 focus:ring-amber-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                />
+                                <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-amber-800/60 font-bold pointer-events-none">฿</span>
+                              </div>
                             </div>
                           </div>
                         </div>
