@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Calendar, MapPin, Clock, Plus, Store, User, Phone, DollarSign, Sparkles, CheckCircle2, AlertCircle, X, ChevronRight, Filter, Flame, Edit2, Trash2, ShoppingBag } from 'lucide-react';
+import { Calendar, MapPin, Clock, Plus, Store, User, Phone, DollarSign, Sparkles, CheckCircle2, AlertCircle, X, ChevronRight, Filter, Flame, Edit2, Trash2, ShoppingBag, Tag } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { EventSchedule } from '../../types';
 
@@ -51,13 +51,15 @@ export const AdminEventMarketManager: React.FC = () => {
         salesTarget: 30000,
         actualSales: 0,
         assignedStaff: 'เจ้าของร้าน (Admin)',
+        rentalFee: 1500,
         note: 'คำนวณเตรียมสต๊อกอาบายะห์ 100 ชุด และน้ำหอมดูไบ EDP 50 ขวด',
         createdAt: new Date().toISOString(),
       },
     ];
   });
 
-  // Form State for Add Event (HUDA ABAYA Default)
+  // Form State for Add/Edit Event (HUDA ABAYA Default)
+  const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null);
   const [eventTitle, setEventTitle] = useState<string>('งานออกบูธตลาดนัดคลอง 16');
   const [eventBranch, setEventBranch] = useState<string>('HUDA ABAYA - บูธ/ตลาดนัดคลอง16');
   const [eventLocation, setEventLocation] = useState<string>('ตลาดนัดคลอง 16');
@@ -69,6 +71,7 @@ export const AdminEventMarketManager: React.FC = () => {
   const [eventEndDate, setEventEndDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [eventSalesTarget, setEventSalesTarget] = useState<number>(30000);
   const [eventStaff, setEventStaff] = useState<string>('เจ้าของร้าน (Admin)');
+  const [eventRentalFee, setEventRentalFee] = useState<number | ''>(1500);
   const [eventNote, setEventNote] = useState<string>('คำนวณเตรียมสต๊อกอาบายะห์ 100 ชุด และน้ำหอมดูไบ 50 ขวด');
 
   // Filtered Schedules
@@ -96,6 +99,42 @@ export const AdminEventMarketManager: React.FC = () => {
     }
   };
 
+  const handleOpenAddModal = () => {
+    setEditingScheduleId(null);
+    setEventTitle('งานออกบูธตลาดนัดคลอง 16');
+    setEventBranch(activeBranch);
+    setEventLocation('ตลาดนัดคลอง 16');
+    setEventHours('10:00 - 22:00 น.');
+    setEventProducts('ชุดอาบายะห์ดูไบ • คัฟทาน • น้ำหอมดูไบ & Oud');
+    setEventPhone(storeSettings.contactPhone || '083-427-4687');
+    setEventStatus('ACTIVE');
+    setEventStartDate(new Date().toISOString().slice(0, 10));
+    setEventEndDate(new Date().toISOString().slice(0, 10));
+    setEventSalesTarget(30000);
+    setEventStaff('เจ้าของร้าน (Admin)');
+    setEventRentalFee(1500);
+    setEventNote('คำนวณเตรียมสต๊อกอาบายะห์ 100 ชุด และน้ำหอมดูไบ 50 ขวด');
+    setIsAddEventModalOpen(true);
+  };
+
+  const handleOpenEditModal = (schedule: EventSchedule) => {
+    setEditingScheduleId(schedule.id);
+    setEventTitle(schedule.title);
+    setEventBranch(schedule.branchName);
+    setEventLocation(schedule.location);
+    setEventHours(schedule.operatingHours);
+    setEventProducts(schedule.productsToPrepare);
+    setEventPhone(schedule.phonePromptPay);
+    setEventStatus(schedule.status);
+    setEventStartDate(schedule.startDate);
+    setEventEndDate(schedule.endDate);
+    setEventSalesTarget(schedule.salesTarget || 30000);
+    setEventStaff(schedule.assignedStaff || 'เจ้าของร้าน (Admin)');
+    setEventRentalFee(schedule.rentalFee !== undefined ? schedule.rentalFee : 0);
+    setEventNote(schedule.note || '');
+    setIsAddEventModalOpen(true);
+  };
+
   const handleSaveNewEvent = (e: React.FormEvent) => {
     e.preventDefault();
     if (!eventTitle.trim()) {
@@ -103,26 +142,57 @@ export const AdminEventMarketManager: React.FC = () => {
       return;
     }
 
-    const newEvent: EventSchedule = {
-      id: `EVENT-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
-      title: eventTitle.trim(),
-      branchName: eventBranch,
-      location: eventLocation.trim(),
-      startDate: eventStartDate,
-      endDate: eventEndDate,
-      operatingHours: eventHours.trim(),
-      productsToPrepare: eventProducts.trim(),
-      phonePromptPay: eventPhone.trim(),
-      status: eventStatus,
-      salesTarget: eventSalesTarget,
-      actualSales: 0,
-      assignedStaff: eventStaff.trim(),
-      note: eventNote.trim(),
-      createdAt: new Date().toISOString(),
-    };
+    const finalRentalFee = typeof eventRentalFee === 'number' ? eventRentalFee : (parseInt(eventRentalFee, 10) || 0);
 
-    saveSchedulesToStorage([newEvent, ...schedules]);
-    alert(`เพิ่มตารางออกงาน "${eventTitle}" เรียบร้อยแล้ว!`);
+    if (editingScheduleId) {
+      const updatedSchedules = schedules.map((s) => {
+        if (s.id === editingScheduleId) {
+          return {
+            ...s,
+            title: eventTitle.trim(),
+            branchName: eventBranch,
+            location: eventLocation.trim(),
+            startDate: eventStartDate,
+            endDate: eventEndDate,
+            operatingHours: eventHours.trim(),
+            productsToPrepare: eventProducts.trim(),
+            phonePromptPay: eventPhone.trim(),
+            status: eventStatus,
+            salesTarget: eventSalesTarget,
+            assignedStaff: eventStaff.trim(),
+            rentalFee: finalRentalFee,
+            note: eventNote.trim(),
+          };
+        }
+        return s;
+      });
+      saveSchedulesToStorage(updatedSchedules);
+      alert(`บันทึกการแก้ไขตารางงาน "${eventTitle}" เรียบร้อยแล้ว!`);
+    } else {
+      const newEvent: EventSchedule = {
+        id: `EVENT-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+        title: eventTitle.trim(),
+        branchName: eventBranch,
+        location: eventLocation.trim(),
+        startDate: eventStartDate,
+        endDate: eventEndDate,
+        operatingHours: eventHours.trim(),
+        productsToPrepare: eventProducts.trim(),
+        phonePromptPay: eventPhone.trim(),
+        status: eventStatus,
+        salesTarget: eventSalesTarget,
+        actualSales: 0,
+        assignedStaff: eventStaff.trim(),
+        rentalFee: finalRentalFee,
+        note: eventNote.trim(),
+        createdAt: new Date().toISOString(),
+      };
+
+      saveSchedulesToStorage([newEvent, ...schedules]);
+      alert(`เพิ่มตารางออกงาน "${eventTitle}" เรียบร้อยแล้ว!`);
+    }
+
+    setEditingScheduleId(null);
     setIsAddEventModalOpen(false);
   };
 
@@ -311,7 +381,7 @@ export const AdminEventMarketManager: React.FC = () => {
 
           <div className="pt-1">
             <button
-              onClick={() => setIsAddEventModalOpen(true)}
+              onClick={handleOpenAddModal}
               className="px-6 py-3 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-sm rounded-2xl shadow-md hover:scale-105 transition flex items-center justify-center gap-2 mx-auto cursor-pointer border-2 border-amber-500"
             >
               <Plus className="w-5 h-5 text-stone-950" />
@@ -385,7 +455,7 @@ export const AdminEventMarketManager: React.FC = () => {
 
             <div className="pt-2">
               <button
-                onClick={() => setIsAddEventModalOpen(true)}
+                onClick={handleOpenAddModal}
                 className="px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow-md hover:scale-105 transition flex items-center gap-1.5 mx-auto cursor-pointer border border-amber-500"
               >
                 <Plus className="w-4 h-4 text-stone-950" />
@@ -450,6 +520,14 @@ export const AdminEventMarketManager: React.FC = () => {
                         <span>พนักงานรับผิดชอบ: {s.assignedStaff}</span>
                       </p>
                     )}
+                    {s.rentalFee !== undefined && (
+                      <p className="flex items-center gap-1.5 font-black text-amber-950 bg-amber-50/90 px-2.5 py-1.5 rounded-xl border border-amber-300/80 shadow-xs">
+                        <Tag className="w-4 h-4 text-amber-700 shrink-0" />
+                        <span>
+                          ราคาค่าเช่าสถานที่ออกบูธ: <strong className="text-amber-900 font-serif font-black">{s.rentalFee === 0 ? 'ฟรี (ไม่มีค่าที่)' : `฿${s.rentalFee.toLocaleString()}`}</strong>
+                        </span>
+                      </p>
+                    )}
                     {s.phonePromptPay && (
                       <p className="flex items-center gap-1.5 font-black text-emerald-950 font-mono">
                         <Phone className="w-4 h-4 text-emerald-700 shrink-0" />
@@ -480,13 +558,24 @@ export const AdminEventMarketManager: React.FC = () => {
                     )}
                   </div>
 
-                  <button
-                    onClick={() => handleDeleteSchedule(s.id)}
-                    className="p-1.5 bg-red-100 hover:bg-red-200 border border-red-400 text-red-950 rounded-lg text-xs transition cursor-pointer"
-                    title="ลบตารางงานนี้"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-700" />
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleOpenEditModal(s)}
+                      className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 border border-amber-400 text-amber-950 rounded-lg text-xs font-black transition cursor-pointer flex items-center gap-1"
+                      title="แก้ไขตารางงานนี้"
+                    >
+                      <Edit2 className="w-3.5 h-3.5 text-amber-800" />
+                      <span>แก้ไข</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteSchedule(s.id)}
+                      className="p-1.5 bg-red-100 hover:bg-red-200 border border-red-400 text-red-950 rounded-lg text-xs transition cursor-pointer"
+                      title="ลบตารางงานนี้"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-700" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -503,7 +592,7 @@ export const AdminEventMarketManager: React.FC = () => {
             <div className="flex justify-between items-center border-b-2 border-amber-400/40 pb-3">
               <h3 className="font-serif font-black text-lg text-stone-950 flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-amber-600" />
-                <span>ลงตารางออกงาน &amp; ตลาดนัดใหม่ (HUDA ABAYA)</span>
+                <span>{editingScheduleId ? 'แก้ไขตารางออกงาน & ตลาดนัด (HUDA ABAYA)' : 'ลงตารางออกงาน & ตลาดนัดใหม่ (HUDA ABAYA)'}</span>
               </h3>
               <button
                 onClick={() => setIsAddEventModalOpen(false)}
@@ -617,6 +706,60 @@ export const AdminEventMarketManager: React.FC = () => {
                 </div>
               </div>
 
+              {/* Booth Rental Fee Input with Preset Chips */}
+              <div className="bg-amber-50/70 border border-amber-300/80 p-3.5 rounded-2xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-stone-950 font-black flex items-center gap-1.5 text-xs">
+                    <Tag className="w-4 h-4 text-amber-700" />
+                    <span>ราคาเช่าสถานที่ออกบูธ (บาท)</span>
+                  </label>
+                  <span className="text-[10px] text-amber-900 font-extrabold bg-amber-200/80 px-2.5 py-0.5 rounded-full border border-amber-300">
+                    {eventRentalFee === '' || eventRentalFee === 0 ? 'ฟรี (ไม่มีค่าที่)' : `฿${(typeof eventRentalFee === 'number' ? eventRentalFee : 0).toLocaleString()}`}
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-serif font-black text-amber-800 text-sm">
+                    ฿
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={eventRentalFee}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEventRentalFee(val === '' ? '' : Math.max(0, parseInt(val, 10) || 0));
+                    }}
+                    onFocus={(e) => e.target.select()}
+                    placeholder="กรอกราคาค่าเช่าสถานที่ หรือ 0 หากไม่มีค่าที่/ฟรี"
+                    className="w-full bg-white border-2 border-stone-400 focus:border-amber-500 rounded-xl py-2 pl-8 pr-12 text-stone-950 font-mono font-black text-xs focus:outline-none shadow-xs"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-500 font-bold">
+                    บาท
+                  </span>
+                </div>
+
+                {/* Quick preset chips */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                  <span className="text-[10px] font-black text-stone-600 shrink-0">ตัวเลือกด่วน:</span>
+                  {[0, 300, 500, 1000, 1500, 2000, 3000, 5000].map((fee) => (
+                    <button
+                      key={fee}
+                      type="button"
+                      onClick={() => setEventRentalFee(fee)}
+                      className={`px-2 py-0.5 rounded-lg text-[10px] font-black border transition cursor-pointer ${
+                        eventRentalFee === fee
+                          ? 'bg-amber-400 border-amber-600 text-stone-950 shadow-xs'
+                          : 'bg-white hover:bg-stone-100 border-stone-300 text-stone-800'
+                      }`}
+                    >
+                      {fee === 0 ? 'ฟรี ฿0' : `฿${fee.toLocaleString()}`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <label className="block text-stone-950 font-black mb-1">คำนวณเตรียมสต๊อก / หมายเหตุเตรียมตัว</label>
                 <input
@@ -641,7 +784,7 @@ export const AdminEventMarketManager: React.FC = () => {
                   type="submit"
                   className="px-6 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black rounded-xl shadow-md border border-amber-500 cursor-pointer"
                 >
-                  บันทึกตารางออกงาน
+                  {editingScheduleId ? 'บันทึกการแก้ไขตารางงาน' : 'บันทึกตารางออกงาน'}
                 </button>
               </div>
             </form>

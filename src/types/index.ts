@@ -159,6 +159,7 @@ export interface EventSchedule {
   salesTarget?: number;
   actualSales?: number;
   assignedStaff?: string;
+  rentalFee?: number; // ราคาค่าเช่าสถานที่ออกบูท / ค่าที่ (บาท)
   note?: string;
   createdAt: string;
 }
