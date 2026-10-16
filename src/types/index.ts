@@ -160,6 +160,9 @@ export interface EventSchedule {
   actualSales?: number;
   assignedStaff?: string;
   rentalFee?: number; // ราคาค่าเช่าสถานที่ออกบูท / ค่าที่ (บาท)
+  depositAmount?: number; // จำนวนเงินมัดจำ (บาท)
+  depositSlipUrl?: string; // แนบไฟล์ภาพหลักฐานการโอนเงินมัดจำ (Base64 Data URL)
+  googleMapsUrl?: string; // ลิงก์แผนที่ปักหมุด Google Maps
   note?: string;
   createdAt: string;
 }

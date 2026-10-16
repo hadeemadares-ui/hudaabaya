@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Calendar, MapPin, Clock, Plus, Store, User, Phone, DollarSign, Sparkles, CheckCircle2, AlertCircle, X, ChevronRight, ChevronLeft, Filter, Flame, Edit2, Trash2, ShoppingBag, Tag, List, LayoutGrid } from 'lucide-react';
+import { Calendar, MapPin, Clock, Plus, Store, User, Phone, DollarSign, Sparkles, CheckCircle2, AlertCircle, X, ChevronRight, ChevronLeft, Filter, Flame, Edit2, Trash2, ShoppingBag, Tag, List, LayoutGrid, Upload, Image as ImageIcon, ExternalLink } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { EventSchedule } from '../../types';
 
@@ -320,6 +320,8 @@ export const AdminEventMarketManager: React.FC = () => {
         actualSales: 0,
         assignedStaff: 'เจ้าของร้าน (Admin)',
         rentalFee: 1500,
+        depositAmount: 500,
+        googleMapsUrl: 'https://maps.google.com/?q=ตลาดนัดคลอง16',
         note: 'คำนวณเตรียมสต๊อกอาบายะห์ 100 ชุด และน้ำหอมดูไบ EDP 50 ขวด',
         createdAt: new Date().toISOString(),
       },
@@ -340,7 +342,50 @@ export const AdminEventMarketManager: React.FC = () => {
   const [eventSalesTarget, setEventSalesTarget] = useState<number>(30000);
   const [eventStaff, setEventStaff] = useState<string>('เจ้าของร้าน (Admin)');
   const [eventRentalFee, setEventRentalFee] = useState<number | ''>(1500);
+  const [eventDepositAmount, setEventDepositAmount] = useState<number | ''>(500);
+  const [eventDepositSlipUrl, setEventDepositSlipUrl] = useState<string>('');
+  const [eventGoogleMapsUrl, setEventGoogleMapsUrl] = useState<string>('https://maps.google.com/?q=ตลาดนัดคลอง16');
+  const [previewSlipModalUrl, setPreviewSlipModalUrl] = useState<string | null>(null);
   const [eventNote, setEventNote] = useState<string>('คำนวณเตรียมสต๊อกอาบายะห์ 100 ชุด และน้ำหอมดูไบ 50 ขวด');
+
+  // Handle deposit slip file upload with canvas compression
+  const handleDepositSlipUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 12 * 1024 * 1024) {
+        alert('ไฟล์รูปภาพมีขนาดใหญ่เกิน 12MB กรุณาเลือกไฟล์ที่มีขนาดเล็กลงครับ');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const rawBase64 = event.target?.result as string;
+        const img = new window.Image();
+        img.src = rawBase64;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 1200;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.82);
+          setEventDepositSlipUrl(compressed);
+        };
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // View mode: 'calendar' (default), 'agenda', 'cards'
   const [viewMode, setViewMode] = useState<'calendar' | 'agenda' | 'cards'>('calendar');
@@ -476,6 +521,9 @@ export const AdminEventMarketManager: React.FC = () => {
     setEventSalesTarget(30000);
     setEventStaff('เจ้าของร้าน (Admin)');
     setEventRentalFee(1500);
+    setEventDepositAmount(500);
+    setEventDepositSlipUrl('');
+    setEventGoogleMapsUrl('https://maps.google.com/?q=ตลาดนัดคลอง16');
     setEventNote('คำนวณเตรียมสต๊อกอาบายะห์ 100 ชุด และน้ำหอมดูไบ 50 ขวด');
     setIsAddEventModalOpen(true);
   };
@@ -494,6 +542,9 @@ export const AdminEventMarketManager: React.FC = () => {
     setEventSalesTarget(schedule.salesTarget || 30000);
     setEventStaff(schedule.assignedStaff || 'เจ้าของร้าน (Admin)');
     setEventRentalFee(schedule.rentalFee !== undefined ? schedule.rentalFee : 0);
+    setEventDepositAmount(schedule.depositAmount !== undefined ? schedule.depositAmount : 0);
+    setEventDepositSlipUrl(schedule.depositSlipUrl || '');
+    setEventGoogleMapsUrl(schedule.googleMapsUrl || '');
     setEventNote(schedule.note || '');
     setIsAddEventModalOpen(true);
   };
@@ -506,6 +557,7 @@ export const AdminEventMarketManager: React.FC = () => {
     }
 
     const finalRentalFee = typeof eventRentalFee === 'number' ? eventRentalFee : (parseInt(eventRentalFee, 10) || 0);
+    const finalDepositAmount = typeof eventDepositAmount === 'number' ? eventDepositAmount : (parseInt(eventDepositAmount, 10) || 0);
 
     if (editingScheduleId) {
       const updatedSchedules = schedules.map((s) => {
@@ -524,6 +576,9 @@ export const AdminEventMarketManager: React.FC = () => {
             salesTarget: eventSalesTarget,
             assignedStaff: eventStaff.trim(),
             rentalFee: finalRentalFee,
+            depositAmount: finalDepositAmount,
+            depositSlipUrl: eventDepositSlipUrl,
+            googleMapsUrl: eventGoogleMapsUrl.trim(),
             note: eventNote.trim(),
           };
         }
@@ -547,6 +602,9 @@ export const AdminEventMarketManager: React.FC = () => {
         actualSales: 0,
         assignedStaff: eventStaff.trim(),
         rentalFee: finalRentalFee,
+        depositAmount: finalDepositAmount,
+        depositSlipUrl: eventDepositSlipUrl,
+        googleMapsUrl: eventGoogleMapsUrl.trim(),
         note: eventNote.trim(),
         createdAt: new Date().toISOString(),
       };
@@ -1235,6 +1293,51 @@ export const AdminEventMarketManager: React.FC = () => {
                             </span>
                           </p>
                         )}
+                        {s.depositAmount !== undefined && s.depositAmount > 0 && (
+                          <p className="flex items-center gap-1.5 font-black text-amber-950 bg-amber-100/70 px-2.5 py-1.5 rounded-xl border border-amber-300 shadow-xs">
+                            <DollarSign className="w-4 h-4 text-amber-700 shrink-0" />
+                            <span>
+                              เงินมัดจำค่าที่: <strong className="text-amber-900 font-mono">฿{s.depositAmount.toLocaleString()}</strong>
+                              {s.rentalFee !== undefined && s.rentalFee > s.depositAmount && (
+                                <span className="text-red-700 font-mono ml-1 text-[11px]">
+                                  (คงเหลือจ่ายวันงาน: ฿{(s.rentalFee - s.depositAmount).toLocaleString()})
+                                </span>
+                              )}
+                              {s.rentalFee !== undefined && s.depositAmount >= s.rentalFee && (
+                                <span className="text-emerald-700 font-bold ml-1 text-[11px]">
+                                  (มัดจำครบแล้ว)
+                                </span>
+                              )}
+                            </span>
+                          </p>
+                        )}
+                        {/* Deposit Slip & Google Maps Buttons */}
+                        {(s.depositSlipUrl || s.googleMapsUrl) && (
+                          <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                            {s.depositSlipUrl && (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewSlipModalUrl(s.depositSlipUrl!)}
+                                className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[11px] font-black flex items-center gap-1 transition shadow-2xs cursor-pointer"
+                              >
+                                <ImageIcon className="w-3.5 h-3.5 text-amber-700" />
+                                <span>ดูสลิปมัดจำ</span>
+                              </button>
+                            )}
+                            {s.googleMapsUrl && (
+                              <a
+                                href={s.googleMapsUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-2.5 py-1 bg-sky-100 hover:bg-sky-200 text-sky-950 border border-sky-300 rounded-lg text-[11px] font-black flex items-center gap-1 transition shadow-2xs"
+                              >
+                                <MapPin className="w-3.5 h-3.5 text-sky-700" />
+                                <span>แผนที่ Google Maps</span>
+                                <ExternalLink className="w-3 h-3 text-sky-600" />
+                              </a>
+                            )}
+                          </div>
+                        )}
                         {s.phonePromptPay && (
                           <p className="flex items-center gap-1.5 font-black text-emerald-950 font-mono">
                             <Phone className="w-4 h-4 text-emerald-700 shrink-0" />
@@ -1350,6 +1453,74 @@ export const AdminEventMarketManager: React.FC = () => {
                     </strong>
                   </span>
                 </p>
+              )}
+
+              {selectedCalendarSchedule.depositAmount !== undefined && selectedCalendarSchedule.depositAmount > 0 && (
+                <div className="bg-amber-100/80 p-2.5 rounded-xl border border-amber-300 text-xs font-black space-y-1">
+                  <div className="flex items-center justify-between text-amber-950">
+                    <span className="flex items-center gap-1.5">
+                      <DollarSign className="w-4 h-4 text-amber-700" />
+                      <span>เงินมัดจำค่าที่:</span>
+                    </span>
+                    <span className="font-mono text-sm text-amber-900">
+                      ฿{selectedCalendarSchedule.depositAmount.toLocaleString()}
+                    </span>
+                  </div>
+                  {selectedCalendarSchedule.rentalFee !== undefined && (
+                    <div className="text-[11px] text-stone-600 flex justify-between pt-0.5 border-t border-amber-200">
+                      <span>คงเหลือชำระวันงาน:</span>
+                      <span className="font-mono font-bold text-red-700">
+                        {selectedCalendarSchedule.depositAmount >= selectedCalendarSchedule.rentalFee
+                          ? '✅ ชำระครบแล้ว 100%'
+                          : `฿${(selectedCalendarSchedule.rentalFee - selectedCalendarSchedule.depositAmount).toLocaleString()}`
+                        }
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Deposit Slip in Detail Modal */}
+              {selectedCalendarSchedule.depositSlipUrl && (
+                <div className="bg-white p-2.5 rounded-xl border border-stone-300 space-y-1.5 shadow-2xs">
+                  <span className="text-[11px] font-black text-stone-800 block flex items-center gap-1">
+                    <ImageIcon className="w-3.5 h-3.5 text-amber-700" />
+                    <span>หลักฐานการโอนเงินมัดจำ:</span>
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={selectedCalendarSchedule.depositSlipUrl}
+                      alt="สลิปมัดจำ"
+                      onClick={() => setPreviewSlipModalUrl(selectedCalendarSchedule.depositSlipUrl!)}
+                      className="w-16 h-16 object-cover rounded-lg border border-amber-300 cursor-pointer hover:scale-105 transition shadow-xs"
+                      title="คลิกเพื่อดูรูปขนาดเต็ม"
+                    />
+                    <div className="text-[11px] text-stone-600 space-y-1">
+                      <p className="font-bold text-stone-900">แนบหลักฐานสลิปมัดจำแล้ว</p>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewSlipModalUrl(selectedCalendarSchedule.depositSlipUrl!)}
+                        className="text-amber-800 hover:text-amber-950 underline font-bold cursor-pointer"
+                      >
+                        กดเพื่อดูรูปสลิปขนาดเต็ม
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Google Maps Link in Detail Modal */}
+              {selectedCalendarSchedule.googleMapsUrl && (
+                <a
+                  href={selectedCalendarSchedule.googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 px-3 bg-sky-100 hover:bg-sky-200 text-sky-950 font-black text-xs rounded-xl border border-sky-300 flex items-center justify-center gap-2 transition shadow-2xs"
+                >
+                  <MapPin className="w-4 h-4 text-sky-700" />
+                  <span>🗺️ เปิด Google Maps เพื่อนำทางไปยังสถานที่จัดงาน</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-sky-700" />
+                </a>
               )}
 
               <p className="flex items-center gap-2 font-black text-amber-900">
@@ -1673,6 +1844,210 @@ export const AdminEventMarketManager: React.FC = () => {
                 </div>
               </div>
 
+              {/* Section: Deposit Amount & Payment Slip */}
+              <div className="bg-amber-50/80 border-2 border-amber-300 rounded-2xl p-3.5 space-y-3 shadow-xs">
+                {/* Deposit Amount Input */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-stone-950 font-black flex items-center gap-1.5 text-xs">
+                      <DollarSign className="w-4 h-4 text-amber-700" />
+                      <span>จำนวนเงินมัดจำค่าที่ / ค่าบูธ (บาท)</span>
+                    </label>
+                    <span className="text-[10px] text-amber-900 font-extrabold bg-amber-200/90 px-2.5 py-0.5 rounded-full border border-amber-300">
+                      {eventDepositAmount === '' || eventDepositAmount === 0
+                        ? 'ยังไม่มีการมัดจำ (฿0)'
+                        : `มัดจำแล้ว: ฿${(typeof eventDepositAmount === 'number' ? eventDepositAmount : 0).toLocaleString()}`
+                      }
+                    </span>
+                  </div>
+
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-serif font-black text-amber-800 text-sm">
+                      ฿
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={eventDepositAmount}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setEventDepositAmount(val === '' ? '' : Math.max(0, parseInt(val, 10) || 0));
+                      }}
+                      onFocus={(e) => e.target.select()}
+                      placeholder="ใส่จำนวนเงินมัดจำที่โอนจ่ายไปแล้ว หรือ 0 หากยังไม่มัดจำ"
+                      className="w-full bg-white border-2 border-stone-400 focus:border-amber-500 rounded-xl py-2 pl-8 pr-12 text-stone-950 font-mono font-black text-xs focus:outline-none shadow-xs"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-stone-500 font-bold">
+                      บาท
+                    </span>
+                  </div>
+
+                  {/* Deposit Calculation Summary */}
+                  {typeof eventRentalFee === 'number' && eventRentalFee > 0 && (
+                    <div className="flex items-center justify-between text-[11px] bg-white px-2.5 py-1.5 rounded-xl border border-amber-200 font-bold">
+                      <span className="text-stone-600">สรุปยอดชำระ:</span>
+                      <span className="font-black text-amber-950">
+                        ค่าที่ ฿{eventRentalFee.toLocaleString()}
+                        {typeof eventDepositAmount === 'number' && eventDepositAmount > 0 ? (
+                          <>
+                            {' - '}มัดจำ ฿{eventDepositAmount.toLocaleString()}{' = '}
+                            {eventDepositAmount >= eventRentalFee ? (
+                              <span className="text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-300 ml-1">
+                                ✅ ชำระมัดจำครบเต็มจำนวนแล้ว
+                              </span>
+                            ) : (
+                              <span className="text-red-700 font-mono ml-1">
+                                คงเหลือจ่ายวันงาน: ฿{(eventRentalFee - eventDepositAmount).toLocaleString()}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-stone-500 ml-1">(ยังไม่ชำระมัดจำ)</span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Quick preset chips for deposit */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                    <span className="text-[10px] font-black text-stone-600 shrink-0">ตัวเลือกมัดจำด่วน:</span>
+                    {[0, 300, 500, 1000].map((amt) => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setEventDepositAmount(amt)}
+                        className={`px-2 py-0.5 rounded-lg text-[10px] font-black border transition cursor-pointer ${
+                          eventDepositAmount === amt
+                            ? 'bg-amber-400 border-amber-600 text-stone-950 shadow-xs'
+                            : 'bg-white hover:bg-stone-100 border-stone-300 text-stone-800'
+                        }`}
+                      >
+                        {amt === 0 ? '฿0 (ไม่มัดจำ)' : `฿${amt.toLocaleString()}`}
+                      </button>
+                    ))}
+                    {typeof eventRentalFee === 'number' && eventRentalFee > 0 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setEventDepositAmount(Math.round(eventRentalFee * 0.5))}
+                          className="px-2 py-0.5 rounded-lg text-[10px] font-black bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 transition cursor-pointer"
+                        >
+                          50% (฿{Math.round(eventRentalFee * 0.5).toLocaleString()})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEventDepositAmount(eventRentalFee)}
+                          className="px-2 py-0.5 rounded-lg text-[10px] font-black bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 text-emerald-900 transition cursor-pointer"
+                        >
+                          เต็มจำนวน (฿{eventRentalFee.toLocaleString()})
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Deposit Slip Image Attachment */}
+                <div className="pt-2 border-t border-amber-300/60 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-stone-950 font-black flex items-center gap-1.5 text-xs">
+                      <ImageIcon className="w-4 h-4 text-amber-700" />
+                      <span>หลักฐานการโอนเงินมัดจำ (สลิป / เอกสาร)</span>
+                    </label>
+                    {eventDepositSlipUrl && (
+                      <span className="text-[10px] text-emerald-800 font-extrabold bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" /> แนบสลิปแล้ว
+                      </span>
+                    )}
+                  </div>
+
+                  {eventDepositSlipUrl ? (
+                    <div className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-stone-300 shadow-2xs">
+                      <img
+                        src={eventDepositSlipUrl}
+                        alt="สลิปมัดจำ"
+                        onClick={() => setPreviewSlipModalUrl(eventDepositSlipUrl)}
+                        className="w-14 h-14 object-cover rounded-lg border border-amber-300 shadow-xs cursor-pointer hover:scale-105 transition"
+                        title="คลิกเพื่อดูรูปขนาดเต็ม"
+                      />
+                      <div className="flex-1 space-y-1">
+                        <p className="text-[11px] font-black text-stone-900">แนบสลิปมัดจำเรียบร้อยแล้ว</p>
+                        <p className="text-[10px] text-stone-500">คลิกที่รูปเพื่อขยายดูภาพสลิปขนาดเต็ม</p>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 font-black text-[10px] rounded-lg border border-amber-300 cursor-pointer transition text-center">
+                          เปลี่ยนรูป
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleDepositSlipUpload}
+                            className="hidden"
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setEventDepositSlipUrl('')}
+                          className="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-700 font-black text-[10px] rounded-lg border border-red-300 transition cursor-pointer"
+                        >
+                          ลบรูป
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center p-3.5 border-2 border-dashed border-amber-400 hover:border-amber-600 bg-white hover:bg-amber-50/50 rounded-xl cursor-pointer transition group shadow-2xs">
+                      <div className="flex items-center gap-2 text-stone-700 group-hover:text-amber-950 font-black text-xs">
+                        <Upload className="w-4 h-4 text-amber-600 group-hover:scale-110 transition" />
+                        <span>คลิกเพื่อแนบไฟล์ภาพสลิปมัดจำ หรือถ่ายภาพ</span>
+                      </div>
+                      <p className="text-[10px] text-stone-500 mt-0.5">รองรับไฟล์รูปภาพ PNG, JPG, JPEG (ระบบปรับขนาดให้อัตโนมัติ)</p>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleDepositSlipUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              {/* Section: Google Maps Pin Link */}
+              <div className="bg-sky-50/80 border-2 border-sky-300 rounded-2xl p-3.5 space-y-2 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <label className="block text-stone-950 font-black flex items-center gap-1.5 text-xs">
+                    <MapPin className="w-4 h-4 text-sky-700" />
+                    <span>แผนที่ปักหมุด Google Maps (Optional)</span>
+                  </label>
+                  {eventGoogleMapsUrl.trim() && (
+                    <a
+                      href={eventGoogleMapsUrl.trim()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-sky-800 font-extrabold bg-sky-200/90 hover:bg-sky-300 px-2.5 py-0.5 rounded-full border border-sky-300 flex items-center gap-1 transition"
+                    >
+                      <ExternalLink className="w-3 h-3 text-sky-700" />
+                      <span>ทดสอบเปิดแผนที่</span>
+                    </a>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sky-700 text-sm">
+                    🗺️
+                  </span>
+                  <input
+                    type="url"
+                    value={eventGoogleMapsUrl}
+                    onChange={(e) => setEventGoogleMapsUrl(e.target.value)}
+                    placeholder="วางลิงก์ Google Maps เช่น https://maps.app.goo.gl/... หรือ https://goo.gl/maps/..."
+                    className="w-full bg-white border-2 border-stone-400 focus:border-sky-500 rounded-xl py-2 pl-9 pr-3 text-stone-950 font-mono font-medium text-xs focus:outline-none shadow-xs"
+                  />
+                </div>
+                <p className="text-[10px] text-stone-500 font-medium">
+                  💡 คัดลอกลิงก์แชร์จากแอป Google Maps หรือค้นหาสถานที่แล้วนำลิงก์มาวางได้ทันที เพื่อให้ทีมงานและลูกค้ากดนำทางได้สะดวกรวดเร็ว
+                </p>
+              </div>
+
               <div>
                 <label className="block text-stone-950 font-black mb-1">คำนวณเตรียมสต๊อก / หมายเหตุเตรียมตัว</label>
                 <input
@@ -1753,6 +2128,47 @@ export const AdminEventMarketManager: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* FULLSCREEN PREVIEW SLIP MODAL */}
+      {previewSlipModalUrl && (
+        <div
+          className="fixed inset-0 z-60 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setPreviewSlipModalUrl(null)}
+        >
+          <div
+            className="relative max-w-lg w-full max-h-[90vh] bg-white p-4 rounded-3xl shadow-2xl flex flex-col items-center cursor-default space-y-3 border-2 border-amber-400"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between w-full border-b-2 border-amber-200 pb-2.5">
+              <span className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+                <ImageIcon className="w-4 h-4 text-amber-700" />
+                <span>หลักฐานการโอนเงินมัดจำ (สลิปโอนเงิน)</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setPreviewSlipModalUrl(null)}
+                className="p-1 rounded-full text-stone-600 hover:text-stone-950 hover:bg-stone-100 cursor-pointer border border-stone-300"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="overflow-auto max-h-[72vh] w-full flex justify-center p-2 bg-stone-100 rounded-2xl border border-stone-200">
+              <img
+                src={previewSlipModalUrl}
+                alt="หลักฐานการโอนเงินมัดจำ"
+                className="max-h-[68vh] object-contain rounded-xl shadow-md"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setPreviewSlipModalUrl(null)}
+              className="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow-md border border-amber-500 cursor-pointer transition"
+            >
+              ปิดหน้าต่างรูปภาพ
+            </button>
           </div>
         </div>
       )}
