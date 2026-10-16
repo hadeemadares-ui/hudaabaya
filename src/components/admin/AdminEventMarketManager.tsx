@@ -1,9 +1,26 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Calendar, MapPin, Clock, Plus, Store, User, Phone, DollarSign, Sparkles, CheckCircle2, AlertCircle, X, ChevronRight, Filter, Flame, Edit2, Trash2, ShoppingBag, Tag } from 'lucide-react';
+import { Calendar, MapPin, Clock, Plus, Store, User, Phone, DollarSign, Sparkles, CheckCircle2, AlertCircle, X, ChevronRight, ChevronLeft, Filter, Flame, Edit2, Trash2, ShoppingBag, Tag, List, LayoutGrid } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { EventSchedule } from '../../types';
+
+// Thai Full Months Data
+const THAI_MONTH_FULL = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+];
+
+// Thai Weekdays Data with themed colors
+const THAI_WEEKDAYS = [
+  { short: 'อา.', full: 'วันอาทิตย์', color: 'bg-rose-100 text-rose-800 border-rose-300' },
+  { short: 'จ.', full: 'วันจันทร์', color: 'bg-amber-100 text-amber-800 border-amber-300' },
+  { short: 'อ.', full: 'วันอังคาร', color: 'bg-pink-100 text-pink-800 border-pink-300' },
+  { short: 'พ.', full: 'วันพุธ', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+  { short: 'พฤ.', full: 'วันพฤหัสบดี', color: 'bg-orange-100 text-orange-800 border-orange-300' },
+  { short: 'ศ.', full: 'วันศุกร์', color: 'bg-sky-100 text-sky-800 border-sky-300' },
+  { short: 'ส.', full: 'วันเสาร์', color: 'bg-purple-100 text-purple-800 border-purple-300' },
+];
 
 // Thai Months Data
 const THAI_MONTHS = [
@@ -325,11 +342,105 @@ export const AdminEventMarketManager: React.FC = () => {
   const [eventRentalFee, setEventRentalFee] = useState<number | ''>(1500);
   const [eventNote, setEventNote] = useState<string>('คำนวณเตรียมสต๊อกอาบายะห์ 100 ชุด และน้ำหอมดูไบ 50 ขวด');
 
+  // View mode: 'calendar' (default), 'agenda', 'cards'
+  const [viewMode, setViewMode] = useState<'calendar' | 'agenda' | 'cards'>('calendar');
+  const [calendarYear, setCalendarYear] = useState<number>(() => new Date().getFullYear());
+  const [calendarMonth, setCalendarMonth] = useState<number>(() => new Date().getMonth());
+  const [selectedCalendarSchedule, setSelectedCalendarSchedule] = useState<EventSchedule | null>(null);
+
   // Filtered Schedules
   const filteredSchedules = schedules.filter((s) => {
     const matchesStatus = eventStatusFilter === 'all' || s.status === eventStatusFilter;
     return matchesStatus;
   });
+
+  // Calendar month navigation
+  const handlePrevMonth = () => {
+    if (calendarMonth === 0) {
+      setCalendarMonth(11);
+      setCalendarYear((y) => y - 1);
+    } else {
+      setCalendarMonth((m) => m - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (calendarMonth === 11) {
+      setCalendarMonth(0);
+      setCalendarYear((y) => y + 1);
+    } else {
+      setCalendarMonth((m) => m + 1);
+    }
+  };
+
+  const handleTodayMonth = () => {
+    const today = new Date();
+    setCalendarYear(today.getFullYear());
+    setCalendarMonth(today.getMonth());
+  };
+
+  // Generate calendar days for current month view
+  const calendarDays = React.useMemo(() => {
+    const firstDayIndex = new Date(calendarYear, calendarMonth, 1).getDay(); // 0 = Sun
+    const totalDaysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+    const prevMonthDays = new Date(calendarYear, calendarMonth, 0).getDate();
+    const todayStr = new Date().toISOString().slice(0, 10);
+
+    const days: {
+      dateStr: string;
+      dayNumber: number;
+      isCurrentMonth: boolean;
+      isToday: boolean;
+      schedules: EventSchedule[];
+    }[] = [];
+
+    // Previous month padding
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+      const d = prevMonthDays - i;
+      const prevMonth = calendarMonth === 0 ? 11 : calendarMonth - 1;
+      const prevYear = calendarMonth === 0 ? calendarYear - 1 : calendarYear;
+      const dateStr = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const daySchedules = filteredSchedules.filter((s) => dateStr >= s.startDate && dateStr <= s.endDate);
+      days.push({
+        dateStr,
+        dayNumber: d,
+        isCurrentMonth: false,
+        isToday: dateStr === todayStr,
+        schedules: daySchedules,
+      });
+    }
+
+    // Current month days
+    for (let d = 1; d <= totalDaysInMonth; d++) {
+      const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const daySchedules = filteredSchedules.filter((s) => dateStr >= s.startDate && dateStr <= s.endDate);
+      days.push({
+        dateStr,
+        dayNumber: d,
+        isCurrentMonth: true,
+        isToday: dateStr === todayStr,
+        schedules: daySchedules,
+      });
+    }
+
+    // Next month padding to fill weeks (multiples of 7)
+    const remainingDays = (7 - (days.length % 7)) % 7;
+    for (let d = 1; d <= remainingDays; d++) {
+      const nextMonth = calendarMonth === 11 ? 0 : calendarMonth + 1;
+      const nextYear = calendarMonth === 11 ? calendarYear + 1 : calendarYear;
+      const dateStr = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const daySchedules = filteredSchedules.filter((s) => dateStr >= s.startDate && dateStr <= s.endDate);
+      days.push({
+        dateStr,
+        dayNumber: d,
+        isCurrentMonth: false,
+        isToday: dateStr === todayStr,
+        schedules: daySchedules,
+      });
+    }
+
+    return days;
+  }, [calendarYear, calendarMonth, filteredSchedules]);
 
   // Metrics
   const upcomingCount = schedules.filter((s) => s.status === 'UPCOMING').length;
@@ -350,7 +461,7 @@ export const AdminEventMarketManager: React.FC = () => {
     }
   };
 
-  const handleOpenAddModal = () => {
+  const handleOpenAddModal = (defaultDate?: string) => {
     setEditingScheduleId(null);
     setEventTitle('งานออกบูธตลาดนัดคลอง 16');
     setEventBranch(activeBranch);
@@ -359,8 +470,9 @@ export const AdminEventMarketManager: React.FC = () => {
     setEventProducts('ชุดอาบายะห์ดูไบ • คัฟทาน • น้ำหอมดูไบ & Oud');
     setEventPhone(storeSettings.contactPhone || '083-427-4687');
     setEventStatus('ACTIVE');
-    setEventStartDate(new Date().toISOString().slice(0, 10));
-    setEventEndDate(new Date().toISOString().slice(0, 10));
+    const targetDate = defaultDate || new Date().toISOString().slice(0, 10);
+    setEventStartDate(targetDate);
+    setEventEndDate(targetDate);
     setEventSalesTarget(30000);
     setEventStaff('เจ้าของร้าน (Admin)');
     setEventRentalFee(1500);
@@ -630,22 +742,69 @@ export const AdminEventMarketManager: React.FC = () => {
             </p>
           </div>
 
-          <div className="pt-1">
+          <div className="pt-1 flex flex-wrap items-center justify-center gap-3">
             <button
-              onClick={handleOpenAddModal}
-              className="px-6 py-3 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-sm rounded-2xl shadow-md hover:scale-105 transition flex items-center justify-center gap-2 mx-auto cursor-pointer border-2 border-amber-500"
+              onClick={() => handleOpenAddModal()}
+              className="px-6 py-3 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-sm rounded-2xl shadow-md hover:scale-105 transition flex items-center justify-center gap-2 cursor-pointer border-2 border-amber-500"
             >
               <Plus className="w-5 h-5 text-stone-950" />
-              <span>ลงตารางออกงานใหม่</span>
+              <span>+ ลงตารางออกงานใหม่</span>
             </button>
           </div>
         </div>
 
+        {/* View Mode Switcher Toolbar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 max-w-4xl mx-auto pt-2">
+          {/* 3 View Tabs */}
+          <div className="inline-flex bg-amber-100/80 p-1.5 rounded-2xl border border-amber-300 shadow-xs">
+            <button
+              type="button"
+              onClick={() => setViewMode('calendar')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'calendar'
+                  ? 'bg-amber-400 text-stone-950 shadow-md border border-amber-500'
+                  : 'text-stone-700 hover:text-stone-950 hover:bg-amber-200/60'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5 text-amber-900" />
+              <span>📅 ปฏิทินนัดหมาย</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('agenda')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'agenda'
+                  ? 'bg-amber-400 text-stone-950 shadow-md border border-amber-500'
+                  : 'text-stone-700 hover:text-stone-950 hover:bg-amber-200/60'
+              }`}
+            >
+              <List className="w-3.5 h-3.5 text-amber-900" />
+              <span>📋 ตารางนัดหมาย &amp; เวลา</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('cards')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
+                viewMode === 'cards'
+                  ? 'bg-amber-400 text-stone-950 shadow-md border border-amber-500'
+                  : 'text-stone-700 hover:text-stone-950 hover:bg-amber-200/60'
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5 text-amber-900" />
+              <span>🗂️ การ์ดสรุปงาน</span>
+            </button>
+          </div>
+
+          <div className="text-xs font-black text-stone-600 bg-stone-100 px-3 py-1.5 rounded-xl border border-stone-200">
+            แสดง: <strong className="text-amber-950 font-mono">{filteredSchedules.length}</strong> จาก {schedules.length} รายการ
+          </div>
+        </div>
+
         {/* Centered Filter Tabs Bar */}
-        <div className="flex flex-wrap items-center justify-center gap-2 border-t-2 border-b-2 border-amber-400/30 py-3 max-w-2xl mx-auto">
+        <div className="flex flex-wrap items-center justify-center gap-2 border-t-2 border-b-2 border-amber-400/30 py-3 max-w-4xl mx-auto">
           <button
             onClick={() => setEventStatusFilter('all')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
+            className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
               eventStatusFilter === 'all'
                 ? 'bg-amber-400 text-stone-950 border-2 border-amber-500 shadow-md'
                 : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
@@ -656,7 +815,7 @@ export const AdminEventMarketManager: React.FC = () => {
 
           <button
             onClick={() => setEventStatusFilter('UPCOMING')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
+            className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
               eventStatusFilter === 'UPCOMING'
                 ? 'bg-amber-400 text-stone-950 border-2 border-amber-500 shadow-md'
                 : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
@@ -667,7 +826,7 @@ export const AdminEventMarketManager: React.FC = () => {
 
           <button
             onClick={() => setEventStatusFilter('ACTIVE')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
+            className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
               eventStatusFilter === 'ACTIVE'
                 ? 'bg-emerald-500 text-stone-950 border-2 border-emerald-600 shadow-md'
                 : 'bg-white text-emerald-950 hover:bg-emerald-50 border-2 border-emerald-600/60'
@@ -678,7 +837,7 @@ export const AdminEventMarketManager: React.FC = () => {
 
           <button
             onClick={() => setEventStatusFilter('COMPLETED')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
+            className={`px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
               eventStatusFilter === 'COMPLETED'
                 ? 'bg-stone-800 text-white border-2 border-stone-900 shadow-md'
                 : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
@@ -688,166 +847,596 @@ export const AdminEventMarketManager: React.FC = () => {
           </button>
         </div>
 
-        {/* Schedule List / Centered Empty State Card */}
-        {filteredSchedules.length === 0 ? (
-          <div className="bg-stone-50 border-2 border-amber-400/40 rounded-3xl p-10 sm:p-14 max-w-xl mx-auto space-y-4 shadow-md text-stone-950">
-            <div className="w-16 h-16 rounded-full bg-amber-100 border-2 border-amber-500 flex items-center justify-center mx-auto text-amber-700 shadow-sm">
-              <Calendar className="w-8 h-8 text-amber-700" />
-            </div>
-
-            <div className="space-y-1">
-              <h4 className="font-serif font-black text-lg sm:text-xl text-stone-950">
-                ยังไม่มีรายการตารางงานในช่วงนี้
-              </h4>
-              <p className="text-xs text-stone-800 max-w-sm mx-auto font-black leading-relaxed">
-                กดปุ่ม "ลงตารางออกงานใหม่" เพื่อเริ่มวางแผนออกงาน/ตลาดนัดล่วงหน้า คำนวณสต๊อกสินค้า HUDA ABAYA และเปิดขายหน้าร้าน POS
-              </p>
-            </div>
-
-            <div className="pt-2">
-              <button
-                onClick={handleOpenAddModal}
-                className="px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow-md hover:scale-105 transition flex items-center gap-1.5 mx-auto cursor-pointer border border-amber-500"
-              >
-                <Plus className="w-4 h-4 text-stone-950" />
-                <span>+ ลงตารางออกงานใหม่</span>
-              </button>
-            </div>
-          </div>
-        ) : (
-          /* Populated Event Cards Grid (Centered max-w-4xl) */
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto text-left">
-            {filteredSchedules.map((s) => (
-              <div
-                key={s.id}
-                className="bg-white border-2 border-amber-400/60 rounded-2xl p-5 shadow-lg space-y-3.5 hover:border-amber-500 transition flex flex-col justify-between text-stone-950"
-              >
-                <div className="space-y-2">
-                  {/* Card Status & Title Header */}
-                  <div className="flex items-start justify-between gap-2 border-b border-amber-400/30 pb-2.5">
-                    <div>
-                      <span className="text-[10px] font-black text-stone-950 bg-amber-100 px-2.5 py-0.5 rounded-lg border border-amber-400">
-                        {s.branchName}
-                      </span>
-                      <h4 className="font-serif font-black text-base text-stone-950 mt-1">
-                        {s.title}
-                      </h4>
-                    </div>
-
-                    {s.status === 'ACTIVE' && (
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-500 text-stone-950 font-black text-[10px] shadow flex items-center gap-1 shrink-0 border border-emerald-600">
-                        <Flame className="w-3 h-3 text-stone-950 animate-bounce" /> กำลังขายอยู่
-                      </span>
-                    )}
-                    {s.status === 'UPCOMING' && (
-                      <span className="px-2.5 py-1 rounded-full bg-amber-400 text-stone-950 font-black text-[10px] shadow shrink-0 border border-amber-500">
-                        ● เร็วๆ นี้
-                      </span>
-                    )}
-                    {s.status === 'COMPLETED' && (
-                      <span className="px-2.5 py-1 rounded-full bg-stone-200 text-stone-800 font-black text-[10px] shrink-0 border border-stone-300">
-                        ✓ เสร็จสิ้นแล้ว
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Details Grid */}
-                  <div className="space-y-1.5 text-xs text-stone-950">
-                    <p className="flex items-center gap-1.5 font-black text-amber-950">
-                      <MapPin className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span>สถานที่: {s.location}</span>
-                    </p>
-                    <div className="bg-amber-50/70 p-2.5 rounded-xl border border-amber-300/70 space-y-1">
-                      <p className="flex items-center gap-1.5 font-black text-amber-950">
-                        <Calendar className="w-4 h-4 text-amber-700 shrink-0" />
-                        <span>
-                          วันที่ออกงาน (ว/ด/ป):{' '}
-                          <strong className="text-amber-900 font-mono text-[13px]">
-                            {s.startDate === s.endDate
-                              ? `${formatThaiDMY(s.startDate)} (${formatThaiDateReadable(s.startDate)})`
-                              : `${formatThaiDMY(s.startDate)} ถึง ${formatThaiDMY(s.endDate)} (${formatThaiDateReadable(s.startDate)} - ${formatThaiDateReadable(s.endDate)})`
-                            }
-                          </strong>
-                        </span>
-                      </p>
-                      <p className="flex items-center gap-1.5 font-black text-stone-800 text-[11px] pl-5">
-                        <Clock className="w-3.5 h-3.5 text-stone-600 shrink-0" />
-                        <span>เวลาทำการ: {s.operatingHours}</span>
-                      </p>
-                    </div>
-                    <p className="flex items-center gap-1.5 font-black text-amber-900">
-                      <ShoppingBag className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span>สินค้าเตรียมขาย: {s.productsToPrepare}</span>
-                    </p>
-                    {s.assignedStaff && (
-                      <p className="flex items-center gap-1.5 font-black text-stone-800">
-                        <User className="w-4 h-4 text-amber-600 shrink-0" />
-                        <span>พนักงานรับผิดชอบ: {s.assignedStaff}</span>
-                      </p>
-                    )}
-                    {s.rentalFee !== undefined && (
-                      <p className="flex items-center gap-1.5 font-black text-amber-950 bg-amber-50/90 px-2.5 py-1.5 rounded-xl border border-amber-300/80 shadow-xs">
-                        <Tag className="w-4 h-4 text-amber-700 shrink-0" />
-                        <span>
-                          ราคาค่าเช่าสถานที่ออกบูธ: <strong className="text-amber-900 font-serif font-black">{s.rentalFee === 0 ? 'ฟรี (ไม่มีค่าที่)' : `฿${s.rentalFee.toLocaleString()}`}</strong>
-                        </span>
-                      </p>
-                    )}
-                    {s.phonePromptPay && (
-                      <p className="flex items-center gap-1.5 font-black text-emerald-950 font-mono">
-                        <Phone className="w-4 h-4 text-emerald-700 shrink-0" />
-                        <span>โทร/พร้อมเพย์: {s.phonePromptPay}</span>
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Card Action Controls */}
-                <div className="pt-3 border-t border-amber-400/30 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1">
-                    {s.status === 'UPCOMING' && (
-                      <button
-                        onClick={() => handleUpdateStatus(s.id, 'ACTIVE')}
-                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] rounded-lg transition shadow border border-emerald-700"
-                      >
-                        เริ่มเปิดขาย
-                      </button>
-                    )}
-                    {s.status === 'ACTIVE' && (
-                      <button
-                        onClick={() => handleUpdateStatus(s.id, 'COMPLETED')}
-                        className="px-2.5 py-1 bg-stone-700 hover:bg-stone-600 text-white font-black text-[11px] rounded-lg transition"
-                      >
-                        ปิดงานขาย
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => handleOpenEditModal(s)}
-                      className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 border border-amber-400 text-amber-950 rounded-lg text-xs font-black transition cursor-pointer flex items-center gap-1"
-                      title="แก้ไขตารางงานนี้"
-                    >
-                      <Edit2 className="w-3.5 h-3.5 text-amber-800" />
-                      <span>แก้ไข</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleDeleteSchedule(s.id)}
-                      className="p-1.5 bg-red-100 hover:bg-red-200 border border-red-400 text-red-950 rounded-lg text-xs transition cursor-pointer"
-                      title="ลบตารางงานนี้"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-700" />
-                    </button>
-                  </div>
-                </div>
+        {/* 1. CALENDAR VIEW (มุมมองปฏิทินนัดหมาย) */}
+        {viewMode === 'calendar' && (
+          <div className="bg-stone-50/70 border-2 border-amber-400/80 rounded-3xl p-3 sm:p-5 shadow-inner max-w-5xl mx-auto space-y-3.5 text-stone-950 text-left">
+            {/* Calendar Month Header & Navigation */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-amber-300/80 shadow-xs">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePrevMonth}
+                  className="p-2 rounded-xl bg-stone-100 hover:bg-amber-100 border border-stone-300 text-stone-800 hover:text-amber-950 transition cursor-pointer shadow-2xs"
+                  title="เดือนก่อนหน้า"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTodayMonth}
+                  className="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-950 text-xs font-black transition cursor-pointer shadow-2xs"
+                >
+                  เดือนนี้ (วันนี้)
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  className="p-2 rounded-xl bg-stone-100 hover:bg-amber-100 border border-stone-300 text-stone-800 hover:text-amber-950 transition cursor-pointer shadow-2xs"
+                  title="เดือนถัดไป"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
               </div>
-            ))}
+
+              <h3 className="font-serif font-black text-xl sm:text-2xl text-amber-950 flex items-center gap-2">
+                <Calendar className="w-6 h-6 text-amber-600 shrink-0" />
+                <span>
+                  {THAI_MONTH_FULL[calendarMonth]} พ.ศ. {calendarYear + 543}{' '}
+                  <span className="text-sm font-sans font-bold text-stone-500">({calendarYear})</span>
+                </span>
+              </h3>
+
+              <div className="flex items-center gap-2 text-[11px] font-bold">
+                <span className="flex items-center gap-1 text-emerald-800 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-300">
+                  <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block animate-pulse"></span>
+                  กำลังขาย
+                </span>
+                <span className="flex items-center gap-1 text-amber-900 bg-amber-50 px-2 py-1 rounded-lg border border-amber-300">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+                  เร็วๆ นี้
+                </span>
+              </div>
+            </div>
+
+            {/* Calendar Weekday Headers (อา. - ส.) */}
+            <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center">
+              {THAI_WEEKDAYS.map((w, idx) => (
+                <div
+                  key={idx}
+                  className={`py-2 px-1 rounded-xl text-xs font-black border shadow-2xs ${w.color}`}
+                >
+                  <span className="hidden sm:inline">{w.full}</span>
+                  <span className="sm:hidden">{w.short}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Grid (7 columns) */}
+            <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+              {calendarDays.map((cell, idx) => (
+                <div
+                  key={idx}
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      handleOpenAddModal(cell.dateStr);
+                    }
+                  }}
+                  className={`min-h-[110px] sm:min-h-[135px] p-1.5 sm:p-2 rounded-2xl border flex flex-col justify-between transition group relative ${
+                    cell.isCurrentMonth
+                      ? 'bg-white border-stone-200 hover:border-amber-400 shadow-2xs'
+                      : 'bg-stone-100/60 border-stone-200/50 opacity-60 text-stone-400'
+                  } ${cell.isToday ? 'ring-2 ring-amber-500 bg-amber-50/40 shadow-sm' : ''}`}
+                >
+                  {/* Top Bar: Date Number & Today Badge */}
+                  <div className="flex items-center justify-between pointer-events-none">
+                    <span
+                      className={`text-xs sm:text-sm font-black rounded-lg px-1.5 py-0.5 ${
+                        cell.isToday
+                          ? 'bg-amber-500 text-stone-950 font-mono shadow-xs'
+                          : cell.isCurrentMonth
+                          ? 'text-stone-900 font-mono'
+                          : 'text-stone-400 font-mono'
+                      }`}
+                    >
+                      {cell.dayNumber}
+                    </span>
+
+                    {cell.isToday && (
+                      <span className="text-[9px] font-black bg-amber-200 text-amber-950 px-1.5 py-0.5 rounded-full border border-amber-400 shadow-2xs">
+                        วันนี้
+                      </span>
+                    )}
+
+                    {/* Quick + button on hover */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenAddModal(cell.dateStr);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 pointer-events-auto p-1 rounded-md bg-amber-100 hover:bg-amber-300 text-amber-950 transition text-[10px] font-black cursor-pointer shadow-2xs"
+                      title={`ลงตารางงานวันที่ ${formatThaiDMY(cell.dateStr)}`}
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* Cell Schedules List */}
+                  <div className="space-y-1 my-1 overflow-y-auto max-h-[85px] sm:max-h-[100px] scrollbar-thin">
+                    {cell.schedules.map((s) => (
+                      <div
+                        key={s.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCalendarSchedule(s);
+                        }}
+                        className={`p-1.5 rounded-xl text-left cursor-pointer transition shadow-xs border ${
+                          s.status === 'ACTIVE'
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-700'
+                            : s.status === 'UPCOMING'
+                            ? 'bg-amber-300 hover:bg-amber-200 text-stone-950 border-amber-400 font-black'
+                            : 'bg-stone-200 hover:bg-stone-300 text-stone-800 border-stone-300'
+                        }`}
+                        title={`${s.title} (${s.operatingHours}) - คลิกเพื่อดูรายละเอียดหรือแก้ไข`}
+                      >
+                        <div className="flex items-center justify-between gap-1 leading-tight">
+                          <span className="font-mono text-[9px] sm:text-[10px] font-black truncate">
+                            {s.operatingHours.split(' ')[0] || s.operatingHours}
+                          </span>
+                          <span className="text-[9px] font-black px-1 rounded bg-black/10 shrink-0">
+                            {s.rentalFee === undefined || s.rentalFee === 0 ? 'ฟรี' : `฿${s.rentalFee?.toLocaleString()}`}
+                          </span>
+                        </div>
+                        <div className="font-black text-[10px] sm:text-[11px] truncate leading-tight mt-0.5">
+                          {s.title}
+                        </div>
+                        <div className="text-[9px] truncate opacity-90 leading-tight">
+                          📍 {s.location}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Empty state hint on hover if no schedules */}
+                  {cell.schedules.length === 0 && (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenAddModal(cell.dateStr);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-center py-1 text-[10px] text-amber-800 font-bold bg-amber-50 hover:bg-amber-100 rounded-lg border border-dashed border-amber-300 cursor-pointer transition"
+                    >
+                      + ออกงาน
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center text-[11px] text-stone-600 font-bold pt-1">
+              💡 <em>คลิกที่วันบนปฏิทินเพื่อลงตารางงานใหม่ หรือคลิกที่แถบกิจกรรมเพื่อดูรายละเอียด &amp; แก้ไข</em>
+            </div>
           </div>
         )}
 
+        {/* 2. AGENDA / TIMETABLE VIEW (ตารางนัดหมาย & เวลา) */}
+        {viewMode === 'agenda' && (
+          <div className="bg-white border-2 border-amber-400/80 rounded-3xl p-4 sm:p-6 shadow-xl max-w-5xl mx-auto space-y-4 text-stone-950 text-left">
+            <div className="flex items-center justify-between border-b-2 border-amber-200 pb-3">
+              <h3 className="font-serif font-black text-xl text-amber-950 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-amber-600" />
+                <span>ตารางนัดหมายออกงาน &amp; ไทม์ไลน์ (Agenda Timetable)</span>
+              </h3>
+              <span className="text-xs font-black text-stone-600 bg-stone-100 px-3 py-1 rounded-xl border border-stone-200">
+                พบ {filteredSchedules.length} รายการ
+              </span>
+            </div>
+
+            {filteredSchedules.length === 0 ? (
+              <div className="text-center py-12 space-y-2">
+                <Calendar className="w-10 h-10 text-stone-400 mx-auto" />
+                <p className="font-black text-stone-700">ไม่มีตารางงานตามตัวกรองที่เลือก</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-amber-50 border-b-2 border-amber-300 text-stone-900 font-black">
+                      <th className="p-3 rounded-l-xl">วันที่ออกงาน (ว/ด/ป)</th>
+                      <th className="p-3">เวลาทำการ</th>
+                      <th className="p-3">ชื่องาน / ตลาดนัด</th>
+                      <th className="p-3">สถานที่</th>
+                      <th className="p-3">ค่าเช่าบูธ</th>
+                      <th className="p-3">พนักงาน</th>
+                      <th className="p-3">สถานะ</th>
+                      <th className="p-3 text-right rounded-r-xl">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-amber-100">
+                    {filteredSchedules
+                      .sort((a, b) => a.startDate.localeCompare(b.startDate))
+                      .map((s) => (
+                        <tr
+                          key={s.id}
+                          className="hover:bg-amber-50/50 transition cursor-pointer"
+                          onClick={() => setSelectedCalendarSchedule(s)}
+                        >
+                          <td className="p-3 font-mono font-black text-amber-950 whitespace-nowrap">
+                            {formatThaiDMY(s.startDate)}
+                            {s.startDate !== s.endDate && (
+                              <span className="text-stone-500 font-sans block text-[10px]">
+                                ถึง {formatThaiDMY(s.endDate)}
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3 font-black text-stone-800 whitespace-nowrap">
+                            {s.operatingHours}
+                          </td>
+                          <td className="p-3 font-serif font-black text-stone-950">
+                            <div>{s.title}</div>
+                            <div className="text-[10px] text-stone-600 font-sans">{s.branchName}</div>
+                          </td>
+                          <td className="p-3 text-stone-800 font-black whitespace-nowrap">
+                            📍 {s.location}
+                          </td>
+                          <td className="p-3 font-mono font-black text-amber-900 whitespace-nowrap">
+                            {s.rentalFee === undefined || s.rentalFee === 0 ? 'ฟรี' : `฿${s.rentalFee.toLocaleString()}`}
+                          </td>
+                          <td className="p-3 text-stone-700 font-bold whitespace-nowrap">
+                            {s.assignedStaff || '-'}
+                          </td>
+                          <td className="p-3 whitespace-nowrap">
+                            {s.status === 'ACTIVE' && (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white font-black text-[10px]">
+                                กำลังขาย
+                              </span>
+                            )}
+                            {s.status === 'UPCOMING' && (
+                              <span className="px-2 py-0.5 rounded-full bg-amber-400 text-stone-950 font-black text-[10px]">
+                                เร็วๆ นี้
+                              </span>
+                            )}
+                            {s.status === 'COMPLETED' && (
+                              <span className="px-2 py-0.5 rounded-full bg-stone-200 text-stone-800 font-black text-[10px]">
+                                เสร็จสิ้น
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => handleOpenEditModal(s)}
+                                className="p-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg transition"
+                                title="แก้ไข"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSchedule(s.id)}
+                                className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition"
+                                title="ลบ"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 3. CARDS VIEW (มุมมองการ์ดสรุปงาน) */}
+        {viewMode === 'cards' && (
+          <>
+            {filteredSchedules.length === 0 ? (
+              <div className="bg-stone-50 border-2 border-amber-400/40 rounded-3xl p-10 sm:p-14 max-w-xl mx-auto space-y-4 shadow-md text-stone-950">
+                <div className="w-16 h-16 rounded-full bg-amber-100 border-2 border-amber-500 flex items-center justify-center mx-auto text-amber-700 shadow-sm">
+                  <Calendar className="w-8 h-8 text-amber-700" />
+                </div>
+
+                <div className="space-y-1">
+                  <h4 className="font-serif font-black text-lg sm:text-xl text-stone-950">
+                    ยังไม่มีรายการตารางงานในช่วงนี้
+                  </h4>
+                  <p className="text-xs text-stone-800 max-w-sm mx-auto font-black leading-relaxed">
+                    กดปุ่ม "ลงตารางออกงานใหม่" เพื่อเริ่มวางแผนออกงาน/ตลาดนัดล่วงหน้า คำนวณสต๊อกสินค้า HUDA ABAYA และเปิดขายหน้าร้าน POS
+                  </p>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    onClick={() => handleOpenAddModal()}
+                    className="px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow-md hover:scale-105 transition flex items-center gap-1.5 mx-auto cursor-pointer border border-amber-500"
+                  >
+                    <Plus className="w-4 h-4 text-stone-950" />
+                    <span>+ ลงตารางออกงานใหม่</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto text-left">
+                {filteredSchedules.map((s) => (
+                  <div
+                    key={s.id}
+                    className="bg-white border-2 border-amber-400/60 rounded-2xl p-5 shadow-lg space-y-3.5 hover:border-amber-500 transition flex flex-col justify-between text-stone-950"
+                  >
+                    <div className="space-y-2">
+                      {/* Card Status & Title Header */}
+                      <div className="flex items-start justify-between gap-2 border-b border-amber-400/30 pb-2.5">
+                        <div>
+                          <span className="text-[10px] font-black text-stone-950 bg-amber-100 px-2.5 py-0.5 rounded-lg border border-amber-400">
+                            {s.branchName}
+                          </span>
+                          <h4 className="font-serif font-black text-base text-stone-950 mt-1">
+                            {s.title}
+                          </h4>
+                        </div>
+
+                        {s.status === 'ACTIVE' && (
+                          <span className="px-2.5 py-1 rounded-full bg-emerald-500 text-stone-950 font-black text-[10px] shadow flex items-center gap-1 shrink-0 border border-emerald-600">
+                            <Flame className="w-3 h-3 text-stone-950 animate-bounce" /> กำลังขายอยู่
+                          </span>
+                        )}
+                        {s.status === 'UPCOMING' && (
+                          <span className="px-2.5 py-1 rounded-full bg-amber-400 text-stone-950 font-black text-[10px] shadow shrink-0 border border-amber-500">
+                            ● เร็วๆ นี้
+                          </span>
+                        )}
+                        {s.status === 'COMPLETED' && (
+                          <span className="px-2.5 py-1 rounded-full bg-stone-200 text-stone-800 font-black text-[10px] shrink-0 border border-stone-300">
+                            ✓ เสร็จสิ้นแล้ว
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Details Grid */}
+                      <div className="space-y-1.5 text-xs text-stone-950">
+                        <p className="flex items-center gap-1.5 font-black text-amber-950">
+                          <MapPin className="w-4 h-4 text-amber-600 shrink-0" />
+                          <span>สถานที่: {s.location}</span>
+                        </p>
+                        <div className="bg-amber-50/70 p-2.5 rounded-xl border border-amber-300/70 space-y-1">
+                          <p className="flex items-center gap-1.5 font-black text-amber-950">
+                            <Calendar className="w-4 h-4 text-amber-700 shrink-0" />
+                            <span>
+                              วันที่ออกงาน (ว/ด/ป):{' '}
+                              <strong className="text-amber-900 font-mono text-[13px]">
+                                {s.startDate === s.endDate
+                                  ? `${formatThaiDMY(s.startDate)} (${formatThaiDateReadable(s.startDate)})`
+                                  : `${formatThaiDMY(s.startDate)} ถึง ${formatThaiDMY(s.endDate)} (${formatThaiDateReadable(s.startDate)} - ${formatThaiDateReadable(s.endDate)})`
+                                }
+                              </strong>
+                            </span>
+                          </p>
+                          <p className="flex items-center gap-1.5 font-black text-stone-800 text-[11px] pl-5">
+                            <Clock className="w-3.5 h-3.5 text-stone-600 shrink-0" />
+                            <span>เวลาทำการ: {s.operatingHours}</span>
+                          </p>
+                        </div>
+                        <p className="flex items-center gap-1.5 font-black text-amber-900">
+                          <ShoppingBag className="w-4 h-4 text-amber-600 shrink-0" />
+                          <span>สินค้าเตรียมขาย: {s.productsToPrepare}</span>
+                        </p>
+                        {s.assignedStaff && (
+                          <p className="flex items-center gap-1.5 font-black text-stone-800">
+                            <User className="w-4 h-4 text-amber-600 shrink-0" />
+                            <span>พนักงานรับผิดชอบ: {s.assignedStaff}</span>
+                          </p>
+                        )}
+                        {s.rentalFee !== undefined && (
+                          <p className="flex items-center gap-1.5 font-black text-amber-950 bg-amber-50/90 px-2.5 py-1.5 rounded-xl border border-amber-300/80 shadow-xs">
+                            <Tag className="w-4 h-4 text-amber-700 shrink-0" />
+                            <span>
+                              ราคาค่าเช่าสถานที่ออกบูธ: <strong className="text-amber-900 font-serif font-black">{s.rentalFee === 0 ? 'ฟรี (ไม่มีค่าที่)' : `฿${s.rentalFee.toLocaleString()}`}</strong>
+                            </span>
+                          </p>
+                        )}
+                        {s.phonePromptPay && (
+                          <p className="flex items-center gap-1.5 font-black text-emerald-950 font-mono">
+                            <Phone className="w-4 h-4 text-emerald-700 shrink-0" />
+                            <span>โทร/พร้อมเพย์: {s.phonePromptPay}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Card Action Controls */}
+                    <div className="pt-3 border-t border-amber-400/30 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1">
+                        {s.status === 'UPCOMING' && (
+                          <button
+                            onClick={() => handleUpdateStatus(s.id, 'ACTIVE')}
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] rounded-lg transition shadow border border-emerald-700 cursor-pointer"
+                          >
+                            เริ่มเปิดขาย
+                          </button>
+                        )}
+                        {s.status === 'ACTIVE' && (
+                          <button
+                            onClick={() => handleUpdateStatus(s.id, 'COMPLETED')}
+                            className="px-2.5 py-1 bg-stone-700 hover:bg-stone-600 text-white font-black text-[11px] rounded-lg transition cursor-pointer"
+                          >
+                            ปิดงานขาย
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleOpenEditModal(s)}
+                          className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 border border-amber-400 text-amber-950 rounded-lg text-xs font-black transition cursor-pointer flex items-center gap-1"
+                          title="แก้ไขตารางงานนี้"
+                        >
+                          <Edit2 className="w-3.5 h-3.5 text-amber-800" />
+                          <span>แก้ไข</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteSchedule(s.id)}
+                          className="p-1.5 bg-red-100 hover:bg-red-200 border border-red-400 text-red-950 rounded-lg text-xs transition cursor-pointer"
+                          title="ลบตารางงานนี้"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-700" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
       </div>
+
+      {/* QUICK DETAIL MODAL FROM CALENDAR / AGENDA CLICK */}
+      {selectedCalendarSchedule && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="relative bg-white border-2 border-amber-500 rounded-3xl max-w-lg w-full p-6 text-stone-950 shadow-2xl space-y-4 text-left">
+            <div className="flex justify-between items-start border-b-2 border-amber-400/40 pb-3">
+              <div>
+                <span className="text-[10px] font-black text-stone-950 bg-amber-100 px-2.5 py-0.5 rounded-lg border border-amber-400">
+                  {selectedCalendarSchedule.branchName}
+                </span>
+                <h3 className="font-serif font-black text-lg text-stone-950 mt-1">
+                  {selectedCalendarSchedule.title}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedCalendarSchedule(null)}
+                className="text-stone-700 hover:text-stone-950 p-1.5 rounded-full border border-stone-300 hover:bg-stone-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2.5 text-xs text-stone-950">
+              <div className="bg-amber-50/80 p-3 rounded-2xl border border-amber-300/80 space-y-1.5">
+                <p className="flex items-center gap-2 font-black text-amber-950">
+                  <Calendar className="w-4 h-4 text-amber-700 shrink-0" />
+                  <span>
+                    วันที่ออกงาน (ว/ด/ป):{' '}
+                    <strong className="text-amber-900 font-mono text-sm">
+                      {selectedCalendarSchedule.startDate === selectedCalendarSchedule.endDate
+                        ? `${formatThaiDMY(selectedCalendarSchedule.startDate)} (${formatThaiDateReadable(selectedCalendarSchedule.startDate)})`
+                        : `${formatThaiDMY(selectedCalendarSchedule.startDate)} ถึง ${formatThaiDMY(selectedCalendarSchedule.endDate)}`
+                      }
+                    </strong>
+                  </span>
+                </p>
+                <p className="flex items-center gap-2 font-black text-stone-800 pl-6">
+                  <Clock className="w-3.5 h-3.5 text-stone-600 shrink-0" />
+                  <span>เวลาทำการ: {selectedCalendarSchedule.operatingHours}</span>
+                </p>
+              </div>
+
+              <p className="flex items-center gap-2 font-black text-stone-950">
+                <MapPin className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>สถานที่: {selectedCalendarSchedule.location}</span>
+              </p>
+
+              {selectedCalendarSchedule.rentalFee !== undefined && (
+                <p className="flex items-center gap-2 font-black text-amber-950 bg-amber-100/70 p-2 rounded-xl border border-amber-300">
+                  <Tag className="w-4 h-4 text-amber-700 shrink-0" />
+                  <span>
+                    ราคาค่าเช่าสถานที่ออกบูธ:{' '}
+                    <strong className="text-amber-900 font-mono text-sm">
+                      {selectedCalendarSchedule.rentalFee === 0 ? 'ฟรี (ไม่มีค่าที่)' : `฿${selectedCalendarSchedule.rentalFee.toLocaleString()}`}
+                    </strong>
+                  </span>
+                </p>
+              )}
+
+              <p className="flex items-center gap-2 font-black text-amber-900">
+                <ShoppingBag className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>สินค้าเตรียมขาย: {selectedCalendarSchedule.productsToPrepare}</span>
+              </p>
+
+              {selectedCalendarSchedule.assignedStaff && (
+                <p className="flex items-center gap-2 font-black text-stone-800">
+                  <User className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>พนักงานรับผิดชอบ: {selectedCalendarSchedule.assignedStaff}</span>
+                </p>
+              )}
+
+              {selectedCalendarSchedule.phonePromptPay && (
+                <p className="flex items-center gap-2 font-black text-emerald-950 font-mono">
+                  <Phone className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span>โทร/พร้อมเพย์: {selectedCalendarSchedule.phonePromptPay}</span>
+                </p>
+              )}
+
+              {selectedCalendarSchedule.note && (
+                <p className="bg-stone-50 p-2.5 rounded-xl border border-stone-200 text-stone-700 italic">
+                  หมายเหตุ: {selectedCalendarSchedule.note}
+                </p>
+              )}
+            </div>
+
+            {/* Quick Actions in Detail Modal */}
+            <div className="pt-3 border-t-2 border-amber-300 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                {selectedCalendarSchedule.status === 'UPCOMING' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleUpdateStatus(selectedCalendarSchedule.id, 'ACTIVE');
+                      setSelectedCalendarSchedule(null);
+                    }}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow transition cursor-pointer"
+                  >
+                    เริ่มเปิดขาย
+                  </button>
+                )}
+                {selectedCalendarSchedule.status === 'ACTIVE' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleUpdateStatus(selectedCalendarSchedule.id, 'COMPLETED');
+                      setSelectedCalendarSchedule(null);
+                    }}
+                    className="px-3 py-1.5 bg-stone-700 hover:bg-stone-800 text-white font-black text-xs rounded-xl shadow transition cursor-pointer"
+                  >
+                    ปิดงานขาย
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const toEdit = selectedCalendarSchedule;
+                    setSelectedCalendarSchedule(null);
+                    handleOpenEditModal(toEdit);
+                  }}
+                  className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow transition flex items-center gap-1 border border-amber-500 cursor-pointer"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>แก้ไข</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const toDelId = selectedCalendarSchedule.id;
+                    setSelectedCalendarSchedule(null);
+                    handleDeleteSchedule(toDelId);
+                  }}
+                  className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 rounded-xl transition cursor-pointer"
+                  title="ลบตารางงานนี้"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL 1: ADD NEW EVENT SCHEDULE MODAL */}
       {isAddEventModalOpen && (
