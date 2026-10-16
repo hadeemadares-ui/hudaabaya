@@ -5,6 +5,257 @@ import { Calendar, MapPin, Clock, Plus, Store, User, Phone, DollarSign, Sparkles
 import { useShop } from '../../context/ShopContext';
 import { EventSchedule } from '../../types';
 
+// Thai Months Data
+const THAI_MONTHS = [
+  { value: 1, name: 'มกราคม', short: 'ม.ค.' },
+  { value: 2, name: 'กุมภาพันธ์', short: 'ก.พ.' },
+  { value: 3, name: 'มีนาคม', short: 'มี.ค.' },
+  { value: 4, name: 'เมษายน', short: 'เม.ย.' },
+  { value: 5, name: 'พฤษภาคม', short: 'พ.ค.' },
+  { value: 6, name: 'มิถุนายน', short: 'มิ.ย.' },
+  { value: 7, name: 'กรกฎาคม', short: 'ก.ค.' },
+  { value: 8, name: 'สิงหาคม', short: 'ส.ค.' },
+  { value: 9, name: 'กันยายน', short: 'ก.ย.' },
+  { value: 10, name: 'ตุลาคม', short: 'ต.ค.' },
+  { value: 11, name: 'พฤศจิกายน', short: 'พ.ย.' },
+  { value: 12, name: 'ธันวาคม', short: 'ธ.ค.' },
+];
+
+// Thai Years Range (พ.ศ. 2567 - 2575 / ค.ศ. 2024 - 2032)
+const THAI_YEARS = [
+  { ce: 2024, be: 2567 },
+  { ce: 2025, be: 2568 },
+  { ce: 2026, be: 2569 },
+  { ce: 2027, be: 2570 },
+  { ce: 2028, be: 2571 },
+  { ce: 2029, be: 2572 },
+  { ce: 2030, be: 2573 },
+  { ce: 2031, be: 2574 },
+  { ce: 2032, be: 2575 },
+];
+
+const getDaysInMonth = (year: number, month: number): number => {
+  return new Date(year, month, 0).getDate();
+};
+
+const formatThaiDMY = (isoStr: string): string => {
+  if (!isoStr) return '-';
+  const parts = isoStr.split('-');
+  if (parts.length === 3) {
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    const d = parseInt(parts[2], 10);
+    const thaiYear = y > 2500 ? y : y + 543;
+    return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${thaiYear}`;
+  }
+  return isoStr;
+};
+
+const formatThaiDateReadable = (isoStr: string): string => {
+  if (!isoStr) return '-';
+  const parts = isoStr.split('-');
+  if (parts.length === 3) {
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    const d = parseInt(parts[2], 10);
+    const thaiMonth = THAI_MONTHS[m - 1]?.short || `${m}`;
+    const thaiYear = y > 2500 ? y : y + 543;
+    return `${d} ${thaiMonth} ${thaiYear}`;
+  }
+  return isoStr;
+};
+
+const addDaysToISO = (isoStr: string, days: number): string => {
+  const parts = isoStr ? isoStr.split('-') : [];
+  const d = parts.length === 3
+    ? new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10))
+    : new Date();
+  d.setDate(d.getDate() + days);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const getUpcomingSaturdayISO = (): string => {
+  const d = new Date();
+  const dayOfWeek = d.getDay(); // 0 is Sun, 6 is Sat
+  const diff = (6 - dayOfWeek + 7) % 7 || 7;
+  d.setDate(d.getDate() + diff);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+// Thai DMY Date Picker Component (วัน / เดือน / ปี)
+interface ThaiDMYDatePickerProps {
+  label: string;
+  value: string; // ISO format 'YYYY-MM-DD'
+  onChange: (isoDate: string) => void;
+  quickPresets?: { label: string; onClick: () => void }[];
+}
+
+const ThaiDMYDatePicker: React.FC<ThaiDMYDatePickerProps> = ({
+  label,
+  value,
+  onChange,
+  quickPresets,
+}) => {
+  const hiddenDateInputRef = React.useRef<HTMLInputElement>(null);
+
+  const parts = value ? value.split('-') : [];
+  const today = new Date();
+  const curYear = parts.length === 3 ? parseInt(parts[0], 10) || today.getFullYear() : today.getFullYear();
+  const curMonth = parts.length === 3 ? parseInt(parts[1], 10) || today.getMonth() + 1 : today.getMonth() + 1;
+  let curDay = parts.length === 3 ? parseInt(parts[2], 10) || today.getDate() : today.getDate();
+
+  const daysInMonth = getDaysInMonth(curYear, curMonth);
+  if (curDay > daysInMonth) curDay = daysInMonth;
+
+  const handleDayChange = (d: number) => {
+    const newIso = `${curYear}-${String(curMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    onChange(newIso);
+  };
+
+  const handleMonthChange = (m: number) => {
+    const maxDays = getDaysInMonth(curYear, m);
+    const validDay = Math.min(curDay, maxDays);
+    const newIso = `${curYear}-${String(m).padStart(2, '0')}-${String(validDay).padStart(2, '0')}`;
+    onChange(newIso);
+  };
+
+  const handleYearChange = (y: number) => {
+    const maxDays = getDaysInMonth(y, curMonth);
+    const validDay = Math.min(curDay, maxDays);
+    const newIso = `${y}-${String(curMonth).padStart(2, '0')}-${String(validDay).padStart(2, '0')}`;
+    onChange(newIso);
+  };
+
+  return (
+    <div className="bg-stone-50/90 border-2 border-stone-300 rounded-2xl p-3 space-y-2.5 shadow-xs">
+      <div className="flex items-center justify-between">
+        <label className="block text-stone-950 font-black text-xs flex items-center gap-1.5">
+          <Calendar className="w-3.5 h-3.5 text-amber-700" />
+          <span>{label}</span>
+          <span className="text-[10px] text-amber-900 bg-amber-200/90 font-black px-1.5 py-0.5 rounded border border-amber-400">
+            ว / ด / ป
+          </span>
+        </label>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => {
+              if (hiddenDateInputRef.current) {
+                if (typeof hiddenDateInputRef.current.showPicker === 'function') {
+                  try {
+                    hiddenDateInputRef.current.showPicker();
+                  } catch (e) {
+                    hiddenDateInputRef.current.focus();
+                  }
+                } else {
+                  hiddenDateInputRef.current.focus();
+                }
+              }
+            }}
+            className="text-[11px] font-bold text-amber-900 hover:text-stone-950 flex items-center gap-1 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-lg border border-amber-300 transition shadow-2xs cursor-pointer"
+            title="กดเพื่อเปิดปฏิทินเลือกวันที่"
+          >
+            <span>📅 ปฏิทิน</span>
+          </button>
+          <input
+            ref={hiddenDateInputRef}
+            type="date"
+            value={value}
+            onChange={(e) => {
+              if (e.target.value) onChange(e.target.value);
+            }}
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+          />
+        </div>
+      </div>
+
+      {/* 3 Selectors: ว (วัน), ด (เดือน), ป (ปี) in EXACT ว/ด/ป order */}
+      <div className="grid grid-cols-3 gap-1.5">
+        {/* วัน (ว) */}
+        <div>
+          <label className="block text-[10px] font-black text-stone-600 mb-0.5">วัน (ว)</label>
+          <select
+            value={curDay}
+            onChange={(e) => handleDayChange(parseInt(e.target.value, 10))}
+            className="w-full bg-white border border-stone-300 rounded-xl p-2 text-stone-950 font-black text-xs focus:outline-none focus:border-amber-500 cursor-pointer shadow-xs"
+          >
+            {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => (
+              <option key={d} value={d}>
+                {String(d).padStart(2, '0')}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* เดือน (ด) */}
+        <div>
+          <label className="block text-[10px] font-black text-stone-600 mb-0.5">เดือน (ด)</label>
+          <select
+            value={curMonth}
+            onChange={(e) => handleMonthChange(parseInt(e.target.value, 10))}
+            className="w-full bg-white border border-stone-300 rounded-xl p-2 text-stone-950 font-black text-xs focus:outline-none focus:border-amber-500 cursor-pointer shadow-xs"
+          >
+            {THAI_MONTHS.map((m) => (
+              <option key={m.value} value={m.value}>
+                {String(m.value).padStart(2, '0')} - {m.short}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* ปี (ป) */}
+        <div>
+          <label className="block text-[10px] font-black text-stone-600 mb-0.5">ปี (ป)</label>
+          <select
+            value={curYear}
+            onChange={(e) => handleYearChange(parseInt(e.target.value, 10))}
+            className="w-full bg-white border border-stone-300 rounded-xl p-2 text-stone-950 font-black text-xs focus:outline-none focus:border-amber-500 cursor-pointer shadow-xs"
+          >
+            {THAI_YEARS.map((y) => (
+              <option key={y.ce} value={y.ce}>
+                {y.be} ({y.ce})
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Date Preview Badge */}
+      <div className="flex items-center justify-between text-[11px] bg-white px-2.5 py-1.5 rounded-xl border border-amber-200 shadow-2xs">
+        <span className="text-stone-600 font-bold">ว/ด/ป ที่เลือก:</span>
+        <span className="font-black text-amber-950 font-mono">
+          {formatThaiDMY(value)} <span className="text-stone-600 font-sans font-medium">({formatThaiDateReadable(value)})</span>
+        </span>
+      </div>
+
+      {/* Quick Presets */}
+      {quickPresets && quickPresets.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1 pt-0.5">
+          <span className="text-[10px] text-stone-500 font-bold">ด่วน:</span>
+          {quickPresets.map((preset, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={preset.onClick}
+              className="text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-stone-800 hover:text-amber-950 px-2 py-0.5 rounded-lg border border-amber-200 shadow-2xs transition cursor-pointer"
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const AdminEventMarketManager: React.FC = () => {
   const { storeSettings } = useShop();
 
@@ -506,10 +757,24 @@ export const AdminEventMarketManager: React.FC = () => {
                       <MapPin className="w-4 h-4 text-amber-600 shrink-0" />
                       <span>สถานที่: {s.location}</span>
                     </p>
-                    <p className="flex items-center gap-1.5 font-black text-stone-950">
-                      <Clock className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span>เวลาเปิด-ปิด: {s.operatingHours} ({s.startDate} ถึง {s.endDate})</span>
-                    </p>
+                    <div className="bg-amber-50/70 p-2.5 rounded-xl border border-amber-300/70 space-y-1">
+                      <p className="flex items-center gap-1.5 font-black text-amber-950">
+                        <Calendar className="w-4 h-4 text-amber-700 shrink-0" />
+                        <span>
+                          วันที่ออกงาน (ว/ด/ป):{' '}
+                          <strong className="text-amber-900 font-mono text-[13px]">
+                            {s.startDate === s.endDate
+                              ? `${formatThaiDMY(s.startDate)} (${formatThaiDateReadable(s.startDate)})`
+                              : `${formatThaiDMY(s.startDate)} ถึง ${formatThaiDMY(s.endDate)} (${formatThaiDateReadable(s.startDate)} - ${formatThaiDateReadable(s.endDate)})`
+                            }
+                          </strong>
+                        </span>
+                      </p>
+                      <p className="flex items-center gap-1.5 font-black text-stone-800 text-[11px] pl-5">
+                        <Clock className="w-3.5 h-3.5 text-stone-600 shrink-0" />
+                        <span>เวลาทำการ: {s.operatingHours}</span>
+                      </p>
+                    </div>
                     <p className="flex items-center gap-1.5 font-black text-amber-900">
                       <ShoppingBag className="w-4 h-4 text-amber-600 shrink-0" />
                       <span>สินค้าเตรียมขาย: {s.productsToPrepare}</span>
@@ -682,28 +947,87 @@ export const AdminEventMarketManager: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-stone-950 font-black mb-1">วันที่เริ่มออกงาน *</label>
-                  <input
-                    type="date"
-                    required
-                    value={eventStartDate}
-                    onChange={(e) => setEventStartDate(e.target.value)}
-                    className="w-full bg-white border-2 border-stone-400 rounded-xl p-2.5 text-stone-950 font-black focus:outline-none focus:border-amber-500"
-                  />
-                </div>
+              {/* Thai DMY Date Selection (วัน / เดือน / ปี) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <ThaiDMYDatePicker
+                  label="วันที่เริ่มออกงาน"
+                  value={eventStartDate}
+                  onChange={(newDate) => {
+                    setEventStartDate(newDate);
+                    // If end date is earlier than new start date, sync end date to new start date
+                    if (eventEndDate < newDate) {
+                      setEventEndDate(newDate);
+                    }
+                  }}
+                  quickPresets={[
+                    {
+                      label: 'วันนี้',
+                      onClick: () => {
+                        const today = new Date().toISOString().slice(0, 10);
+                        setEventStartDate(today);
+                        if (eventEndDate < today) setEventEndDate(today);
+                      },
+                    },
+                    {
+                      label: 'พรุ่งนี้',
+                      onClick: () => {
+                        const tomorrow = addDaysToISO(new Date().toISOString().slice(0, 10), 1);
+                        setEventStartDate(tomorrow);
+                        if (eventEndDate < tomorrow) setEventEndDate(tomorrow);
+                      },
+                    },
+                    {
+                      label: 'เสาร์นี้',
+                      onClick: () => {
+                        const sat = getUpcomingSaturdayISO();
+                        setEventStartDate(sat);
+                        if (eventEndDate < sat) setEventEndDate(sat);
+                      },
+                    },
+                    {
+                      label: '+3 วัน',
+                      onClick: () => {
+                        const next3 = addDaysToISO(new Date().toISOString().slice(0, 10), 3);
+                        setEventStartDate(next3);
+                        if (eventEndDate < next3) setEventEndDate(next3);
+                      },
+                    },
+                    {
+                      label: '+7 วัน',
+                      onClick: () => {
+                        const next7 = addDaysToISO(new Date().toISOString().slice(0, 10), 7);
+                        setEventStartDate(next7);
+                        if (eventEndDate < next7) setEventEndDate(next7);
+                      },
+                    },
+                  ]}
+                />
 
-                <div>
-                  <label className="block text-stone-950 font-black mb-1">วันที่สิ้นสุดงาน *</label>
-                  <input
-                    type="date"
-                    required
-                    value={eventEndDate}
-                    onChange={(e) => setEventEndDate(e.target.value)}
-                    className="w-full bg-white border-2 border-stone-400 rounded-xl p-2.5 text-stone-950 font-black focus:outline-none focus:border-amber-500"
-                  />
-                </div>
+                <ThaiDMYDatePicker
+                  label="วันที่สิ้นสุดงาน"
+                  value={eventEndDate}
+                  onChange={(newDate) => {
+                    setEventEndDate(newDate);
+                  }}
+                  quickPresets={[
+                    {
+                      label: 'วันเดียวกับวันเริ่ม',
+                      onClick: () => setEventEndDate(eventStartDate),
+                    },
+                    {
+                      label: '+1 วัน (2 วัน)',
+                      onClick: () => setEventEndDate(addDaysToISO(eventStartDate, 1)),
+                    },
+                    {
+                      label: '+2 วัน (ศุกร์-อาทิตย์)',
+                      onClick: () => setEventEndDate(addDaysToISO(eventStartDate, 2)),
+                    },
+                    {
+                      label: '+7 วัน (1 สัปดาห์)',
+                      onClick: () => setEventEndDate(addDaysToISO(eventStartDate, 7)),
+                    },
+                  ]}
+                />
               </div>
 
               {/* Booth Rental Fee Input with Preset Chips */}
