@@ -165,7 +165,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     return new Set<string>();
   });
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [stockMovements, setStockMovements] = useState<StockMovement[]>(() => {
@@ -445,19 +445,23 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         // Merge Stock Movements
-        if (Array.isArray(data.stockMovements)) {
+        if (Array.isArray(data.stockMovements) && data.stockMovements.length > 0) {
           setStockMovements(data.stockMovements);
           if (typeof window !== 'undefined') {
             localStorage.setItem('huda_stock_movements', JSON.stringify(data.stockMovements));
           }
+        } else if (stockMovements.length > 0) {
+          triggerBackgroundPush({ stockMovements });
         }
 
         // Merge Supplier Settlements
-        if (Array.isArray(data.supplierSettlements)) {
+        if (Array.isArray(data.supplierSettlements) && data.supplierSettlements.length > 0) {
           setSupplierSettlements(data.supplierSettlements);
           if (typeof window !== 'undefined') {
             localStorage.setItem('huda_supplier_settlements', JSON.stringify(data.supplierSettlements));
           }
+        } else if (supplierSettlements.length > 0) {
+          triggerBackgroundPush({ supplierSettlements });
         }
 
         // Merge Event Schedules
@@ -661,38 +665,46 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsAdminLoginModalOpen(true);
         }
 
-        // Restore saved products from local memory if available
+        // Restore and auto-upgrade saved products to full 78 master catalog across all devices
         const savedProds = localStorage.getItem('huda_products');
-        if (savedProds) {
+        const catalogVer = localStorage.getItem('huda_catalog_version');
+        if (savedProds && catalogVer === 'v_78_master') {
           try {
             const parsedProds = JSON.parse(savedProds);
-            if (Array.isArray(parsedProds) && parsedProds.length > 0) {
-              setProducts((prev) => {
-                const mergedMap = new Map<string, Product>();
-                const savedDeleted = localStorage.getItem('huda_deleted_product_ids');
-                let deletedSet = deletedProductIds;
-                if (savedDeleted) {
-                  try {
-                    const arr = JSON.parse(savedDeleted);
-                    if (Array.isArray(arr)) deletedSet = new Set([...Array.from(deletedSet), ...arr]);
-                  } catch (e) {}
-                }
-                prev.forEach((p) => {
-                  if (!deletedSet.has(p.id)) mergedMap.set(p.id, p);
-                });
-                parsedProds.forEach((p) => {
-                  if (!deletedSet.has(p.id)) mergedMap.set(p.id, p);
-                });
-                return Array.from(mergedMap.values())
-                  .filter((p) => !deletedSet.has(p.id))
-                  .sort(sortProductsNatural);
-              });
-            } else if (Array.isArray(parsedProds) && parsedProds.length === 0) {
-              localStorage.removeItem('huda_products');
+            if (Array.isArray(parsedProds) && parsedProds.length >= INITIAL_PRODUCTS.length) {
+              setProducts(parsedProds.sort(sortProductsNatural));
+            } else {
+              const mergedMap = new Map<string, Product>();
+              INITIAL_PRODUCTS.forEach((p) => mergedMap.set(p.id, p));
+              if (Array.isArray(parsedProds)) {
+                parsedProds.forEach((p) => mergedMap.set(p.id, p));
+              }
+              const finalMerged = Array.from(mergedMap.values()).sort(sortProductsNatural);
+              setProducts(finalMerged);
+              localStorage.setItem('huda_products', JSON.stringify(finalMerged));
+              localStorage.setItem('huda_catalog_version', 'v_78_master');
             }
           } catch (e) {
-            localStorage.removeItem('huda_products');
+            setProducts(INITIAL_PRODUCTS);
+            localStorage.setItem('huda_products', JSON.stringify(INITIAL_PRODUCTS));
+            localStorage.setItem('huda_catalog_version', 'v_78_master');
           }
+        } else {
+          // Fresh device or older mobile app cache: upgrade seamlessly to 78 master products!
+          const mergedMap = new Map<string, Product>();
+          INITIAL_PRODUCTS.forEach((p) => mergedMap.set(p.id, p));
+          if (savedProds) {
+            try {
+              const oldProds = JSON.parse(savedProds);
+              if (Array.isArray(oldProds)) {
+                oldProds.forEach((p: Product) => mergedMap.set(p.id, p));
+              }
+            } catch (e) {}
+          }
+          const finalMerged = Array.from(mergedMap.values()).sort(sortProductsNatural);
+          setProducts(finalMerged);
+          localStorage.setItem('huda_products', JSON.stringify(finalMerged));
+          localStorage.setItem('huda_catalog_version', 'v_78_master');
         }
 
         const savedLogo = localStorage.getItem('huda_saved_logo_image') || '';
@@ -841,13 +853,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return fallbackProds;
           }
 
-          if (deletedSet.size === 0) {
-            saveCloudProducts(INITIAL_PRODUCTS);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('huda_products', JSON.stringify(INITIAL_PRODUCTS));
-            }
-            return INITIAL_PRODUCTS;
-          }
+          return prev.length > 0 ? prev : [];
 
           return [];
         }

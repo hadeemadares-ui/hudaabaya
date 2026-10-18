@@ -171,111 +171,123 @@ export async function onRequestPost(context: any) {
       getKVData(env, 'huda_custom_options', memorySyncData.customOptions || null),
     ]);
 
-    // 2. Intelligently merge incoming updates
+    // 2. Merge or Replace incoming updates
     let updatedProducts = curProducts || [];
     let updatedDeletedIds = curDeletedIds || [];
-
-    if (Array.isArray(body.deletedIds)) {
-      updatedDeletedIds = Array.from(new Set([...updatedDeletedIds, ...body.deletedIds]));
-    }
-
-    if (Array.isArray(body.products)) {
-      const prodMap = new Map<string, any>();
-      (curProducts || []).forEach((p: any) => prodMap.set(p.id, p));
-      body.products.forEach((p: any) => {
-        if (!updatedDeletedIds.includes(p.id)) {
-          prodMap.set(p.id, p);
-        }
-      });
-      updatedProducts = Array.from(prodMap.values()).filter((p: any) => !updatedDeletedIds.includes(p.id));
-    }
-
-    // Merge Orders
     let updatedOrders = curOrders || [];
     let updatedDeletedOrderIds = curDeletedOrderIds || [];
-
-    if (Array.isArray(body.deletedOrderIds)) {
-      updatedDeletedOrderIds = Array.from(new Set([...updatedDeletedOrderIds, ...body.deletedOrderIds]));
-    }
-
-    if (Array.isArray(body.orders)) {
-      const orderMap = new Map<string, any>();
-      (curOrders || []).forEach((o: any) => orderMap.set(o.id, o));
-      body.orders.forEach((o: any) => {
-        if (!updatedDeletedOrderIds.includes(o.id)) {
-          const existing = orderMap.get(o.id);
-          if (!existing) {
-            orderMap.set(o.id, o);
-          } else {
-            // Keep the one with more recent updatedAt or updated payment/status
-            const existingTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
-            const incomingTime = new Date(o.updatedAt || o.createdAt || 0).getTime();
-            orderMap.set(o.id, incomingTime >= existingTime ? o : existing);
-          }
-        }
-      });
-      updatedOrders = Array.from(orderMap.values())
-        .filter((o: any) => !updatedDeletedOrderIds.includes(o.id))
-        .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-    }
-
-    // Merge Stock Movements
     let updatedMovements = curMovements || [];
-    if (Array.isArray(body.stockMovements)) {
-      const movMap = new Map<string, any>();
-      (curMovements || []).forEach((m: any) => movMap.set(m.id, m));
-      body.stockMovements.forEach((m: any) => movMap.set(m.id, m));
-      updatedMovements = Array.from(movMap.values()).sort(
-        (a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-      );
-    }
-
-    // Merge Supplier Settlements
     let updatedSettlements = curSettlements || [];
-    if (Array.isArray(body.supplierSettlements)) {
-      const setMap = new Map<string, any>();
-      (curSettlements || []).forEach((s: any) => setMap.set(s.id, s));
-      body.supplierSettlements.forEach((s: any) => setMap.set(s.id, s));
-      updatedSettlements = Array.from(setMap.values()).sort(
-        (a: any, b: any) => new Date(b.settledAt || 0).getTime() - new Date(a.settledAt || 0).getTime()
-      );
-    }
-
-    // Merge Event Schedules
     let updatedSchedules = curSchedules || [];
-    if (Array.isArray(body.eventSchedules)) {
-      const schMap = new Map<string, any>();
-      (curSchedules || []).forEach((s: any) => schMap.set(s.id, s));
-      body.eventSchedules.forEach((s: any) => schMap.set(s.id, s));
-      updatedSchedules = Array.from(schMap.values()).sort(
-        (a: any, b: any) => new Date(b.startDate || 0).getTime() - new Date(a.startDate || 0).getTime()
-      );
-    }
-
-    // Merge Event Branches
     let updatedBranches = curBranches || [];
-    if (Array.isArray(body.eventBranches)) {
-      updatedBranches = Array.from(new Set([...(curBranches || []), ...body.eventBranches]));
-    }
-
-    // Merge Settings
     let updatedSettings = curSettings;
-    if (body.settings && typeof body.settings === 'object') {
-      updatedSettings = { ...(curSettings || {}), ...body.settings };
-    }
-
-    // Merge Custom Options
     let updatedOptions = curOptions || {};
-    if (body.customOptions && typeof body.customOptions === 'object') {
-      updatedOptions = {
-        suppliers: Array.from(new Set([...(curOptions?.suppliers || []), ...(body.customOptions.suppliers || [])])),
-        stockInNotes: Array.from(new Set([...(curOptions?.stockInNotes || []), ...(body.customOptions.stockInNotes || [])])),
-        categories: body.customOptions.categories || curOptions?.categories || [],
-        fabrics: { ...(curOptions?.fabrics || {}), ...(body.customOptions.fabrics || {}) },
-        sizes: { ...(curOptions?.sizes || {}), ...(body.customOptions.sizes || {}) },
-        colors: { ...(curOptions?.colors || {}), ...(body.customOptions.colors || {}) },
-        descriptions: Array.from(new Set([...(curOptions?.descriptions || []), ...(body.customOptions.descriptions || [])])),
-      };
+
+    if (body.replace_all) {
+      if (Array.isArray(body.products)) updatedProducts = body.products;
+      if (Array.isArray(body.deletedIds)) updatedDeletedIds = body.deletedIds;
+      if (Array.isArray(body.orders)) updatedOrders = body.orders;
+      if (Array.isArray(body.deletedOrderIds)) updatedDeletedOrderIds = body.deletedOrderIds;
+      if (Array.isArray(body.stockMovements)) updatedMovements = body.stockMovements;
+      if (Array.isArray(body.supplierSettlements)) updatedSettlements = body.supplierSettlements;
+      if (Array.isArray(body.eventSchedules)) updatedSchedules = body.eventSchedules;
+      if (Array.isArray(body.eventBranches)) updatedBranches = body.eventBranches;
+      if (body.settings && typeof body.settings === 'object') updatedSettings = body.settings;
+      if (body.customOptions && typeof body.customOptions === 'object') updatedOptions = body.customOptions;
+    } else {
+      if (Array.isArray(body.deletedIds)) {
+        updatedDeletedIds = Array.from(new Set([...updatedDeletedIds, ...body.deletedIds]));
+      }
+
+      if (Array.isArray(body.products)) {
+        const prodMap = new Map<string, any>();
+        (curProducts || []).forEach((p: any) => prodMap.set(p.id, p));
+        body.products.forEach((p: any) => {
+          if (!updatedDeletedIds.includes(p.id)) {
+            prodMap.set(p.id, p);
+          }
+        });
+        updatedProducts = Array.from(prodMap.values()).filter((p: any) => !updatedDeletedIds.includes(p.id));
+      }
+
+      // Merge Orders
+      if (Array.isArray(body.deletedOrderIds)) {
+        updatedDeletedOrderIds = Array.from(new Set([...updatedDeletedOrderIds, ...body.deletedOrderIds]));
+      }
+
+      if (Array.isArray(body.orders)) {
+        const orderMap = new Map<string, any>();
+        (curOrders || []).forEach((o: any) => orderMap.set(o.id, o));
+        body.orders.forEach((o: any) => {
+          if (!updatedDeletedOrderIds.includes(o.id)) {
+            const existing = orderMap.get(o.id);
+            if (!existing) {
+              orderMap.set(o.id, o);
+            } else {
+              // Keep the one with more recent updatedAt or updated payment/status
+              const existingTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+              const incomingTime = new Date(o.updatedAt || o.createdAt || 0).getTime();
+              orderMap.set(o.id, incomingTime >= existingTime ? o : existing);
+            }
+          }
+        });
+        updatedOrders = Array.from(orderMap.values())
+          .filter((o: any) => !updatedDeletedOrderIds.includes(o.id))
+          .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      }
+
+      // Merge Stock Movements
+      if (Array.isArray(body.stockMovements)) {
+        const movMap = new Map<string, any>();
+        (curMovements || []).forEach((m: any) => movMap.set(m.id, m));
+        body.stockMovements.forEach((m: any) => movMap.set(m.id, m));
+        updatedMovements = Array.from(movMap.values()).sort(
+          (a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+        );
+      }
+
+      // Merge Supplier Settlements
+      if (Array.isArray(body.supplierSettlements)) {
+        const setMap = new Map<string, any>();
+        (curSettlements || []).forEach((s: any) => setMap.set(s.id, s));
+        body.supplierSettlements.forEach((s: any) => setMap.set(s.id, s));
+        updatedSettlements = Array.from(setMap.values()).sort(
+          (a: any, b: any) => new Date(b.settledAt || 0).getTime() - new Date(a.settledAt || 0).getTime()
+        );
+      }
+
+      // Merge Event Schedules
+      if (Array.isArray(body.eventSchedules)) {
+        const schMap = new Map<string, any>();
+        (curSchedules || []).forEach((s: any) => schMap.set(s.id, s));
+        body.eventSchedules.forEach((s: any) => schMap.set(s.id, s));
+        updatedSchedules = Array.from(schMap.values()).sort(
+          (a: any, b: any) => new Date(b.startDate || 0).getTime() - new Date(a.startDate || 0).getTime()
+        );
+      }
+
+      // Merge Event Branches
+      if (Array.isArray(body.eventBranches)) {
+        updatedBranches = Array.from(new Set([...(curBranches || []), ...body.eventBranches]));
+      }
+
+      // Merge Settings
+      if (body.settings && typeof body.settings === 'object') {
+        updatedSettings = { ...(curSettings || {}), ...body.settings };
+      }
+
+      // Merge Custom Options
+      if (body.customOptions && typeof body.customOptions === 'object') {
+        updatedOptions = {
+          suppliers: Array.from(new Set([...(curOptions?.suppliers || []), ...(body.customOptions.suppliers || [])])),
+          stockInNotes: Array.from(new Set([...(curOptions?.stockInNotes || []), ...(body.customOptions.stockInNotes || [])])),
+          categories: body.customOptions.categories || curOptions?.categories || [],
+          fabrics: { ...(curOptions?.fabrics || {}), ...(body.customOptions.fabrics || {}) },
+          sizes: { ...(curOptions?.sizes || {}), ...(body.customOptions.sizes || {}) },
+          colors: { ...(curOptions?.colors || {}), ...(body.customOptions.colors || {}) },
+          descriptions: Array.from(new Set([...(curOptions?.descriptions || []), ...(body.customOptions.descriptions || [])])),
+        };
+      }
     }
 
     // 3. Save to KV and update in-memory cache
