@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp, FileSpreadsheet, ExternalLink, RefreshCw, CheckCircle, AlertCircle, HelpCircle, ChevronDown, Check, Lock, Unlock, KeyRound, Eye, EyeOff, ShieldAlert } from 'lucide-react';
+import { Plus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp, FileSpreadsheet, ExternalLink, RefreshCw, CheckCircle, AlertCircle, HelpCircle, ChevronDown, Check, Lock, Unlock, KeyRound, Eye, EyeOff, ShieldAlert, PackagePlus } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CategoryType } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
@@ -29,6 +29,7 @@ export const AdminProductManager: React.FC = () => {
     updateProduct,
     updateVariantStock,
     deleteProduct,
+    recordStockIn,
     selectedCategory,
     setSelectedCategory,
     syncProducts,
@@ -40,6 +41,23 @@ export const AdminProductManager: React.FC = () => {
   const [adminSearch, setAdminSearch] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  // Quick Direct Stock IN Modal State (Instant In-Place)
+  const [quickStockInItem, setQuickStockInItem] = useState<{
+    productId: string;
+    productTitle: string;
+    variantId: string;
+    variantName: string;
+    currentStock: number;
+    costPrice: number;
+    color?: string;
+  } | null>(null);
+  const [quickStockInQty, setQuickStockInQty] = useState<string>('1');
+  const [quickStockInCost, setQuickStockInCost] = useState<string>('');
+  const [quickStockInSupplier, setQuickStockInSupplier] = useState<string>('โรงงานอาบายะห์ดูไบ');
+  const [quickStockInNote, setQuickStockInNote] = useState<string>('รับเติมสต๊อกหน้าร้าน');
+  const [highlightedVariantId, setHighlightedVariantId] = useState<string | null>(null);
+  const [stockSuccessToast, setStockSuccessToast] = useState<{ message: string; submessage?: string } | null>(null);
 
   // Stock Editing Lock & PIN Modal State
   const [isStockEditUnlocked, setIsStockEditUnlocked] = useState(false);
@@ -110,6 +128,76 @@ export const AdminProductManager: React.FC = () => {
       });
       setNewStockInput(v.stockQuantity);
     });
+  };
+
+  // Instant Stock IN Handlers (Direct & Real-time inside Product Manager)
+  useEffect(() => {
+    const handleStockInCompleted = (e: any) => {
+      if (e.detail?.variantId) {
+        setHighlightedVariantId(e.detail.variantId);
+        setTimeout(() => {
+          setHighlightedVariantId(null);
+        }, 4000);
+      }
+    };
+    window.addEventListener('huda_stock_in_completed', handleStockInCompleted);
+    return () => window.removeEventListener('huda_stock_in_completed', handleStockInCompleted);
+  }, []);
+
+  const handleOpenQuickStockIn = (prod: Product, v: ProductVariant) => {
+    const costVal = v.costPrice ?? (v.price ? Math.round(v.price * 0.5) : 0);
+    const defaultSupplier = (prod.category === 'perfume' || prod.category === 'incense')
+      ? 'ซัพพลายเออร์น้ำหอมดูไบ'
+      : 'โรงงานอาบายะห์ดูไบ';
+    setQuickStockInItem({
+      productId: prod.id,
+      productTitle: prod.title,
+      variantId: v.id,
+      variantName: v.name,
+      currentStock: typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity) ? v.stockQuantity : 0,
+      costPrice: costVal,
+      color: v.color,
+    });
+    setQuickStockInQty('1');
+    setQuickStockInCost(costVal > 0 ? costVal.toString() : '');
+    setQuickStockInSupplier(defaultSupplier);
+    setQuickStockInNote('รับเติมสต๊อกหน้าร้าน');
+  };
+
+  const handleExecuteQuickStockIn = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!quickStockInItem) return;
+    const qty = parseInt(quickStockInQty, 10);
+    if (isNaN(qty) || qty <= 0) {
+      alert('กรุณากรอกจำนวนสินค้าที่รับเข้าอย่างน้อย 1 ชิ้นครับ');
+      return;
+    }
+    const cost = parseFloat(quickStockInCost) || quickStockInItem.costPrice || 0;
+
+    recordStockIn({
+      productId: quickStockInItem.productId,
+      variantId: quickStockInItem.variantId,
+      quantity: qty,
+      costPrice: cost,
+      supplierName: quickStockInSupplier.trim() || 'โรงงานอาบายะห์ดูไบ',
+      note: quickStockInNote.trim() || 'รับเติมสต๊อกหน้าร้าน',
+    });
+
+    const vName = quickStockInItem.variantName;
+    const newQty = quickStockInItem.currentStock + qty;
+    setStockSuccessToast({
+      message: `รับเข้าสต๊อก (+${qty} ชิ้น) สำเร็จทันที!`,
+      submessage: `${quickStockInItem.productTitle} (${vName}) สต๊อกใหม่: ${newQty} ชิ้น`,
+    });
+    setHighlightedVariantId(quickStockInItem.variantId);
+    setTimeout(() => {
+      setHighlightedVariantId(null);
+    }, 4000);
+    setTimeout(() => {
+      setStockSuccessToast(null);
+    }, 4500);
+
+    setQuickStockInItem(null);
   };
 
   // Google Sheets Live Sync State
@@ -1593,10 +1681,12 @@ export const AdminProductManager: React.FC = () => {
                       return (
                         <div
                           key={variant.id}
-                          className={`p-3 rounded-2xl border-2 flex flex-col justify-between text-xs shadow-md transition-all gap-2 bg-stone-50 ${
-                            variant.stockQuantity > 0
-                              ? 'border-emerald-500'
-                              : 'border-red-400'
+                          className={`p-3 rounded-2xl border-2 flex flex-col justify-between text-xs shadow-md transition-all duration-300 gap-2 ${
+                            highlightedVariantId === variant.id
+                              ? 'border-emerald-500 ring-4 ring-emerald-300 bg-emerald-50 scale-[1.02]'
+                              : variant.stockQuantity > 0
+                              ? 'border-emerald-500 bg-stone-50'
+                              : 'border-red-400 bg-stone-50'
                           }`}
                         >
                           <div>
@@ -1604,13 +1694,19 @@ export const AdminProductManager: React.FC = () => {
                               <span className="font-black text-stone-950 text-xs sm:text-sm truncate" title={variant.name}>{variant.name}</span>
                               <div className="flex items-center gap-1 shrink-0">
                                 <span
-                                  className={`px-2 py-0.5 text-[10px] font-black rounded-full ${
-                                    variant.stockQuantity > 0
+                                  className={`px-2 py-0.5 text-[10px] font-black rounded-full transition-all ${
+                                    highlightedVariantId === variant.id
+                                      ? 'bg-emerald-600 text-white ring-2 ring-emerald-400 animate-pulse'
+                                      : variant.stockQuantity > 0
                                       ? 'bg-emerald-600 text-white'
                                       : 'bg-red-600 text-white'
                                   }`}
                                 >
-                                  {variant.stockQuantity > 0 ? `สต๊อก ${variant.stockQuantity} ชิ้น` : 'สต๊อกหมด (0)'}
+                                  {highlightedVariantId === variant.id
+                                    ? `⚡ สต๊อกใหม่ ${variant.stockQuantity} ชิ้น`
+                                    : variant.stockQuantity > 0
+                                    ? `สต๊อก ${variant.stockQuantity} ชิ้น`
+                                    : 'สต๊อกหมด (0)'}
                                 </span>
                                 <button
                                   type="button"
@@ -1643,29 +1739,12 @@ export const AdminProductManager: React.FC = () => {
                                 กำไร {profitVal >= 0 ? '+' : ''}฿{profitVal.toLocaleString()}
                               </span>
                               <button
-                                onClick={() => {
-                                  if (typeof window !== 'undefined') {
-                                    sessionStorage.setItem('huda_stock_in_return_state', JSON.stringify({
-                                      tab: 'products',
-                                      scrollY: window.scrollY,
-                                      productId: product.id,
-                                      variantId: variant.id,
-                                    }));
-                                    sessionStorage.setItem('huda_pending_stock_in', JSON.stringify({
-                                      productId: product.id,
-                                      variantId: variant.id,
-                                      costPrice: costVal,
-                                      timestamp: Date.now(),
-                                    }));
-                                    window.dispatchEvent(new CustomEvent('switch_admin_tab_suppliers_stock_in', {
-                                      detail: { productId: product.id, variantId: variant.id, costPrice: costVal }
-                                    }));
-                                  }
-                                }}
-                                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-[11px] shadow-xs flex items-center gap-1 cursor-pointer transition border border-emerald-700"
-                                title={`บันทึกรับสต๊อกเข้าสำหรับ ${variant.name}`}
+                                type="button"
+                                onClick={() => handleOpenQuickStockIn(product, variant)}
+                                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black rounded-lg text-[11px] shadow-xs flex items-center gap-1 cursor-pointer transition border border-emerald-700 hover:scale-[1.02]"
+                                title={`บันทึกรับสต๊อกเข้าทันทีสำหรับ ${variant.name}`}
                               >
-                                <Plus className="w-3 h-3 text-white" />
+                                <Plus className="w-3.5 h-3.5 text-white" />
                                 <span>+ รับเข้า (Stock IN)</span>
                               </button>
                             </div>
@@ -3583,8 +3662,14 @@ export const AdminProductManager: React.FC = () => {
                 type="button"
                 onClick={() => {
                   updateVariantStock(quickStockAdjustItem.productId, quickStockAdjustItem.variantId, newStockInput);
+                  setStockSuccessToast({
+                    message: `อัปเดตสต๊อก ${quickStockAdjustItem.variantName} เป็น ${newStockInput} ชิ้น เรียบร้อยแล้ว!`,
+                    submessage: quickStockAdjustItem.productTitle,
+                  });
+                  setHighlightedVariantId(quickStockAdjustItem.variantId);
+                  setTimeout(() => setHighlightedVariantId(null), 4000);
+                  setTimeout(() => setStockSuccessToast(null), 4500);
                   setQuickStockAdjustItem(null);
-                  alert(`อัปเดตสต๊อก ${quickStockAdjustItem.variantName} เป็น ${newStockInput} ชิ้น เรียบร้อยแล้ว!`);
                 }}
                 className="flex-1 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black rounded-xl text-xs transition shadow-md border border-amber-500 cursor-pointer"
               >
@@ -3592,6 +3677,200 @@ export const AdminProductManager: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Quick Direct Stock IN Modal for Catalog Cards */}
+      {quickStockInItem && (
+        <div className="fixed inset-0 z-[80] overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="relative bg-white border-2 border-emerald-500 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl text-stone-950 p-6 my-8 space-y-4 animate-scale-up">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-100 border border-emerald-400 flex items-center justify-center text-emerald-900 shadow-xs">
+                  <PackagePlus className="w-6 h-6 text-emerald-700" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-black text-base text-stone-950 flex items-center gap-1.5">
+                    <span>บันทึกรับเข้าสต๊อกทันที (Stock IN)</span>
+                  </h3>
+                  <p className="text-xs text-stone-600 font-bold truncate max-w-[240px]" title={quickStockInItem.productTitle}>
+                    {quickStockInItem.productTitle}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQuickStockInItem(null)}
+                className="text-stone-400 hover:text-stone-900 p-1.5 rounded-full hover:bg-stone-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Item Details Box */}
+            <div className="bg-emerald-50/80 p-3.5 rounded-2xl border border-emerald-300 space-y-2">
+              <div className="text-xs font-black text-stone-900 flex items-center justify-between">
+                <span>ไซส์ / รายการ:</span>
+                <span className="font-extrabold text-emerald-950 text-sm bg-white px-2.5 py-0.5 rounded-lg border border-emerald-300">
+                  {quickStockInItem.variantName}
+                </span>
+              </div>
+              {quickStockInItem.color && (
+                <div className="text-xs font-bold text-stone-700 flex items-center justify-between">
+                  <span>สี:</span>
+                  <span className="font-black text-stone-900">🎨 {quickStockInItem.color}</span>
+                </div>
+              )}
+              <div className="text-xs font-bold text-stone-700 flex items-center justify-between pt-1.5 border-t border-emerald-200">
+                <span>สต๊อกปัจจุบัน:</span>
+                <span className="font-black text-emerald-950 bg-emerald-200/80 px-2.5 py-0.5 rounded-lg border border-emerald-400 text-xs">
+                  {quickStockInItem.currentStock} ชิ้น
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleExecuteQuickStockIn} className="space-y-3.5">
+              {/* Qty Input & Preview */}
+              <div>
+                <label className="text-xs font-black text-stone-950 flex items-center justify-between mb-1">
+                  <span>จำนวนที่รับเข้าเพิ่ม *</span>
+                  {parseInt(quickStockInQty, 10) > 0 && (
+                    <span className="text-[11px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300">
+                      ➔ สต๊อกใหม่: {quickStockInItem.currentStock + (parseInt(quickStockInQty, 10) || 0)} ชิ้น
+                    </span>
+                  )}
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-700 font-black text-lg select-none">+</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoFocus
+                    required
+                    value={quickStockInQty}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const clean = e.target.value.replace(/[^0-9]/g, '');
+                      setQuickStockInQty(clean);
+                    }}
+                    placeholder="เช่น 10"
+                    className="w-full pl-8 pr-14 py-2.5 bg-white border-2 border-emerald-500 focus:ring-4 focus:ring-emerald-200 rounded-xl text-stone-950 font-black text-lg focus:outline-none transition shadow-xs"
+                  />
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-stone-500 select-none">ชิ้น</span>
+                </div>
+                {/* Quick Add Qty Chips */}
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  {[1, 5, 10, 20, 50, 100].map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => setQuickStockInQty(chip.toString())}
+                      className="px-2 py-1 text-[11px] font-black bg-stone-100 hover:bg-emerald-100 hover:text-emerald-950 text-stone-700 rounded-lg border border-stone-300 cursor-pointer transition"
+                    >
+                      +{chip}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Cost Price Input */}
+              <div>
+                <label className="text-xs font-black text-stone-950 block mb-1">
+                  ราคาทุนต่อชิ้น (บาท)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-600 font-bold text-sm select-none">฿</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={quickStockInCost}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => {
+                      const clean = e.target.value.replace(/[^0-9.]/g, '');
+                      setQuickStockInCost(clean);
+                    }}
+                    placeholder="เช่น 450"
+                    className="w-full pl-8 pr-3 py-2 bg-white border-2 border-stone-300 focus:border-amber-500 rounded-xl text-stone-950 font-black text-sm focus:outline-none transition shadow-xs"
+                  />
+                </div>
+                {parseInt(quickStockInQty, 10) > 0 && parseFloat(quickStockInCost) > 0 && (
+                  <p className="text-[11px] text-stone-600 font-bold mt-1">
+                    รวมต้นทุนรอบนี้: ฿{((parseInt(quickStockInQty, 10) || 0) * (parseFloat(quickStockInCost) || 0)).toLocaleString()}
+                  </p>
+                )}
+              </div>
+
+              {/* Supplier Selection */}
+              <div>
+                <label className="text-xs font-black text-stone-950 block mb-1">
+                  Supplier / แหล่งนำเข้า
+                </label>
+                <input
+                  type="text"
+                  value={quickStockInSupplier}
+                  onChange={(e) => setQuickStockInSupplier(e.target.value)}
+                  placeholder="เช่น โรงงานอาบายะห์ดูไบ"
+                  className="w-full px-3 py-2 bg-white border-2 border-stone-300 focus:border-amber-500 rounded-xl text-stone-950 font-bold text-xs focus:outline-none transition shadow-xs"
+                />
+              </div>
+
+              {/* Note / DO Number */}
+              <div>
+                <label className="text-xs font-black text-stone-950 block mb-1">
+                  หมายเหตุ / ล็อต / เลขที่ DO
+                </label>
+                <input
+                  type="text"
+                  value={quickStockInNote}
+                  onChange={(e) => setQuickStockInNote(e.target.value)}
+                  placeholder="เช่น ล็อตสั่งตัดพิเศษ UAE, 00001/69"
+                  className="w-full px-3 py-2 bg-white border-2 border-stone-300 focus:border-amber-500 rounded-xl text-stone-950 font-bold text-xs focus:outline-none transition shadow-xs"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setQuickStockInItem(null)}
+                  className="flex-1 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold rounded-xl text-xs transition cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={!quickStockInQty || parseInt(quickStockInQty, 10) <= 0}
+                  className="flex-2 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-50 text-white font-black rounded-xl text-xs transition shadow-md border border-emerald-700 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
+                  <span>บันทึกรับเข้าทันที (+{parseInt(quickStockInQty, 10) || 0} ชิ้น)</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Stock Success Notification Toast */}
+      {stockSuccessToast && (
+        <div className="fixed top-5 right-5 z-[100] max-w-sm bg-stone-950 text-white border-2 border-emerald-500 rounded-2xl p-4 shadow-2xl flex items-start gap-3 animate-slide-in">
+          <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-black text-sm text-emerald-400">{stockSuccessToast.message}</p>
+            {stockSuccessToast.submessage && (
+              <p className="text-xs text-stone-300 font-bold truncate mt-0.5">{stockSuccessToast.submessage}</p>
+            )}
+          </div>
+          <button
+            onClick={() => setStockSuccessToast(null)}
+            className="text-stone-400 hover:text-white p-1 rounded-lg hover:bg-stone-800 cursor-pointer transition shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 

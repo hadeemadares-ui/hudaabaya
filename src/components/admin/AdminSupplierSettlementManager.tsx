@@ -248,6 +248,9 @@ export const AdminSupplierSettlementManager: React.FC = () => {
     setSelectedMovementIds(unsettledIds);
   }, [stockMovements]);
 
+  // Non-blocking toast state for instant stock in feedback
+  const [stockInToast, setStockInToast] = useState<string | null>(null);
+
   // Auto-listen and pick up pending Stock IN requests from AdminProductManager
   useEffect(() => {
     const applyStockInData = (data: { productId?: string; variantId?: string; costPrice?: number }) => {
@@ -490,11 +493,13 @@ export const AdminSupplierSettlementManager: React.FC = () => {
       }
     }
 
+    setStockInToast(`บันทึกรับสินค้าเข้าสต๊อก (+${finalQty} ชิ้น) เรียบร้อยแล้ว! สต๊อกในระบบอัปเดตทันที`);
+    setTimeout(() => {
+      setStockInToast(null);
+    }, 4000);
+
     if (returnData && returnData.tab) {
-      alert(`บันทึกรับสินค้าเข้าสต๊อก (+${finalQty} ชิ้น) เรียบร้อยแล้ว!\nระบบจะพากลับไปยังหน้ารายการสินค้าเดิมที่ตำแหน่งเดิมทันทีค่ะ`);
       window.dispatchEvent(new CustomEvent('switch_admin_tab_products', { detail: returnData }));
-    } else {
-      alert(`บันทึกรับสินค้าเข้าสต๊อก (+${finalQty} ชิ้น) เรียบร้อยแล้ว! สต๊อกในระบบอัปเดตทันที`);
     }
   };
 
@@ -576,6 +581,22 @@ export const AdminSupplierSettlementManager: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Instant Success Toast Notification */}
+      {stockInToast && (
+        <div className="bg-emerald-500 text-white p-3.5 rounded-2xl shadow-lg border-2 border-emerald-600 flex items-center justify-between gap-3 animate-fade-in">
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-black">
+            <CheckCircle2 className="w-5 h-5 text-emerald-100 shrink-0" />
+            <span>{stockInToast}</span>
+          </div>
+          <button
+            onClick={() => setStockInToast(null)}
+            className="text-white/80 hover:text-white text-xs font-black px-2 py-1 rounded-lg hover:bg-emerald-600 cursor-pointer transition"
+          >
+            ปิด
+          </button>
+        </div>
+      )}
 
       {/* Top 3 Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

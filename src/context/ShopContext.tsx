@@ -989,16 +989,62 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supplierName: string;
     note?: string;
   }) => {
-    const prod = products.find((p) => p.id === data.productId);
-    const variant = prod?.variants.find((v) => v.id === data.variantId);
+    soundFx.playSuccess();
+    const now = Date.now();
+    let productTitle = 'สินค้า';
+    let variantName = 'ไซส์/รายการ';
+    let calculatedNewStock = 0;
 
+    // 1. Atomically and immediately update products state & local storage
+    setProducts((prev) => {
+      const updated = prev.map((p) => {
+        if (p.id === data.productId) {
+          productTitle = p.title;
+          const updatedVariants = p.variants.map((v) => {
+            if (v.id === data.variantId) {
+              variantName = v.name;
+              const currentStock = (typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity)) ? v.stockQuantity : 0;
+              calculatedNewStock = Math.max(0, currentStock + data.quantity);
+              const updatedCost = data.costPrice > 0 ? data.costPrice : v.costPrice;
+              return {
+                ...v,
+                stockQuantity: calculatedNewStock,
+                costPrice: updatedCost,
+                updatedAt: now,
+              };
+            }
+            return v;
+          });
+          return { ...p, variants: updatedVariants, updatedAt: now };
+        }
+        return p;
+      });
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_products', JSON.stringify(updated));
+        window.dispatchEvent(
+          new CustomEvent('huda_stock_in_completed', {
+            detail: {
+              productId: data.productId,
+              variantId: data.variantId,
+              quantity: data.quantity,
+              newStock: calculatedNewStock,
+            },
+          })
+        );
+      }
+      saveCloudProducts(updated);
+      return updated;
+    });
+
+    // 2. Record Stock Movement Log
     const newMovement: StockMovement = {
       id: `MOV-IN-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       type: 'IN',
       productId: data.productId,
-      productTitle: prod?.title || 'สินค้า',
+      productTitle: productTitle,
       variantId: data.variantId,
-      variantName: variant?.name || 'ไซส์/รายการ',
+      variantName: variantName,
       quantity: data.quantity,
       costPrice: data.costPrice,
       totalCost: data.costPrice * data.quantity,
@@ -1008,14 +1054,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       createdAt: new Date().toISOString(),
       isSettled: true,
     };
-
-    if (data.productId && data.variantId) {
-      updateVariantStock(
-        data.productId,
-        data.variantId,
-        (variant?.stockQuantity || 0) + data.quantity
-      );
-    }
 
     setStockMovements((prev) => {
       const updated = [newMovement, ...prev];
@@ -1032,12 +1070,29 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // If it was a Stock IN movement and revertStock is true, reduce stock back
     if (targetMovement && targetMovement.type === 'IN' && revertStock && targetMovement.productId && targetMovement.variantId) {
-      const prod = products.find((p) => p.id === targetMovement.productId);
-      const variant = prod?.variants.find((v) => v.id === targetMovement.variantId);
-      if (prod && variant) {
-        const newStock = Math.max(0, (variant.stockQuantity || 0) - targetMovement.quantity);
-        updateVariantStock(targetMovement.productId, targetMovement.variantId, newStock);
-      }
+      setProducts((prev) => {
+        const now = Date.now();
+        const updated = prev.map((p) => {
+          if (p.id === targetMovement.productId) {
+            const updatedVariants = p.variants.map((v) => {
+              if (v.id === targetMovement.variantId) {
+                const currentStock = (typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity)) ? v.stockQuantity : 0;
+                const newStock = Math.max(0, currentStock - targetMovement.quantity);
+                return { ...v, stockQuantity: newStock, updatedAt: now };
+              }
+              return v;
+            });
+            return { ...p, variants: updatedVariants, updatedAt: now };
+          }
+          return p;
+        });
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('huda_products', JSON.stringify(updated));
+        }
+        saveCloudProducts(updated);
+        return updated;
+      });
     }
 
     setStockMovements((prev) => {
