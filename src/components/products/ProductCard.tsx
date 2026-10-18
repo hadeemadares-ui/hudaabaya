@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Star, Eye, ShoppingBag, Sparkles, Tag, Layers, Box } from 'lucide-react';
 import { Product } from '../../types';
 import { ProductModal } from './ProductModal';
@@ -36,12 +36,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   const [imgSrc, setImgSrc] = useState<string>(initialImg);
 
+  useEffect(() => {
+    setImgSrc(initialImg);
+  }, [initialImg]);
+
   return (
     <>
       <div className="group bg-white border border-[#E8E3DA] rounded-lg overflow-hidden hover:border-[#B89352] shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col justify-between hover:-translate-y-0.5">
         
-        {/* Image Frame */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-[#F5F3EF] cursor-pointer" onClick={() => setIsModalOpen(true)}>
+        {/* Image Frame - Uncropped Full View */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-b from-[#FAF8F5] via-[#F5F2EC] to-[#EFECE5] flex items-center justify-center p-2 cursor-pointer group" onClick={() => setIsModalOpen(true)}>
           <img
             src={imgSrc}
             alt={product.title}
@@ -50,11 +54,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 setImgSrc(defaultImg);
               }
             }}
-            className="w-full h-full object-cover object-center transform transition duration-500 group-hover:scale-105"
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-contain object-center transform transition duration-500 group-hover:scale-105 drop-shadow-sm"
           />
           
           {/* Subtle image Overlay on Hover */}
-          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition duration-300" />
+          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none" />
 
           {/* Badges - Subtle & Clean */}
           <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">

@@ -665,46 +665,75 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsAdminLoginModalOpen(true);
         }
 
-        // Restore and auto-upgrade saved products to full 78 master catalog across all devices
+        // Restore and auto-upgrade saved products to full 78 master catalog with pristine CDN images
+        const CURRENT_CATALOG_VERSION = 'v_78_clean_cdn_v4';
         const savedProds = localStorage.getItem('huda_products');
         const catalogVer = localStorage.getItem('huda_catalog_version');
-        if (savedProds && catalogVer === 'v_78_master') {
+
+        const masterMap = new Map<string, Product>();
+        INITIAL_PRODUCTS.forEach((p) => masterMap.set(p.id, p));
+
+        if (savedProds && catalogVer === CURRENT_CATALOG_VERSION) {
           try {
             const parsedProds = JSON.parse(savedProds);
-            if (Array.isArray(parsedProds) && parsedProds.length >= INITIAL_PRODUCTS.length) {
-              setProducts(parsedProds.sort(sortProductsNatural));
+            if (Array.isArray(parsedProds) && parsedProds.length > 0) {
+              // Sanitize: ensure no product uses old base64 or broken image
+              const sanitized = parsedProds.map((p: Product) => {
+                const master = masterMap.get(p.id);
+                const isBadImage = !p.images || !p.images[0] || p.images[0].startsWith('data:image') || p.images[0].length > 500;
+                if (isBadImage && master) {
+                  return { ...p, images: master.images };
+                }
+                return p;
+              });
+              setProducts(sanitized.sort(sortProductsNatural));
             } else {
-              const mergedMap = new Map<string, Product>();
-              INITIAL_PRODUCTS.forEach((p) => mergedMap.set(p.id, p));
-              if (Array.isArray(parsedProds)) {
-                parsedProds.forEach((p) => mergedMap.set(p.id, p));
-              }
-              const finalMerged = Array.from(mergedMap.values()).sort(sortProductsNatural);
-              setProducts(finalMerged);
-              localStorage.setItem('huda_products', JSON.stringify(finalMerged));
-              localStorage.setItem('huda_catalog_version', 'v_78_master');
+              setProducts(INITIAL_PRODUCTS);
+              try {
+                localStorage.setItem('huda_products', JSON.stringify(INITIAL_PRODUCTS));
+                localStorage.setItem('huda_catalog_version', CURRENT_CATALOG_VERSION);
+              } catch (e) {}
             }
           } catch (e) {
             setProducts(INITIAL_PRODUCTS);
-            localStorage.setItem('huda_products', JSON.stringify(INITIAL_PRODUCTS));
-            localStorage.setItem('huda_catalog_version', 'v_78_master');
+            try {
+              localStorage.setItem('huda_products', JSON.stringify(INITIAL_PRODUCTS));
+              localStorage.setItem('huda_catalog_version', CURRENT_CATALOG_VERSION);
+            } catch (e) {}
           }
         } else {
-          // Fresh device or older mobile app cache: upgrade seamlessly to 78 master products!
+          // Fresh device or upgrade from older base64 cache:
+          // Preserve custom user products and customizations, but enforce clean CDN images!
           const mergedMap = new Map<string, Product>();
           INITIAL_PRODUCTS.forEach((p) => mergedMap.set(p.id, p));
           if (savedProds) {
             try {
               const oldProds = JSON.parse(savedProds);
               if (Array.isArray(oldProds)) {
-                oldProds.forEach((p: Product) => mergedMap.set(p.id, p));
+                oldProds.forEach((p: Product) => {
+                  const master = masterMap.get(p.id);
+                  if (master) {
+                    // Update master with any custom pricing/stock, but KEEP clean CDN images
+                    mergedMap.set(p.id, {
+                      ...master,
+                      costPrice: typeof p.costPrice === 'number' ? p.costPrice : master.costPrice,
+                      variants: Array.isArray(p.variants) && p.variants.length > 0 ? p.variants : master.variants,
+                      images: master.images, // ALWAYS enforce pristine, uncorrupted CDN image files
+                    });
+                  } else {
+                    // Custom user-added product
+                    mergedMap.set(p.id, p);
+                  }
+                });
               }
             } catch (e) {}
           }
           const finalMerged = Array.from(mergedMap.values()).sort(sortProductsNatural);
           setProducts(finalMerged);
-          localStorage.setItem('huda_products', JSON.stringify(finalMerged));
-          localStorage.setItem('huda_catalog_version', 'v_78_master');
+          try {
+            localStorage.setItem('huda_products', JSON.stringify(finalMerged));
+            localStorage.setItem('huda_catalog_version', CURRENT_CATALOG_VERSION);
+          } catch (e) {}
         }
 
         const savedLogo = localStorage.getItem('huda_saved_logo_image') || '';

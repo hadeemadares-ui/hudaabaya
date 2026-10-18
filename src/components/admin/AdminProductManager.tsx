@@ -1596,7 +1596,7 @@ export const AdminProductManager: React.FC = () => {
                       alt={product.title}
                       loading="lazy"
                       decoding="async"
-                      className="w-16 h-20 object-cover rounded-xl border-2 border-amber-400 bg-stone-100 shrink-0 shadow-md"
+                      className="w-16 h-20 object-contain p-1 rounded-xl border-2 border-amber-400 bg-stone-100 shrink-0 shadow-md"
                     />
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -2316,7 +2316,7 @@ export const AdminProductManager: React.FC = () => {
                                 <img
                                   src={img}
                                   alt={`Image ${idx + 1}`}
-                                  className="w-full h-full object-cover"
+                                  className="w-full h-full object-contain p-1"
                                 />
                                 {idx === 0 && (
                                   <span className="absolute top-1 left-1 bg-amber-500 text-stone-950 text-[10px] font-black px-2 py-0.5 rounded-md shadow">

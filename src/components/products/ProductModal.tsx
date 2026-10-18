@@ -171,7 +171,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                     setSelectedImage(defaultImg);
                   }
                 }}
-                className="w-full h-full object-cover object-center transition duration-300 group-hover:scale-[1.02]"
+                className="w-full h-full object-contain object-center transition duration-300 p-2 drop-shadow-md group-hover:scale-[1.02]"
               />
               
               {product.onSale && (
@@ -229,7 +229,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                       selectedImage === img ? 'border-gold-400 scale-105' : 'border-gold-400/20 opacity-70'
                     }`}
                   >
-                    <img src={img} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
+                    <img src={img} alt={`thumb-${idx}`} className="w-full h-full object-contain bg-stone-900 p-0.5" />
                   </button>
                 ))}
               </div>
