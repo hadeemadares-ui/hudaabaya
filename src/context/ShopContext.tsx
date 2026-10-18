@@ -410,14 +410,71 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           syncVersionRef.current = data.version;
         }
 
-        // Merge Products
+        // Merge Products with Conflict Resolution (protect local stock changes)
         if (Array.isArray(data.products) && data.products.length > 0) {
+          const cloudProducts = data.products;
           const cloudDeleted = Array.isArray(data.deletedIds) ? new Set(data.deletedIds) : new Set<string>();
-          const validProds = data.products.filter((p: Product) => !cloudDeleted.has(p.id)).sort(sortProductsNatural);
-          setProducts(validProds);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('huda_products', JSON.stringify(validProds));
-          }
+
+          setProducts((currentLocalProds) => {
+            const localMap = new Map<string, Product>();
+            currentLocalProds.forEach((p) => localMap.set(p.id, p));
+
+            const mergedList: Product[] = [];
+            const processedIds = new Set<string>();
+
+            cloudProducts.forEach((cloudProd: Product) => {
+              if (cloudDeleted.has(cloudProd.id)) return;
+              processedIds.add(cloudProd.id);
+
+              const localProd = localMap.get(cloudProd.id);
+              if (!localProd) {
+                mergedList.push(cloudProd);
+              } else {
+                const localUpdated = Number(localProd.updatedAt) || 0;
+                const cloudUpdated = Number(cloudProd.updatedAt) || 0;
+
+                const mergedVariants = (cloudProd.variants || []).map((cv) => {
+                  const lv = localProd.variants?.find((v) => v.id === cv.id);
+                  if (!lv) return cv;
+                  const lvTime = Number(lv.updatedAt) || localUpdated;
+                  const cvTime = Number(cv.updatedAt) || cloudUpdated;
+
+                  // If local variant was updated more recently or has higher stock from recent stock-in, protect it!
+                  if (lvTime > cvTime || lv.stockQuantity > cv.stockQuantity) {
+                    return lv;
+                  }
+                  return cv;
+                });
+
+                if (localProd.variants) {
+                  localProd.variants.forEach((lv) => {
+                    if (!mergedVariants.some((v) => v.id === lv.id)) {
+                      mergedVariants.push(lv);
+                    }
+                  });
+                }
+
+                mergedList.push({
+                  ...(localUpdated > cloudUpdated ? localProd : cloudProd),
+                  variants: mergedVariants,
+                });
+              }
+            });
+
+            currentLocalProds.forEach((localProd) => {
+              if (!processedIds.has(localProd.id) && !cloudDeleted.has(localProd.id)) {
+                mergedList.push(localProd);
+              }
+            });
+
+            const finalSorted = mergedList.sort(sortProductsNatural);
+            if (typeof window !== 'undefined') {
+              try {
+                localStorage.setItem('huda_products', JSON.stringify(finalSorted));
+              } catch (e) {}
+            }
+            return finalSorted;
+          });
         }
 
         if (Array.isArray(data.deletedIds)) {
@@ -666,7 +723,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         // Restore and auto-upgrade saved products to full 78 master catalog with pristine CDN images
-        const CURRENT_CATALOG_VERSION = 'v_78_clean_cdn_v4';
+        const CURRENT_CATALOG_VERSION = 'v_78_stock_sync_v5';
         const savedProds = localStorage.getItem('huda_products');
         const catalogVer = localStorage.getItem('huda_catalog_version');
 
@@ -713,11 +770,23 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 oldProds.forEach((p: Product) => {
                   const master = masterMap.get(p.id);
                   if (master) {
-                    // Update master with any custom pricing/stock, but KEEP clean CDN images
+                    const mergedVariants = master.variants.map((mv) => {
+                      const ov = (p.variants || []).find((v: ProductVariant) => v.id === mv.id);
+                      if (!ov) return mv;
+                      const ovStock = typeof ov.stockQuantity === 'number' && !isNaN(ov.stockQuantity) ? ov.stockQuantity : 0;
+                      const mvStock = typeof mv.stockQuantity === 'number' && !isNaN(mv.stockQuantity) ? mv.stockQuantity : 0;
+                      return {
+                        ...mv,
+                        price: typeof ov.price === 'number' && ov.price > 0 ? ov.price : mv.price,
+                        costPrice: typeof ov.costPrice === 'number' && ov.costPrice > 0 ? ov.costPrice : mv.costPrice,
+                        stockQuantity: Math.max(ovStock, mvStock),
+                        updatedAt: Math.max(Number(ov.updatedAt) || 0, Number(mv.updatedAt) || 0),
+                      };
+                    });
                     mergedMap.set(p.id, {
                       ...master,
                       costPrice: typeof p.costPrice === 'number' ? p.costPrice : master.costPrice,
-                      variants: Array.isArray(p.variants) && p.variants.length > 0 ? p.variants : master.variants,
+                      variants: mergedVariants,
                       images: master.images, // ALWAYS enforce pristine, uncorrupted CDN image files
                     });
                   } else {
@@ -1442,6 +1511,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
       }
       saveCloudProducts(updated);
+      triggerBackgroundPush({ products: updated });
       return updated;
     });
 
@@ -1468,6 +1538,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (typeof window !== 'undefined') {
         localStorage.setItem('huda_stock_movements', JSON.stringify(updated));
       }
+      triggerBackgroundPush({ stockMovements: updated });
       return updated;
     });
   };

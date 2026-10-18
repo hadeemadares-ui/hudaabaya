@@ -24,10 +24,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Calculate price range & total stock across sizes
-  const prices = product.variants.map((v) => v.price);
-  const minPrice = Math.min(...prices);
-  const maxPrice = Math.max(...prices);
-  const totalStock = product.variants.reduce((sum, v) => sum + v.stockQuantity, 0);
+  const validPrices = product.variants.map((v) => Number(v.price) || 0).filter((p) => p > 0);
+  const minPrice = validPrices.length > 0 ? Math.min(...validPrices) : (product.variants[0]?.price || 0);
+  const maxPrice = validPrices.length > 0 ? Math.max(...validPrices) : (product.variants[0]?.price || 0);
+  const totalStock = product.variants.reduce((sum, v) => sum + (Number(v.stockQuantity) || 0), 0);
 
   const defaultImg = DEFAULT_CATEGORY_IMAGES[product.category] || DEFAULT_CATEGORY_IMAGES.abaya;
   const initialImg = (product.images && product.images.length > 0 && product.images[0] && typeof product.images[0] === 'string' && product.images[0].trim() !== '')

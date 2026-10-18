@@ -861,41 +861,43 @@ export const INITIAL_PRODUCTS: Product[] = [
         "costPrice": 900,
         "stockQuantity": 1,
         "color": "สีดำ (Black)",
-        "updatedAt": 1792282305634
+        "updatedAt": 1792334946424
       },
       {
         "id": "var-1791006148683-1",
         "name": "Size 54 (ส่วนสูง ~155-160 ซม. / ยาว 54\")",
         "sku": "HD-ABY-54",
-        "price": 0,
-        "costPrice": 0,
+        "price": 1250,
+        "costPrice": 900,
         "stockQuantity": 2,
         "color": "สีดำ (Black)",
-        "updatedAt": 1792295178353
+        "updatedAt": 1792334946424
       },
       {
         "id": "var-1791006148683-2",
         "name": "Size 56 (ส่วนสูง ~160-165 ซม. / ยาว 56\")",
         "sku": "HD-ABY-56",
-        "price": 0,
-        "costPrice": 0,
-        "stockQuantity": 0,
-        "color": "สีดำ (Black)"
+        "price": 1250,
+        "costPrice": 900,
+        "stockQuantity": 1,
+        "color": "สีดำ (Black)",
+        "updatedAt": 1792334946424
       },
       {
         "id": "var-1791006148683-3",
         "name": "Size 58 (ส่วนสูง ~165-170 ซม. / ยาว 58\")",
         "sku": "HD-ABY-58",
-        "price": 0,
-        "costPrice": 0,
-        "stockQuantity": 0,
-        "color": "สีดำ (Black)"
+        "price": 1250,
+        "costPrice": 900,
+        "stockQuantity": 1,
+        "color": "สีดำ (Black)",
+        "updatedAt": 1792334946424
       }
     ],
     "rating": 5,
     "reviewsCount": 1,
     "isNew": true,
-    "updatedAt": 1792295178353
+    "updatedAt": 1792334946424
   },
   {
     "id": "huda-prod-1789990258574-997",
