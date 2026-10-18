@@ -215,3 +215,32 @@ export interface StoreSettings {
   mapUrl?: string;
   lastUpdated?: string;
 }
+
+export interface CustomOptions {
+  suppliers?: string[];
+  stockInNotes?: string[];
+  categories?: any[];
+  fabrics?: Record<string, string[]>;
+  sizes?: Record<string, any[]>;
+  colors?: Record<string, string[]>;
+  descriptions?: string[];
+}
+
+export interface RealtimeSyncPayload {
+  success?: boolean;
+  error?: string;
+  version: number;
+  products?: Product[];
+  deletedIds?: string[];
+  orders?: Order[];
+  deletedOrderIds?: string[];
+  stockMovements?: StockMovement[];
+  supplierSettlements?: SupplierSettlement[];
+  eventSchedules?: EventSchedule[];
+  eventBranches?: string[];
+  settings?: StoreSettings;
+  customOptions?: CustomOptions;
+  serverTimeUTC?: string;
+  upToDate?: boolean;
+}
+

@@ -4,8 +4,8 @@
   "webDir": "public",
   "bundledWebRuntime": false,
   "server": {
-    "url": "https://hudaabaya.vercel.app",
-    "cleartext": false
+    "url": "https://hudaabaya.pages.dev",
+    "cleartext": true
   },
   "plugins": {
     "SplashScreen": {

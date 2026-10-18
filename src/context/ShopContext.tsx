@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { Product, ProductVariant, CartItem, Order, CategoryType, Coupon, StoreSettings, CurrencyType, StockMovement, SupplierSettlement } from '../types';
+import { Product, ProductVariant, CartItem, Order, CategoryType, Coupon, StoreSettings, CurrencyType, StockMovement, SupplierSettlement, EventSchedule, CustomOptions, RealtimeSyncPayload } from '../types';
 import { INITIAL_PRODUCTS, INITIAL_COUPONS, INITIAL_ORDERS } from '../data/mockProducts';
 import { DEFAULT_LOGO_BASE64 } from '../data/logoData';
 import { soundFx } from '../lib/soundEffects';
@@ -13,7 +13,9 @@ import {
   fetchCloudOrders,
   saveCloudOrders,
   fetchCloudSettings,
-  saveCloudSettings
+  saveCloudSettings,
+  fetchRealtimeSync,
+  pushRealtimeSync,
 } from '../lib/cloudStorage';
 import {
   sendLineNotification,
@@ -117,6 +119,20 @@ interface ShopContextType {
   syncFromGoogleSheet: (url?: string) => Promise<{ success: boolean; count: number; error?: string; message?: string }>;
   testLineNotification: (customMsg?: string) => Promise<{ success: boolean; error?: string }>;
   clearBrowserCacheAndReload: () => Promise<void>;
+  eventSchedules: EventSchedule[];
+  eventBranches: string[];
+  setEventSchedules: React.Dispatch<React.SetStateAction<EventSchedule[]>>;
+  setEventBranches: React.Dispatch<React.SetStateAction<string[]>>;
+  addEventSchedule: (schedule: EventSchedule) => void;
+  updateEventSchedule: (schedule: EventSchedule) => void;
+  deleteEventSchedule: (scheduleId: string) => void;
+  addEventBranch: (branchName: string) => void;
+  deleteEventBranch: (branchName: string) => void;
+  syncStatus: 'synced' | 'syncing' | 'offline' | 'error';
+  lastSyncTime: number;
+  forceRealtimeSync: () => Promise<void>;
+  customOptions: CustomOptions;
+  saveCustomOption: (type: keyof CustomOptions, value: any) => void;
 }
 
 const getTimestampMs = (val: any): number => {
@@ -170,6 +186,90 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     return [];
   });
+
+  // Event Market & Branches State (Realtime multi-device sync)
+  const [eventBranches, setEventBranches] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('huda_event_branches');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        } catch (e) {}
+      }
+    }
+    return [
+      'HUDA ABAYA - สาขาใหญ่ หนองจอก',
+      'HUDA ABAYA - บูธ/ตลาดนัดคลอง16',
+    ];
+  });
+
+  const [eventSchedules, setEventSchedules] = useState<EventSchedule[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('huda_event_schedules');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
+      }
+    }
+    return [
+      {
+        id: 'EVENT-KLONG16-001',
+        title: 'ออกบูธตลาดนัดคลอง 16 (HUDA ABAYA Pop-up)',
+        branchName: 'HUDA ABAYA - บูธ/ตลาดนัดคลอง16',
+        location: 'ตลาดนัดคลอง 16',
+        startDate: new Date().toISOString().slice(0, 10),
+        endDate: new Date().toISOString().slice(0, 10),
+        operatingHours: '10:00 - 22:00 น.',
+        productsToPrepare: 'ชุดอาบายะห์ดูไบ • คัฟทาน • น้ำหอมดูไบ & Oud',
+        phonePromptPay: '083-427-4687',
+        status: 'ACTIVE',
+        salesTarget: 30000,
+        actualSales: 0,
+        assignedStaff: 'เจ้าของร้าน (Admin)',
+        rentalFee: 1500,
+        depositAmount: 500,
+        googleMapsUrl: 'https://maps.google.com/?q=ตลาดนัดคลอง16',
+        note: 'คำนวณเตรียมสต๊อกอาบายะห์ 100 ชุด และน้ำหอมดูไบ EDP 50 ขวด',
+        createdAt: new Date().toISOString(),
+      },
+    ];
+  });
+
+  // Real-Time Multi-Device Sync Indicators & Refs
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'offline' | 'error'>('synced');
+  const [lastSyncTime, setLastSyncTime] = useState<number>(Date.now());
+  const [customOptions, setCustomOptions] = useState<CustomOptions>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedSuppliers = localStorage.getItem('huda_custom_suppliers');
+        const savedNotes = localStorage.getItem('huda_custom_stock_in_notes');
+        const savedCategories = localStorage.getItem('huda_custom_category_list_v1');
+        const savedFabrics = localStorage.getItem('huda_category_fabric_map_v3');
+        const savedSizes = localStorage.getItem('huda_category_size_map_v1');
+        const savedColors = localStorage.getItem('huda_category_color_map_v1');
+        const savedDesc = localStorage.getItem('huda_custom_description_options_v1');
+        return {
+          suppliers: savedSuppliers ? JSON.parse(savedSuppliers) : [],
+          stockInNotes: savedNotes ? JSON.parse(savedNotes) : [],
+          categories: savedCategories ? JSON.parse(savedCategories) : [],
+          fabrics: savedFabrics ? JSON.parse(savedFabrics) : {},
+          sizes: savedSizes ? JSON.parse(savedSizes) : {},
+          colors: savedColors ? JSON.parse(savedColors) : {},
+          descriptions: savedDesc ? JSON.parse(savedDesc) : [],
+        };
+      } catch (e) {}
+    }
+    return {};
+  });
+
+  const syncVersionRef = useRef<number>(0);
+  const isSyncingRef = useRef<boolean>(false);
+  const syncChannelRef = useRef<BroadcastChannel | null>(null);
+  const pushTimeoutRef = useRef<any>(null);
+
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState<boolean>(false);
@@ -271,6 +371,268 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const triggerBackgroundPush = (payload: Partial<RealtimeSyncPayload>) => {
+    if (pushTimeoutRef.current) clearTimeout(pushTimeoutRef.current);
+    pushTimeoutRef.current = setTimeout(async () => {
+      try {
+        const newVer = await pushRealtimeSync(payload);
+        if (newVer) {
+          syncVersionRef.current = newVer;
+          setLastSyncTime(Date.now());
+          setSyncStatus('synced');
+          try {
+            syncChannelRef.current?.postMessage({ type: 'SYNC_NOW' });
+          } catch (e) {}
+        }
+      } catch (e) {
+        console.warn('Realtime push notice:', e);
+      }
+    }, 150);
+  };
+
+  async function forceRealtimeSync() {
+    if (isSyncingRef.current) return;
+    isSyncingRef.current = true;
+    setSyncStatus('syncing');
+
+    try {
+      const data = await fetchRealtimeSync(syncVersionRef.current);
+      if (data?.success) {
+        setSyncStatus('synced');
+        setLastSyncTime(Date.now());
+
+        if (data.upToDate) {
+          isSyncingRef.current = false;
+          return;
+        }
+
+        if (typeof data.version === 'number' && data.version > 0) {
+          syncVersionRef.current = data.version;
+        }
+
+        // Merge Products
+        if (Array.isArray(data.products) && data.products.length > 0) {
+          const cloudDeleted = Array.isArray(data.deletedIds) ? new Set(data.deletedIds) : new Set<string>();
+          const validProds = data.products.filter((p: Product) => !cloudDeleted.has(p.id)).sort(sortProductsNatural);
+          setProducts(validProds);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_products', JSON.stringify(validProds));
+          }
+        }
+
+        if (Array.isArray(data.deletedIds)) {
+          setDeletedProductIds(new Set(data.deletedIds));
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_deleted_product_ids', JSON.stringify(data.deletedIds));
+          }
+        }
+
+        // Merge Orders
+        if (Array.isArray(data.orders)) {
+          const cloudDeletedOrders = Array.isArray(data.deletedOrderIds) ? new Set(data.deletedOrderIds) : new Set<string>();
+          const validOrders = data.orders.filter((o: Order) => !cloudDeletedOrders.has(o.id));
+          setOrders(validOrders);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_orders', JSON.stringify(validOrders));
+          }
+        }
+
+        if (Array.isArray(data.deletedOrderIds)) {
+          setDeletedOrderIds(new Set(data.deletedOrderIds));
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_deleted_order_ids', JSON.stringify(data.deletedOrderIds));
+          }
+        }
+
+        // Merge Stock Movements
+        if (Array.isArray(data.stockMovements)) {
+          setStockMovements(data.stockMovements);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_stock_movements', JSON.stringify(data.stockMovements));
+          }
+        }
+
+        // Merge Supplier Settlements
+        if (Array.isArray(data.supplierSettlements)) {
+          setSupplierSettlements(data.supplierSettlements);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_supplier_settlements', JSON.stringify(data.supplierSettlements));
+          }
+        }
+
+        // Merge Event Schedules
+        if (Array.isArray(data.eventSchedules) && data.eventSchedules.length > 0) {
+          setEventSchedules(data.eventSchedules);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_event_schedules', JSON.stringify(data.eventSchedules));
+          }
+        } else if (eventSchedules.length > 0) {
+          triggerBackgroundPush({ eventSchedules, eventBranches });
+        }
+
+        // Merge Event Branches
+        if (Array.isArray(data.eventBranches) && data.eventBranches.length > 0) {
+          setEventBranches(data.eventBranches);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_event_branches', JSON.stringify(data.eventBranches));
+          }
+        }
+
+        // Merge Settings
+        if (data.settings && typeof data.settings === 'object') {
+          setStoreSettings((prev) => {
+            const updated = { ...DEFAULT_SETTINGS, ...prev, ...data.settings };
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('huda_store_settings', JSON.stringify(updated));
+            }
+            return updated;
+          });
+        }
+
+        // Merge Custom Options
+        if (data.customOptions && typeof data.customOptions === 'object') {
+          setCustomOptions((prev) => {
+            const updated: CustomOptions = {
+              suppliers: data.customOptions?.suppliers || prev.suppliers || [],
+              stockInNotes: data.customOptions?.stockInNotes || prev.stockInNotes || [],
+              categories: data.customOptions?.categories || prev.categories || [],
+              fabrics: data.customOptions?.fabrics || prev.fabrics || {},
+              sizes: data.customOptions?.sizes || prev.sizes || {},
+              colors: data.customOptions?.colors || prev.colors || {},
+              descriptions: data.customOptions?.descriptions || prev.descriptions || [],
+            };
+            if (typeof window !== 'undefined') {
+              if (updated.suppliers) localStorage.setItem('huda_custom_suppliers', JSON.stringify(updated.suppliers));
+              if (updated.stockInNotes) localStorage.setItem('huda_custom_stock_in_notes', JSON.stringify(updated.stockInNotes));
+              if (updated.categories) localStorage.setItem('huda_custom_category_list_v1', JSON.stringify(updated.categories));
+              if (updated.fabrics) localStorage.setItem('huda_category_fabric_map_v3', JSON.stringify(updated.fabrics));
+              if (updated.sizes) localStorage.setItem('huda_category_size_map_v1', JSON.stringify(updated.sizes));
+              if (updated.colors) localStorage.setItem('huda_category_color_map_v1', JSON.stringify(updated.colors));
+              if (updated.descriptions) localStorage.setItem('huda_custom_description_options_v1', JSON.stringify(updated.descriptions));
+            }
+            return updated;
+          });
+        }
+      } else {
+        // Fallback to legacy individual sync endpoints if /api/sync is not available yet
+        await Promise.allSettled([syncProducts(), syncOrders(), syncStoreSettings()]);
+        setSyncStatus('synced');
+      }
+    } catch (e) {
+      setSyncStatus('error');
+    } finally {
+      isSyncingRef.current = false;
+    }
+  }
+
+  const addEventSchedule = (schedule: EventSchedule) => {
+    soundFx.playSuccess();
+    setEventSchedules((prev) => {
+      const updated = [schedule, ...prev.filter((s) => s.id !== schedule.id)];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_event_schedules', JSON.stringify(updated));
+      }
+      triggerBackgroundPush({ eventSchedules: updated });
+      return updated;
+    });
+  };
+
+  const updateEventSchedule = (schedule: EventSchedule) => {
+    soundFx.playSuccess();
+    setEventSchedules((prev) => {
+      const updated = prev.map((s) => (s.id === schedule.id ? schedule : s));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_event_schedules', JSON.stringify(updated));
+      }
+      triggerBackgroundPush({ eventSchedules: updated });
+      return updated;
+    });
+  };
+
+  const deleteEventSchedule = (scheduleId: string) => {
+    soundFx.playDelete();
+    setEventSchedules((prev) => {
+      const updated = prev.filter((s) => s.id !== scheduleId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_event_schedules', JSON.stringify(updated));
+      }
+      triggerBackgroundPush({ eventSchedules: updated });
+      return updated;
+    });
+  };
+
+  const addEventBranch = (branchName: string) => {
+    soundFx.playSuccess();
+    const clean = branchName.trim();
+    if (!clean) return;
+    setEventBranches((prev) => {
+      if (prev.includes(clean)) return prev;
+      const updated = [...prev, clean];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_event_branches', JSON.stringify(updated));
+      }
+      triggerBackgroundPush({ eventBranches: updated });
+      return updated;
+    });
+  };
+
+  const deleteEventBranch = (branchName: string) => {
+    soundFx.playDelete();
+    setEventBranches((prev) => {
+      const updated = prev.filter((b) => b !== branchName);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_event_branches', JSON.stringify(updated));
+      }
+      triggerBackgroundPush({ eventBranches: updated });
+      return updated;
+    });
+  };
+
+  const handleSetEventSchedules: React.Dispatch<React.SetStateAction<EventSchedule[]>> = (valueOrUpdater) => {
+    setEventSchedules((prev) => {
+      const next = typeof valueOrUpdater === 'function' ? valueOrUpdater(prev) : valueOrUpdater;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_event_schedules', JSON.stringify(next));
+      }
+      triggerBackgroundPush({ eventSchedules: next });
+      return next;
+    });
+  };
+
+  const handleSetEventBranches: React.Dispatch<React.SetStateAction<string[]>> = (valueOrUpdater) => {
+    setEventBranches((prev) => {
+      const next = typeof valueOrUpdater === 'function' ? valueOrUpdater(prev) : valueOrUpdater;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_event_branches', JSON.stringify(next));
+      }
+      triggerBackgroundPush({ eventBranches: next });
+      return next;
+    });
+  };
+
+  const saveCustomOption = (type: keyof CustomOptions, value: any) => {
+    setCustomOptions((prev) => {
+      const updated = { ...prev, [type]: value };
+      if (typeof window !== 'undefined') {
+        const storageKeys: Record<keyof CustomOptions, string> = {
+          suppliers: 'huda_custom_suppliers',
+          stockInNotes: 'huda_custom_stock_in_notes',
+          categories: 'huda_custom_category_list_v1',
+          fabrics: 'huda_category_fabric_map_v3',
+          sizes: 'huda_category_size_map_v1',
+          colors: 'huda_category_color_map_v1',
+          descriptions: 'huda_custom_description_options_v1',
+        };
+        const key = storageKeys[type];
+        if (key) {
+          localStorage.setItem(key, JSON.stringify(value));
+        }
+      }
+      triggerBackgroundPush({ customOptions: updated });
+      return updated;
+    });
+  };
+
   // Initial load & URL admin parameter check with Product & Logo Memory Fallback
   useEffect(() => {
     try {
@@ -368,31 +730,42 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const savedCart = localStorage.getItem('huda_cart');
       if (savedCart) setCart(JSON.parse(savedCart));
 
-      syncStoreSettings();
-      syncOrders();
-      syncProducts();
+      // Multi-device and cross-tab realtime sync initialization
+      try {
+        if ('BroadcastChannel' in window) {
+          syncChannelRef.current = new BroadcastChannel('huda_realtime_sync_channel');
+          syncChannelRef.current.onmessage = (event) => {
+            if (event.data?.type === 'SYNC_NOW') {
+              forceRealtimeSync();
+            }
+          };
+        }
+      } catch (e) {}
 
+      // Initial immediate fetch
+      forceRealtimeSync();
+
+      // Continuous 2.5s polling loop for instant cross-device updates (Mobile, Tablet, Desktop)
       const syncInterval = setInterval(() => {
-        syncProducts();
-        syncOrders();
-        syncStoreSettings();
-      }, 1500);
+        forceRealtimeSync();
+      }, 2500);
 
-      const handleWindowFocus = () => {
-        syncProducts();
-        syncOrders();
-        syncStoreSettings();
+      const handleVisibilityChange = () => {
+        if (!document.hidden) forceRealtimeSync();
       };
+      const handleWindowFocus = () => forceRealtimeSync();
+      const handleOnline = () => forceRealtimeSync();
 
-      if (typeof window !== 'undefined') {
-        window.addEventListener('focus', handleWindowFocus);
-      }
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('focus', handleWindowFocus);
+      window.addEventListener('online', handleOnline);
 
       return () => {
         clearInterval(syncInterval);
-        if (typeof window !== 'undefined') {
-          window.removeEventListener('focus', handleWindowFocus);
-        }
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('focus', handleWindowFocus);
+        window.removeEventListener('online', handleOnline);
+        try { syncChannelRef.current?.close(); } catch (e) {}
       };
 
     } catch (e) {
@@ -425,7 +798,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('huda_cart', JSON.stringify(cart));
   }, [cart]);
 
-  const syncProducts = async () => {
+  async function syncProducts() {
     try {
       const [cloudProds, cloudDeletedArr] = await Promise.all([
         fetchCloudProducts(),
@@ -705,7 +1078,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const syncOrders = async () => {
+  async function syncOrders() {
     try {
       let currentDeletedSet = deletedOrderIds;
       if (typeof window !== 'undefined') {
@@ -743,9 +1116,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.warn('Orders sync notice', e);
     }
-  };
+  }
 
-  const syncStoreSettings = async () => {
+  async function syncStoreSettings() {
     try {
       const cloudSettings = await fetchCloudSettings();
       if (cloudSettings && Object.keys(cloudSettings).length > 0) {
@@ -1422,6 +1795,20 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         syncFromGoogleSheet,
         testLineNotification,
         clearBrowserCacheAndReload,
+        eventSchedules,
+        eventBranches,
+        setEventSchedules: handleSetEventSchedules,
+        setEventBranches: handleSetEventBranches,
+        addEventSchedule,
+        updateEventSchedule,
+        deleteEventSchedule,
+        addEventBranch,
+        deleteEventBranch,
+        syncStatus,
+        lastSyncTime,
+        forceRealtimeSync,
+        customOptions,
+        saveCustomOption,
       }}
     >
       {children}

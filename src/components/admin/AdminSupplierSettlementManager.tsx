@@ -16,6 +16,7 @@ export const AdminSupplierSettlementManager: React.FC = () => {
     verifyAdminPasscode,
     createSupplierSettlement,
     storeSettings,
+    saveCustomOption,
   } = useShop();
 
   const [activeSubTab, setActiveSubTab] = useState<'payouts' | 'logs' | 'history'>('payouts');
@@ -68,6 +69,7 @@ export const AdminSupplierSettlementManager: React.FC = () => {
   const saveSupplierOptions = (newList: string[]) => {
     const cleaned = Array.from(new Set(newList.map((s) => s.trim()).filter(Boolean)));
     setSupplierOptions(cleaned);
+    saveCustomOption('suppliers', cleaned);
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('huda_custom_suppliers', JSON.stringify(cleaned));
@@ -132,6 +134,7 @@ export const AdminSupplierSettlementManager: React.FC = () => {
   const saveNoteOptions = (newList: string[]) => {
     const cleaned = Array.from(new Set(newList.map((s) => s.trim()).filter(Boolean)));
     setNoteOptions(cleaned);
+    saveCustomOption('stockInNotes', cleaned);
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('huda_custom_stock_in_notes', JSON.stringify(cleaned));

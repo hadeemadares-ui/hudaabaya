@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, MapPin, Clock, Plus, Store, User, Phone, DollarSign, Sparkles, CheckCircle2, AlertCircle, X, ChevronRight, ChevronLeft, Filter, Flame, Edit2, Trash2, ShoppingBag, Tag, List, LayoutGrid, Upload, Image as ImageIcon, ExternalLink } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { EventSchedule } from '../../types';
@@ -274,7 +274,13 @@ const ThaiDMYDatePicker: React.FC<ThaiDMYDatePickerProps> = ({
 };
 
 export const AdminEventMarketManager: React.FC = () => {
-  const { storeSettings } = useShop();
+  const {
+    storeSettings,
+    eventSchedules,
+    eventBranches,
+    setEventSchedules,
+    setEventBranches,
+  } = useShop();
 
   // Store branches state for HUDA ABAYA with localStorage persistence
   const [branches, setBranches] = useState<string[]>(() => {
@@ -289,6 +295,18 @@ export const AdminEventMarketManager: React.FC = () => {
       'HUDA ABAYA - บูธ/ตลาดนัดคลอง16',
     ];
   });
+
+  useEffect(() => {
+    if (Array.isArray(eventSchedules) && eventSchedules.length > 0) {
+      setSchedules(eventSchedules);
+    }
+  }, [eventSchedules]);
+
+  useEffect(() => {
+    if (Array.isArray(eventBranches) && eventBranches.length > 0) {
+      setBranches(eventBranches);
+    }
+  }, [eventBranches]);
 
   const [activeBranch, setActiveBranch] = useState<string>('HUDA ABAYA - บูธ/ตลาดนัดคลอง16');
   const [eventStatusFilter, setEventStatusFilter] = useState<'all' | 'UPCOMING' | 'ACTIVE' | 'COMPLETED'>('all');
@@ -494,6 +512,7 @@ export const AdminEventMarketManager: React.FC = () => {
 
   const saveBranchesToStorage = (updatedBranches: string[]) => {
     setBranches(updatedBranches);
+    setEventBranches(updatedBranches);
     if (typeof window !== 'undefined') {
       localStorage.setItem('huda_event_branches', JSON.stringify(updatedBranches));
     }
@@ -501,6 +520,7 @@ export const AdminEventMarketManager: React.FC = () => {
 
   const saveSchedulesToStorage = (updated: EventSchedule[]) => {
     setSchedules(updated);
+    setEventSchedules(updated);
     if (typeof window !== 'undefined') {
       localStorage.setItem('huda_event_schedules', JSON.stringify(updated));
     }

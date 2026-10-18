@@ -36,7 +36,8 @@ async function saveProductsToKV(env: any, prods: any[], delIds: any[]) {
     try {
       await Promise.all([
         env.HUDA_KV.put('huda_products', JSON.stringify(prods)),
-        env.HUDA_KV.put('huda_deleted_ids', JSON.stringify(delIds))
+        env.HUDA_KV.put('huda_deleted_ids', JSON.stringify(delIds)),
+        env.HUDA_KV.put('huda_sync_version', Date.now().toString())
       ]);
     } catch (e) {}
   }

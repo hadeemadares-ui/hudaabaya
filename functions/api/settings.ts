@@ -33,7 +33,10 @@ async function saveSettingsToKV(env: any, settings: any) {
   memorySettings = settings;
   if (env?.HUDA_KV) {
     try {
-      await env.HUDA_KV.put('huda_settings', JSON.stringify(settings));
+      await Promise.all([
+        env.HUDA_KV.put('huda_settings', JSON.stringify(settings)),
+        env.HUDA_KV.put('huda_sync_version', Date.now().toString())
+      ]);
     } catch (e) {}
   }
 }

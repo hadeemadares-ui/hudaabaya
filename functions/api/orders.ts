@@ -33,7 +33,10 @@ async function saveOrdersToKV(env: any, orders: any[]) {
   memoryOrders = orders;
   if (env?.HUDA_KV) {
     try {
-      await env.HUDA_KV.put('huda_orders', JSON.stringify(orders));
+      await Promise.all([
+        env.HUDA_KV.put('huda_orders', JSON.stringify(orders)),
+        env.HUDA_KV.put('huda_sync_version', Date.now().toString())
+      ]);
     } catch (e) {}
   }
 }
