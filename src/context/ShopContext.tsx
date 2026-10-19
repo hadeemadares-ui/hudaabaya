@@ -269,6 +269,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isSyncingRef = useRef<boolean>(false);
   const syncChannelRef = useRef<BroadcastChannel | null>(null);
   const pushTimeoutRef = useRef<any>(null);
+  const pendingPushPayloadRef = useRef<Partial<RealtimeSyncPayload>>({});
 
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
@@ -372,10 +373,16 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const triggerBackgroundPush = (payload: Partial<RealtimeSyncPayload>) => {
+    pendingPushPayloadRef.current = {
+      ...pendingPushPayloadRef.current,
+      ...payload,
+    };
     if (pushTimeoutRef.current) clearTimeout(pushTimeoutRef.current);
     pushTimeoutRef.current = setTimeout(async () => {
+      const toSend = { ...pendingPushPayloadRef.current };
+      pendingPushPayloadRef.current = {};
       try {
-        const newVer = await pushRealtimeSync(payload);
+        const newVer = await pushRealtimeSync(toSend);
         if (newVer) {
           syncVersionRef.current = newVer;
           setLastSyncTime(Date.now());
@@ -501,22 +508,46 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // Merge Stock Movements
+        // Merge Stock Movements (smart merge preserving un-synced local records)
         if (Array.isArray(data.stockMovements) && data.stockMovements.length > 0) {
-          setStockMovements(data.stockMovements);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('huda_stock_movements', JSON.stringify(data.stockMovements));
-          }
+          setStockMovements((prev) => {
+            const movMap = new Map<string, StockMovement>();
+            (data.stockMovements || []).forEach((m: StockMovement) => movMap.set(m.id, m));
+            prev.forEach((m) => {
+              if (!movMap.has(m.id)) {
+                movMap.set(m.id, m);
+              }
+            });
+            const merged = Array.from(movMap.values()).sort(
+              (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+            );
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('huda_stock_movements', JSON.stringify(merged));
+            }
+            return merged;
+          });
         } else if (stockMovements.length > 0) {
           triggerBackgroundPush({ stockMovements });
         }
 
-        // Merge Supplier Settlements
+        // Merge Supplier Settlements (smart merge preserving un-synced local records)
         if (Array.isArray(data.supplierSettlements) && data.supplierSettlements.length > 0) {
-          setSupplierSettlements(data.supplierSettlements);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('huda_supplier_settlements', JSON.stringify(data.supplierSettlements));
-          }
+          setSupplierSettlements((prev) => {
+            const setMap = new Map<string, SupplierSettlement>();
+            (data.supplierSettlements || []).forEach((s: SupplierSettlement) => setMap.set(s.id, s));
+            prev.forEach((s) => {
+              if (!setMap.has(s.id)) {
+                setMap.set(s.id, s);
+              }
+            });
+            const merged = Array.from(setMap.values()).sort(
+              (a, b) => new Date(b.settledAt || 0).getTime() - new Date(a.settledAt || 0).getTime()
+            );
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('huda_supplier_settlements', JSON.stringify(merged));
+            }
+            return merged;
+          });
         } else if (supplierSettlements.length > 0) {
           triggerBackgroundPush({ supplierSettlements });
         }
@@ -1163,6 +1194,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('huda_store_settings', JSON.stringify(updatedSettings));
       }
       saveCloudSettings(updatedSettings);
+      triggerBackgroundPush({ products: mergedList, settings: updatedSettings });
 
       soundFx.playSuccess();
 
@@ -1271,6 +1303,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('huda_store_settings', JSON.stringify(updated));
       }
       saveCloudSettings(updated);
+      triggerBackgroundPush({ settings: updated });
       return updated;
     });
   };
@@ -1374,8 +1407,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const now = Date.now();
 
+    let updatedProductsList: Product[] = [];
     setProducts((prevProducts) => {
-      const updatedProductsList = prevProducts.map((prod) => {
+      updatedProductsList = prevProducts.map((prod) => {
         const matchingItems = newOrder.items.filter((item) => item.productId === prod.id);
         if (matchingItems.length === 0) return prod;
 
@@ -1401,13 +1435,14 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return updatedProductsList;
     });
 
+    let updatedOrdersList: Order[] = [];
     setOrders((prev) => {
-      const updated = [newOrder, ...prev];
+      updatedOrdersList = [newOrder, ...prev];
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_orders', JSON.stringify(updated));
+        localStorage.setItem('huda_orders', JSON.stringify(updatedOrdersList));
       }
-      saveCloudOrders(updated);
-      return updated;
+      saveCloudOrders(updatedOrdersList);
+      return updatedOrdersList;
     });
 
     // Auto-record Stock OUT movement for sold items to enable Supplier Settlement
@@ -1438,12 +1473,19 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     });
 
+    let updatedMovementsList: StockMovement[] = [];
     setStockMovements((prev) => {
-      const updated = [...newStockOutMovements, ...prev];
+      updatedMovementsList = [...newStockOutMovements, ...prev];
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_stock_movements', JSON.stringify(updated));
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsList));
       }
-      return updated;
+      return updatedMovementsList;
+    });
+
+    triggerBackgroundPush({
+      products: updatedProductsList,
+      orders: updatedOrdersList,
+      stockMovements: updatedMovementsList,
     });
 
     clearCart();
@@ -1547,6 +1589,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     soundFx.playDelete();
     const targetMovement = stockMovements.find((m) => m.id === movementId);
 
+    let updatedProductsOnDelete: Product[] | null = null;
     // If it was a Stock IN movement and revertStock is true, reduce stock back
     if (targetMovement && targetMovement.type === 'IN' && revertStock && targetMovement.productId && targetMovement.variantId) {
       setProducts((prev) => {
@@ -1570,16 +1613,23 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.setItem('huda_products', JSON.stringify(updated));
         }
         saveCloudProducts(updated);
+        updatedProductsOnDelete = updated;
         return updated;
       });
     }
 
+    let updatedMovementsOnDelete: StockMovement[] = [];
     setStockMovements((prev) => {
-      const updated = prev.filter((m) => m.id !== movementId);
+      updatedMovementsOnDelete = prev.filter((m) => m.id !== movementId);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_stock_movements', JSON.stringify(updated));
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsOnDelete));
       }
-      return updated;
+      return updatedMovementsOnDelete;
+    });
+
+    triggerBackgroundPush({
+      ...(updatedProductsOnDelete ? { products: updatedProductsOnDelete } : {}),
+      stockMovements: updatedMovementsOnDelete,
     });
 
     return true;
@@ -1615,22 +1665,29 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       slipImageUrl: data.slipImageUrl || undefined,
     };
 
+    let updatedMovementsOnSettle: StockMovement[] = [];
     setStockMovements((prev) => {
-      const updated = prev.map((m) =>
+      updatedMovementsOnSettle = prev.map((m) =>
         data.movementIds.includes(m.id) ? { ...m, isSettled: true, settlementId } : m
       );
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_stock_movements', JSON.stringify(updated));
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsOnSettle));
       }
-      return updated;
+      return updatedMovementsOnSettle;
     });
 
+    let updatedSettlementsList: SupplierSettlement[] = [];
     setSupplierSettlements((prev) => {
-      const updated = [newSettlement, ...prev];
+      updatedSettlementsList = [newSettlement, ...prev];
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_supplier_settlements', JSON.stringify(updated));
+        localStorage.setItem('huda_supplier_settlements', JSON.stringify(updatedSettlementsList));
       }
-      return updated;
+      return updatedSettlementsList;
+    });
+
+    triggerBackgroundPush({
+      stockMovements: updatedMovementsOnSettle,
+      supplierSettlements: updatedSettlementsList,
     });
 
     return newSettlement;
@@ -1659,6 +1716,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('huda_orders', JSON.stringify(updated));
       }
       saveCloudOrders(updated);
+      triggerBackgroundPush({ orders: updated });
       return updated;
     });
   };
@@ -1682,35 +1740,46 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('huda_orders', JSON.stringify(updated));
       }
       saveCloudOrders(updated);
+      triggerBackgroundPush({ orders: updated });
       return updated;
     });
   };
 
   const deleteOrder = (orderId: string) => {
+    let updatedSetArr: string[] = [];
     setDeletedOrderIds((prevSet) => {
       const updatedSet = new Set(Array.from(prevSet)).add(orderId);
+      updatedSetArr = Array.from(updatedSet);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_deleted_order_ids', JSON.stringify(Array.from(updatedSet)));
+        localStorage.setItem('huda_deleted_order_ids', JSON.stringify(updatedSetArr));
       }
       return updatedSet;
     });
 
+    let updatedOrdersList: Order[] = [];
     setOrders((prev) => {
-      const updated = prev.filter((o) => o.id !== orderId);
+      updatedOrdersList = prev.filter((o) => o.id !== orderId);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_orders', JSON.stringify(updated));
+        localStorage.setItem('huda_orders', JSON.stringify(updatedOrdersList));
       }
-      saveCloudOrders(updated);
-      return updated;
+      saveCloudOrders(updatedOrdersList);
+      return updatedOrdersList;
     });
 
     // Sync Stock Movements for Unsettled Sales Breakdown
+    let updatedMovementsList: StockMovement[] = [];
     setStockMovements((prevMovements) => {
-      const updatedMovements = prevMovements.filter((m) => m.referenceOrderNo !== orderId);
+      updatedMovementsList = prevMovements.filter((m) => m.referenceOrderNo !== orderId);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovements));
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsList));
       }
-      return updatedMovements;
+      return updatedMovementsList;
+    });
+
+    triggerBackgroundPush({
+      orders: updatedOrdersList,
+      deletedOrderIds: updatedSetArr,
+      stockMovements: updatedMovementsList,
     });
   };
 
@@ -1721,6 +1790,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('huda_orders', JSON.stringify(remaining));
       }
       saveCloudOrders(remaining);
+      triggerBackgroundPush({ orders: remaining });
       return remaining;
     });
   };
@@ -1731,6 +1801,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('huda_orders', JSON.stringify([]));
     }
     saveCloudOrders([]);
+    triggerBackgroundPush({ orders: [] });
   };
 
   const clearAllProducts = async () => {
@@ -1742,6 +1813,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const deletedArr = Array.from(new Set([...Array.from(deletedProductIds), ...allIds]));
     saveCloudDeletedIds(deletedArr);
     saveCloudProducts([]);
+    triggerBackgroundPush({ products: [], deletedIds: deletedArr });
   };
 
   const addProduct = (newProduct: Product) => {
@@ -1754,6 +1826,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('huda_products', JSON.stringify(updated));
       }
       saveCloudProducts(updated);
+      triggerBackgroundPush({ products: updated });
       return updated;
     });
   };
@@ -1762,18 +1835,20 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     soundFx.playSuccess();
     const timestamped = { ...updatedProduct, updatedAt: Date.now() };
 
+    let updatedProductsList: Product[] = [];
     setProducts((prev) => {
-      const updated = prev.map((p) => (p.id === timestamped.id ? timestamped : p)).sort(sortProductsNatural);
+      updatedProductsList = prev.map((p) => (p.id === timestamped.id ? timestamped : p)).sort(sortProductsNatural);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_products', JSON.stringify(updated));
+        localStorage.setItem('huda_products', JSON.stringify(updatedProductsList));
       }
-      saveCloudProducts(updated);
-      return updated;
+      saveCloudProducts(updatedProductsList);
+      return updatedProductsList;
     });
 
     // Update corresponding stock movements to keep Unsettled Sales Breakdown in sync
+    let updatedMovementsList: StockMovement[] = [];
     setStockMovements((prevMovements) => {
-      const updatedMovements = prevMovements.map((m) => {
+      updatedMovementsList = prevMovements.map((m) => {
         if (m.productId === updatedProduct.id || m.productTitle === updatedProduct.title) {
           const matchedVariant = updatedProduct.variants.find(
             (v) => v.id === m.variantId || v.name === m.variantName
@@ -1793,9 +1868,14 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovements));
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsList));
       }
-      return updatedMovements;
+      return updatedMovementsList;
+    });
+
+    triggerBackgroundPush({
+      products: updatedProductsList,
+      stockMovements: updatedMovementsList,
     });
   };
 
@@ -1818,18 +1898,31 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('huda_products', JSON.stringify(updated));
       }
       saveCloudProducts(updated);
+      triggerBackgroundPush({ products: updated });
       return updated;
     });
   };
 
   const deleteProduct = (productId: string) => {
     soundFx.playDelete();
+    let updatedDeletedList: string[] = [];
+    setDeletedProductIds((prev) => {
+      const updated = new Set(Array.from(prev)).add(productId);
+      updatedDeletedList = Array.from(updated);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_deleted_ids', JSON.stringify(updatedDeletedList));
+      }
+      return updated;
+    });
+
     setProducts((prev) => {
       const updated = prev.filter((p) => p.id !== productId);
       if (typeof window !== 'undefined') {
         localStorage.setItem('huda_products', JSON.stringify(updated));
       }
       saveCloudProducts(updated);
+      saveCloudDeletedIds(updatedDeletedList);
+      triggerBackgroundPush({ products: updated, deletedIds: updatedDeletedList });
       return updated;
     });
   };
