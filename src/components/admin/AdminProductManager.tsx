@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp, FileSpreadsheet, ExternalLink, RefreshCw, CheckCircle, AlertCircle, HelpCircle, ChevronDown, Check, Lock, Unlock, KeyRound, Eye, EyeOff, ShieldAlert, PackagePlus } from 'lucide-react';
+import { Plus, Minus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp, FileSpreadsheet, ExternalLink, RefreshCw, CheckCircle, AlertCircle, HelpCircle, ChevronDown, Check, Lock, Unlock, KeyRound, Eye, EyeOff, ShieldAlert, PackagePlus } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CategoryType } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
@@ -37,6 +37,8 @@ export const AdminProductManager: React.FC = () => {
     syncFromGoogleSheet,
     storeSettings,
     verifyAdminPasscode,
+    customOptions,
+    saveCustomOption,
   } = useShop();
 
   const [adminSearch, setAdminSearch] = useState('');
@@ -56,9 +58,44 @@ export const AdminProductManager: React.FC = () => {
   const [quickStockInQty, setQuickStockInQty] = useState<string>('1');
   const [quickStockInCost, setQuickStockInCost] = useState<string>('');
   const [quickStockInSupplier, setQuickStockInSupplier] = useState<string>('โรงงานอาบายะห์ดูไบ');
-  const [quickStockInNote, setQuickStockInNote] = useState<string>('รับเติมสต๊อกหน้าร้าน');
+  const [quickStockInNote, setQuickStockInNote] = useState<string>('');
+  const [isStockInNoteDropdownOpen, setIsStockInNoteDropdownOpen] = useState<boolean>(false);
+  const stockInNoteDropdownRef = useRef<HTMLDivElement>(null);
   const [highlightedVariantId, setHighlightedVariantId] = useState<string | null>(null);
   const [stockSuccessToast, setStockSuccessToast] = useState<{ message: string; submessage?: string } | null>(null);
+
+  const DEFAULT_STOCK_IN_NOTE_PRESETS = useMemo(() => [
+    'รับเติมสต๊อกหน้าร้าน',
+    'ล็อตสั่งตัดพิเศษ UAE',
+    '00001/69',
+    'รับสินค้าล็อตแรก / เปิดร้าน',
+    'รับสินค้าล็อตทดลอง',
+    'สต๊อกงานอีเวนต์',
+  ], []);
+
+  const stockInNoteOptions = useMemo(() => {
+    const customList = customOptions?.stockInNotes || [];
+    return Array.from(new Set([...DEFAULT_STOCK_IN_NOTE_PRESETS, ...customList])).filter(Boolean);
+  }, [customOptions?.stockInNotes, DEFAULT_STOCK_IN_NOTE_PRESETS]);
+
+  const handleSaveStockInNoteOption = (noteText: string) => {
+    const trimmed = noteText.trim();
+    if (!trimmed) return;
+    const current = customOptions?.stockInNotes || [];
+    if (!current.includes(trimmed)) {
+      const updated = [trimmed, ...current];
+      saveCustomOption('stockInNotes', updated);
+    }
+  };
+
+  const handleDeleteStockInNoteOption = (noteToDelete: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm(`คุณต้องการลบ "${noteToDelete}" ออกจากรายการตัวเลือกใช่หรือไม่?`)) {
+      const current = customOptions?.stockInNotes || [];
+      const updated = current.filter((item) => item !== noteToDelete);
+      saveCustomOption('stockInNotes', updated);
+    }
+  };
 
   // Stock Editing Lock & PIN Modal State
   const [isStockEditUnlocked, setIsStockEditUnlocked] = useState(false);
@@ -145,6 +182,20 @@ export const AdminProductManager: React.FC = () => {
     return () => window.removeEventListener('huda_stock_in_completed', handleStockInCompleted);
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (stockInNoteDropdownRef.current && !stockInNoteDropdownRef.current.contains(e.target as Node)) {
+        setIsStockInNoteDropdownOpen(false);
+      }
+    };
+    if (isStockInNoteDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isStockInNoteDropdownOpen]);
+
   const handleOpenQuickStockIn = (prod: Product, v: ProductVariant) => {
     const costVal = v.costPrice ?? (v.price ? Math.round(v.price * 0.5) : 0);
     const defaultSupplier = (prod.category === 'perfume' || prod.category === 'incense')
@@ -157,12 +208,13 @@ export const AdminProductManager: React.FC = () => {
       variantName: v.name,
       currentStock: typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity) ? v.stockQuantity : 0,
       costPrice: costVal,
-      color: v.color,
+      color: v.color || (prod.colors && prod.colors.length > 0 ? prod.colors[0] : undefined),
     });
     setQuickStockInQty('1');
     setQuickStockInCost(costVal > 0 ? costVal.toString() : '');
     setQuickStockInSupplier(defaultSupplier);
-    setQuickStockInNote('รับเติมสต๊อกหน้าร้าน');
+    setQuickStockInNote('');
+    setIsStockInNoteDropdownOpen(false);
   };
 
   const handleExecuteQuickStockIn = (e?: React.FormEvent) => {
@@ -174,6 +226,11 @@ export const AdminProductManager: React.FC = () => {
       return;
     }
     const cost = parseFloat(quickStockInCost) || quickStockInItem.costPrice || 0;
+    const noteVal = quickStockInNote.trim();
+
+    if (noteVal) {
+      handleSaveStockInNoteOption(noteVal);
+    }
 
     recordStockIn({
       productId: quickStockInItem.productId,
@@ -181,7 +238,7 @@ export const AdminProductManager: React.FC = () => {
       quantity: qty,
       costPrice: cost,
       supplierName: quickStockInSupplier.trim() || 'โรงงานอาบายะห์ดูไบ',
-      note: quickStockInNote.trim() || 'รับเติมสต๊อกหน้าร้าน',
+      note: noteVal,
     });
 
     const vName = quickStockInItem.variantName;
@@ -3693,16 +3750,16 @@ export const AdminProductManager: React.FC = () => {
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-stone-200 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-100 border border-emerald-400 flex items-center justify-center text-emerald-900 shadow-xs">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-100 border border-emerald-400 flex items-center justify-center text-emerald-900 shadow-xs shrink-0">
                   <PackagePlus className="w-6 h-6 text-emerald-700" />
                 </div>
                 <div>
                   <h3 className="font-serif font-black text-base text-stone-950 flex items-center gap-1.5">
                     <span>บันทึกรับเข้าสต๊อกทันที (Stock IN)</span>
                   </h3>
-                  <p className="text-xs text-stone-600 font-bold truncate max-w-[240px]" title={quickStockInItem.productTitle}>
-                    {quickStockInItem.productTitle}
-                  </p>
+                  <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    รหัส: {quickStockInItem.productId}
+                  </span>
                 </div>
               </div>
               <button
@@ -3714,19 +3771,27 @@ export const AdminProductManager: React.FC = () => {
               </button>
             </div>
 
+            {/* Prominent Large Product Title Banner */}
+            <div className="bg-gradient-to-r from-amber-500/10 via-amber-100/60 to-emerald-500/10 border-2 border-amber-400/80 rounded-2xl p-3.5 shadow-xs">
+              <div className="text-[11px] font-bold text-amber-900 uppercase tracking-wider">ชื่อสินค้า / รุ่น:</div>
+              <div className="text-xl sm:text-2xl font-black text-stone-950 font-serif leading-snug mt-0.5 break-words">
+                {quickStockInItem.productTitle}
+              </div>
+            </div>
+
             {/* Item Details Box */}
-            <div className="bg-emerald-50/80 p-3.5 rounded-2xl border border-emerald-300 space-y-2">
+            <div className="bg-emerald-50/80 p-3.5 rounded-2xl border border-emerald-300 space-y-2.5">
               <div className="text-xs font-black text-stone-900 flex items-center justify-between">
                 <span>ไซส์ / รายการ:</span>
-                <span className="font-extrabold text-emerald-950 text-sm bg-white px-2.5 py-0.5 rounded-lg border border-emerald-300">
+                <span className="font-extrabold text-emerald-950 text-sm bg-white px-2.5 py-1 rounded-lg border border-emerald-300 shadow-2xs">
                   {quickStockInItem.variantName}
                 </span>
               </div>
               {quickStockInItem.color && (
                 <div className="text-xs font-bold text-stone-700 flex items-center justify-between">
                   <span>สี:</span>
-                  <span className="font-black text-stone-900 bg-white px-2.5 py-1 rounded-lg border border-emerald-300 shadow-2xs">
-                    <ColorIndicator color={quickStockInItem.color} dotClassName="w-4 h-4 ring-1 ring-black/10" />
+                  <span className="font-black text-stone-900 bg-white px-3 py-1 rounded-lg border border-emerald-300 shadow-2xs inline-flex items-center gap-2">
+                    <ColorIndicator color={quickStockInItem.color} dotClassName="w-4 h-4 ring-2 ring-black/15 shadow-sm" />
                   </span>
                 </div>
               )}
@@ -3739,47 +3804,57 @@ export const AdminProductManager: React.FC = () => {
             </div>
 
             <form onSubmit={handleExecuteQuickStockIn} className="space-y-3.5">
-              {/* Qty Input & Preview */}
+              {/* Qty Stepper Input & Preview (No quick chips, direct typing or +/- stepper) */}
               <div>
-                <label className="text-xs font-black text-stone-950 flex items-center justify-between mb-1">
+                <label className="text-xs font-black text-stone-950 flex items-center justify-between mb-1.5">
                   <span>จำนวนที่รับเข้าเพิ่ม *</span>
                   {parseInt(quickStockInQty, 10) > 0 && (
-                    <span className="text-[11px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300">
+                    <span className="text-[11px] font-black text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-md border border-emerald-300">
                       ➔ สต๊อกใหม่: {quickStockInItem.currentStock + (parseInt(quickStockInQty, 10) || 0)} ชิ้น
                     </span>
                   )}
                 </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-700 font-black text-lg select-none">+</span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    autoFocus
-                    required
-                    value={quickStockInQty}
-                    onFocus={(e) => e.target.select()}
-                    onChange={(e) => {
-                      const clean = e.target.value.replace(/[^0-9]/g, '');
-                      setQuickStockInQty(clean);
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const val = parseInt(quickStockInQty, 10) || 1;
+                      setQuickStockInQty(Math.max(1, val - 1).toString());
                     }}
-                    placeholder="เช่น 10"
-                    className="w-full pl-8 pr-14 py-2.5 bg-white border-2 border-emerald-500 focus:ring-4 focus:ring-emerald-200 rounded-xl text-stone-950 font-black text-lg focus:outline-none transition shadow-xs"
-                  />
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-stone-500 select-none">ชิ้น</span>
-                </div>
-                {/* Quick Add Qty Chips */}
-                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                  {[1, 5, 10, 20, 50, 100].map((chip) => (
-                    <button
-                      key={chip}
-                      type="button"
-                      onClick={() => setQuickStockInQty(chip.toString())}
-                      className="px-2 py-1 text-[11px] font-black bg-stone-100 hover:bg-emerald-100 hover:text-emerald-950 text-stone-700 rounded-lg border border-stone-300 cursor-pointer transition"
-                    >
-                      +{chip}
-                    </button>
-                  ))}
+                    className="w-12 h-12 rounded-xl bg-stone-100 hover:bg-stone-200 active:bg-stone-300 text-stone-800 font-black text-2xl flex items-center justify-center border-2 border-stone-300 transition select-none cursor-pointer shrink-0 shadow-xs"
+                    title="ลดจำนวน 1 ชิ้น"
+                  >
+                    <Minus className="w-5 h-5 stroke-[3]" />
+                  </button>
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      autoFocus
+                      required
+                      value={quickStockInQty}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => {
+                        const clean = e.target.value.replace(/[^0-9]/g, '');
+                        setQuickStockInQty(clean);
+                      }}
+                      placeholder="1"
+                      className="w-full py-2 px-3 text-center bg-white border-2 border-emerald-500 focus:ring-4 focus:ring-emerald-200 rounded-xl text-stone-950 font-black text-2xl focus:outline-none transition shadow-xs"
+                    />
+                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-black text-stone-400 select-none pointer-events-none">ชิ้น</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const val = parseInt(quickStockInQty, 10) || 0;
+                      setQuickStockInQty((val + 1).toString());
+                    }}
+                    className="w-12 h-12 rounded-xl bg-emerald-100 hover:bg-emerald-200 active:bg-emerald-300 text-emerald-950 font-black text-2xl flex items-center justify-center border-2 border-emerald-400 transition select-none cursor-pointer shrink-0 shadow-xs"
+                    title="เพิ่มจำนวน 1 ชิ้น"
+                  >
+                    <Plus className="w-5 h-5 stroke-[3]" />
+                  </button>
                 </div>
               </div>
 
@@ -3824,18 +3899,105 @@ export const AdminProductManager: React.FC = () => {
                 />
               </div>
 
-              {/* Note / DO Number */}
-              <div>
-                <label className="text-xs font-black text-stone-950 block mb-1">
-                  หมายเหตุ / ล็อต / เลขที่ DO
+              {/* Note / DO Number Dropdown with Custom Add */}
+              <div className="relative" ref={stockInNoteDropdownRef}>
+                <label className="text-xs font-black text-stone-950 flex items-center justify-between mb-1">
+                  <span>หมายเหตุ / ล็อต / เลขที่ DO</span>
+                  {quickStockInNote && (
+                    <button
+                      type="button"
+                      onClick={() => setQuickStockInNote('')}
+                      className="text-[11px] text-stone-400 hover:text-stone-700 cursor-pointer font-bold"
+                    >
+                      ล้างค่าว่าง
+                    </button>
+                  )}
                 </label>
-                <input
-                  type="text"
-                  value={quickStockInNote}
-                  onChange={(e) => setQuickStockInNote(e.target.value)}
-                  placeholder="เช่น ล็อตสั่งตัดพิเศษ UAE, 00001/69"
-                  className="w-full px-3 py-2 bg-white border-2 border-stone-300 focus:border-amber-500 rounded-xl text-stone-950 font-bold text-xs focus:outline-none transition shadow-xs"
-                />
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={quickStockInNote}
+                    onFocus={() => setIsStockInNoteDropdownOpen(true)}
+                    onChange={(e) => {
+                      setQuickStockInNote(e.target.value);
+                      setIsStockInNoteDropdownOpen(true);
+                    }}
+                    placeholder="เลือกจากรายการ หรือพิมพ์ใหม่ (เว้นว่างได้)"
+                    className="w-full pl-3 pr-10 py-2 bg-white border-2 border-stone-300 focus:border-amber-500 rounded-xl text-stone-950 font-bold text-xs focus:outline-none transition shadow-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsStockInNoteDropdownOpen((prev) => !prev)}
+                    className="absolute right-2 p-1 text-stone-500 hover:text-stone-800 transition cursor-pointer rounded-lg hover:bg-stone-100"
+                    title="เปิด/ปิดรายการตัวเลือก"
+                  >
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isStockInNoteDropdownOpen ? 'rotate-180 text-amber-600' : ''}`} />
+                  </button>
+                </div>
+
+                {/* Dropdown Menu */}
+                {isStockInNoteDropdownOpen && (
+                  <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto">
+                    <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 flex items-center justify-between text-[11px] font-black text-amber-950">
+                      <span>ตัวเลือกที่บันทึกไว้ ({stockInNoteOptions.length})</span>
+                      <span className="text-[10px] text-stone-500 font-bold">เลือกหรือพิมพ์เพื่อบันทึก</span>
+                    </div>
+
+                    {/* Add new option button if typed text not yet in list */}
+                    {quickStockInNote.trim() && !stockInNoteOptions.some((o) => o.toLowerCase() === quickStockInNote.trim().toLowerCase()) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleSaveStockInNoteOption(quickStockInNote.trim());
+                        }}
+                        className="w-full text-left px-3 py-2 bg-emerald-50 hover:bg-emerald-100 border-b border-emerald-300 text-xs font-black text-emerald-950 flex items-center justify-between transition cursor-pointer"
+                      >
+                        <span className="truncate">➕ บันทึก <strong className="text-emerald-900 underline font-black">"{quickStockInNote.trim()}"</strong> ไว้ใช้ครั้งถัดไป</span>
+                        <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full border border-emerald-400 font-bold shrink-0 ml-1">กดบันทึก</span>
+                      </button>
+                    )}
+
+                    {/* List of presets and saved notes */}
+                    <div className="divide-y divide-stone-100">
+                      {stockInNoteOptions.map((item) => {
+                        const isSelected = quickStockInNote === item;
+                        const isPreset = DEFAULT_STOCK_IN_NOTE_PRESETS.includes(item);
+                        return (
+                          <div
+                            key={item}
+                            className={`px-3 py-2 text-xs font-black transition flex items-center justify-between group ${
+                              isSelected ? 'bg-amber-100 text-amber-950' : 'text-stone-900 hover:bg-stone-50'
+                            }`}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setQuickStockInNote(item);
+                                setIsStockInNoteDropdownOpen(false);
+                              }}
+                              className="flex-1 text-left flex items-center justify-between pr-2 cursor-pointer truncate"
+                            >
+                              <span className="truncate">{item}</span>
+                              {isSelected && (
+                                <span className="text-amber-800 text-[11px] font-black shrink-0 ml-1.5">✓ เลือกอยู่</span>
+                              )}
+                            </button>
+                            {!isPreset && (
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeleteStockInNoteOption(item, e)}
+                                className="opacity-0 group-hover:opacity-100 text-stone-400 hover:text-rose-600 p-1 rounded transition cursor-pointer"
+                                title="ลบตัวเลือกนี้"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}
