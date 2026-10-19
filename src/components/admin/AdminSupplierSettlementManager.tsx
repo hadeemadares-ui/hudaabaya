@@ -5,6 +5,7 @@ import { Truck, DollarSign, PackageCheck, Plus, Search, Calendar, FileText, Chec
 import { useShop } from '../../context/ShopContext';
 import { StockMovement, SupplierSettlement } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
+import { ColorIndicator, getEffectiveVariantColor } from '../../utils/colorUtils';
 
 export const AdminSupplierSettlementManager: React.FC = () => {
   const {
@@ -32,6 +33,35 @@ export const AdminSupplierSettlementManager: React.FC = () => {
   const [selectedSupplierFilter, setSelectedSupplierFilter] = useState<string>('all');
   const [movementSearchQuery, setMovementSearchQuery] = useState<string>('');
   const [movementTypeFilter, setMovementTypeFilter] = useState<'all' | 'IN' | 'OUT'>('all');
+  const [logStartDateTime, setLogStartDateTime] = useState<string>('');
+  const [logEndDateTime, setLogEndDateTime] = useState<string>('');
+
+  const setQuickDatePreset = (preset: 'today' | '7days' | '30days' | 'all') => {
+    if (preset === 'all') {
+      setLogStartDateTime('');
+      setLogEndDateTime('');
+      return;
+    }
+    const now = new Date();
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const formatDateTimeLocal = (d: Date) =>
+      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+    if (preset === 'today') {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      setLogStartDateTime(formatDateTimeLocal(start));
+      setLogEndDateTime(formatDateTimeLocal(end));
+    } else if (preset === '7days') {
+      const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      setLogStartDateTime(formatDateTimeLocal(start));
+      setLogEndDateTime(formatDateTimeLocal(now));
+    } else if (preset === '30days') {
+      const start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      setLogStartDateTime(formatDateTimeLocal(start));
+      setLogEndDateTime(formatDateTimeLocal(now));
+    }
+  };
 
   // Modal States
   const [isStockInModalOpen, setIsStockInModalOpen] = useState<boolean>(false);
@@ -954,27 +984,79 @@ export const AdminSupplierSettlementManager: React.FC = () => {
 
             {/* Log Filters */}
             <div className="flex items-center gap-2 flex-wrap">
+              {/* ช่วงวันที่-เวลา: จาก ... ถึง ... */}
+              <div className="flex items-center gap-1.5 bg-stone-50 border-2 border-stone-300 rounded-xl px-2.5 py-1.5 text-xs flex-wrap sm:flex-nowrap shadow-xs">
+                <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
+                <div className="flex items-center gap-1">
+                  <span className="text-[11px] font-black text-stone-700 whitespace-nowrap">จาก:</span>
+                  <input
+                    type="datetime-local"
+                    value={logStartDateTime}
+                    onChange={(e) => setLogStartDateTime(e.target.value)}
+                    className="bg-white border border-stone-300 rounded-lg px-2 py-0.5 text-stone-950 font-bold text-xs focus:outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
+                    title="เลือกวัน-เวลาเริ่มต้น"
+                  />
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[11px] font-black text-stone-700 whitespace-nowrap">ถึง:</span>
+                  <input
+                    type="datetime-local"
+                    value={logEndDateTime}
+                    onChange={(e) => setLogEndDateTime(e.target.value)}
+                    className="bg-white border border-stone-300 rounded-lg px-2 py-0.5 text-stone-950 font-bold text-xs focus:outline-none focus:border-amber-500 cursor-pointer shadow-2xs"
+                    title="เลือกวัน-เวลาสิ้นสุด"
+                  />
+                </div>
+                {(logStartDateTime || logEndDateTime) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLogStartDateTime('');
+                      setLogEndDateTime('');
+                    }}
+                    className="p-1 bg-stone-200 hover:bg-red-100 hover:text-red-700 text-stone-600 rounded-lg transition cursor-pointer"
+                    title="ล้างช่วงวัน-เวลา"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Quick Presets */}
+              <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl border border-stone-200 text-[11px] font-black">
+                <button
+                  type="button"
+                  onClick={() => setQuickDatePreset('today')}
+                  className="px-2 py-1 rounded-lg hover:bg-white text-stone-700 hover:text-stone-950 transition cursor-pointer"
+                >
+                  วันนี้
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickDatePreset('7days')}
+                  className="px-2 py-1 rounded-lg hover:bg-white text-stone-700 hover:text-stone-950 transition cursor-pointer"
+                >
+                  7 วัน
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickDatePreset('all')}
+                  className={`px-2 py-1 rounded-lg transition cursor-pointer ${!logStartDateTime && !logEndDateTime ? 'bg-white text-stone-950 shadow-2xs' : 'text-stone-600 hover:bg-white'}`}
+                >
+                  ทั้งหมด
+                </button>
+              </div>
+
+              {/* Movement Type Filter */}
               <select
                 value={movementTypeFilter}
                 onChange={(e) => setMovementTypeFilter(e.target.value as any)}
-                className="bg-white border-2 border-stone-400 rounded-xl px-3 py-1.5 text-xs text-stone-950 font-black focus:outline-none cursor-pointer"
+                className="bg-white border-2 border-stone-400 rounded-xl px-3 py-1.5 text-xs text-stone-950 font-black focus:outline-none cursor-pointer shadow-xs"
               >
                 <option value="all" className="bg-white text-stone-950 font-bold">-- ทุกประเภท --</option>
                 <option value="IN" className="bg-white text-emerald-800 font-bold">🟢 สินค้าเข้า (Stock IN)</option>
                 <option value="OUT" className="bg-white text-amber-900 font-bold">🟠 สินค้าออก (Stock OUT)</option>
               </select>
-
-              <button
-                onClick={() => {
-                  setStockInQty('');
-                  setStockInCostPrice('');
-                  setIsStockInModalOpen(true);
-                }}
-                className="px-3.5 py-1.5 bg-emerald-600 text-white font-black text-xs rounded-xl shadow hover:bg-emerald-500 transition flex items-center gap-1 cursor-pointer border border-emerald-700"
-              >
-                <Plus className="w-4 h-4 text-white" />
-                <span>+ บันทึกรับสินค้าเข้า</span>
-              </button>
             </div>
           </div>
 
@@ -994,16 +1076,46 @@ export const AdminSupplierSettlementManager: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-200">
-                {stockMovements.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="py-8 text-center text-stone-700 font-black">
-                      ยังไม่มีประวัติสินค้าเข้า-ออกในระบบ (เมื่อขายสินค้าออกหรือรับสินค้าเข้า ระบบจะบันทึกประวัติที่นี่อัตโนมัติ)
-                    </td>
-                  </tr>
-                ) : (
-                  stockMovements
-                    .filter((m) => movementTypeFilter === 'all' || m.type === movementTypeFilter)
-                    .map((m) => (
+                {(() => {
+                  const filteredMovements = stockMovements.filter((m) => {
+                    if (movementTypeFilter !== 'all' && m.type !== movementTypeFilter) return false;
+                    const mTime = new Date(m.createdAt).getTime();
+                    if (!isNaN(mTime)) {
+                      if (logStartDateTime) {
+                        const startTime = new Date(logStartDateTime).getTime();
+                        if (!isNaN(startTime) && mTime < startTime) return false;
+                      }
+                      if (logEndDateTime) {
+                        const endTime = new Date(logEndDateTime).getTime();
+                        if (!isNaN(endTime) && mTime > endTime + 59999) return false;
+                      }
+                    }
+                    return true;
+                  });
+
+                  if (filteredMovements.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan={9} className="py-8 text-center text-stone-700 font-black">
+                          {stockMovements.length === 0
+                            ? 'ยังไม่มีประวัติสินค้าเข้า-ออกในระบบ (เมื่อขายสินค้าออกหรือรับสินค้าเข้า ระบบจะบันทึกประวัติที่นี่อัตโนมัติ)'
+                            : 'ไม่พบรายการประวัติตามช่วงวัน-เวลาหรือประเภทที่เลือก'}
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return filteredMovements.map((m) => {
+                    const prod = products.find(
+                      (p) => p.id === m.productId || p.title.toLowerCase() === (m.productTitle || '').toLowerCase()
+                    );
+                    const variant = prod?.variants?.find((v) => v.id === m.variantId || v.name === m.variantName);
+                    const effectiveColor = getEffectiveVariantColor(prod, {
+                      color: (m as any).color || variant?.color,
+                      name: m.variantName,
+                    });
+
+                    return (
                       <tr key={m.id} className="hover:bg-amber-50/60 transition">
                         <td className="py-3 px-3 font-mono text-[11px] text-stone-800 font-bold">
                           {new Date(m.createdAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
@@ -1020,8 +1132,22 @@ export const AdminSupplierSettlementManager: React.FC = () => {
                           )}
                         </td>
                         <td className="py-3 px-3 font-black">
-                          <span className="text-stone-950 block font-black">{m.productTitle}</span>
-                          <span className="text-stone-700 text-[11px] font-bold">{m.variantName}</span>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-stone-950 block font-black text-sm">{m.productTitle}</span>
+                              {effectiveColor && (
+                                <span className="inline-flex items-center gap-1 bg-stone-100 px-2 py-0.5 rounded-md border border-stone-300 shadow-2xs">
+                                  <ColorIndicator
+                                    color={effectiveColor}
+                                    dotClassName="w-3.5 h-3.5 ring-1 ring-black/20 shrink-0"
+                                    showLabel={true}
+                                    labelClassName="text-[10px] text-stone-950 font-black"
+                                  />
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-stone-700 text-[11px] font-bold">{m.variantName}</span>
+                          </div>
                         </td>
                         <td className="py-3 px-3 font-black text-amber-950">{m.supplierName}</td>
                         <td className="py-3 px-3 text-center font-black text-emerald-800 font-mono text-sm">
@@ -1042,8 +1168,9 @@ export const AdminSupplierSettlementManager: React.FC = () => {
                           </button>
                         </td>
                       </tr>
-                    ))
-                )}
+                    );
+                  });
+                })()}
               </tbody>
             </table>
           </div>
