@@ -36,11 +36,12 @@ export const AdminDashboard: React.FC = () => {
       }
       if (params.get('tab') === 'suppliers' || params.get('tab') === 'supplier') return 'suppliers';
       if (params.get('tab') === 'events' || params.get('tab') === 'market') return 'events';
-      if (params.get('tab') === 'pos' || params.get('tab') === 'cashier') return 'pos';
+      if (params.get('tab') === 'products') return 'products';
       if (params.get('tab') === 'orders') return 'orders';
       if (params.get('tab') === 'settings') return 'settings';
+      if (params.get('tab') === 'pos' || params.get('tab') === 'cashier') return 'pos';
     }
-    return 'products';
+    return 'pos';
   });
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
@@ -77,6 +78,10 @@ export const AdminDashboard: React.FC = () => {
           params.get('tab') === 'orders'
         ) {
           setActiveTab('orders');
+        } else if (
+          params.get('tab') === 'products'
+        ) {
+          setActiveTab('products');
         } else if (
           params.get('tab') === 'settings'
         ) {
@@ -259,18 +264,6 @@ export const AdminDashboard: React.FC = () => {
         {/* Tab Switcher Bar */}
         <div className="flex flex-wrap gap-2.5 border-b-2 border-amber-400/40 pb-3">
           <button
-            onClick={() => setActiveTab('products')}
-            className={`px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md cursor-pointer ${
-              activeTab === 'products'
-                ? 'bg-amber-400 text-stone-950 shadow-lg border-2 border-amber-500'
-                : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
-            }`}
-          >
-            <Layers className="w-4.5 h-4.5 text-stone-950" />
-            <span>จัดการสต๊อกสินค้า & ใส่ต้นทุน ({products.length})</span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('pos')}
             className={`px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md cursor-pointer ${
               activeTab === 'pos'
@@ -280,6 +273,18 @@ export const AdminDashboard: React.FC = () => {
           >
             <Store className="w-4.5 h-4.5 text-stone-950" />
             <span>คิดเงินหน้าร้าน (POS Cashier)</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('products')}
+            className={`px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md cursor-pointer ${
+              activeTab === 'products'
+                ? 'bg-amber-400 text-stone-950 shadow-lg border-2 border-amber-500'
+                : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
+            }`}
+          >
+            <Layers className="w-4.5 h-4.5 text-stone-950" />
+            <span>จัดการสต๊อกสินค้า & ใส่ต้นทุน ({products.length})</span>
           </button>
 
           <button
