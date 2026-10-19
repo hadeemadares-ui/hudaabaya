@@ -859,9 +859,9 @@ export const INITIAL_PRODUCTS: Product[] = [
         "sku": "HD-ABY-52",
         "price": 1250,
         "costPrice": 900,
-        "stockQuantity": 1,
+        "stockQuantity": 2,
         "color": "สีดำ (Black)",
-        "updatedAt": 1792334946424
+        "updatedAt": 1792371959463
       },
       {
         "id": "var-1791006148683-1",
@@ -871,7 +871,7 @@ export const INITIAL_PRODUCTS: Product[] = [
         "costPrice": 900,
         "stockQuantity": 2,
         "color": "สีดำ (Black)",
-        "updatedAt": 1792334946424
+        "updatedAt": 1792371959463
       },
       {
         "id": "var-1791006148683-2",
@@ -881,7 +881,7 @@ export const INITIAL_PRODUCTS: Product[] = [
         "costPrice": 900,
         "stockQuantity": 1,
         "color": "สีดำ (Black)",
-        "updatedAt": 1792334946424
+        "updatedAt": 1792371959463
       },
       {
         "id": "var-1791006148683-3",
@@ -891,13 +891,13 @@ export const INITIAL_PRODUCTS: Product[] = [
         "costPrice": 900,
         "stockQuantity": 1,
         "color": "สีดำ (Black)",
-        "updatedAt": 1792334946424
+        "updatedAt": 1792371959463
       }
     ],
     "rating": 5,
     "reviewsCount": 1,
     "isNew": true,
-    "updatedAt": 1792334946424
+    "updatedAt": 1792371959463
   },
   {
     "id": "huda-prod-1789990258574-997",

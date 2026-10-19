@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { X, Star, ShoppingBag, Check, ShieldCheck, Ruler, Sparkles, AlertCircle, Truck, Palette, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product, ProductVariant } from '../../types';
 import { useShop } from '../../context/ShopContext';
+import { ColorIndicator } from '../../utils/colorUtils';
 
 interface ProductModalProps {
   product: Product;
@@ -264,11 +265,16 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
 
               {/* Colors Available Badge */}
               {product.colors && product.colors.length > 0 && (
-                <div className="flex items-center gap-1.5 pt-1">
-                  <span className="text-xs text-sky-300 font-bold flex items-center gap-1 bg-dubai-black px-2.5 py-1 rounded-full border border-gold-400/30">
+                <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                  <span className="text-xs text-sky-200 font-bold flex items-center gap-1 bg-dubai-black px-2.5 py-1 rounded-full border border-gold-400/30">
                     <Palette className="w-3.5 h-3.5 text-gold-400" />
-                    <span>ตัวเลือกสี: {product.colors.join(', ')}</span>
+                    <span>ตัวเลือกสี:</span>
                   </span>
+                  {product.colors.map((c, idx) => (
+                    <span key={idx} className="text-xs text-stone-200 bg-dubai-black/80 px-2.5 py-0.5 rounded-full border border-gold-400/20 shadow-xs">
+                      <ColorIndicator color={c} dotClassName="w-3 h-3" />
+                    </span>
+                  ))}
                 </div>
               )}
 
@@ -342,8 +348,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                         </div>
                         
                         {v.color && (
-                          <span className="text-[10px] text-sky-300 block font-serif mt-0.5">
-                            {v.color}
+                          <span className="text-[10px] text-sky-200 block font-serif mt-0.5">
+                            <ColorIndicator color={v.color} dotClassName="w-2.5 h-2.5" />
                           </span>
                         )}
 

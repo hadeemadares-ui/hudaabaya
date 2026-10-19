@@ -6,6 +6,7 @@ import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CategoryType } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
 import { sortProductsNatural } from '../../utils/productUtils';
+import { ColorIndicator } from '../../utils/colorUtils';
 
 export interface CategoryOptionItem {
   id: string;
@@ -1604,10 +1605,13 @@ export const AdminProductManager: React.FC = () => {
                           {getCategoryLabel(product.category)}
                         </span>
                         {product.colors && product.colors.length > 0 && (
-                          <span className="text-xs font-black text-emerald-950 bg-emerald-100 px-2.5 py-0.5 rounded-lg border border-emerald-400 flex items-center gap-1">
-                            <Palette className="w-3.5 h-3.5 text-emerald-700" />
-                            {product.colors.join(', ')}
-                          </span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {product.colors.map((c, cIdx) => (
+                              <span key={cIdx} className="text-xs font-black text-stone-900 bg-stone-100 px-2 py-0.5 rounded-lg border border-stone-300 flex items-center gap-1 shadow-2xs">
+                                <ColorIndicator color={c} dotClassName="w-3 h-3" />
+                              </span>
+                            ))}
+                          </div>
                         )}
                       </div>
                       <h4 className="font-serif font-black text-base sm:text-lg text-stone-950 mt-1">
@@ -1720,8 +1724,8 @@ export const AdminProductManager: React.FC = () => {
                               </div>
                             </div>
                             {variant.color && (
-                              <span className="text-xs text-amber-950 block font-black mb-1.5">
-                                🎨 {variant.color}
+                              <span className="text-xs text-amber-950 flex items-center font-black mb-1.5">
+                                <ColorIndicator color={variant.color} dotClassName="w-3.5 h-3.5" />
                               </span>
                             )}
                             <div className="flex flex-wrap items-center gap-1.5 text-xs mt-1.5">
@@ -3602,7 +3606,9 @@ export const AdminProductManager: React.FC = () => {
               {quickStockAdjustItem.color && (
                 <div className="text-xs font-bold text-stone-700 flex items-center justify-between">
                   <span>สี:</span>
-                  <span>{quickStockAdjustItem.color}</span>
+                  <span className="font-black text-stone-900 bg-white px-2 py-0.5 rounded-lg border border-amber-300">
+                    <ColorIndicator color={quickStockAdjustItem.color} dotClassName="w-3.5 h-3.5" />
+                  </span>
                 </div>
               )}
               <div className="text-xs font-bold text-stone-700 flex items-center justify-between pt-1 border-t border-amber-200/60">
@@ -3719,7 +3725,9 @@ export const AdminProductManager: React.FC = () => {
               {quickStockInItem.color && (
                 <div className="text-xs font-bold text-stone-700 flex items-center justify-between">
                   <span>สี:</span>
-                  <span className="font-black text-stone-900">🎨 {quickStockInItem.color}</span>
+                  <span className="font-black text-stone-900 bg-white px-2.5 py-1 rounded-lg border border-emerald-300 shadow-2xs">
+                    <ColorIndicator color={quickStockInItem.color} dotClassName="w-4 h-4 ring-1 ring-black/10" />
+                  </span>
                 </div>
               )}
               <div className="text-xs font-bold text-stone-700 flex items-center justify-between pt-1.5 border-t border-emerald-200">
