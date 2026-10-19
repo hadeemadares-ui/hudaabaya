@@ -964,32 +964,32 @@ export const AdminProductManager: React.FC = () => {
 
   // Standard Dubai Abaya Default Sizes
   const DEFAULT_DUBAI_SIZES = [
-    { name: 'Size 52 (ส่วนสูง ~150-155 ซม. / ยาว 52")', sku: 'HD-ABY-52', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
-    { name: 'Size 54 (ส่วนสูง ~155-160 ซม. / ยาว 54")', sku: 'HD-ABY-54', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
-    { name: 'Size 56 (ส่วนสูง ~160-165 ซม. / ยาว 56")', sku: 'HD-ABY-56', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
-    { name: 'Size 58 (ส่วนสูง ~165-170 ซม. / ยาว 58")', sku: 'HD-ABY-58', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
-    { name: 'Size 60 (ส่วนสูง ~170-175 ซม. / ยาว 60")', sku: 'HD-ABY-60', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
+    { name: 'Size 52 (ส่วนสูง ~150-155 ซม. / ยาว 52")', sku: 'HD-ABY-52', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
+    { name: 'Size 54 (ส่วนสูง ~155-160 ซม. / ยาว 54")', sku: 'HD-ABY-54', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
+    { name: 'Size 56 (ส่วนสูง ~160-165 ซม. / ยาว 56")', sku: 'HD-ABY-56', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
+    { name: 'Size 58 (ส่วนสูง ~165-170 ซม. / ยาว 58")', sku: 'HD-ABY-58', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
+    { name: 'Size 60 (ส่วนสูง ~170-175 ซม. / ยาว 60")', sku: 'HD-ABY-60', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
   ];
 
   // Standard Dubai Perfume Default Volumes/Sizes
   const DEFAULT_PERFUME_SIZES = [
-    { name: 'ขวดสเปรย์ 50 ml (EDP Spray)', sku: 'HD-PRF-50ML', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
-    { name: 'ขวดสเปรย์ 100 ml (EDP Premium Spray)', sku: 'HD-PRF-100ML', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
-    { name: 'ขวดแก้วคริสตัล 12 ml (Attar Pure Oil)', sku: 'HD-PRF-12ML', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
-    { name: 'ขวดเทสเตอร์ 3 ml (Sample Tester)', sku: 'HD-PRF-3ML', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
+    { name: 'ขวดสเปรย์ 50 ml (EDP Spray)', sku: 'HD-PRF-50ML', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
+    { name: 'ขวดสเปรย์ 100 ml (EDP Premium Spray)', sku: 'HD-PRF-100ML', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
+    { name: 'ขวดแก้วคริสตัล 12 ml (Attar Pure Oil)', sku: 'HD-PRF-12ML', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
+    { name: 'ขวดเทสเตอร์ 3 ml (Sample Tester)', sku: 'HD-PRF-3ML', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
   ];
 
   // Standard Dubai Incense Default Variants
   const DEFAULT_INCENSE_SIZES = [
-    { name: 'ขวด/กระปุก 50g (Standard Bukhoor)', sku: 'HD-INC-50G', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
-    { name: 'ขวด/กระปุก 100g (Premium Bukhoor)', sku: 'HD-INC-100G', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
-    { name: 'เซ็ตเตาเผาหอม + ถ่านหอมดูไบ', sku: 'HD-INC-SET', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
+    { name: 'ขวด/กระปุก 50g (Standard Bukhoor)', sku: 'HD-INC-50G', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
+    { name: 'ขวด/กระปุก 100g (Premium Bukhoor)', sku: 'HD-INC-100G', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
+    { name: 'เซ็ตเตาเผาหอม + ถ่านหอมดูไบ', sku: 'HD-INC-SET', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
   ];
 
   // Standard Other Items Default Variants
   const DEFAULT_OTHER_SIZES = [
-    { name: 'ชิ้น/กล่อง (Standard)', sku: 'HD-OTH-STD', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
-    { name: 'แพ็กสุดคุ้ม (Pack)', sku: 'HD-OTH-PACK', price: 0, costPrice: 0, stockQuantity: 999, color: '' },
+    { name: 'ชิ้น/กล่อง (Standard)', sku: 'HD-OTH-STD', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
+    { name: 'แพ็กสุดคุ้ม (Pack)', sku: 'HD-OTH-PACK', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
   ];
 
   // Size & Color Variants State (เริ่มต้นเป็นค่าว่าง [] เพื่อให้ผู้ใช้กดเลือกเฉพาะขนาดที่ต้องการเอง)
@@ -1314,7 +1314,7 @@ export const AdminProductManager: React.FC = () => {
         sku: skuCode || `SKU-${Date.now().toString().slice(-4)}`,
         price: 0,
         costPrice: 0,
-        stockQuantity: 999,
+        stockQuantity: 0,
         color: '',
       },
     ]);
@@ -1331,7 +1331,7 @@ export const AdminProductManager: React.FC = () => {
         sku: `SKU-${variants.length + 1}`, 
         price: 0, 
         costPrice: 0,
-        stockQuantity: 999, 
+        stockQuantity: 0, 
         color: '', 
       },
     ]);
