@@ -7,6 +7,7 @@ import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CartItem, Order } from '../../types';
 import { DEFAULT_LOGO_BASE64 } from '../../data/logoData';
 import { sortProductsNatural } from '../../utils/productUtils';
+import { ColorIndicator, getEffectiveVariantColor } from '../../utils/colorUtils';
 
 export const AdminPOSManager: React.FC = () => {
   const { products, createOrder, formatPrice, storeSettings } = useShop();
@@ -393,13 +394,14 @@ export const AdminPOSManager: React.FC = () => {
                         {prod.variants.map((variant) => {
                           const isOutOfStock = variant.stockQuantity <= 0;
                           const isLowStock = variant.stockQuantity > 0 && variant.stockQuantity <= (storeSettings.lowStockThreshold || 3);
+                          const vColor = getEffectiveVariantColor(prod, variant);
 
                           return (
                             <button
                               key={variant.id}
                               disabled={isOutOfStock}
                               onClick={() => handleAddToCart(prod, variant)}
-                              className={`group relative text-[11px] px-2.5 py-1.5 rounded-xl font-black border transition flex items-center justify-between gap-2 cursor-pointer ${
+                              className={`group relative text-[11px] px-2.5 py-1.5 rounded-xl font-black border transition flex items-center justify-between gap-2.5 cursor-pointer ${
                                 isOutOfStock
                                   ? 'bg-stone-100 border-stone-300 text-stone-400 line-through opacity-50 cursor-not-allowed'
                                   : isLowStock
@@ -407,11 +409,18 @@ export const AdminPOSManager: React.FC = () => {
                                   : 'bg-white hover:bg-amber-400 text-stone-950 border-stone-300 hover:border-amber-500 shadow-xs'
                               }`}
                             >
-                              <span>{variant.name}</span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span>{variant.name}</span>
+                                {vColor && (
+                                  <span className="inline-flex items-center gap-1 bg-stone-100 group-hover:bg-white px-2 py-0.5 rounded-md border border-stone-300 shadow-2xs">
+                                    <ColorIndicator color={vColor} dotClassName="w-3.5 h-3.5 ring-1 ring-black/20 shrink-0" showLabel={true} labelClassName="text-[10px] text-stone-950 font-black" />
+                                  </span>
+                                )}
+                              </div>
 
                               {/* Dynamic Stock Badge */}
                               <span
-                                className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-black shadow-xs ${
+                                className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-black shadow-xs shrink-0 ${
                                   isOutOfStock
                                     ? 'bg-red-600 text-white'
                                     : isLowStock
@@ -955,6 +964,7 @@ export const AdminPOSManager: React.FC = () => {
               <div className="flex flex-wrap gap-2">
                 {previewImageProduct.variants.map((v) => {
                   const isOut = v.stockQuantity <= 0;
+                  const vColor = getEffectiveVariantColor(previewImageProduct, v);
                   return (
                     <button
                       key={v.id}
@@ -963,17 +973,26 @@ export const AdminPOSManager: React.FC = () => {
                         handleAddToCart(previewImageProduct, v);
                         setPreviewImageProduct(null);
                       }}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-black border transition flex items-center gap-2 cursor-pointer ${
+                      className={`px-3.5 py-2 rounded-xl text-xs font-black border transition flex items-center justify-between gap-2.5 cursor-pointer ${
                         isOut
                           ? 'bg-stone-100 border-stone-300 text-stone-400 line-through opacity-50 cursor-not-allowed'
                           : 'bg-amber-400 hover:bg-amber-300 text-stone-950 border-amber-500 shadow-md'
                       }`}
                     >
-                      <span>{v.name} {v.color ? `(${v.color})` : ''}</span>
-                      <span className="font-serif">฿{v.price.toLocaleString()}</span>
-                      <span className="text-[10px] bg-stone-950 text-white px-2 py-0.5 rounded-full font-mono">
-                        {isOut ? 'หมด' : `${v.stockQuantity} ชิ้น`}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span>{v.name}</span>
+                        {vColor && (
+                          <span className="bg-white/90 px-2 py-0.5 rounded-lg border border-stone-300 shadow-2xs">
+                            <ColorIndicator color={vColor} dotClassName="w-3.5 h-3.5 ring-1 ring-black/20 shrink-0" showLabel={true} labelClassName="text-[10px] text-stone-950 font-black" />
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-serif">฿{v.price.toLocaleString()}</span>
+                        <span className="text-[10px] bg-stone-950 text-white px-2 py-0.5 rounded-full font-mono">
+                          {isOut ? 'หมด' : `${v.stockQuantity} ชิ้น`}
+                        </span>
+                      </div>
                     </button>
                   );
                 })}

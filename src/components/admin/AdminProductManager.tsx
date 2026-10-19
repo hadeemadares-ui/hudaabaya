@@ -6,7 +6,7 @@ import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CategoryType } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
 import { sortProductsNatural } from '../../utils/productUtils';
-import { ColorIndicator } from '../../utils/colorUtils';
+import { ColorIndicator, getEffectiveVariantColor } from '../../utils/colorUtils';
 
 export interface CategoryOptionItem {
   id: string;
@@ -1870,9 +1870,9 @@ export const AdminProductManager: React.FC = () => {
                                 </button>
                               </div>
                             </div>
-                            {variant.color && (
+                            {getEffectiveVariantColor(product, variant) && (
                               <span className="text-xs text-amber-950 flex items-center font-black mb-1.5">
-                                <ColorIndicator color={variant.color} dotClassName="w-3.5 h-3.5" />
+                                <ColorIndicator color={getEffectiveVariantColor(product, variant)} dotClassName="w-3.5 h-3.5" />
                               </span>
                             )}
                             <div className="flex flex-wrap items-center gap-1.5 text-xs mt-1.5">

@@ -117,3 +117,44 @@ export const ColorIndicator: React.FC<ColorIndicatorProps> = ({
     </span>
   );
 };
+
+export function detectColorName(str?: string | null): string | null {
+  if (!str) return null;
+  const s = str.toLowerCase();
+  if (s.includes('ดำ') || s.includes('black')) return 'สีดำ (Black)';
+  if (s.includes('ขาว') || s.includes('white')) return 'สีขาว (White)';
+  if (s.includes('ทอง') || s.includes('gold')) return 'สีทอง (Gold)';
+  if (s.includes('น้ำตาล') || s.includes('brown')) return 'สีน้ำตาล (Brown)';
+  if (s.includes('ชมพู') || s.includes('pink') || s.includes('rose')) return 'สีชมพู (Pink)';
+  if (s.includes('ฟ้า') || s.includes('sky')) return 'สีฟ้า (Sky Blue)';
+  if (s.includes('กรม') || s.includes('navy')) return 'สีกรมท่า (Navy)';
+  if (s.includes('น้ำเงิน') || s.includes('blue')) return 'สีน้ำเงิน (Blue)';
+  if (s.includes('เขียว') || s.includes('green') || s.includes('emerald')) return 'สีเขียว (Green)';
+  if (s.includes('แดง') || s.includes('red') || s.includes('wine')) return 'สีแดง (Red)';
+  if (s.includes('ม่วง') || s.includes('purple') || s.includes('violet')) return 'สีม่วง (Purple)';
+  if (s.includes('เงิน') || s.includes('silver')) return 'สีเงิน (Silver)';
+  if (s.includes('เทา') || s.includes('gray') || s.includes('grey')) return 'สีเทา (Gray)';
+  if (s.includes('ส้ม') || s.includes('orange')) return 'สีส้ม (Orange)';
+  if (s.includes('เหลือง') || s.includes('yellow')) return 'สีเหลือง (Yellow)';
+  if (s.includes('ครีม') || s.includes('เบจ') || s.includes('beige')) return 'สีครีม (Beige)';
+  return null;
+}
+
+export function getEffectiveVariantColor(
+  prod?: { title?: string; category?: string; colors?: string[] } | null,
+  variant?: { color?: string | null; name?: string } | null
+): string {
+  if (variant?.color && variant.color.trim()) return variant.color.trim();
+  if (prod?.colors && Array.isArray(prod.colors) && prod.colors.length > 0 && prod.colors[0]?.trim()) {
+    return prod.colors[0].trim();
+  }
+  const fromVariant = detectColorName(variant?.name);
+  if (fromVariant) return fromVariant;
+  const fromTitle = detectColorName(prod?.title);
+  if (fromTitle) return fromTitle;
+  if (prod?.category === 'perfume' || prod?.category === 'incense') {
+    return 'สีทอง (Gold)';
+  }
+  return 'สีดำ (Black)';
+}
+
