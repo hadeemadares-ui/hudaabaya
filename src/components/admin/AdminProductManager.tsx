@@ -74,26 +74,49 @@ export const AdminProductManager: React.FC = () => {
   ], []);
 
   const stockInNoteOptions = useMemo(() => {
-    const customList = customOptions?.stockInNotes || [];
-    return Array.from(new Set([...DEFAULT_STOCK_IN_NOTE_PRESETS, ...customList])).filter(Boolean);
+    if (customOptions?.stockInNotes && Array.isArray(customOptions.stockInNotes)) {
+      return customOptions.stockInNotes;
+    }
+    return DEFAULT_STOCK_IN_NOTE_PRESETS;
   }, [customOptions?.stockInNotes, DEFAULT_STOCK_IN_NOTE_PRESETS]);
+
+  const [editingNoteItem, setEditingNoteItem] = useState<string | null>(null);
+  const [editingNoteText, setEditingNoteText] = useState<string>('');
 
   const handleSaveStockInNoteOption = (noteText: string) => {
     const trimmed = noteText.trim();
     if (!trimmed) return;
-    const current = customOptions?.stockInNotes || [];
+    const current = stockInNoteOptions;
     if (!current.includes(trimmed)) {
       const updated = [trimmed, ...current];
       saveCustomOption('stockInNotes', updated);
     }
   };
 
+  const handleUpdateStockInNoteOption = (oldText: string, newText: string) => {
+    const trimmed = newText.trim();
+    if (!trimmed || trimmed === oldText) {
+      setEditingNoteItem(null);
+      return;
+    }
+    const current = stockInNoteOptions;
+    const updated = current.map((item) => (item === oldText ? trimmed : item));
+    saveCustomOption('stockInNotes', updated);
+    if (quickStockInNote === oldText) {
+      setQuickStockInNote(trimmed);
+    }
+    setEditingNoteItem(null);
+  };
+
   const handleDeleteStockInNoteOption = (noteToDelete: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm(`คุณต้องการลบ "${noteToDelete}" ออกจากรายการตัวเลือกใช่หรือไม่?`)) {
-      const current = customOptions?.stockInNotes || [];
+      const current = stockInNoteOptions;
       const updated = current.filter((item) => item !== noteToDelete);
       saveCustomOption('stockInNotes', updated);
+      if (quickStockInNote === noteToDelete) {
+        setQuickStockInNote('');
+      }
     }
   };
 
@@ -110,26 +133,49 @@ export const AdminProductManager: React.FC = () => {
   const stockInSupplierDropdownRef = useRef<HTMLDivElement>(null);
 
   const stockInSupplierOptions = useMemo(() => {
-    const customList = customOptions?.suppliers || [];
-    return Array.from(new Set([...DEFAULT_SUPPLIER_PRESETS, ...customList])).filter(Boolean);
+    if (customOptions?.suppliers && Array.isArray(customOptions.suppliers)) {
+      return customOptions.suppliers;
+    }
+    return DEFAULT_SUPPLIER_PRESETS;
   }, [customOptions?.suppliers, DEFAULT_SUPPLIER_PRESETS]);
+
+  const [editingSupplierItem, setEditingSupplierItem] = useState<string | null>(null);
+  const [editingSupplierText, setEditingSupplierText] = useState<string>('');
 
   const handleSaveSupplierOption = (supplierName: string) => {
     const trimmed = supplierName.trim();
     if (!trimmed) return;
-    const current = customOptions?.suppliers || [];
+    const current = stockInSupplierOptions;
     if (!current.includes(trimmed)) {
       const updated = [trimmed, ...current];
       saveCustomOption('suppliers', updated);
     }
   };
 
+  const handleUpdateSupplierOption = (oldText: string, newText: string) => {
+    const trimmed = newText.trim();
+    if (!trimmed || trimmed === oldText) {
+      setEditingSupplierItem(null);
+      return;
+    }
+    const current = stockInSupplierOptions;
+    const updated = current.map((item) => (item === oldText ? trimmed : item));
+    saveCustomOption('suppliers', updated);
+    if (quickStockInSupplier === oldText) {
+      setQuickStockInSupplier(trimmed);
+    }
+    setEditingSupplierItem(null);
+  };
+
   const handleDeleteSupplierOption = (supplierToDelete: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm(`คุณต้องการลบ "${supplierToDelete}" ออกจากรายการตัวเลือกใช่หรือไม่?`)) {
-      const current = customOptions?.suppliers || [];
+      const current = stockInSupplierOptions;
       const updated = current.filter((item) => item !== supplierToDelete);
       saveCustomOption('suppliers', updated);
+      if (quickStockInSupplier === supplierToDelete) {
+        setQuickStockInSupplier('');
+      }
     }
   };
 
@@ -3991,9 +4037,19 @@ export const AdminProductManager: React.FC = () => {
 
                 {/* Dropdown Menu - Opens UPWARDS so it never covers anything below */}
                 {isStockInSupplierDropdownOpen && (
-                  <div className="absolute z-50 left-0 right-0 bottom-full mb-2 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl overflow-hidden max-h-52 overflow-y-auto animate-scale-up">
+                  <div className="absolute z-50 left-0 right-0 bottom-full mb-2 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto animate-scale-up">
                     <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 flex items-center justify-between text-[11px] font-black text-amber-950 sticky top-0 z-10">
-                      <span>ตัวเลือก Supplier / แหล่งนำเข้า ({stockInSupplierOptions.length})</span>
+                      <div className="flex items-center gap-2">
+                        <span>ตัวเลือก Supplier ({stockInSupplierOptions.length})</span>
+                        <button
+                          type="button"
+                          onClick={() => saveCustomOption('suppliers', DEFAULT_SUPPLIER_PRESETS)}
+                          className="text-[10px] text-stone-500 hover:text-amber-800 underline font-normal cursor-pointer"
+                          title="รีเซ็ตเป็นค่าเริ่มต้น"
+                        >
+                          รีเซ็ต
+                        </button>
+                      </div>
                       <button
                         type="button"
                         onClick={() => setIsStockInSupplierDropdownOpen(false)}
@@ -4018,11 +4074,47 @@ export const AdminProductManager: React.FC = () => {
                       </button>
                     )}
 
-                    {/* List of presets and saved suppliers */}
+                    {/* List of presets and saved suppliers with Edit & Delete */}
                     <div className="divide-y divide-stone-100">
                       {stockInSupplierOptions.map((item) => {
                         const isSelected = quickStockInSupplier === item;
-                        const isPreset = DEFAULT_SUPPLIER_PRESETS.includes(item);
+                        if (editingSupplierItem === item) {
+                          return (
+                            <div key={item} className="flex items-center gap-1.5 p-2 bg-amber-50/90 border-y border-amber-300">
+                              <input
+                                type="text"
+                                autoFocus
+                                value={editingSupplierText}
+                                onChange={(e) => setEditingSupplierText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleUpdateSupplierOption(item, editingSupplierText);
+                                  } else if (e.key === 'Escape') {
+                                    setEditingSupplierItem(null);
+                                  }
+                                }}
+                                className="flex-1 px-2.5 py-1 text-xs border-2 border-amber-500 rounded-lg bg-white font-bold text-stone-900 focus:outline-none shadow-inner"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateSupplierOption(item, editingSupplierText)}
+                                className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition cursor-pointer shadow-xs shrink-0"
+                                title="บันทึกการแก้ไข"
+                              >
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingSupplierItem(null)}
+                                className="p-1.5 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-lg transition cursor-pointer shadow-xs shrink-0"
+                                title="ยกเลิก"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        }
                         return (
                           <div
                             key={item}
@@ -4043,16 +4135,28 @@ export const AdminProductManager: React.FC = () => {
                                 <span className="text-amber-800 text-[11px] font-black shrink-0 ml-1.5">✓ เลือกอยู่</span>
                               )}
                             </button>
-                            {!isPreset && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingSupplierItem(item);
+                                  setEditingSupplierText(item);
+                                }}
+                                className="text-stone-400 hover:text-amber-700 p-1 rounded hover:bg-stone-200/70 transition cursor-pointer"
+                                title="แก้ไขตัวเลือกนี้"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
                               <button
                                 type="button"
                                 onClick={(e) => handleDeleteSupplierOption(item, e)}
-                                className="opacity-0 group-hover:opacity-100 text-stone-400 hover:text-rose-600 p-1 rounded transition cursor-pointer"
+                                className="text-stone-400 hover:text-rose-600 p-1 rounded hover:bg-stone-200/70 transition cursor-pointer"
                                 title="ลบตัวเลือกนี้"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
-                            )}
+                            </div>
                           </div>
                         );
                       })}
@@ -4123,9 +4227,19 @@ export const AdminProductManager: React.FC = () => {
 
                 {/* Dropdown Menu - Opens UPWARDS (bottom-full mb-2) so it NEVER covers the action buttons below */}
                 {isStockInNoteDropdownOpen && (
-                  <div className="absolute z-50 left-0 right-0 bottom-full mb-2 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl overflow-hidden max-h-52 overflow-y-auto animate-scale-up">
+                  <div className="absolute z-50 left-0 right-0 bottom-full mb-2 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto animate-scale-up">
                     <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 flex items-center justify-between text-[11px] font-black text-amber-950 sticky top-0 z-10">
-                      <span>ตัวเลือกหมายเหตุ / ล็อต ({stockInNoteOptions.length})</span>
+                      <div className="flex items-center gap-2">
+                        <span>ตัวเลือกหมายเหตุ / ล็อต ({stockInNoteOptions.length})</span>
+                        <button
+                          type="button"
+                          onClick={() => saveCustomOption('stockInNotes', DEFAULT_STOCK_IN_NOTE_PRESETS)}
+                          className="text-[10px] text-stone-500 hover:text-amber-800 underline font-normal cursor-pointer"
+                          title="รีเซ็ตเป็นค่าเริ่มต้น"
+                        >
+                          รีเซ็ต
+                        </button>
+                      </div>
                       <button
                         type="button"
                         onClick={() => setIsStockInNoteDropdownOpen(false)}
@@ -4150,11 +4264,47 @@ export const AdminProductManager: React.FC = () => {
                       </button>
                     )}
 
-                    {/* List of presets and saved notes */}
+                    {/* List of presets and saved notes with Edit & Delete */}
                     <div className="divide-y divide-stone-100">
                       {stockInNoteOptions.map((item) => {
                         const isSelected = quickStockInNote === item;
-                        const isPreset = DEFAULT_STOCK_IN_NOTE_PRESETS.includes(item);
+                        if (editingNoteItem === item) {
+                          return (
+                            <div key={item} className="flex items-center gap-1.5 p-2 bg-amber-50/90 border-y border-amber-300">
+                              <input
+                                type="text"
+                                autoFocus
+                                value={editingNoteText}
+                                onChange={(e) => setEditingNoteText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleUpdateStockInNoteOption(item, editingNoteText);
+                                  } else if (e.key === 'Escape') {
+                                    setEditingNoteItem(null);
+                                  }
+                                }}
+                                className="flex-1 px-2.5 py-1 text-xs border-2 border-amber-500 rounded-lg bg-white font-bold text-stone-900 focus:outline-none shadow-inner"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateStockInNoteOption(item, editingNoteText)}
+                                className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition cursor-pointer shadow-xs shrink-0"
+                                title="บันทึกการแก้ไข"
+                              >
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingNoteItem(null)}
+                                className="p-1.5 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-lg transition cursor-pointer shadow-xs shrink-0"
+                                title="ยกเลิก"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        }
                         return (
                           <div
                             key={item}
@@ -4175,16 +4325,28 @@ export const AdminProductManager: React.FC = () => {
                                 <span className="text-amber-800 text-[11px] font-black shrink-0 ml-1.5">✓ เลือกอยู่</span>
                               )}
                             </button>
-                            {!isPreset && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingNoteItem(item);
+                                  setEditingNoteText(item);
+                                }}
+                                className="text-stone-400 hover:text-amber-700 p-1 rounded hover:bg-stone-200/70 transition cursor-pointer"
+                                title="แก้ไขตัวเลือกนี้"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
                               <button
                                 type="button"
                                 onClick={(e) => handleDeleteStockInNoteOption(item, e)}
-                                className="opacity-0 group-hover:opacity-100 text-stone-400 hover:text-rose-600 p-1 rounded transition cursor-pointer"
+                                className="text-stone-400 hover:text-rose-600 p-1 rounded hover:bg-stone-200/70 transition cursor-pointer"
                                 title="ลบตัวเลือกนี้"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
-                            )}
+                            </div>
                           </div>
                         );
                       })}
