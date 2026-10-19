@@ -97,6 +97,42 @@ export const AdminProductManager: React.FC = () => {
     }
   };
 
+  // Supplier Options & Dropdown State
+  const DEFAULT_SUPPLIER_PRESETS = useMemo(() => [
+    'โรงงานอาบายะห์ดูไบ',
+    'ซัพพลายเออร์น้ำหอมดูไบ',
+    'ร้านฝากขาย A (Consignment A)',
+    'ร้านฝากขาย B (Consignment B)',
+    'โรงงานตัดเย็บเดรสอาหรับ UAE',
+  ], []);
+
+  const [isStockInSupplierDropdownOpen, setIsStockInSupplierDropdownOpen] = useState<boolean>(false);
+  const stockInSupplierDropdownRef = useRef<HTMLDivElement>(null);
+
+  const stockInSupplierOptions = useMemo(() => {
+    const customList = customOptions?.suppliers || [];
+    return Array.from(new Set([...DEFAULT_SUPPLIER_PRESETS, ...customList])).filter(Boolean);
+  }, [customOptions?.suppliers, DEFAULT_SUPPLIER_PRESETS]);
+
+  const handleSaveSupplierOption = (supplierName: string) => {
+    const trimmed = supplierName.trim();
+    if (!trimmed) return;
+    const current = customOptions?.suppliers || [];
+    if (!current.includes(trimmed)) {
+      const updated = [trimmed, ...current];
+      saveCustomOption('suppliers', updated);
+    }
+  };
+
+  const handleDeleteSupplierOption = (supplierToDelete: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm(`คุณต้องการลบ "${supplierToDelete}" ออกจากรายการตัวเลือกใช่หรือไม่?`)) {
+      const current = customOptions?.suppliers || [];
+      const updated = current.filter((item) => item !== supplierToDelete);
+      saveCustomOption('suppliers', updated);
+    }
+  };
+
   // Stock Editing Lock & PIN Modal State
   const [isStockEditUnlocked, setIsStockEditUnlocked] = useState(false);
   const [stockPinModalOpen, setStockPinModalOpen] = useState(false);
@@ -187,14 +223,17 @@ export const AdminProductManager: React.FC = () => {
       if (stockInNoteDropdownRef.current && !stockInNoteDropdownRef.current.contains(e.target as Node)) {
         setIsStockInNoteDropdownOpen(false);
       }
+      if (stockInSupplierDropdownRef.current && !stockInSupplierDropdownRef.current.contains(e.target as Node)) {
+        setIsStockInSupplierDropdownOpen(false);
+      }
     };
-    if (isStockInNoteDropdownOpen) {
+    if (isStockInNoteDropdownOpen || isStockInSupplierDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isStockInNoteDropdownOpen]);
+  }, [isStockInNoteDropdownOpen, isStockInSupplierDropdownOpen]);
 
   const handleOpenQuickStockIn = (prod: Product, v: ProductVariant) => {
     const costVal = v.costPrice ?? (v.price ? Math.round(v.price * 0.5) : 0);
@@ -215,6 +254,7 @@ export const AdminProductManager: React.FC = () => {
     setQuickStockInSupplier(defaultSupplier);
     setQuickStockInNote('');
     setIsStockInNoteDropdownOpen(false);
+    setIsStockInSupplierDropdownOpen(false);
   };
 
   const handleExecuteQuickStockIn = (e?: React.FormEvent) => {
@@ -227,9 +267,13 @@ export const AdminProductManager: React.FC = () => {
     }
     const cost = parseFloat(quickStockInCost) || quickStockInItem.costPrice || 0;
     const noteVal = quickStockInNote.trim();
+    const supplierVal = quickStockInSupplier.trim();
 
     if (noteVal) {
       handleSaveStockInNoteOption(noteVal);
+    }
+    if (supplierVal) {
+      handleSaveSupplierOption(supplierVal);
     }
 
     recordStockIn({
@@ -237,7 +281,7 @@ export const AdminProductManager: React.FC = () => {
       variantId: quickStockInItem.variantId,
       quantity: qty,
       costPrice: cost,
-      supplierName: quickStockInSupplier.trim() || 'โรงงานอาบายะห์ดูไบ',
+      supplierName: supplierVal || 'โรงงานอาบายะห์ดูไบ',
       note: noteVal,
     });
 
@@ -3885,18 +3929,136 @@ export const AdminProductManager: React.FC = () => {
                 )}
               </div>
 
-              {/* Supplier Selection */}
-              <div>
-                <label className="text-xs font-black text-stone-950 block mb-1">
-                  Supplier / แหล่งนำเข้า
-                </label>
-                <input
-                  type="text"
-                  value={quickStockInSupplier}
-                  onChange={(e) => setQuickStockInSupplier(e.target.value)}
-                  placeholder="เช่น โรงงานอาบายะห์ดูไบ"
-                  className="w-full px-3 py-2 bg-white border-2 border-stone-300 focus:border-amber-500 rounded-xl text-stone-950 font-bold text-xs focus:outline-none transition shadow-xs"
-                />
+              {/* Supplier Selection Dropdown with Custom Add (Opens UPWARDS matching Note field) */}
+              <div className="relative" ref={stockInSupplierDropdownRef}>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-black text-stone-950">
+                    Supplier / แหล่งนำเข้า
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {quickStockInSupplier && (
+                      <button
+                        type="button"
+                        onClick={() => setQuickStockInSupplier('')}
+                        className="text-[11px] text-stone-400 hover:text-stone-700 cursor-pointer font-bold"
+                      >
+                        ล้างค่าว่าง
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setIsStockInSupplierDropdownOpen((prev) => !prev)}
+                      className="text-[11px] font-bold text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200 transition cursor-pointer flex items-center gap-1"
+                    >
+                      <span>{isStockInSupplierDropdownOpen ? 'ปิดตัวเลือก ▲' : 'เลือกจากรายการ ▼'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={quickStockInSupplier}
+                    onChange={(e) => setQuickStockInSupplier(e.target.value)}
+                    placeholder="พิมพ์เอง หรือกด 'เลือกจากรายการ' (เว้นว่างได้)"
+                    className="w-full pl-3 pr-10 py-2 bg-white border-2 border-stone-300 focus:border-amber-500 rounded-xl text-stone-950 font-bold text-xs focus:outline-none transition shadow-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsStockInSupplierDropdownOpen((prev) => !prev)}
+                    className="absolute right-2 p-1 text-stone-500 hover:text-stone-800 transition cursor-pointer rounded-lg hover:bg-stone-100"
+                    title="เปิด/ปิดรายการตัวเลือก"
+                  >
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isStockInSupplierDropdownOpen ? 'rotate-180 text-amber-600' : ''}`} />
+                  </button>
+                </div>
+
+                {/* Inline Quick Save Badge if user typed a new supplier not yet in list */}
+                {quickStockInSupplier.trim() && !stockInSupplierOptions.some((o) => o.toLowerCase() === quickStockInSupplier.trim().toLowerCase()) && (
+                  <div className="mt-1.5 flex items-center justify-between bg-emerald-50 border border-emerald-300 rounded-lg px-2.5 py-1">
+                    <span className="text-[11px] text-emerald-900 font-bold truncate">
+                      💡 ซัพพลายเออร์ใหม่: <strong className="font-black text-emerald-950">"{quickStockInSupplier.trim()}"</strong>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveSupplierOption(quickStockInSupplier.trim())}
+                      className="text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-black px-2 py-0.5 rounded shadow-xs cursor-pointer shrink-0 ml-1 transition"
+                    >
+                      + บันทึกไว้ใช้ครั้งถัดไป
+                    </button>
+                  </div>
+                )}
+
+                {/* Dropdown Menu - Opens UPWARDS so it never covers anything below */}
+                {isStockInSupplierDropdownOpen && (
+                  <div className="absolute z-50 left-0 right-0 bottom-full mb-2 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl overflow-hidden max-h-52 overflow-y-auto animate-scale-up">
+                    <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 flex items-center justify-between text-[11px] font-black text-amber-950 sticky top-0 z-10">
+                      <span>ตัวเลือก Supplier / แหล่งนำเข้า ({stockInSupplierOptions.length})</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsStockInSupplierDropdownOpen(false)}
+                        className="text-[10px] text-stone-500 hover:text-stone-900 font-bold px-1.5 py-0.5 rounded hover:bg-amber-100 cursor-pointer"
+                      >
+                        ✕ ปิด
+                      </button>
+                    </div>
+
+                    {/* Add new option button inside menu if typed text not yet in list */}
+                    {quickStockInSupplier.trim() && !stockInSupplierOptions.some((o) => o.toLowerCase() === quickStockInSupplier.trim().toLowerCase()) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleSaveSupplierOption(quickStockInSupplier.trim());
+                          setIsStockInSupplierDropdownOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 bg-emerald-50 hover:bg-emerald-100 border-b border-emerald-300 text-xs font-black text-emerald-950 flex items-center justify-between transition cursor-pointer"
+                      >
+                        <span className="truncate">➕ บันทึก <strong className="text-emerald-900 underline font-black">"{quickStockInSupplier.trim()}"</strong></span>
+                        <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full border border-emerald-400 font-bold shrink-0 ml-1">กดบันทึก</span>
+                      </button>
+                    )}
+
+                    {/* List of presets and saved suppliers */}
+                    <div className="divide-y divide-stone-100">
+                      {stockInSupplierOptions.map((item) => {
+                        const isSelected = quickStockInSupplier === item;
+                        const isPreset = DEFAULT_SUPPLIER_PRESETS.includes(item);
+                        return (
+                          <div
+                            key={item}
+                            className={`px-3 py-2 text-xs font-black transition flex items-center justify-between group ${
+                              isSelected ? 'bg-amber-100 text-amber-950' : 'text-stone-900 hover:bg-stone-50'
+                            }`}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setQuickStockInSupplier(item);
+                                setIsStockInSupplierDropdownOpen(false);
+                              }}
+                              className="flex-1 text-left flex items-center justify-between pr-2 cursor-pointer truncate"
+                            >
+                              <span className="truncate">{item}</span>
+                              {isSelected && (
+                                <span className="text-amber-800 text-[11px] font-black shrink-0 ml-1.5">✓ เลือกอยู่</span>
+                              )}
+                            </button>
+                            {!isPreset && (
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeleteSupplierOption(item, e)}
+                                className="opacity-0 group-hover:opacity-100 text-stone-400 hover:text-rose-600 p-1 rounded transition cursor-pointer"
+                                title="ลบตัวเลือกนี้"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Note / DO Number Dropdown with Custom Add (Opens UPWARDS so it never covers buttons) */}
