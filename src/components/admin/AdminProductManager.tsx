@@ -3899,30 +3899,38 @@ export const AdminProductManager: React.FC = () => {
                 />
               </div>
 
-              {/* Note / DO Number Dropdown with Custom Add */}
+              {/* Note / DO Number Dropdown with Custom Add (Opens UPWARDS so it never covers buttons) */}
               <div className="relative" ref={stockInNoteDropdownRef}>
-                <label className="text-xs font-black text-stone-950 flex items-center justify-between mb-1">
-                  <span>หมายเหตุ / ล็อต / เลขที่ DO</span>
-                  {quickStockInNote && (
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-black text-stone-950">
+                    หมายเหตุ / ล็อต / เลขที่ DO
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {quickStockInNote && (
+                      <button
+                        type="button"
+                        onClick={() => setQuickStockInNote('')}
+                        className="text-[11px] text-stone-400 hover:text-stone-700 cursor-pointer font-bold"
+                      >
+                        ล้างค่าว่าง
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={() => setQuickStockInNote('')}
-                      className="text-[11px] text-stone-400 hover:text-stone-700 cursor-pointer font-bold"
+                      onClick={() => setIsStockInNoteDropdownOpen((prev) => !prev)}
+                      className="text-[11px] font-bold text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200 transition cursor-pointer flex items-center gap-1"
                     >
-                      ล้างค่าว่าง
+                      <span>{isStockInNoteDropdownOpen ? 'ปิดตัวเลือก ▲' : 'เลือกจากรายการ ▼'}</span>
                     </button>
-                  )}
-                </label>
+                  </div>
+                </div>
+
                 <div className="relative flex items-center">
                   <input
                     type="text"
                     value={quickStockInNote}
-                    onFocus={() => setIsStockInNoteDropdownOpen(true)}
-                    onChange={(e) => {
-                      setQuickStockInNote(e.target.value);
-                      setIsStockInNoteDropdownOpen(true);
-                    }}
-                    placeholder="เลือกจากรายการ หรือพิมพ์ใหม่ (เว้นว่างได้)"
+                    onChange={(e) => setQuickStockInNote(e.target.value)}
+                    placeholder="พิมพ์เอง หรือกด 'เลือกจากรายการ' (เว้นว่างได้)"
                     className="w-full pl-3 pr-10 py-2 bg-white border-2 border-stone-300 focus:border-amber-500 rounded-xl text-stone-950 font-bold text-xs focus:outline-none transition shadow-xs"
                   />
                   <button
@@ -3935,24 +3943,47 @@ export const AdminProductManager: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Dropdown Menu */}
+                {/* Inline Quick Save Badge if user typed a new note not yet in list */}
+                {quickStockInNote.trim() && !stockInNoteOptions.some((o) => o.toLowerCase() === quickStockInNote.trim().toLowerCase()) && (
+                  <div className="mt-1.5 flex items-center justify-between bg-emerald-50 border border-emerald-300 rounded-lg px-2.5 py-1">
+                    <span className="text-[11px] text-emerald-900 font-bold truncate">
+                      💡 ล็อตใหม่: <strong className="font-black text-emerald-950">"{quickStockInNote.trim()}"</strong>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveStockInNoteOption(quickStockInNote.trim())}
+                      className="text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-black px-2 py-0.5 rounded shadow-xs cursor-pointer shrink-0 ml-1 transition"
+                    >
+                      + บันทึกไว้ใช้ครั้งถัดไป
+                    </button>
+                  </div>
+                )}
+
+                {/* Dropdown Menu - Opens UPWARDS (bottom-full mb-2) so it NEVER covers the action buttons below */}
                 {isStockInNoteDropdownOpen && (
-                  <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto">
-                    <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 flex items-center justify-between text-[11px] font-black text-amber-950">
-                      <span>ตัวเลือกที่บันทึกไว้ ({stockInNoteOptions.length})</span>
-                      <span className="text-[10px] text-stone-500 font-bold">เลือกหรือพิมพ์เพื่อบันทึก</span>
+                  <div className="absolute z-50 left-0 right-0 bottom-full mb-2 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl overflow-hidden max-h-52 overflow-y-auto animate-scale-up">
+                    <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 flex items-center justify-between text-[11px] font-black text-amber-950 sticky top-0 z-10">
+                      <span>ตัวเลือกหมายเหตุ / ล็อต ({stockInNoteOptions.length})</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsStockInNoteDropdownOpen(false)}
+                        className="text-[10px] text-stone-500 hover:text-stone-900 font-bold px-1.5 py-0.5 rounded hover:bg-amber-100 cursor-pointer"
+                      >
+                        ✕ ปิด
+                      </button>
                     </div>
 
-                    {/* Add new option button if typed text not yet in list */}
+                    {/* Add new option button inside menu if typed text not yet in list */}
                     {quickStockInNote.trim() && !stockInNoteOptions.some((o) => o.toLowerCase() === quickStockInNote.trim().toLowerCase()) && (
                       <button
                         type="button"
                         onClick={() => {
                           handleSaveStockInNoteOption(quickStockInNote.trim());
+                          setIsStockInNoteDropdownOpen(false);
                         }}
                         className="w-full text-left px-3 py-2 bg-emerald-50 hover:bg-emerald-100 border-b border-emerald-300 text-xs font-black text-emerald-950 flex items-center justify-between transition cursor-pointer"
                       >
-                        <span className="truncate">➕ บันทึก <strong className="text-emerald-900 underline font-black">"{quickStockInNote.trim()}"</strong> ไว้ใช้ครั้งถัดไป</span>
+                        <span className="truncate">➕ บันทึก <strong className="text-emerald-900 underline font-black">"{quickStockInNote.trim()}"</strong></span>
                         <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full border border-emerald-400 font-bold shrink-0 ml-1">กดบันทึก</span>
                       </button>
                     )}
@@ -4000,8 +4031,8 @@ export const AdminProductManager: React.FC = () => {
                 )}
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2 pt-2">
+              {/* Action Buttons - Always visible and unobstructed */}
+              <div className="flex items-center gap-2 pt-3 border-t border-stone-200 mt-2 relative z-10">
                 <button
                   type="button"
                   onClick={() => setQuickStockInItem(null)}
