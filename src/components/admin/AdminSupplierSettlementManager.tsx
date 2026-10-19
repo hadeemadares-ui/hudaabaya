@@ -19,7 +19,16 @@ export const AdminSupplierSettlementManager: React.FC = () => {
     saveCustomOption,
   } = useShop();
 
-  const [activeSubTab, setActiveSubTab] = useState<'payouts' | 'logs' | 'history'>('payouts');
+  const [activeSubTab, setActiveSubTab] = useState<'payouts' | 'logs' | 'history'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const sub = params.get('subtab') || params.get('sub');
+      if (sub === 'payouts' || sub === 'settlement') return 'payouts';
+      if (sub === 'history') return 'history';
+      if (sub === 'logs' || sub === 'stock') return 'logs';
+    }
+    return 'logs';
+  });
   const [selectedSupplierFilter, setSelectedSupplierFilter] = useState<string>('all');
   const [movementSearchQuery, setMovementSearchQuery] = useState<string>('');
   const [movementTypeFilter, setMovementTypeFilter] = useState<'all' | 'IN' | 'OUT'>('all');
@@ -649,18 +658,6 @@ export const AdminSupplierSettlementManager: React.FC = () => {
       {/* Sub-Tab Navigation Header */}
       <div className="flex items-center gap-2 border-b-2 border-amber-400/40 pb-3 overflow-x-auto no-scrollbar">
         <button
-          onClick={() => setActiveSubTab('payouts')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition cursor-pointer ${
-            activeSubTab === 'payouts'
-              ? 'bg-amber-400 text-stone-950 border-2 border-amber-500 shadow-md'
-              : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
-          }`}
-        >
-          <DollarSign className="w-4 h-4 text-stone-950" />
-          <span>💰 เคลียร์ยอด Supplier ({supplierSummaries.length} รายรอเคลียร์)</span>
-        </button>
-
-        <button
           onClick={() => setActiveSubTab('logs')}
           className={`px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition cursor-pointer ${
             activeSubTab === 'logs'
@@ -670,6 +667,18 @@ export const AdminSupplierSettlementManager: React.FC = () => {
         >
           <PackageCheck className="w-4 h-4 text-stone-950" />
           <span>📦 บันทึก &amp; ประวัติสินค้าเข้า-ออก ({stockMovements.length} รายการ)</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('payouts')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition cursor-pointer ${
+            activeSubTab === 'payouts'
+              ? 'bg-amber-400 text-stone-950 border-2 border-amber-500 shadow-md'
+              : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
+          }`}
+        >
+          <DollarSign className="w-4 h-4 text-stone-950" />
+          <span>💰 เคลียร์ยอด Supplier ({supplierSummaries.length} รายรอเคลียร์)</span>
         </button>
 
         <button
