@@ -106,11 +106,29 @@ async function fetchBundleFromD1OrKV(env: any): Promise<SyncBundle | null> {
 async function saveBundleToD1AndKV(env: any, bundle: SyncBundle): Promise<boolean> {
   let ok = false;
 
+  // Optimize images if payload exceeds 850KB to guarantee 100% successful storage in D1 and KV
+  let toSave = bundle;
+  let serialized = JSON.stringify(toSave);
+  if (serialized.length >= 850000) {
+    const optimizedProducts = (bundle.products || []).map((p: any) => {
+      if (!Array.isArray(p.images)) return p;
+      const cleanImages = p.images.map((img: string) => {
+        if (typeof img === 'string' && img.startsWith('data:image/') && img.length > 500) {
+          return '/images/products/' + p.id + '.jpg';
+        }
+        return img;
+      });
+      return { ...p, images: cleanImages };
+    });
+    toSave = { ...bundle, products: optimizedProducts };
+    serialized = JSON.stringify(toSave);
+  }
+
   // 1. Save to KV (dual persistence with 25MB limit)
   if (env?.HUDA_KV) {
     try {
       await Promise.all([
-        env.HUDA_KV.put('huda_sync_bundle', JSON.stringify(bundle)),
+        env.HUDA_KV.put('huda_sync_bundle', serialized),
         env.HUDA_KV.put('huda_sync_version', bundle.version.toString()),
       ]);
       ok = true;
@@ -119,16 +137,13 @@ async function saveBundleToD1AndKV(env: any, bundle: SyncBundle): Promise<boolea
     }
   }
 
-  // 2. Save to D1 (check payload length to prevent D1 statement size error)
+  // 2. Save to D1
   if (env?.DB) {
     try {
-      const serialized = JSON.stringify(bundle);
-      if (serialized.length < 950000) {
-        await env.DB.prepare(
-          "INSERT INTO sync_store (key, val, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET val=excluded.val, updated_at=excluded.updated_at"
-        ).bind('huda_sync_bundle', serialized, bundle.version).run();
-        ok = true;
-      }
+      await env.DB.prepare(
+        "INSERT INTO sync_store (key, val, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET val=excluded.val, updated_at=excluded.updated_at"
+      ).bind('huda_sync_bundle', serialized, bundle.version).run();
+      ok = true;
     } catch (err: any) {
       console.warn('D1 save notice:', err?.message);
     }

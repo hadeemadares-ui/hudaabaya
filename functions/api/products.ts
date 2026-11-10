@@ -15,17 +15,40 @@ export async function onRequestOptions() {
 }
 
 async function getProductsFromKVOrMemory(env: any) {
+  // 1. Try KV
   if (env?.HUDA_KV) {
     try {
       const rawProds = await env.HUDA_KV.get('huda_products');
       const rawDeleted = await env.HUDA_KV.get('huda_deleted_ids');
-      const prods = rawProds ? JSON.parse(rawProds) : memoryProducts;
-      const delIds = rawDeleted ? JSON.parse(rawDeleted) : memoryDeletedIds;
-      memoryProducts = prods;
-      memoryDeletedIds = delIds;
-      return { prods, delIds };
+      if (rawProds) {
+        const prods = JSON.parse(rawProds);
+        const delIds = rawDeleted ? JSON.parse(rawDeleted) : [];
+        if (Array.isArray(prods) && prods.length > 0) {
+          memoryProducts = prods;
+          memoryDeletedIds = delIds;
+          return { prods, delIds };
+        }
+      }
     } catch (e) {}
   }
+
+  // 2. Try D1 sync_store bundle (dual persistent fallback)
+  if (env?.DB) {
+    try {
+      const row: any = await env.DB.prepare(
+        "SELECT val FROM sync_store WHERE key = ?"
+      ).bind('huda_sync_bundle').first();
+      if (row?.val) {
+        const parsed = JSON.parse(row.val);
+        if (parsed && Array.isArray(parsed.products) && parsed.products.length > 0) {
+          memoryProducts = parsed.products;
+          memoryDeletedIds = Array.isArray(parsed.deletedIds) ? parsed.deletedIds : [];
+          return { prods: memoryProducts, delIds: memoryDeletedIds };
+        }
+      }
+    } catch (e) {}
+  }
+
   return { prods: memoryProducts, delIds: memoryDeletedIds };
 }
 
@@ -39,6 +62,32 @@ async function saveProductsToKV(env: any, prods: any[], delIds: any[]) {
         env.HUDA_KV.put('huda_deleted_ids', JSON.stringify(delIds)),
         env.HUDA_KV.put('huda_sync_version', Date.now().toString())
       ]);
+    } catch (e) {}
+  }
+
+  // Dual-save to D1 sync_store bundle so /api/sync and /api/products stay in sync
+  if (env?.DB) {
+    try {
+      const row: any = await env.DB.prepare(
+        "SELECT val FROM sync_store WHERE key = ?"
+      ).bind('huda_sync_bundle').first();
+      let bundle: any = row?.val ? JSON.parse(row.val) : { version: Date.now(), orders: [], stockMovements: [] };
+      bundle.products = prods;
+      bundle.deletedIds = delIds;
+      bundle.version = Date.now();
+
+      let serialized = JSON.stringify(bundle);
+      if (serialized.length >= 850000) {
+        bundle.products = prods.map((p: any) => ({
+          ...p,
+          images: Array.isArray(p.images) ? p.images.map((img: string) => (typeof img === 'string' && img.startsWith('data:image/') && img.length > 500) ? ('/images/products/' + p.id + '.jpg') : img) : []
+        }));
+        serialized = JSON.stringify(bundle);
+      }
+
+      await env.DB.prepare(
+        "INSERT INTO sync_store (key, val, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET val=excluded.val, updated_at=excluded.updated_at"
+      ).bind('huda_sync_bundle', serialized, bundle.version).run();
     } catch (e) {}
   }
 }
