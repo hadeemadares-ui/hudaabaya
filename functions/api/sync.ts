@@ -103,32 +103,62 @@ async function fetchBundleFromD1OrKV(env: any): Promise<SyncBundle | null> {
   return kvBundle || d1Bundle || null;
 }
 
+// List of products that actually have static jpg files on disk (/images/products/[id].jpg)
+const KNOWN_STATIC_IMAGE_PRODUCT_IDS = new Set([
+  'huda-prod-1789990258574-997',
+  'huda-prod-1790238827664-70',
+  'huda-prod-1790254417677-0',
+  'huda-prod-1790258958294-396',
+  'huda-prod-1790259577088-489',
+  'huda-prod-1790290856433-370',
+  'huda-prod-1790291092441-691',
+  'huda-prod-1791004081562-29',
+  'huda-prod-1791004718219-910',
+  'huda-prod-1791004940194-528',
+  'huda-prod-1791005341354-846',
+  'huda-prod-1791007571083-191',
+  'huda-prod-1791009321948-999',
+  'huda-prod-1791009446706-759',
+  'huda-prod-1791011240968-250',
+  'huda-prod-1791011277045-726',
+  'huda-prod-1791011344410-950',
+  'huda-prod-1791011400024-765',
+  'huda-prod-1791011457320-220',
+  'huda-prod-1791011503393-566',
+  'huda-prod-1791011594237-608',
+  'huda-prod-1791011630134-655',
+  'huda-prod-1791011656065-663',
+  'huda-prod-1791011688199-1',
+  'huda-prod-1791011719490-285',
+  'huda-prod-1791011775710-310',
+  'huda-prod-1791011808104-657',
+  'huda-prod-1791011840649-470',
+  'huda-prod-1791011892803-761',
+  'huda-prod-1791011923101-349',
+  'huda-prod-1791011946022-273',
+  'huda-prod-1791011998828-428',
+  'huda-prod-1791012042383-966',
+  'huda-prod-1792325361278-2262',
+  'huda-prod-1792325365976-5046',
+  'huda-prod-1792325366241-6544',
+  'huda-prod-1792325366517-2006',
+  'huda-prod-1792325366781-1065',
+  'huda-prod-1792325366906-6881',
+  'huda-prod-1792325367505-7107',
+  'huda-prod-1794316876026-862',
+  'huda-prod-1794318257371-219',
+  'huda-prod-1794318895489-717',
+]);
+
 async function saveBundleToD1AndKV(env: any, bundle: SyncBundle): Promise<boolean> {
   let ok = false;
 
-  // Optimize images if payload exceeds 850KB to guarantee 100% successful storage in D1 and KV
-  let toSave = bundle;
-  let serialized = JSON.stringify(toSave);
-  if (serialized.length >= 850000) {
-    const optimizedProducts = (bundle.products || []).map((p: any) => {
-      if (!Array.isArray(p.images)) return p;
-      const cleanImages = p.images.map((img: string) => {
-        if (typeof img === 'string' && img.startsWith('data:image/') && img.length > 500) {
-          return '/images/products/' + p.id + '.jpg';
-        }
-        return img;
-      });
-      return { ...p, images: cleanImages };
-    });
-    toSave = { ...bundle, products: optimizedProducts };
-    serialized = JSON.stringify(toSave);
-  }
-
-  // 1. Save to KV (dual persistence with 25MB limit)
+  // 1. Cloudflare KV has 25MB capacity: ALWAYS store the 100% full, pristine bundle with all user camera base64 photos intact!
+  const fullSerialized = JSON.stringify(bundle);
   if (env?.HUDA_KV) {
     try {
       await Promise.all([
-        env.HUDA_KV.put('huda_sync_bundle', serialized),
+        env.HUDA_KV.put('huda_sync_bundle', fullSerialized),
         env.HUDA_KV.put('huda_sync_version', bundle.version.toString()),
       ]);
       ok = true;
@@ -137,12 +167,32 @@ async function saveBundleToD1AndKV(env: any, bundle: SyncBundle): Promise<boolea
     }
   }
 
-  // 2. Save to D1
+  // 2. Prepare payload for Cloudflare D1 (D1 has a 1MB query statement limit)
+  let d1Serialized = fullSerialized;
+  if (d1Serialized.length >= 850000) {
+    const optimizedProducts = (bundle.products || []).map((p: any) => {
+      // ONLY replace with static CDN path if the file ACTUALLY exists on disk!
+      // NEVER destroy user-uploaded / camera-captured images for custom products!
+      if (!Array.isArray(p.images) || !KNOWN_STATIC_IMAGE_PRODUCT_IDS.has(p.id)) {
+        return p;
+      }
+      const cleanImages = p.images.map((img: string) => {
+        if (typeof img === 'string' && img.startsWith('data:image/') && img.length > 500) {
+          return '/images/products/' + p.id + '.jpg';
+        }
+        return img;
+      });
+      return { ...p, images: cleanImages };
+    });
+    d1Serialized = JSON.stringify({ ...bundle, products: optimizedProducts });
+  }
+
+  // 3. Save to D1
   if (env?.DB) {
     try {
       await env.DB.prepare(
         "INSERT INTO sync_store (key, val, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET val=excluded.val, updated_at=excluded.updated_at"
-      ).bind('huda_sync_bundle', serialized, bundle.version).run();
+      ).bind('huda_sync_bundle', d1Serialized, bundle.version).run();
       ok = true;
     } catch (err: any) {
       console.warn('D1 save notice:', err?.message);
