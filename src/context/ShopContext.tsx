@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { Product, ProductVariant, CartItem, Order, CategoryType, Coupon, StoreSettings, CurrencyType, StockMovement, SupplierSettlement, EventSchedule, CustomOptions, RealtimeSyncPayload } from '../types';
+import { Product, ProductVariant, CartItem, Order, CategoryType, Coupon, StoreSettings, CurrencyType, StockMovement, SupplierSettlement, SupplierReturnItem, SupplierReturnVoucher, EventSchedule, CustomOptions, RealtimeSyncPayload, TrashedStockMovement, BoothStockTransfer, BoothTransferItem, BoothReplenishmentLog, StaffUser, StaffPermissions, DEFAULT_STAFF_PERMISSIONS, OWNER_PERMISSIONS } from '../types';
 import { INITIAL_PRODUCTS, INITIAL_COUPONS, INITIAL_ORDERS } from '../data/mockProducts';
 import { DEFAULT_LOGO_BASE64 } from '../data/logoData';
 import { soundFx } from '../lib/soundEffects';
@@ -22,8 +22,10 @@ import {
   formatNewOrderMessage,
   formatSlipUploadMessage,
   formatLowStockMessage,
+  formatEventScheduleMessage,
 } from '../lib/lineNotification';
-import { sortProductsNatural } from '../utils/productUtils';
+import { sortProductsNatural, stripBottlePrefix } from '../utils/productUtils';
+import { isMatchingLot } from '../utils/qrUtils';
 
 const DEFAULT_SETTINGS: StoreSettings = {
   storeName: 'HUDA ABAYA DUBAI',
@@ -31,6 +33,7 @@ const DEFAULT_SETTINGS: StoreSettings = {
   logoLetter: 'H',
   logoImageUrl: DEFAULT_LOGO_BASE64,
   topAnnouncement: 'HUDA ABAYA DUBAI — สินค้าแท้นำเข้าจากเมืองดูไบ UAE | ส่งฟรีทั่วไทยเมื่อช็อปครบ 2,000.-',
+  showHeroBanner: true,
   contactPhone: '083-427-4687',
   contactLine: '',
   contactAddress: '11/2 ถนน คลองสิบสาม แขวงหนองจอก เขตหนองจอก กรุงเทพมหานคร 10530',
@@ -51,11 +54,12 @@ const DEFAULT_SETTINGS: StoreSettings = {
   lineNotifyEnabled: true,
   lineChannelId: '2011949895',
   lineChannelSecret: '45811e9faeabea629c67ebcbb52d8236',
-  lineNotifyToken: 'F5oQJACUmI8/SB64i2W+SPKwCnUVTCIfA5fAbdiW3KqjiaVa7rZ3ikE2rjoeROJ6CdGtlw+Fm/4wv7PnCbIVHnigM+j9mT4V6UqbSwOJRqLFQAWPLqwDHFqzrqTIbcVUI4QXjau+CL7JsfCxxSHuFo9PbdgDzCFqoOLOYbqAITQ=',
+  lineNotifyToken: 'T7zjWvPiXBVw8gI5BqSaofwCbvKLIU92hOtUsg9/XNn7dUSjPFlRhgmv6IYXQ6vGCdGtlw+Fm/4wv7PnCbIVHnigM+j9mT4V6UqbSwOJRqKxWTYTYAD/id0JGKr+hEdCoAG2Aw4KZ5FRmloIsvmWf49PbdgDzCFqoOLOYbqAITQ=',
   lineNotifyOnNewOrder: true,
   lineNotifyOnSlipUpload: true,
   lineNotifyOnLowStock: true,
   lineNotifyOnDailySummary: true,
+  lineNotifyOnEventSchedule: true,
 };
 
 interface ShopContextType {
@@ -64,6 +68,7 @@ interface ShopContextType {
   orders: Order[];
   stockMovements: StockMovement[];
   supplierSettlements: SupplierSettlement[];
+  supplierReturnVouchers: SupplierReturnVoucher[];
   appliedCoupon: Coupon | null;
   isCartOpen: boolean;
   isOrderTrackingOpen: boolean;
@@ -94,7 +99,16 @@ interface ShopContextType {
   createOrder: (orderData: Omit<Order, 'id' | 'createdAt'>) => Order;
   updateOrderStatus: (orderId: string, orderStatus: Order['orderStatus'], trackingNumber?: string, courier?: string) => void;
   updateOrderPaymentStatus: (orderId: string, paymentStatus: Order['paymentStatus']) => void;
-  deleteOrder: (orderId: string) => void;
+  cancelAndRestockOrder: (
+    orderId: string,
+    options?: {
+      reason?: string;
+      refundPayment?: boolean;
+      performedBy?: string;
+    }
+  ) => Promise<{ success: boolean; message: string }>;
+  deleteOrder: (orderId: string, revertStock?: boolean) => void;
+  deleteOrders: (orderIds: string[], revertStock?: boolean) => void;
   clearSampleOrders: () => Promise<void>;
   clearAllOrders: () => Promise<void>;
   clearAllProducts: () => Promise<void>;
@@ -102,9 +116,17 @@ interface ShopContextType {
   updateProduct: (product: Product) => void;
   updateVariantStock: (productId: string, variantId: string, newStock: number) => void;
   deleteProduct: (productId: string) => void;
-  recordStockIn: (data: { productId: string; variantId: string; quantity: number; costPrice: number; supplierName: string; note?: string }) => void;
+  recordStockIn: (data: { productId: string; variantId: string; quantity: number; costPrice: number; supplierName: string; note?: string; lotNumber?: string }) => void;
+  recordStockInBatch: (items: Array<{ productId: string; variantId: string; quantity: number; costPrice: number; supplierName: string; note?: string; lotNumber?: string }>) => void;
   deleteStockMovement: (movementId: string, revertStock?: boolean) => boolean;
+  trashedStockMovements: TrashedStockMovement[];
+  restoreStockMovement: (movementId: string) => boolean;
+  permanentlyDeleteStockMovement: (movementId: string) => void;
+  clearTrashedStockMovements: () => void;
   createSupplierSettlement: (data: { supplierName: string; periodStart: string; periodEnd: string; movementIds: string[]; paymentRef?: string; note?: string; slipImageUrl?: string }) => SupplierSettlement;
+  cancelSupplierSettlement: (settlementId: string) => boolean;
+  createSupplierReturn: (data: Omit<SupplierReturnVoucher, 'id' | 'createdAt'>) => SupplierReturnVoucher;
+  deleteSupplierReturn: (voucherId: string, revertStock?: boolean) => boolean;
   setIsCartOpen: (open: boolean) => void;
   setIsOrderTrackingOpen: (open: boolean) => void;
   setIsAdminMode: (admin: boolean) => void;
@@ -117,7 +139,8 @@ interface ShopContextType {
   syncOrders: () => Promise<void>;
   syncProducts: () => Promise<void>;
   syncFromGoogleSheet: (url?: string) => Promise<{ success: boolean; count: number; error?: string; message?: string }>;
-  testLineNotification: (customMsg?: string) => Promise<{ success: boolean; error?: string }>;
+  testLineNotification: (customMsg?: string, settingsOverride?: StoreSettings) => Promise<{ success: boolean; error?: string }>;
+  notifyEventScheduleToLine: (schedule: EventSchedule, action?: 'created' | 'updated' | 'reminder') => Promise<{ success: boolean; error?: string }>;
   clearBrowserCacheAndReload: () => Promise<void>;
   eventSchedules: EventSchedule[];
   eventBranches: string[];
@@ -128,12 +151,98 @@ interface ShopContextType {
   deleteEventSchedule: (scheduleId: string) => void;
   addEventBranch: (branchName: string) => void;
   deleteEventBranch: (branchName: string) => void;
+  boothTransfers: BoothStockTransfer[];
+  setBoothTransfers: React.Dispatch<React.SetStateAction<BoothStockTransfer[]>>;
+  createBoothTransfer: (transfer: BoothStockTransfer) => void;
+  updateBoothTransfer: (transfer: BoothStockTransfer) => void;
+  deleteBoothTransfer: (transferId: string) => void;
+  replenishBoothTransfer: (
+    transferId: string,
+    additionalItems: Array<{
+      productId: string;
+      variantId: string;
+      productTitle: string;
+      variantName: string;
+      sku: string;
+      price: number;
+      costPrice?: number;
+      image?: string;
+      quantity: number;
+    }>,
+    staffName?: string,
+    note?: string
+  ) => void;
+  reconcileAndReturnBoothTransfer: (transferId: string, actualItems: BoothTransferItem[], note?: string) => void;
   syncStatus: 'synced' | 'syncing' | 'offline' | 'error';
   lastSyncTime: number;
-  forceRealtimeSync: () => Promise<void>;
+  forceRealtimeSync: (forceAll?: boolean, isManual?: boolean) => Promise<void>;
   customOptions: CustomOptions;
   saveCustomOption: (type: keyof CustomOptions, value: any) => void;
+  staffUsers: StaffUser[];
+  currentStaff: StaffUser | null;
+  addStaffUser: (user: StaffUser) => void;
+  updateStaffUser: (user: StaffUser) => void;
+  deleteStaffUser: (userId: string) => void;
+  setCurrentStaff: React.Dispatch<React.SetStateAction<StaffUser | null>>;
+  refundOrderItems: (params: {
+    orderId: string;
+    refundItems: Array<{
+      productId: string;
+      variantId: string;
+      quantity: number;
+      price: number;
+      productTitle: string;
+      variantName: string;
+    }>;
+    refundAmount: number;
+    refundMethod: 'cash' | 'transfer';
+    reason: string;
+    performedBy: string;
+    approvedBy?: string;
+  }) => Promise<{ success: boolean; message: string; updatedOrder?: Order }>;
+  exchangeOrderItem: (params: {
+    orderId: string;
+    boothTransferId?: string | null;
+    returnItem: {
+      productId: string;
+      variantId: string;
+      quantity: number;
+      price: number;
+      productTitle: string;
+      variantName: string;
+    };
+    newItem: {
+      productId: string;
+      variantId: string;
+      quantity: number;
+      price: number;
+      productTitle: string;
+      variantName: string;
+    };
+    priceDifference: number;
+    paymentMethodForDiff?: 'cash' | 'promptpay' | 'none';
+    performedBy: string;
+    approvedBy?: string;
+    reason?: string;
+  }) => Promise<{ success: boolean; message: string; updatedOrder?: Order }>;
+  verifySupervisorPin: (pin: string) => { valid: boolean; approverName?: string };
+  syncStaffUsersToCloud: () => Promise<{ success: boolean; count: number }>;
+  syncBoothTransfersToCloud: () => Promise<{ success: boolean; count: number }>;
 }
+
+const DEFAULT_STAFF_USERS: StaffUser[] = [
+  {
+    id: 'STF-OWNER',
+    name: 'เจ้าของร้าน (Admin)',
+    pin: '1077',
+    role: 'OWNER',
+    phone: '083-427-4687',
+    active: true,
+    isActive: true,
+    permissions: OWNER_PERMISSIONS,
+    createdAt: new Date().toISOString(),
+  },
+];
 
 const getTimestampMs = (val: any): number => {
   if (!val) return 0;
@@ -151,6 +260,40 @@ const getTimestampMs = (val: any): number => {
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
+function normalizeEventScheduleStatus(schedule: EventSchedule): EventSchedule {
+  let sStart = schedule.startDate || '';
+  let sEnd = schedule.endDate || schedule.startDate || '';
+  if (sStart) {
+    const parts = sStart.split('-');
+    if (parts.length === 3 && parseInt(parts[0], 10) > 2400) {
+      sStart = `${parseInt(parts[0], 10) - 543}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+    }
+  }
+  if (sEnd) {
+    const parts = sEnd.split('-');
+    if (parts.length === 3 && parseInt(parts[0], 10) > 2400) {
+      sEnd = `${parseInt(parts[0], 10) - 543}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+    }
+  }
+  const normalized: EventSchedule = {
+    ...schedule,
+    startDate: sStart || schedule.startDate,
+    endDate: sEnd || sStart || schedule.endDate,
+  };
+  if (schedule.status === 'TRANSFERRED' || schedule.status === 'CANCELLED') return normalized;
+  const today = new Date().toISOString().slice(0, 10);
+  if (sEnd && sEnd < today) {
+    return { ...normalized, status: 'COMPLETED' };
+  }
+  if (sStart && sStart > today) {
+    return { ...normalized, status: 'UPCOMING' };
+  }
+  if (schedule.status === 'COMPLETED') {
+    return normalized;
+  }
+  return { ...normalized, status: 'ACTIVE' };
+}
+
 export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [deletedProductIds, setDeletedProductIds] = useState<Set<string>>(new Set());
   const [deletedOrderIds, setDeletedOrderIds] = useState<Set<string>>(() => {
@@ -165,18 +308,123 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     return new Set<string>();
   });
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
-  const [stockMovements, setStockMovements] = useState<StockMovement[]>(() => {
+  const [deletedEventScheduleIds, setDeletedEventScheduleIds] = useState<Set<string>>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('huda_stock_movements');
+      const saved = localStorage.getItem('huda_deleted_event_ids');
       if (saved) {
-        try { return JSON.parse(saved); } catch (e) {}
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return new Set(parsed);
+        } catch (e) {}
+      }
+    }
+    return new Set<string>();
+  });
+  const [deletedStockMovementIds, setDeletedStockMovementIds] = useState<Set<string>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('huda_deleted_stock_movement_ids');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return new Set(parsed);
+        } catch (e) {}
+      }
+    }
+    return new Set<string>();
+  });
+  const [trashedStockMovements, setTrashedStockMovements] = useState<TrashedStockMovement[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('huda_trashed_stock_movements');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
       }
     }
     return [];
   });
+  const [products, setProducts] = useState<Product[]>(() => {
+    if (typeof window !== 'undefined') {
+      const savedProds = localStorage.getItem('huda_products');
+      if (savedProds) {
+        try {
+          const parsed = JSON.parse(savedProds);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const sanitized = parsed.map((p: Product) => ({
+              ...p,
+              variants: Array.isArray(p.variants)
+                ? p.variants.map((v) => ({
+                    ...v,
+                    name: stripBottlePrefix(v.name),
+                  }))
+                : [],
+            }));
+            return sanitized.sort(sortProductsNatural);
+          }
+        } catch (e) {}
+      }
+    }
+    return INITIAL_PRODUCTS;
+  });
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [orders, setOrders] = useState<Order[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('huda_orders');
+      const savedDeleted = localStorage.getItem('huda_deleted_order_ids');
+      const deletedSet = new Set<string>();
+      if (savedDeleted) {
+        try {
+          const parsed = JSON.parse(savedDeleted);
+          if (Array.isArray(parsed)) parsed.forEach((id: string) => deletedSet.add(id));
+        } catch (e) {}
+      }
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            return parsed.filter((o: Order) => !deletedSet.has(o.id));
+          }
+        } catch (e) {}
+      }
+    }
+    return INITIAL_ORDERS;
+  });
+  const [stockMovements, setStockMovements] = useState<StockMovement[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('huda_stock_movements');
+      const savedDeleted = localStorage.getItem('huda_deleted_stock_movement_ids');
+      const deletedSet = new Set<string>();
+      if (savedDeleted) {
+        try {
+          const parsed = JSON.parse(savedDeleted);
+          if (Array.isArray(parsed)) parsed.forEach((id: string) => deletedSet.add(id));
+        } catch (e) {}
+      }
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            return parsed.filter((m: StockMovement) => !deletedSet.has(m.id));
+          }
+        } catch (e) {}
+      }
+    }
+    return [];
+  });
+  const [supplierReturnVouchers, setSupplierReturnVouchers] = useState<SupplierReturnVoucher[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('huda_supplier_returns');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
+      }
+    }
+    return [];
+  });
+
   const [supplierSettlements, setSupplierSettlements] = useState<SupplierSettlement[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('huda_supplier_settlements');
@@ -210,7 +458,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) return parsed;
+          if (Array.isArray(parsed)) return parsed.map(normalizeEventScheduleStatus);
         } catch (e) {}
       }
     }
@@ -238,6 +486,19 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ];
   });
 
+  const [boothTransfers, setBoothTransfers] = useState<BoothStockTransfer[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('huda_booth_transfers');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (e) {}
+      }
+    }
+    return [];
+  });
+
   // Real-Time Multi-Device Sync Indicators & Refs
   const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'offline' | 'error'>('synced');
   const [lastSyncTime, setLastSyncTime] = useState<number>(Date.now());
@@ -246,17 +507,31 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const savedSuppliers = localStorage.getItem('huda_custom_suppliers');
         const savedNotes = localStorage.getItem('huda_custom_stock_in_notes');
+        const savedLots = localStorage.getItem('huda_custom_lot_numbers');
         const savedCategories = localStorage.getItem('huda_custom_category_list_v1');
         const savedFabrics = localStorage.getItem('huda_category_fabric_map_v3');
         const savedSizes = localStorage.getItem('huda_category_size_map_v1');
+        let parsedSizes = savedSizes ? JSON.parse(savedSizes) : {};
+        if (parsedSizes && typeof parsedSizes === 'object') {
+          const cleanedSizes: Record<string, string[]> = {};
+          for (const [k, arr] of Object.entries(parsedSizes)) {
+            if (Array.isArray(arr)) {
+              cleanedSizes[k] = Array.from(new Set(arr.map(stripBottlePrefix).filter(Boolean)));
+            } else {
+              cleanedSizes[k] = arr as any;
+            }
+          }
+          parsedSizes = cleanedSizes;
+        }
         const savedColors = localStorage.getItem('huda_category_color_map_v1');
         const savedDesc = localStorage.getItem('huda_custom_description_options_v1');
         return {
           suppliers: savedSuppliers ? JSON.parse(savedSuppliers) : [],
           stockInNotes: savedNotes ? JSON.parse(savedNotes) : [],
+          lotNumbers: savedLots ? JSON.parse(savedLots) : ['HUDA-001-1-69', 'HUDA-A005-1-69', '1-69'],
           categories: savedCategories ? JSON.parse(savedCategories) : [],
           fabrics: savedFabrics ? JSON.parse(savedFabrics) : {},
-          sizes: savedSizes ? JSON.parse(savedSizes) : {},
+          sizes: parsedSizes,
           colors: savedColors ? JSON.parse(savedColors) : {},
           descriptions: savedDesc ? JSON.parse(savedDesc) : [],
         };
@@ -265,13 +540,57 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return {};
   });
 
+  const [staffUsers, setStaffUsers] = useState<StaffUser[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('huda_staff_users');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const cleaned = parsed.filter((u: StaffUser) => u.id !== 'STF-001');
+            if (cleaned.length !== parsed.length) {
+              localStorage.setItem('huda_staff_users', JSON.stringify(cleaned));
+            }
+            return cleaned.length > 0 ? cleaned : DEFAULT_STAFF_USERS;
+          }
+        } catch (e) {}
+      }
+    }
+    return DEFAULT_STAFF_USERS;
+  });
+
+  const [currentStaff, setCurrentStaff] = useState<StaffUser | null>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('huda_current_staff') || sessionStorage.getItem('huda_current_staff');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.id === 'STF-001') {
+            localStorage.removeItem('huda_current_staff');
+            sessionStorage.removeItem('huda_current_staff');
+            return null;
+          }
+          return parsed;
+        } catch (e) {}
+      }
+    }
+    return null;
+  });
+
   const syncVersionRef = useRef<number>(0);
   const isSyncingRef = useRef<boolean>(false);
   const syncChannelRef = useRef<BroadcastChannel | null>(null);
+  const tabIdRef = useRef<string>(
+    typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `tab_${Math.random()}`
+  );
   const pushTimeoutRef = useRef<any>(null);
   const pendingPushPayloadRef = useRef<Partial<RealtimeSyncPayload>>({});
   const isInitialSyncCompletedRef = useRef<boolean>(false);
   const isApplyingCloudSyncRef = useRef<boolean>(false);
+  const deletedStockMovementIdsRef = useRef<Set<string>>(deletedStockMovementIds);
+  useEffect(() => {
+    deletedStockMovementIdsRef.current = deletedStockMovementIds;
+  }, [deletedStockMovementIds]);
 
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
@@ -359,18 +678,52 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Currency Converter & Formatter
-  const formatPrice = (priceInTHB: number) => {
+  // Currency Converter & Formatter (Null-safe)
+  const formatPrice = (priceInTHB?: number | null) => {
+    const val = typeof priceInTHB === 'number' && !isNaN(priceInTHB) ? priceInTHB : (Number(priceInTHB) || 0);
     switch (currency) {
       case 'AED':
-        return `د.إ ${(priceInTHB * 0.11).toFixed(0)}`;
+        return `د.إ ${(val * 0.11).toFixed(0)}`;
       case 'USD':
-        return `$${(priceInTHB * 0.029).toFixed(1)}`;
+        return `${(val * 0.029).toFixed(1)}`;
       case 'EUR':
-        return `€${(priceInTHB * 0.027).toFixed(1)}`;
+        return `€${(val * 0.027).toFixed(1)}`;
       case 'THB':
       default:
-        return `฿${priceInTHB.toLocaleString()}`;
+        return `฿${val.toLocaleString()}`;
+    }
+  };
+
+  const syncStaffUsersToCloud = async (): Promise<{ success: boolean; count: number }> => {
+    try {
+      const current = staffUsers || [];
+      const ver = await pushRealtimeSync({ staffUsers: current });
+      if (ver) {
+        setSyncStatus('synced');
+        setLastSyncTime(Date.now());
+        return { success: true, count: current.length };
+      }
+      return { success: false, count: current.length };
+    } catch {
+      return { success: false, count: (staffUsers || []).length };
+    }
+  };
+
+  const syncBoothTransfersToCloud = async (): Promise<{ success: boolean; count: number }> => {
+    try {
+      const current = boothTransfers || [];
+      const ver = await pushRealtimeSync({ boothTransfers: current });
+      if (ver) {
+        setSyncStatus('synced');
+        setLastSyncTime(Date.now());
+        try {
+          syncChannelRef.current?.postMessage({ type: 'SYNC_NOW', senderId: tabIdRef.current });
+        } catch (e) {}
+        return { success: true, count: current.length };
+      }
+      return { success: false, count: current.length };
+    } catch {
+      return { success: false, count: (boothTransfers || []).length };
     }
   };
 
@@ -394,7 +747,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const triggerBackgroundPush = (payload: Partial<RealtimeSyncPayload>) => {
+  const triggerBackgroundPush = (payload: Partial<RealtimeSyncPayload>, immediate: boolean = false) => {
     pendingPushPayloadRef.current = {
       ...pendingPushPayloadRef.current,
       ...payload,
@@ -406,8 +759,8 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('huda_sync_outbox', JSON.stringify({ ...parsed, ...pendingPushPayloadRef.current }));
       } catch (e) {}
     }
-    if (pushTimeoutRef.current) clearTimeout(pushTimeoutRef.current);
-    pushTimeoutRef.current = setTimeout(async () => {
+
+    const executePush = async () => {
       const toSend = { ...pendingPushPayloadRef.current };
       try {
         const newVer = await pushRealtimeSync(toSend);
@@ -420,37 +773,63 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLastSyncTime(Date.now());
           setSyncStatus('synced');
           try {
-            syncChannelRef.current?.postMessage({ type: 'SYNC_NOW' });
+            syncChannelRef.current?.postMessage({ type: 'SYNC_NOW', senderId: tabIdRef.current });
           } catch (e) {}
         }
       } catch (e) {
         console.warn('Realtime push notice (safely stored in persistent offline outbox):', e);
         setSyncStatus('offline');
       }
-    }, 150);
+    };
+
+    if (immediate) {
+      if (pushTimeoutRef.current) clearTimeout(pushTimeoutRef.current);
+      executePush();
+      return;
+    }
+
+    if (pushTimeoutRef.current) clearTimeout(pushTimeoutRef.current);
+    pushTimeoutRef.current = setTimeout(executePush, 100);
   };
 
-  async function forceRealtimeSync() {
+  async function forceRealtimeSync(forceAll: boolean = false, isManual: boolean = false) {
     if (isSyncingRef.current) return;
     isSyncingRef.current = true;
-    setSyncStatus('syncing');
+    if (isManual) {
+      setSyncStatus('syncing');
+    }
 
     // Flush any pending offline changes first
     await flushOutboxQueue();
 
     try {
-      const data = await fetchRealtimeSync(syncVersionRef.current);
+      const verToSend = forceAll ? 0 : syncVersionRef.current;
+      const data = await fetchRealtimeSync(verToSend, forceAll);
       if (data?.success) {
-        setSyncStatus('synced');
-        setLastSyncTime(Date.now());
-
-        if (data.upToDate) {
+        if (data.upToDate && !forceAll) {
           isSyncingRef.current = false;
+          if (isManual) {
+            setSyncStatus('synced');
+            setLastSyncTime(Date.now());
+          }
           return;
         }
 
         if (typeof data.version === 'number' && data.version > 0) {
+          if (data.version === syncVersionRef.current && !forceAll) {
+            isSyncingRef.current = false;
+            if (isManual) {
+              setSyncStatus('synced');
+              setLastSyncTime(Date.now());
+            }
+            return;
+          }
           syncVersionRef.current = data.version;
+        }
+
+        setSyncStatus((prev) => (prev !== 'synced' ? 'synced' : prev));
+        if (isManual) {
+          setLastSyncTime(Date.now());
         }
 
         isApplyingCloudSyncRef.current = true;
@@ -484,8 +863,8 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   const lvTime = Number(lv.updatedAt) || localUpdated;
                   const cvTime = Number(cv.updatedAt) || cloudUpdated;
 
-                  // If local variant was updated more recently or has higher stock from recent stock-in, protect it!
-                  if (lvTime > cvTime || lv.stockQuantity > cv.stockQuantity) {
+                  // Take cloud variant when forceAll is active, or cloud product is newer/equal, or cloud variant is newer/equal
+                  if (!forceAll && lvTime > cvTime && lvTime > 0 && localUpdated > cloudUpdated) {
                     return lv;
                   }
                   return cv;
@@ -500,7 +879,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
 
                 mergedList.push({
-                  ...(localUpdated > cloudUpdated ? localProd : cloudProd),
+                  ...(cloudUpdated >= localUpdated ? cloudProd : localProd),
                   variants: mergedVariants,
                 });
               }
@@ -522,82 +901,281 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         }
 
+        // Merge Deleted Product IDs (Tombstone Union: strictly monotonic, never erased by cloud)
+        let activeDeletedProdIds = new Set<string>();
+        if (typeof window !== 'undefined') {
+          try {
+            const saved = localStorage.getItem('huda_deleted_product_ids') || localStorage.getItem('huda_deleted_ids');
+            if (saved) JSON.parse(saved).forEach((id: string) => activeDeletedProdIds.add(id));
+          } catch (e) {}
+        }
         if (Array.isArray(data.deletedIds)) {
-          setDeletedProductIds(new Set(data.deletedIds));
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('huda_deleted_product_ids', JSON.stringify(data.deletedIds));
-          }
+          data.deletedIds.forEach((id: string) => activeDeletedProdIds.add(id));
+        }
+        setDeletedProductIds(activeDeletedProdIds);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('huda_deleted_product_ids', JSON.stringify(Array.from(activeDeletedProdIds)));
         }
 
-        // Merge Orders
+        // Merge Orders (smart non-destructive merge protecting local orders)
         if (Array.isArray(data.orders)) {
-          const cloudDeletedOrders = Array.isArray(data.deletedOrderIds) ? new Set(data.deletedOrderIds) : new Set<string>();
-          const validOrders = data.orders.filter((o: Order) => !cloudDeletedOrders.has(o.id));
-          setOrders(validOrders);
+          const cloudOrders = data.orders;
+          let activeDeletedOrderIds = new Set<string>();
           if (typeof window !== 'undefined') {
-            localStorage.setItem('huda_orders', JSON.stringify(validOrders));
+            try {
+              const saved = localStorage.getItem('huda_deleted_order_ids');
+              if (saved) JSON.parse(saved).forEach((id: string) => activeDeletedOrderIds.add(id));
+            } catch (e) {}
           }
-        }
-
-        if (Array.isArray(data.deletedOrderIds)) {
-          setDeletedOrderIds(new Set(data.deletedOrderIds));
+          if (Array.isArray(data.deletedOrderIds)) {
+            data.deletedOrderIds.forEach((id: string) => activeDeletedOrderIds.add(id));
+          }
+          setDeletedOrderIds(activeDeletedOrderIds);
           if (typeof window !== 'undefined') {
-            localStorage.setItem('huda_deleted_order_ids', JSON.stringify(data.deletedOrderIds));
+            localStorage.setItem('huda_deleted_order_ids', JSON.stringify(Array.from(activeDeletedOrderIds)));
           }
-        }
 
-        // Merge Stock Movements (smart merge preserving un-synced local records)
-        if (Array.isArray(data.stockMovements) && data.stockMovements.length > 0) {
-          setStockMovements((prev) => {
-            const movMap = new Map<string, StockMovement>();
-            (data.stockMovements || []).forEach((m: StockMovement) => movMap.set(m.id, m));
-            prev.forEach((m) => {
-              if (!movMap.has(m.id)) {
-                movMap.set(m.id, m);
-              }
+          let ordersToPush: Order[] | null = null;
+          setOrders((currentLocalOrders) => {
+            const orderMap = new Map<string, Order>();
+            // Keep local non-deleted orders
+            currentLocalOrders.forEach((o) => {
+              if (!activeDeletedOrderIds.has(o.id)) orderMap.set(o.id, o);
             });
-            const merged = Array.from(movMap.values()).sort(
+            // Merge cloud orders
+            cloudOrders.forEach((o: Order) => {
+              if (!activeDeletedOrderIds.has(o.id)) orderMap.set(o.id, o);
+            });
+            const validOrders = Array.from(orderMap.values()).sort(
               (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
             );
             if (typeof window !== 'undefined') {
-              localStorage.setItem('huda_stock_movements', JSON.stringify(merged));
+              localStorage.setItem('huda_orders', JSON.stringify(validOrders));
             }
-            return merged;
+
+            // Two-Way Sync: If this device has local orders that cloud lacks, push them up!
+            const cloudOrderIds = new Set((cloudOrders || []).map((o: Order) => o.id));
+            const hasUnsyncedOrders = validOrders.some((o) => !cloudOrderIds.has(o.id));
+            if (hasUnsyncedOrders || validOrders.length > cloudOrders.length) {
+              ordersToPush = validOrders;
+            }
+
+            return validOrders;
           });
-        } else if (stockMovements.length > 0) {
-          triggerBackgroundPush({ stockMovements });
+
+          if (ordersToPush) {
+            pushRealtimeSync({ orders: ordersToPush }).catch(() => {});
+          }
+        }
+
+        // Merge Deleted Stock Movement IDs (Tombstone Union: strictly monotonic)
+        let activeDeletedMovIds = new Set<string>();
+        if (typeof window !== 'undefined') {
+          try {
+            const saved = localStorage.getItem('huda_deleted_stock_movement_ids');
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              if (Array.isArray(parsed)) parsed.forEach((id: string) => activeDeletedMovIds.add(id));
+            }
+          } catch (e) {}
+        }
+        deletedStockMovementIdsRef.current.forEach((id: string) => activeDeletedMovIds.add(id));
+        if (Array.isArray(data.deletedStockMovementIds)) {
+          data.deletedStockMovementIds.forEach((id: string) => activeDeletedMovIds.add(id));
+        }
+        setDeletedStockMovementIds(activeDeletedMovIds);
+        deletedStockMovementIdsRef.current = activeDeletedMovIds;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('huda_deleted_stock_movement_ids', JSON.stringify(Array.from(activeDeletedMovIds)));
+        }
+
+        // Merge Stock Movements (smart zero-data-loss merge preserving local settlements & deletions)
+        const cloudDeletedMovs = activeDeletedMovIds;
+        let movementsToPush: StockMovement[] | null = null;
+
+        setStockMovements((prev) => {
+          const movMap = new Map<string, StockMovement>();
+
+          // 1. Add current local movements first (strictly excluding any deleted ones)
+          prev.forEach((m) => {
+            if (!cloudDeletedMovs.has(m.id)) {
+              movMap.set(m.id, m);
+            }
+          });
+
+          // 2. Merge cloud movements (strictly excluding any deleted ones)
+          if (Array.isArray(data.stockMovements)) {
+            data.stockMovements.forEach((cloudMov: StockMovement) => {
+              if (cloudDeletedMovs.has(cloudMov.id)) return;
+              const localMov = movMap.get(cloudMov.id);
+              if (!localMov) {
+                movMap.set(cloudMov.id, cloudMov);
+              } else {
+                // Keep settled status if either cloud or local marked it settled
+                const isSettled = Boolean(localMov.isSettled || cloudMov.isSettled);
+                const settlementId = localMov.settlementId || cloudMov.settlementId;
+                movMap.set(cloudMov.id, {
+                  ...cloudMov,
+                  ...localMov,
+                  isSettled,
+                  settlementId: isSettled ? settlementId : undefined,
+                  lotNumber: localMov.lotNumber || cloudMov.lotNumber || '',
+                });
+              }
+            });
+          }
+
+          const merged = Array.from(movMap.values()).sort(
+            (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+          );
+
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_stock_movements', JSON.stringify(merged));
+          }
+
+          // Two-Way Sync: If this device has local movements that cloud lacks, push them up!
+          const cloudMovIds = new Set((data.stockMovements || []).map((m: StockMovement) => m.id));
+          const hasUnsyncedMovements = merged.some((m) => !cloudMovIds.has(m.id));
+          if (hasUnsyncedMovements || merged.length > (data.stockMovements || []).length) {
+            movementsToPush = merged;
+          }
+
+          return merged;
+        });
+
+        if (movementsToPush) {
+          pushRealtimeSync({ stockMovements: movementsToPush }).catch(() => {});
+        }
+
+        // If cloud returned deleted items, purge them from cloud immediately!
+        if (cloudDeletedMovs.size > 0 && Array.isArray(data.stockMovements) && data.stockMovements.some((m) => cloudDeletedMovs.has(m.id))) {
+          const cleanedCloudList = (data.stockMovements || []).filter((m) => !cloudDeletedMovs.has(m.id));
+          pushRealtimeSync({
+            stockMovements: cleanedCloudList,
+            deletedStockMovementIds: Array.from(cloudDeletedMovs),
+          }).catch(() => {});
         }
 
         // Merge Supplier Settlements (smart merge preserving un-synced local records)
-        if (Array.isArray(data.supplierSettlements) && data.supplierSettlements.length > 0) {
-          setSupplierSettlements((prev) => {
-            const setMap = new Map<string, SupplierSettlement>();
-            (data.supplierSettlements || []).forEach((s: SupplierSettlement) => setMap.set(s.id, s));
-            prev.forEach((s) => {
+        let settlementsToPush: SupplierSettlement[] | null = null;
+        setSupplierSettlements((prev) => {
+          let deletedSettlementIds = new Set<string>();
+          if (typeof window !== 'undefined') {
+            try {
+              const raw = localStorage.getItem('huda_deleted_settlement_ids') || '[]';
+              const parsed: string[] = JSON.parse(raw);
+              deletedSettlementIds = new Set(parsed);
+            } catch (e) {}
+          }
+          const setMap = new Map<string, SupplierSettlement>();
+          prev.forEach((s) => {
+            if (!deletedSettlementIds.has(s.id)) {
+              setMap.set(s.id, s);
+            }
+          });
+          if (Array.isArray(data.supplierSettlements)) {
+            data.supplierSettlements.forEach((s: SupplierSettlement) => {
+              if (deletedSettlementIds.has(s.id)) return;
               if (!setMap.has(s.id)) {
                 setMap.set(s.id, s);
+              } else {
+                const local = setMap.get(s.id)!;
+                setMap.set(s.id, { ...s, ...local });
               }
             });
-            const merged = Array.from(setMap.values()).sort(
-              (a, b) => new Date(b.settledAt || 0).getTime() - new Date(a.settledAt || 0).getTime()
+          }
+          const merged = Array.from(setMap.values()).sort(
+            (a, b) => new Date(b.settledAt || 0).getTime() - new Date(a.settledAt || 0).getTime()
+          );
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_supplier_settlements', JSON.stringify(merged));
+          }
+
+          // Two-Way Sync: If this device has settlements that cloud lacks, push them up!
+          const cloudSetIds = new Set((data.supplierSettlements || []).map((s: SupplierSettlement) => s.id));
+          const hasUnsyncedSets = merged.some((s) => !cloudSetIds.has(s.id));
+          if (hasUnsyncedSets || merged.length > (data.supplierSettlements || []).length) {
+            settlementsToPush = merged;
+          }
+
+          return merged;
+        });
+
+        if (settlementsToPush) {
+          pushRealtimeSync({ supplierSettlements: settlementsToPush }).catch(() => {});
+        }
+
+        // Merge Supplier Return Vouchers
+        let returnVouchersToPush: SupplierReturnVoucher[] | null = null;
+        setSupplierReturnVouchers((prev) => {
+          const retMap = new Map<string, SupplierReturnVoucher>();
+          prev.forEach((v) => retMap.set(v.id, v));
+          if (Array.isArray(data.supplierReturnVouchers)) {
+            data.supplierReturnVouchers.forEach((v: SupplierReturnVoucher) => {
+              if (!retMap.has(v.id)) {
+                retMap.set(v.id, v);
+              } else {
+                const local = retMap.get(v.id)!;
+                retMap.set(v.id, { ...v, ...local });
+              }
+            });
+          }
+          const merged = Array.from(retMap.values()).sort(
+            (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+          );
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_supplier_return_vouchers', JSON.stringify(merged));
+          }
+
+          const cloudRetIds = new Set((data.supplierReturnVouchers || []).map((v: SupplierReturnVoucher) => v.id));
+          const hasUnsyncedRets = merged.some((v) => !cloudRetIds.has(v.id));
+          if (hasUnsyncedRets || merged.length > (data.supplierReturnVouchers || []).length) {
+            returnVouchersToPush = merged;
+          }
+
+          return merged;
+        });
+
+        if (returnVouchersToPush) {
+          pushRealtimeSync({ supplierReturnVouchers: returnVouchersToPush }).catch(() => {});
+        }
+
+        // Merge Deleted Event Schedule IDs
+        if (Array.isArray(data.deletedEventScheduleIds)) {
+          setDeletedEventScheduleIds(new Set(data.deletedEventScheduleIds));
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_deleted_event_ids', JSON.stringify(data.deletedEventScheduleIds));
+          }
+        }
+
+        // Merge Event Schedules (Smart Zero Data Loss Architecture)
+        if (Array.isArray(data.eventSchedules)) {
+          const cloudDeletedEvents = Array.isArray(data.deletedEventScheduleIds)
+            ? new Set(data.deletedEventScheduleIds)
+            : new Set<string>();
+
+          setEventSchedules((prev) => {
+            const schMap = new Map<string, EventSchedule>();
+            // 1. Load incoming cloud schedules not marked deleted
+            (data.eventSchedules || []).forEach((s: EventSchedule) => {
+              if (!cloudDeletedEvents.has(s.id)) {
+                schMap.set(s.id, s);
+              }
+            });
+            // 2. CRITICAL: Preserve un-synced local schedules!
+            prev.forEach((local) => {
+              if (!schMap.has(local.id) && !cloudDeletedEvents.has(local.id)) {
+                schMap.set(local.id, local);
+              }
+            });
+            const merged = Array.from(schMap.values()).sort(
+              (a, b) => new Date(b.startDate || 0).getTime() - new Date(a.startDate || 0).getTime()
             );
             if (typeof window !== 'undefined') {
-              localStorage.setItem('huda_supplier_settlements', JSON.stringify(merged));
+              localStorage.setItem('huda_event_schedules', JSON.stringify(merged));
             }
             return merged;
           });
-        } else if (supplierSettlements.length > 0) {
-          triggerBackgroundPush({ supplierSettlements });
-        }
-
-        // Merge Event Schedules
-        if (Array.isArray(data.eventSchedules) && data.eventSchedules.length > 0) {
-          setEventSchedules(data.eventSchedules);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('huda_event_schedules', JSON.stringify(data.eventSchedules));
-          }
-        } else if (eventSchedules.length > 0) {
-          triggerBackgroundPush({ eventSchedules, eventBranches });
         }
 
         // Merge Event Branches
@@ -605,6 +1183,55 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setEventBranches(data.eventBranches);
           if (typeof window !== 'undefined') {
             localStorage.setItem('huda_event_branches', JSON.stringify(data.eventBranches));
+          }
+        }
+
+        // Merge Booth Stock Transfers (Multi-device booth sync)
+        if (Array.isArray(data.boothTransfers)) {
+          const cloudDeletedTransfers = Array.isArray(data.deletedBoothTransferIds)
+            ? new Set(data.deletedBoothTransferIds)
+            : new Set<string>();
+
+          let transfersToPush: BoothStockTransfer[] | null = null;
+          setBoothTransfers((prev) => {
+            const trfMap = new Map<string, BoothStockTransfer>();
+            (data.boothTransfers || []).forEach((t: BoothStockTransfer) => {
+              if (!cloudDeletedTransfers.has(t.id)) {
+                trfMap.set(t.id, t);
+              }
+            });
+            prev.forEach((local) => {
+              if (!trfMap.has(local.id) && !cloudDeletedTransfers.has(local.id)) {
+                trfMap.set(local.id, local);
+              }
+            });
+            const merged = Array.from(trfMap.values()).sort(
+              (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+            );
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('huda_booth_transfers', JSON.stringify(merged));
+            }
+            // CRITICAL: If local device has transfers that cloud doesn't have, prepare push to cloud!
+            const cloudIds = new Set((data.boothTransfers || []).map((t: BoothStockTransfer) => t.id));
+            const hasUnsyncedLocal = merged.some((m) => !cloudIds.has(m.id));
+            if (hasUnsyncedLocal || merged.length > (data.boothTransfers || []).length) {
+              transfersToPush = merged;
+            }
+            return merged;
+          });
+
+          if (transfersToPush) {
+            pushRealtimeSync({ boothTransfers: transfersToPush }).catch(() => {});
+          }
+        } else if (typeof window !== 'undefined') {
+          const savedLocalTransfers = localStorage.getItem('huda_booth_transfers');
+          if (savedLocalTransfers) {
+            try {
+              const parsed = JSON.parse(savedLocalTransfers);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                pushRealtimeSync({ boothTransfers: parsed }).catch(() => {});
+              }
+            } catch (e) {}
           }
         }
 
@@ -625,6 +1252,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const updated: CustomOptions = {
               suppliers: data.customOptions?.suppliers || prev.suppliers || [],
               stockInNotes: data.customOptions?.stockInNotes || prev.stockInNotes || [],
+              lotNumbers: data.customOptions?.lotNumbers || prev.lotNumbers || ['HUDA-001-1-69', 'HUDA-A005-1-69', '1-69'],
               categories: data.customOptions?.categories || prev.categories || [],
               fabrics: data.customOptions?.fabrics || prev.fabrics || {},
               sizes: data.customOptions?.sizes || prev.sizes || {},
@@ -634,6 +1262,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (typeof window !== 'undefined') {
               if (updated.suppliers) localStorage.setItem('huda_custom_suppliers', JSON.stringify(updated.suppliers));
               if (updated.stockInNotes) localStorage.setItem('huda_custom_stock_in_notes', JSON.stringify(updated.stockInNotes));
+              if (updated.lotNumbers) localStorage.setItem('huda_custom_lot_numbers', JSON.stringify(updated.lotNumbers));
               if (updated.categories) localStorage.setItem('huda_custom_category_list_v1', JSON.stringify(updated.categories));
               if (updated.fabrics) localStorage.setItem('huda_category_fabric_map_v3', JSON.stringify(updated.fabrics));
               if (updated.sizes) localStorage.setItem('huda_category_size_map_v1', JSON.stringify(updated.sizes));
@@ -642,6 +1271,78 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             return updated;
           });
+        }
+
+        // Merge Staff Users (Multi-Device Auto-Sync)
+        if (Array.isArray(data.staffUsers)) {
+          let staffToPush: StaffUser[] | null = null;
+          setStaffUsers((prev) => {
+            const userMap = new Map<string, StaffUser>();
+            (data.staffUsers || []).filter((u) => u && u.id !== 'STF-001').forEach((u) => userMap.set(u.id, u));
+            (prev || []).filter((u) => u && u.id !== 'STF-001').forEach((local) => {
+              const serverUser = userMap.get(local.id);
+              if (!serverUser) {
+                userMap.set(local.id, local);
+              } else {
+                const localUpdated = (local as any).updatedAt || 0;
+                const serverUpdated = (serverUser as any).updatedAt || 0;
+                if (localUpdated >= serverUpdated) {
+                  userMap.set(local.id, local);
+                }
+              }
+            });
+            const merged = Array.from(userMap.values());
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('huda_staff_users', JSON.stringify(merged));
+            }
+            // If local device has more staff than cloud returned, prepare push to cloud!
+            if (merged.length > (data.staffUsers || []).length) {
+              staffToPush = merged;
+            }
+            return merged;
+          });
+
+          if (staffToPush) {
+            pushRealtimeSync({ staffUsers: staffToPush }).catch(() => {});
+          }
+        } else if (typeof window !== 'undefined') {
+          const savedLocalStaff = localStorage.getItem('huda_staff_users');
+          if (savedLocalStaff) {
+            try {
+              const parsed = JSON.parse(savedLocalStaff);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                pushRealtimeSync({ staffUsers: parsed }).catch(() => {});
+              }
+            } catch (e) {}
+          }
+        }
+
+        // Two-Way Sync Fallback: If cloud returned empty lists for movements/orders/settlements,
+        // automatically push any local persistent records up to cloud so other devices (e.g. PC / mobile) get them immediately!
+        if (typeof window !== 'undefined') {
+          try {
+            const rawMovs = localStorage.getItem('huda_stock_movements');
+            if (rawMovs && (!data.stockMovements || data.stockMovements.length === 0)) {
+              const parsedMovs = JSON.parse(rawMovs);
+              if (Array.isArray(parsedMovs) && parsedMovs.length > 0) {
+                pushRealtimeSync({ stockMovements: parsedMovs }).catch(() => {});
+              }
+            }
+            const rawOrders = localStorage.getItem('huda_orders');
+            if (rawOrders && (!data.orders || data.orders.length === 0)) {
+              const parsedOrders = JSON.parse(rawOrders);
+              if (Array.isArray(parsedOrders) && parsedOrders.length > 0) {
+                pushRealtimeSync({ orders: parsedOrders }).catch(() => {});
+              }
+            }
+            const rawSets = localStorage.getItem('huda_supplier_settlements');
+            if (rawSets && (!data.supplierSettlements || data.supplierSettlements.length === 0)) {
+              const parsedSets = JSON.parse(rawSets);
+              if (Array.isArray(parsedSets) && parsedSets.length > 0) {
+                pushRealtimeSync({ supplierSettlements: parsedSets }).catch(() => {});
+              }
+            }
+          } catch (e) {}
         }
       } else {
         // Fallback to legacy individual sync endpoints if /api/sync is not available yet
@@ -659,71 +1360,18 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
-  // =========================================================================
-  // AUTOMATED REACTIVE SENTINELS (100% Zero Data Loss Architecture)
-  // Guarantee: If ANY developer or function mutates state anywhere in the application,
-  // these sentinels automatically capture, save locally, and push to Cloudflare KV.
-  // =========================================================================
-  useEffect(() => {
-    if (!isInitialSyncCompletedRef.current || isApplyingCloudSyncRef.current) return;
-    if (typeof window !== 'undefined') {
-      try { localStorage.setItem('huda_products', JSON.stringify(products)); } catch (e) {}
+  const notifyEventScheduleToLine = async (
+    schedule: EventSchedule,
+    action: 'created' | 'updated' | 'reminder' = 'created'
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const msg = formatEventScheduleMessage(schedule, action);
+      return await sendLineNotification(msg, storeSettings);
+    } catch (err: any) {
+      console.warn('Failed to send LINE event schedule notification:', err);
+      return { success: false, error: err?.message || 'ส่งแจ้งเตือนตารางงานไม่สำเร็จ' };
     }
-    triggerBackgroundPush({ products });
-  }, [products]);
-
-  useEffect(() => {
-    if (!isInitialSyncCompletedRef.current || isApplyingCloudSyncRef.current) return;
-    if (typeof window !== 'undefined') {
-      try { localStorage.setItem('huda_orders', JSON.stringify(orders)); } catch (e) {}
-    }
-    triggerBackgroundPush({ orders });
-  }, [orders]);
-
-  useEffect(() => {
-    if (!isInitialSyncCompletedRef.current || isApplyingCloudSyncRef.current) return;
-    if (typeof window !== 'undefined') {
-      try { localStorage.setItem('huda_stock_movements', JSON.stringify(stockMovements)); } catch (e) {}
-    }
-    triggerBackgroundPush({ stockMovements });
-  }, [stockMovements]);
-
-  useEffect(() => {
-    if (!isInitialSyncCompletedRef.current || isApplyingCloudSyncRef.current) return;
-    if (typeof window !== 'undefined') {
-      try { localStorage.setItem('huda_supplier_settlements', JSON.stringify(supplierSettlements)); } catch (e) {}
-    }
-    triggerBackgroundPush({ supplierSettlements });
-  }, [supplierSettlements]);
-
-  useEffect(() => {
-    if (!isInitialSyncCompletedRef.current || isApplyingCloudSyncRef.current) return;
-    if (typeof window !== 'undefined') {
-      try { localStorage.setItem('huda_store_settings', JSON.stringify(storeSettings)); } catch (e) {}
-    }
-    triggerBackgroundPush({ settings: storeSettings });
-  }, [storeSettings]);
-
-  useEffect(() => {
-    if (!isInitialSyncCompletedRef.current || isApplyingCloudSyncRef.current) return;
-    if (typeof window !== 'undefined') {
-      try { localStorage.setItem('huda_event_schedules', JSON.stringify(eventSchedules)); } catch (e) {}
-    }
-    triggerBackgroundPush({ eventSchedules });
-  }, [eventSchedules]);
-
-  useEffect(() => {
-    if (!isInitialSyncCompletedRef.current || isApplyingCloudSyncRef.current) return;
-    if (typeof window !== 'undefined') {
-      try { localStorage.setItem('huda_event_branches', JSON.stringify(eventBranches)); } catch (e) {}
-    }
-    triggerBackgroundPush({ eventBranches });
-  }, [eventBranches]);
-
-  useEffect(() => {
-    if (!isInitialSyncCompletedRef.current || isApplyingCloudSyncRef.current) return;
-    triggerBackgroundPush({ customOptions });
-  }, [customOptions]);
+  };
 
   const addEventSchedule = (schedule: EventSchedule) => {
     soundFx.playSuccess();
@@ -735,6 +1383,11 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       triggerBackgroundPush({ eventSchedules: updated });
       return updated;
     });
+
+    // Auto-send LINE notification if enabled
+    if (storeSettings.lineNotifyEnabled !== false && storeSettings.lineNotifyOnEventSchedule !== false) {
+      notifyEventScheduleToLine(schedule, 'created').catch(() => {});
+    }
   };
 
   const updateEventSchedule = (schedule: EventSchedule) => {
@@ -747,16 +1400,31 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       triggerBackgroundPush({ eventSchedules: updated });
       return updated;
     });
+
+    // Auto-send LINE notification if enabled
+    if (storeSettings.lineNotifyEnabled !== false && storeSettings.lineNotifyOnEventSchedule !== false) {
+      notifyEventScheduleToLine(schedule, 'updated').catch(() => {});
+    }
   };
 
   const deleteEventSchedule = (scheduleId: string) => {
     soundFx.playDelete();
+    setDeletedEventScheduleIds((prev) => {
+      const updated = new Set([...prev, scheduleId]);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_deleted_event_ids', JSON.stringify(Array.from(updated)));
+      }
+      return updated;
+    });
     setEventSchedules((prev) => {
       const updated = prev.filter((s) => s.id !== scheduleId);
       if (typeof window !== 'undefined') {
         localStorage.setItem('huda_event_schedules', JSON.stringify(updated));
       }
-      triggerBackgroundPush({ eventSchedules: updated });
+      triggerBackgroundPush({
+        eventSchedules: updated,
+        deletedEventScheduleIds: [scheduleId],
+      });
       return updated;
     });
   };
@@ -788,6 +1456,381 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const createBoothTransfer = (transfer: BoothStockTransfer) => {
+    soundFx.playSuccess();
+    // 1. Deduct dispatched quantity from central products inventory
+    let updatedProducts: Product[] = [];
+    setProducts((prevProducts) => {
+      updatedProducts = prevProducts.map((prod) => {
+        const transferItemsForProd = transfer.items.filter((ti) => ti.productId === prod.id);
+        if (transferItemsForProd.length === 0) return prod;
+
+        const updatedVariants = prod.variants.map((v) => {
+          const matchItem = transferItemsForProd.find((ti) => ti.variantId === v.id);
+          if (!matchItem) return v;
+          const newQty = Math.max(0, v.stockQuantity - matchItem.dispatchedQty);
+          return {
+            ...v,
+            stockQuantity: newQty,
+            updatedAt: Date.now(),
+          };
+        });
+
+        return { ...prod, variants: updatedVariants, updatedAt: Date.now() };
+      });
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_products', JSON.stringify(updatedProducts));
+      }
+      saveCloudProducts(updatedProducts);
+      return updatedProducts;
+    });
+
+    // 2. Save new booth transfer
+    setBoothTransfers((prev) => {
+      const updated = [transfer, ...prev.filter((t) => t.id !== transfer.id)];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_booth_transfers', JSON.stringify(updated));
+      }
+      pushRealtimeSync({
+        products: updatedProducts,
+        boothTransfers: updated,
+      }).then((ver) => {
+        if (ver) {
+          syncVersionRef.current = ver;
+          setLastSyncTime(Date.now());
+          setSyncStatus('synced');
+          try {
+            syncChannelRef.current?.postMessage({ type: 'SYNC_NOW', senderId: tabIdRef.current });
+          } catch (e) {}
+        }
+      }).catch(() => {});
+      triggerBackgroundPush({
+        products: updatedProducts,
+        boothTransfers: updated,
+      });
+      return updated;
+    });
+  };
+
+  const updateBoothTransfer = (transfer: BoothStockTransfer) => {
+    soundFx.playSuccess();
+    setBoothTransfers((prev) => {
+      const updated = prev.map((t) => (t.id === transfer.id ? transfer : t));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_booth_transfers', JSON.stringify(updated));
+      }
+      pushRealtimeSync({ boothTransfers: updated }).then((ver) => {
+        if (ver) {
+          syncVersionRef.current = ver;
+          setLastSyncTime(Date.now());
+          setSyncStatus('synced');
+          try {
+            syncChannelRef.current?.postMessage({ type: 'SYNC_NOW', senderId: tabIdRef.current });
+          } catch (e) {}
+        }
+      }).catch(() => {});
+      triggerBackgroundPush({ boothTransfers: updated });
+      return updated;
+    });
+  };
+
+  const deleteBoothTransfer = (transferId: string) => {
+    soundFx.playDelete();
+    const target = (boothTransfers || []).find((t) => t.id === transferId);
+    let updatedProducts: Product[] = [];
+
+    // If transfer was active and not completed, revert remaining stock back to central products
+    if (target && target.status !== 'COMPLETED') {
+      const safeItems = Array.isArray(target.items) ? target.items : [];
+      setProducts((prevProducts) => {
+        updatedProducts = (prevProducts || []).map((prod) => {
+          if (!prod) return prod;
+          const transferItemsForProd = safeItems.filter((ti) => ti && ti.productId === prod.id);
+          if (transferItemsForProd.length === 0) return prod;
+
+          const updatedVariants = (prod.variants || []).map((v) => {
+            if (!v) return v;
+            const matchItem = transferItemsForProd.find((ti) => ti && ti.variantId === v.id);
+            if (!matchItem) return v;
+            const remainingToRevert = Math.max(0, (matchItem.dispatchedQty || 0) - (matchItem.soldQty || 0));
+            const currentStock = typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity) ? v.stockQuantity : 0;
+            return {
+              ...v,
+              stockQuantity: currentStock + remainingToRevert,
+              updatedAt: Date.now(),
+            };
+          });
+
+          return { ...prod, variants: updatedVariants, updatedAt: Date.now() };
+        });
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('huda_products', JSON.stringify(updatedProducts));
+        }
+        saveCloudProducts(updatedProducts);
+        return updatedProducts;
+      });
+    }
+
+    setBoothTransfers((prev) => {
+      const updated = (prev || []).filter((t) => t.id !== transferId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_booth_transfers', JSON.stringify(updated));
+      }
+      const pushPayload = {
+        boothTransfers: updated,
+        deletedBoothTransferIds: [transferId],
+        ...(updatedProducts.length > 0 ? { products: updatedProducts } : {}),
+      };
+      pushRealtimeSync(pushPayload).then((ver) => {
+        if (ver) {
+          syncVersionRef.current = ver;
+          setLastSyncTime(Date.now());
+          setSyncStatus('synced');
+          try {
+            syncChannelRef.current?.postMessage({ type: 'SYNC_NOW', senderId: tabIdRef.current });
+          } catch (e) {}
+        }
+      }).catch(() => {});
+      triggerBackgroundPush(pushPayload);
+      return updated;
+    });
+  };
+
+  const replenishBoothTransfer = (
+    transferId: string,
+    additionalItems: Array<{
+      productId: string;
+      variantId: string;
+      productTitle: string;
+      variantName: string;
+      sku: string;
+      price: number;
+      costPrice?: number;
+      image?: string;
+      quantity: number;
+    }>,
+    staffName?: string,
+    note?: string
+  ) => {
+    const validItems = additionalItems.filter((i) => i.quantity > 0);
+    if (validItems.length === 0) return;
+
+    soundFx.playSuccess();
+
+    // 1. Deduct replenishment quantities from central warehouse
+    let updatedProducts: Product[] = [];
+    setProducts((prevProducts) => {
+      updatedProducts = prevProducts.map((prod) => {
+        const replenishForProd = validItems.filter((i) => i.productId === prod.id);
+        if (replenishForProd.length === 0) return prod;
+
+        const updatedVariants = prod.variants.map((v) => {
+          const match = replenishForProd.find((i) => i.variantId === v.id);
+          if (!match) return v;
+          return {
+            ...v,
+            stockQuantity: Math.max(0, v.stockQuantity - match.quantity),
+            updatedAt: Date.now(),
+          };
+        });
+
+        return { ...prod, variants: updatedVariants, updatedAt: Date.now() };
+      });
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_products', JSON.stringify(updatedProducts));
+      }
+      saveCloudProducts(updatedProducts);
+      return updatedProducts;
+    });
+
+    // 2. Update the booth transfer items and append replenishment log
+    setBoothTransfers((prev) => {
+      const target = prev.find((t) => t.id === transferId);
+      if (!target) return prev;
+
+      const updatedItems = [...target.items];
+
+      for (const add of validItems) {
+        const existingIdx = updatedItems.findIndex(
+          (i) => i.productId === add.productId && i.variantId === add.variantId
+        );
+
+        if (existingIdx !== -1) {
+          const cur = updatedItems[existingIdx];
+          const newDispatched = cur.dispatchedQty + add.quantity;
+          const newExpected = Math.max(0, newDispatched - (cur.soldQty || 0));
+          updatedItems[existingIdx] = {
+            ...cur,
+            dispatchedQty: newDispatched,
+            expectedReturnQty: newExpected,
+            difference: (cur.actualReturnedQty || 0) - newExpected,
+          };
+        } else {
+          updatedItems.push({
+            productId: add.productId,
+            variantId: add.variantId,
+            productTitle: add.productTitle,
+            variantName: add.variantName,
+            sku: add.sku,
+            price: add.price,
+            costPrice: add.costPrice,
+            image: add.image,
+            dispatchedQty: add.quantity,
+            soldQty: 0,
+            expectedReturnQty: add.quantity,
+            actualReturnedQty: 0,
+            difference: -add.quantity,
+          });
+        }
+      }
+
+      const totalDispatchedQty = updatedItems.reduce((sum, item) => sum + item.dispatchedQty, 0);
+      const totalQtyAdded = validItems.reduce((sum, item) => sum + item.quantity, 0);
+
+      const replenishmentLog: BoothReplenishmentLog = {
+        id: `REP-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        staffName: staffName || target.staffName || 'เจ้าหน้าที่',
+        totalQtyAdded,
+        note: note || '',
+        items: validItems.map((it) => ({
+          productId: it.productId,
+          variantId: it.variantId,
+          productTitle: it.productTitle,
+          variantName: it.variantName,
+          addedQty: it.quantity,
+        })),
+      };
+
+      const updatedTransfer: BoothStockTransfer = {
+        ...target,
+        items: updatedItems,
+        totalDispatchedQty,
+        replenishments: [...(target.replenishments || []), replenishmentLog],
+        updatedAt: new Date().toISOString(),
+      };
+
+      const updatedList = prev.map((t) => (t.id === transferId ? updatedTransfer : t));
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_booth_transfers', JSON.stringify(updatedList));
+      }
+
+      pushRealtimeSync({
+        products: updatedProducts,
+        boothTransfers: updatedList,
+      }).then((ver) => {
+        if (ver) {
+          syncVersionRef.current = ver;
+          setLastSyncTime(Date.now());
+          setSyncStatus('synced');
+          try {
+            syncChannelRef.current?.postMessage({ type: 'SYNC_NOW', senderId: tabIdRef.current });
+          } catch (e) {}
+        }
+      }).catch(() => {});
+
+      triggerBackgroundPush({
+        products: updatedProducts,
+        boothTransfers: updatedList,
+      });
+
+      return updatedList;
+    });
+  };
+
+  const reconcileAndReturnBoothTransfer = (
+    transferId: string,
+    actualItems: BoothTransferItem[],
+    note?: string
+  ) => {
+    try {
+      soundFx.playSuccess();
+      const target = (boothTransfers || []).find((t) => t.id === transferId);
+      if (!target) {
+        console.warn(`reconcileAndReturnBoothTransfer: Transfer #${transferId} not found`);
+        return;
+      }
+
+      const safeActualItems = Array.isArray(actualItems) ? actualItems : [];
+
+      // 1. Return the physically counted items back into central warehouse
+      let updatedProducts: Product[] = [];
+      setProducts((prevProducts) => {
+        updatedProducts = (prevProducts || []).map((prod) => {
+          if (!prod) return prod;
+          const returnItemsForProd = safeActualItems.filter((ti) => ti && ti.productId === prod.id);
+          if (returnItemsForProd.length === 0) return prod;
+
+          const updatedVariants = (prod.variants || []).map((v) => {
+            if (!v) return v;
+            const matchItem = returnItemsForProd.find((ti) => ti && ti.variantId === v.id);
+            if (!matchItem) return v;
+            const returnQty = Math.max(0, Number(matchItem.actualReturnedQty) || 0);
+            const currentStock = typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity) ? v.stockQuantity : 0;
+            return {
+              ...v,
+              stockQuantity: currentStock + returnQty,
+              updatedAt: Date.now(),
+            };
+          });
+
+          return { ...prod, variants: updatedVariants, updatedAt: Date.now() };
+        });
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('huda_products', JSON.stringify(updatedProducts));
+        }
+        saveCloudProducts(updatedProducts);
+        return updatedProducts;
+      });
+
+      // 2. Mark transfer as COMPLETED & isReconciled = true
+      const totalActualReturnedQty = safeActualItems.reduce((sum, item) => sum + (Number(item?.actualReturnedQty) || 0), 0);
+      const completedTransfer: BoothStockTransfer = {
+        ...target,
+        status: 'COMPLETED',
+        isReconciled: true,
+        returnDate: new Date().toISOString(),
+        items: safeActualItems,
+        totalActualReturnedQty,
+        note: note !== undefined ? note : (target.note || ''),
+        updatedAt: new Date().toISOString(),
+      };
+
+      setBoothTransfers((prev) => {
+        const updated = (prev || []).map((t) => (t.id === transferId ? completedTransfer : t));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('huda_booth_transfers', JSON.stringify(updated));
+        }
+        pushRealtimeSync({
+          products: updatedProducts,
+          boothTransfers: updated,
+        }).then((ver) => {
+          if (ver) {
+            syncVersionRef.current = ver;
+            setLastSyncTime(Date.now());
+            setSyncStatus('synced');
+            try {
+              syncChannelRef.current?.postMessage({ type: 'SYNC_NOW', senderId: tabIdRef.current });
+            } catch (e) {}
+          }
+        }).catch(() => {});
+        triggerBackgroundPush({
+          products: updatedProducts,
+          boothTransfers: updated,
+        });
+        return updated;
+      });
+    } catch (error) {
+      console.error('Error in reconcileAndReturnBoothTransfer:', error);
+      throw error;
+    }
+  };
+
   const handleSetEventSchedules: React.Dispatch<React.SetStateAction<EventSchedule[]>> = (valueOrUpdater) => {
     setEventSchedules((prev) => {
       const next = typeof valueOrUpdater === 'function' ? valueOrUpdater(prev) : valueOrUpdater;
@@ -817,6 +1860,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const storageKeys: Record<keyof CustomOptions, string> = {
           suppliers: 'huda_custom_suppliers',
           stockInNotes: 'huda_custom_stock_in_notes',
+          lotNumbers: 'huda_custom_lot_numbers',
           categories: 'huda_custom_category_list_v1',
           fabrics: 'huda_category_fabric_map_v3',
           sizes: 'huda_category_size_map_v1',
@@ -862,9 +1906,16 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         // Restore and auto-upgrade saved products to full 78 master catalog with pristine CDN images
-        const CURRENT_CATALOG_VERSION = 'v_78_stock_sync_v5';
+        const CURRENT_CATALOG_VERSION = 'v_79_clean_edp_perfume_sizes';
         const savedProds = localStorage.getItem('huda_products');
         const catalogVer = localStorage.getItem('huda_catalog_version');
+
+        const cleanPerfumeVariantName = (name: string): string => {
+          if (!name) return '';
+          return name
+            .replace(/\s*\([^)]*(?:edp|spray|premium|attar|sample|tester)[^)]*\)/gi, '')
+            .trim() || name;
+        };
 
         const masterMap = new Map<string, Product>();
         INITIAL_PRODUCTS.forEach((p) => masterMap.set(p.id, p));
@@ -912,13 +1963,12 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     const mergedVariants = master.variants.map((mv) => {
                       const ov = (p.variants || []).find((v: ProductVariant) => v.id === mv.id);
                       if (!ov) return mv;
-                      const ovStock = typeof ov.stockQuantity === 'number' && !isNaN(ov.stockQuantity) ? ov.stockQuantity : 0;
-                      const mvStock = typeof mv.stockQuantity === 'number' && !isNaN(mv.stockQuantity) ? mv.stockQuantity : 0;
+                      const ovStock = typeof ov.stockQuantity === 'number' && !isNaN(ov.stockQuantity) ? ov.stockQuantity : mv.stockQuantity;
                       return {
                         ...mv,
                         price: typeof ov.price === 'number' && ov.price > 0 ? ov.price : mv.price,
                         costPrice: typeof ov.costPrice === 'number' && ov.costPrice > 0 ? ov.costPrice : mv.costPrice,
-                        stockQuantity: Math.max(ovStock, mvStock),
+                        stockQuantity: ovStock,
                         updatedAt: Math.max(Number(ov.updatedAt) || 0, Number(mv.updatedAt) || 0),
                       };
                     });
@@ -930,7 +1980,11 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     });
                   } else {
                     // Custom user-added product
-                    mergedMap.set(p.id, p);
+                    const cleanedVariants = (p.variants || []).map((v) => ({
+                      ...v,
+                      name: p.category === 'perfume' ? cleanPerfumeVariantName(v.name) : v.name,
+                    }));
+                    mergedMap.set(p.id, { ...p, variants: cleanedVariants });
                   }
                 });
               }
@@ -949,29 +2003,16 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (savedSettings) {
           try {
             const parsed = JSON.parse(savedSettings);
-            if (parsed.enableCreditCard || parsed.enableCOD || parsed.enableTrueMoney) {
-              localStorage.removeItem('huda_store_settings');
-            } else {
-              setStoreSettings({
+            if (parsed && typeof parsed === 'object') {
+              setStoreSettings((prev) => ({
                 ...DEFAULT_SETTINGS,
+                ...prev,
                 ...parsed,
-                contactAddress: '11/2 ถนน คลองสิบสาม แขวงหนองจอก เขตหนองจอก กรุงเทพมหานคร 10530',
-                contactPhone: '083-427-4687',
-                promptPayNumber: '0963452355',
-                bankName: 'ธนาคารกรุงไทย (Krungthai Bank)',
-                bankAccountNo: '460-0-87408-0',
-                bankAccountName: 'น.ส. ฮูดา นิมา',
-                contactLine: '',
-                enablePromptPay: true,
-                enableBankTransfer: true,
-                enableCreditCard: false,
-                enableCOD: false,
-                enableTrueMoney: false,
-                logoImageUrl: parsed.logoImageUrl || savedLogo || DEFAULT_LOGO_BASE64,
-              });
+                logoImageUrl: parsed.logoImageUrl || savedLogo || prev.logoImageUrl || DEFAULT_LOGO_BASE64,
+              }));
             }
           } catch (e) {
-            localStorage.removeItem('huda_store_settings');
+            console.warn('Failed to parse huda_store_settings', e);
           }
         }
       }
@@ -984,15 +2025,106 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if ('BroadcastChannel' in window) {
           syncChannelRef.current = new BroadcastChannel('huda_realtime_sync_channel');
           syncChannelRef.current.onmessage = (event) => {
-            if (event.data?.type === 'SYNC_NOW') {
-              forceRealtimeSync();
+            if (event.data?.senderId && event.data.senderId === tabIdRef.current) {
+              return;
+            }
+            if (event.data?.type === 'PRODUCTS_UPDATED' && Array.isArray(event.data?.products)) {
+              setProducts(event.data.products);
+              if (Array.isArray(event.data?.stockMovements)) {
+                setStockMovements(event.data.stockMovements);
+              }
+            } else if (event.data?.type === 'ORDERS_UPDATED' && Array.isArray(event.data?.orders)) {
+              setOrders(event.data.orders);
+              if (Array.isArray(event.data?.products)) {
+                setProducts(event.data.products);
+              }
+              if (Array.isArray(event.data?.stockMovements)) {
+                setStockMovements(event.data.stockMovements);
+              }
+            } else if (
+              event.data?.type === 'STOCK_UPDATED' ||
+              event.data?.type === 'STOCK_MOVEMENTS_UPDATED'
+            ) {
+              if (Array.isArray(event.data?.stockMovements)) {
+                setStockMovements(event.data.stockMovements);
+              }
+              if (Array.isArray(event.data?.products)) {
+                setProducts(event.data.products);
+              }
+              if (Array.isArray(event.data?.supplierReturnVouchers)) {
+                setSupplierReturnVouchers(event.data.supplierReturnVouchers);
+              }
+              if (Array.isArray(event.data?.supplierSettlements)) {
+                setSupplierSettlements(event.data.supplierSettlements);
+              }
+            } else if (event.data?.type === 'SETTLEMENTS_UPDATED') {
+              if (Array.isArray(event.data?.supplierSettlements)) {
+                setSupplierSettlements(event.data.supplierSettlements);
+              }
+              if (Array.isArray(event.data?.stockMovements)) {
+                setStockMovements(event.data.stockMovements);
+              }
+            } else if (event.data?.type === 'SYNC_NOW') {
+              forceRealtimeSync(false, false);
             }
           };
         }
       } catch (e) {}
 
+      // Native browser StorageEvent listener (synchronizes open tabs in 0ms without network)
+      const handleStorageEvent = (e: StorageEvent) => {
+        if (e.key === 'huda_products' && e.newValue) {
+          try {
+            const parsed = JSON.parse(e.newValue);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setProducts(parsed);
+            }
+          } catch (err) {}
+        }
+        if (e.key === 'huda_stock_movements' && e.newValue) {
+          try {
+            const parsed = JSON.parse(e.newValue);
+            if (Array.isArray(parsed)) {
+              setStockMovements(parsed);
+            }
+          } catch (err) {}
+        }
+        if (e.key === 'huda_supplier_settlements' && e.newValue) {
+          try {
+            const parsed = JSON.parse(e.newValue);
+            if (Array.isArray(parsed)) {
+              setSupplierSettlements(parsed);
+            }
+          } catch (err) {}
+        }
+        if (e.key === 'huda_deleted_stock_movement_ids' && e.newValue) {
+          try {
+            const parsed = JSON.parse(e.newValue);
+            if (Array.isArray(parsed)) {
+              setDeletedStockMovementIds(new Set(parsed));
+            }
+          } catch (err) {}
+        }
+        if (e.key === 'huda_orders' && e.newValue) {
+          try {
+            const parsed = JSON.parse(e.newValue);
+            if (Array.isArray(parsed)) {
+              setOrders(parsed);
+            }
+          } catch (err) {}
+        }
+        if (e.key === 'huda_store_settings' && e.newValue) {
+          try {
+            const parsed = JSON.parse(e.newValue);
+            if (parsed && typeof parsed === 'object') {
+              setStoreSettings(parsed);
+            }
+          } catch (err) {}
+        }
+      };
+      window.addEventListener('storage', handleStorageEvent);
+
       // Initial immediate outbox flush & sync
-      flushOutboxQueue();
       forceRealtimeSync();
 
       // Fallback: If network is slow or offline, activate sentinels after 1200ms
@@ -1000,16 +2132,19 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isInitialSyncCompletedRef.current = true;
       }, 1200);
 
-      // Continuous 2.5s polling loop for instant cross-device updates (Mobile, Tablet, Desktop)
+      // Continuous ultra-fast realtime polling loop for instant cross-device updates (Mobile, Tablet, Desktop)
+      // Polls every 1.8s when tab is active, ensuring sales on any device reflect immediately without refreshing!
       const syncInterval = setInterval(() => {
-        forceRealtimeSync();
-      }, 2500);
+        if (typeof document !== 'undefined' && !document.hidden) {
+          forceRealtimeSync(false, false);
+        }
+      }, 1800);
 
       const handleVisibilityChange = () => {
-        if (!document.hidden) forceRealtimeSync();
+        if (!document.hidden) forceRealtimeSync(true, false);
       };
-      const handleWindowFocus = () => forceRealtimeSync();
-      const handleOnline = () => forceRealtimeSync();
+      const handleWindowFocus = () => forceRealtimeSync(true, false);
+      const handleOnline = () => forceRealtimeSync(true, false);
 
       document.addEventListener('visibilitychange', handleVisibilityChange);
       window.addEventListener('focus', handleWindowFocus);
@@ -1021,6 +2156,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         window.removeEventListener('focus', handleWindowFocus);
         window.removeEventListener('online', handleOnline);
+        window.removeEventListener('storage', handleStorageEvent);
         try { syncChannelRef.current?.close(); } catch (e) {}
       };
 
@@ -1030,13 +2166,46 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const verifyAdminPasscode = (passcode: string) => {
-    const validCode = storeSettings.adminPasscode || '1077';
-    if (passcode.trim() === validCode.trim()) {
+    const trimmed = String(passcode || '').trim();
+    const ownerCode = String(storeSettings?.adminPasscode || '1077').trim();
+
+    // 1. Check if matches owner passcode
+    if (trimmed === ownerCode) {
+      const ownerStaff = (staffUsers || []).find((u) => u.role === 'OWNER') || {
+        id: 'STF-OWNER',
+        name: 'เจ้าของร้าน (Admin)',
+        pin: ownerCode,
+        role: 'OWNER' as const,
+        phone: storeSettings?.contactPhone || '',
+        active: true,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+      };
+      setCurrentStaff(ownerStaff);
       setIsAdminAuthenticated(true);
       setIsAdminMode(true);
       setIsAdminLoginModalOpen(false);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_current_staff', JSON.stringify(ownerStaff));
+        sessionStorage.setItem('huda_current_staff', JSON.stringify(ownerStaff));
+      }
       return true;
     }
+
+    // 2. Check if matches any active Staff User PIN
+    const matchedUser = (staffUsers || []).find((u) => (u.isActive ?? u.active ?? true) && String(u.pin || '').trim() === trimmed);
+    if (matchedUser) {
+      setCurrentStaff(matchedUser);
+      setIsAdminAuthenticated(true);
+      setIsAdminMode(true);
+      setIsAdminLoginModalOpen(false);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_current_staff', JSON.stringify(matchedUser));
+        sessionStorage.setItem('huda_current_staff', JSON.stringify(matchedUser));
+      }
+      return true;
+    }
+
     return false;
   };
 
@@ -1044,9 +2213,63 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsAdminAuthenticated(false);
     setIsAdminMode(false);
     setIsAdminLoginModalOpen(false);
+    setCurrentStaff(null);
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('huda_admin_authenticated');
       localStorage.removeItem('huda_admin_authenticated');
+      sessionStorage.removeItem('huda_current_staff');
+      localStorage.removeItem('huda_current_staff');
+    }
+  };
+
+  const addStaffUser = (user: StaffUser) => {
+    soundFx.playSuccess();
+    const timestamped: StaffUser = { ...user, updatedAt: Date.now() };
+    setStaffUsers((prev) => {
+      const updated = [...prev.filter((u) => u.id !== timestamped.id), timestamped];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_staff_users', JSON.stringify(updated));
+      }
+      triggerBackgroundPush({ staffUsers: updated });
+      pushRealtimeSync({ staffUsers: updated }).catch(() => {});
+      return updated;
+    });
+  };
+
+  const updateStaffUser = (user: StaffUser) => {
+    soundFx.playSuccess();
+    const timestamped: StaffUser = { ...user, updatedAt: Date.now() };
+    setStaffUsers((prev) => {
+      const updated = prev.map((u) => (u.id === user.id ? timestamped : u));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_staff_users', JSON.stringify(updated));
+      }
+      triggerBackgroundPush({ staffUsers: updated });
+      pushRealtimeSync({ staffUsers: updated }).catch(() => {});
+      return updated;
+    });
+    if (currentStaff?.id === user.id) {
+      setCurrentStaff(timestamped);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_current_staff', JSON.stringify(timestamped));
+        sessionStorage.setItem('huda_current_staff', JSON.stringify(timestamped));
+      }
+    }
+  };
+
+  const deleteStaffUser = (userId: string) => {
+    soundFx.playDelete();
+    setStaffUsers((prev) => {
+      const updated = prev.filter((u) => u.id !== userId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_staff_users', JSON.stringify(updated));
+      }
+      triggerBackgroundPush({ staffUsers: updated });
+      pushRealtimeSync({ staffUsers: updated }).catch(() => {});
+      return updated;
+    });
+    if (currentStaff?.id === userId) {
+      logoutAdmin();
     }
   };
 
@@ -1374,6 +2597,14 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const cloudSettings = await fetchCloudSettings();
       if (cloudSettings && Object.keys(cloudSettings).length > 0) {
         setStoreSettings((prev) => {
+          const cloudTime = cloudSettings.lastUpdated ? new Date(cloudSettings.lastUpdated).getTime() : 0;
+          const localTime = prev.lastUpdated ? new Date(prev.lastUpdated).getTime() : 0;
+
+          if (localTime > cloudTime && localTime > 0) {
+            saveCloudSettings(prev);
+            return prev;
+          }
+
           const updated = {
             ...DEFAULT_SETTINGS,
             ...prev,
@@ -1405,7 +2636,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateStoreSettings = async (newSettings: Partial<StoreSettings>) => {
-    const nowStamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+    const nowStamp = new Date().toISOString();
     setStoreSettings((prev) => {
       const updated = {
         ...prev,
@@ -1523,32 +2754,74 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const now = Date.now();
 
     let updatedProductsList: Product[] = [];
-    setProducts((prevProducts) => {
-      updatedProductsList = prevProducts.map((prod) => {
-        const matchingItems = newOrder.items.filter((item) => item.productId === prod.id);
-        if (matchingItems.length === 0) return prod;
+    if (!newOrder.boothTransferId) {
+      setProducts((prevProducts) => {
+        updatedProductsList = prevProducts.map((prod) => {
+          const matchingItems = newOrder.items.filter((item) => item.productId === prod.id);
+          if (matchingItems.length === 0) return prod;
 
-        const updatedVariants = prod.variants.map((variant) => {
-          const orderedItem = matchingItems.find((item) => item.variantId === variant.id);
-          if (!orderedItem) return variant;
-          const updatedStock = Math.max(0, variant.stockQuantity - orderedItem.quantity);
+          const updatedVariants = prod.variants.map((variant) => {
+            const orderedItem = matchingItems.find((item) => item.variantId === variant.id);
+            if (!orderedItem) return variant;
+            const updatedStock = Math.max(0, variant.stockQuantity - orderedItem.quantity);
+
+            return {
+              ...variant,
+              stockQuantity: updatedStock,
+              updatedAt: now,
+            };
+          });
+
+          return { ...prod, variants: updatedVariants, updatedAt: now };
+        });
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('huda_products', JSON.stringify(updatedProductsList));
+          syncChannelRef.current?.postMessage({ type: 'PRODUCTS_UPDATED', products: updatedProductsList });
+        }
+        saveCloudProducts(updatedProductsList);
+        return updatedProductsList;
+      });
+    } else {
+      // Order placed from Booth POS: record sold quantity against the booth transfer
+      setBoothTransfers((prev) => {
+        const updated = prev.map((bt) => {
+          if (bt.id !== newOrder.boothTransferId) return bt;
+          const updatedItems = bt.items.map((item) => {
+            const soldInThisOrder = newOrder.items.find(
+              (oi) => oi.productId === item.productId && oi.variantId === item.variantId
+            );
+            if (!soldInThisOrder) return item;
+            const newSold = (item.soldQty || 0) + soldInThisOrder.quantity;
+            const expReturn = Math.max(0, item.dispatchedQty - newSold);
+            return {
+              ...item,
+              soldQty: newSold,
+              expectedReturnQty: expReturn,
+              difference: (item.actualReturnedQty || 0) - expReturn,
+            };
+          });
+
+          const totalSoldQty = updatedItems.reduce((sum, i) => sum + (i.soldQty || 0), 0);
+          const totalSalesAmount = (bt.totalSalesAmount || 0) + newOrder.netAmount;
 
           return {
-            ...variant,
-            stockQuantity: updatedStock,
-            updatedAt: now,
+            ...bt,
+            items: updatedItems,
+            totalSoldQty,
+            totalSalesAmount,
+            status: bt.status === 'DISPATCHED' ? 'SELLING' : bt.status,
+            updatedAt: new Date().toISOString(),
           };
         });
 
-        return { ...prod, variants: updatedVariants, updatedAt: now };
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('huda_booth_transfers', JSON.stringify(updated));
+        }
+        triggerBackgroundPush({ boothTransfers: updated });
+        return updated;
       });
-
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_products', JSON.stringify(updatedProductsList));
-      }
-      saveCloudProducts(updatedProductsList);
-      return updatedProductsList;
-    });
+    }
 
     let updatedOrdersList: Order[] = [];
     setOrders((prev) => {
@@ -1564,7 +2837,25 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newStockOutMovements: StockMovement[] = newOrder.items.map((item, idx) => {
       const prod = products.find((p) => p.id === item.productId);
       const variant = prod?.variants.find((v) => v.id === item.variantId);
-      const itemCost = item.costPrice ?? variant?.costPrice ?? Math.round(item.price * 0.5);
+
+      // Specific Lot Cost Identification:
+      // If item has a lotNumber specified, try to find the matching IN movement to get the EXACT cost of this lot!
+      let resolvedCost = item.costPrice;
+      if (resolvedCost === undefined && item.lotNumber) {
+        const cleanLot = item.lotNumber.trim();
+        const matchingIn = stockMovements.find(
+          (m) =>
+            m.type === 'IN' &&
+            m.productId === item.productId &&
+            m.variantId === item.variantId &&
+            isMatchingLot(m.lotNumber, cleanLot)
+        );
+        if (matchingIn && matchingIn.costPrice !== undefined) {
+          resolvedCost = matchingIn.costPrice;
+        }
+      }
+
+      const itemCost = resolvedCost ?? variant?.costPrice ?? Math.round(item.price * 0.5);
       const supplier = prod?.category === 'perfume' || prod?.fabric?.includes('Oud')
         ? 'ซัพพลายเออร์น้ำหอมดูไบ'
         : 'โรงงานอาบายะห์ดูไบ';
@@ -1580,8 +2871,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         costPrice: itemCost,
         totalCost: itemCost * item.quantity,
         supplierName: supplier,
+        lotNumber: item.lotNumber || '',
         referenceOrderNo: newId,
-        note: `ขายสินค้าออนไลน์/POS (Order #${newId})`,
+        note: `ขายสินค้าออนไลน์/POS (Order #${newId})${item.lotNumber ? ` [ล็อต: ${item.lotNumber}]` : ''}`,
         performedBy: 'ระบบขายหน้าร้าน / POS',
         createdAt: new Date().toISOString(),
         isSettled: false,
@@ -1597,11 +2889,22 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return updatedMovementsList;
     });
 
+    if (typeof window !== 'undefined') {
+      try {
+        syncChannelRef.current?.postMessage({
+          type: 'ORDERS_UPDATED',
+          orders: updatedOrdersList,
+          products: updatedProductsList,
+          stockMovements: updatedMovementsList,
+        });
+      } catch (e) {}
+    }
+
     triggerBackgroundPush({
       products: updatedProductsList,
       orders: updatedOrdersList,
       stockMovements: updatedMovementsList,
-    });
+    }, true);
 
     clearCart();
 
@@ -1615,6 +2918,132 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return newOrder;
   };
 
+  const recordStockInBatch = (
+    items: Array<{
+      productId: string;
+      variantId: string;
+      quantity: number;
+      costPrice: number;
+      supplierName: string;
+      note?: string;
+      lotNumber?: string;
+    }>
+  ) => {
+    if (!items || items.length === 0) return;
+    soundFx.playSuccess();
+    const now = Date.now();
+    const nowIso = new Date().toISOString();
+
+    let updatedProductsList: Product[] = [];
+    setProducts((prevProducts) => {
+      // Map of incoming increments: `${productId}:${variantId}`
+      const incomingMap = new Map<string, { quantity: number; costPrice: number }>();
+      items.forEach((it) => {
+        const key = `${it.productId}:${it.variantId}`;
+        const existing = incomingMap.get(key);
+        if (existing) {
+          existing.quantity += it.quantity;
+          if (it.costPrice > 0) existing.costPrice = it.costPrice;
+        } else {
+          incomingMap.set(key, { quantity: it.quantity, costPrice: it.costPrice });
+        }
+      });
+
+      updatedProductsList = prevProducts.map((p) => {
+        let prodChanged = false;
+        const updatedVariants = p.variants.map((v) => {
+          const inc = incomingMap.get(`${p.id}:${v.id}`);
+          if (inc) {
+            prodChanged = true;
+            const currentStock = typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity) ? v.stockQuantity : 0;
+            const newStock = Math.max(0, currentStock + inc.quantity);
+            const newCost = inc.costPrice > 0 ? inc.costPrice : (v.costPrice || 0);
+            return {
+              ...v,
+              stockQuantity: newStock,
+              costPrice: newCost,
+              updatedAt: now,
+            };
+          }
+          return v;
+        });
+
+        if (prodChanged) {
+          return { ...p, variants: updatedVariants, updatedAt: now };
+        }
+        return p;
+      });
+
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('huda_products', JSON.stringify(updatedProductsList));
+        } catch (e) {}
+      }
+      return updatedProductsList;
+    });
+
+    let updatedMovementsList: StockMovement[] = [];
+    setStockMovements((prevMovements) => {
+      const newMovements: StockMovement[] = items.map((it, idx) => {
+        const prod = updatedProductsList.find((p) => p.id === it.productId) || products.find((p) => p.id === it.productId);
+        const variant = prod?.variants.find((v) => v.id === it.variantId);
+        const cost = it.costPrice > 0 ? it.costPrice : (variant?.costPrice || 0);
+
+        return {
+          id: `MOV-IN-${now}-${idx}-${Math.floor(Math.random() * 1000)}`,
+          type: 'IN',
+          productId: it.productId,
+          productTitle: prod?.title || 'สินค้า',
+          variantId: it.variantId,
+          variantName: variant?.name || 'ไซส์/รายการ',
+          quantity: it.quantity,
+          costPrice: cost,
+          totalCost: cost * it.quantity,
+          supplierName: it.supplierName || 'โรงงานอาบายะห์ดูไบ',
+          note: it.note || 'บันทึกรับสินค้าเข้าสต๊อก (Stock In)',
+          performedBy: 'ผู้ดูแลระบบหลังบ้าน',
+          createdAt: nowIso,
+          isSettled: true,
+          lotNumber: it.lotNumber || '',
+        };
+      });
+
+      updatedMovementsList = [...newMovements, ...prevMovements];
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsList));
+        } catch (e) {}
+      }
+      return updatedMovementsList;
+    });
+
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(
+          new CustomEvent('huda_stock_in_completed', {
+            detail: {
+              itemsCount: items.length,
+              timestamp: now,
+            },
+          })
+        );
+
+        // Immediate BroadcastChannel notification (0ms cross-tab realtime!)
+        syncChannelRef.current?.postMessage({
+          type: 'PRODUCTS_UPDATED',
+          products: updatedProductsList,
+          stockMovements: updatedMovementsList,
+        });
+      } catch (e) {}
+    }
+
+    saveCloudProducts(updatedProductsList);
+    triggerBackgroundPush({
+      products: updatedProductsList,
+      stockMovements: updatedMovementsList,
+    });
+  };
+
   const recordStockIn = (data: {
     productId: string;
     variantId: string;
@@ -1622,87 +3051,33 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     costPrice: number;
     supplierName: string;
     note?: string;
+    lotNumber?: string;
   }) => {
-    soundFx.playSuccess();
-    const now = Date.now();
-    let productTitle = 'สินค้า';
-    let variantName = 'ไซส์/รายการ';
-    let calculatedNewStock = 0;
-
-    // 1. Atomically and immediately update products state & local storage
-    setProducts((prev) => {
-      const updated = prev.map((p) => {
-        if (p.id === data.productId) {
-          productTitle = p.title;
-          const updatedVariants = p.variants.map((v) => {
-            if (v.id === data.variantId) {
-              variantName = v.name;
-              const currentStock = (typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity)) ? v.stockQuantity : 0;
-              calculatedNewStock = Math.max(0, currentStock + data.quantity);
-              const updatedCost = data.costPrice > 0 ? data.costPrice : v.costPrice;
-              return {
-                ...v,
-                stockQuantity: calculatedNewStock,
-                costPrice: updatedCost,
-                updatedAt: now,
-              };
-            }
-            return v;
-          });
-          return { ...p, variants: updatedVariants, updatedAt: now };
-        }
-        return p;
-      });
-
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_products', JSON.stringify(updated));
-        window.dispatchEvent(
-          new CustomEvent('huda_stock_in_completed', {
-            detail: {
-              productId: data.productId,
-              variantId: data.variantId,
-              quantity: data.quantity,
-              newStock: calculatedNewStock,
-            },
-          })
-        );
-      }
-      saveCloudProducts(updated);
-      triggerBackgroundPush({ products: updated });
-      return updated;
-    });
-
-    // 2. Record Stock Movement Log
-    const newMovement: StockMovement = {
-      id: `MOV-IN-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      type: 'IN',
-      productId: data.productId,
-      productTitle: productTitle,
-      variantId: data.variantId,
-      variantName: variantName,
-      quantity: data.quantity,
-      costPrice: data.costPrice,
-      totalCost: data.costPrice * data.quantity,
-      supplierName: data.supplierName || 'โรงงานอาบายะห์ดูไบ',
-      note: data.note || 'บันทึกรับสินค้าเข้าสต๊อก (Stock In)',
-      performedBy: 'ผู้ดูแลระบบหลังบ้าน',
-      createdAt: new Date().toISOString(),
-      isSettled: true,
-    };
-
-    setStockMovements((prev) => {
-      const updated = [newMovement, ...prev];
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_stock_movements', JSON.stringify(updated));
-      }
-      triggerBackgroundPush({ stockMovements: updated });
-      return updated;
-    });
+    recordStockInBatch([data]);
   };
 
   const deleteStockMovement = (movementId: string, revertStock: boolean = true): boolean => {
     soundFx.playDelete();
     const targetMovement = stockMovements.find((m) => m.id === movementId);
+
+    // Save to Trash bin before deleting so user can undo / restore anytime!
+    if (targetMovement) {
+      setTrashedStockMovements((prev) => {
+        const trashedItem: TrashedStockMovement = {
+          id: movementId,
+          movement: targetMovement,
+          revertedStock: revertStock,
+          deletedAt: new Date().toISOString(),
+        };
+        const updated = [trashedItem, ...prev.filter((t) => t.id !== movementId)];
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('huda_trashed_stock_movements', JSON.stringify(updated));
+          } catch (e) {}
+        }
+        return updated;
+      });
+    }
 
     let updatedProductsOnDelete: Product[] | null = null;
     // If it was a Stock IN movement and revertStock is true, reduce stock back
@@ -1742,12 +3117,162 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return updatedMovementsOnDelete;
     });
 
-    triggerBackgroundPush({
-      ...(updatedProductsOnDelete ? { products: updatedProductsOnDelete } : {}),
-      stockMovements: updatedMovementsOnDelete,
+    let updatedDeletedMovs: string[] = [];
+    setDeletedStockMovementIds((prev) => {
+      const next = new Set(Array.from(prev)).add(movementId);
+      updatedDeletedMovs = Array.from(next);
+      deletedStockMovementIdsRef.current = next;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_deleted_stock_movement_ids', JSON.stringify(updatedDeletedMovs));
+      }
+      return next;
     });
 
+    if (typeof window !== 'undefined') {
+      try {
+        syncChannelRef.current?.postMessage({
+          type: 'STOCK_MOVEMENTS_UPDATED',
+          stockMovements: updatedMovementsOnDelete,
+          deletedStockMovementIds: updatedDeletedMovs,
+          ...(updatedProductsOnDelete ? { products: updatedProductsOnDelete } : {}),
+        });
+      } catch (e) {}
+    }
+
+    const deletePayload: Partial<RealtimeSyncPayload> = {
+      ...(updatedProductsOnDelete ? { products: updatedProductsOnDelete } : {}),
+      stockMovements: updatedMovementsOnDelete,
+      deletedStockMovementIds: updatedDeletedMovs,
+    };
+
+    // Immediately push to Cloud API without waiting for 150ms debounce
+    pushRealtimeSync(deletePayload).catch(() => {});
+    triggerBackgroundPush(deletePayload);
+
     return true;
+  };
+
+  const restoreStockMovement = (movementId: string): boolean => {
+    soundFx.playSuccess();
+    const trashed = trashedStockMovements.find((t) => t.id === movementId);
+    if (!trashed) return false;
+
+    const { movement, revertedStock } = trashed;
+    let updatedProductsOnRestore: Product[] | null = null;
+
+    // 1. If stock was reverted during deletion and it was IN movement, restore stock back to variant!
+    if (movement.type === 'IN' && revertedStock && movement.productId && movement.variantId) {
+      setProducts((prev) => {
+        const now = Date.now();
+        const updated = prev.map((p) => {
+          if (p.id === movement.productId) {
+            const updatedVariants = p.variants.map((v) => {
+              if (v.id === movement.variantId) {
+                const currentStock = typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity) ? v.stockQuantity : 0;
+                const newStock = Math.max(0, currentStock + movement.quantity);
+                return { ...v, stockQuantity: newStock, updatedAt: now };
+              }
+              return v;
+            });
+            return { ...p, variants: updatedVariants, updatedAt: now };
+          }
+          return p;
+        });
+
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('huda_products', JSON.stringify(updated));
+          } catch (e) {}
+        }
+        saveCloudProducts(updated);
+        updatedProductsOnRestore = updated;
+        return updated;
+      });
+    }
+
+    // 2. Remove movementId from deletedStockMovementIds
+    let updatedDeletedMovs: string[] = [];
+    setDeletedStockMovementIds((prev) => {
+      const next = new Set(Array.from(prev));
+      next.delete(movementId);
+      updatedDeletedMovs = Array.from(next);
+      deletedStockMovementIdsRef.current = next;
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('huda_deleted_stock_movement_ids', JSON.stringify(updatedDeletedMovs));
+        } catch (e) {}
+      }
+      return next;
+    });
+
+    // 3. Add movement back to stockMovements
+    let updatedMovements: StockMovement[] = [];
+    setStockMovements((prev) => {
+      updatedMovements = [movement, ...prev.filter((m) => m.id !== movementId)];
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovements));
+        } catch (e) {}
+      }
+      return updatedMovements;
+    });
+
+    // 4. Remove from trashedStockMovements
+    setTrashedStockMovements((prev) => {
+      const updated = prev.filter((t) => t.id !== movementId);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('huda_trashed_stock_movements', JSON.stringify(updated));
+        } catch (e) {}
+      }
+      return updated;
+    });
+
+    // 5. Broadcast to all open tabs and push to cloud
+    if (typeof window !== 'undefined') {
+      try {
+        syncChannelRef.current?.postMessage({
+          type: 'STOCK_MOVEMENTS_UPDATED',
+          stockMovements: updatedMovements,
+          deletedStockMovementIds: updatedDeletedMovs,
+          ...(updatedProductsOnRestore ? { products: updatedProductsOnRestore } : {}),
+        });
+      } catch (e) {}
+    }
+
+    const restorePayload: Partial<RealtimeSyncPayload> = {
+      ...(updatedProductsOnRestore ? { products: updatedProductsOnRestore } : {}),
+      stockMovements: updatedMovements,
+      deletedStockMovementIds: updatedDeletedMovs,
+    };
+
+    pushRealtimeSync(restorePayload).catch(() => {});
+    triggerBackgroundPush(restorePayload);
+
+    return true;
+  };
+
+  const permanentlyDeleteStockMovement = (movementId: string) => {
+    soundFx.playDelete();
+    setTrashedStockMovements((prev) => {
+      const updated = prev.filter((t) => t.id !== movementId);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('huda_trashed_stock_movements', JSON.stringify(updated));
+        } catch (e) {}
+      }
+      return updated;
+    });
+  };
+
+  const clearTrashedStockMovements = () => {
+    soundFx.playDelete();
+    setTrashedStockMovements([]);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('huda_trashed_stock_movements');
+      } catch (e) {}
+    }
   };
 
   const createSupplierSettlement = (data: {
@@ -1800,6 +3325,16 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return updatedSettlementsList;
     });
 
+    if (typeof window !== 'undefined') {
+      try {
+        syncChannelRef.current?.postMessage({
+          type: 'SETTLEMENTS_UPDATED',
+          supplierSettlements: updatedSettlementsList,
+          stockMovements: updatedMovementsOnSettle,
+        });
+      } catch (e) {}
+    }
+
     triggerBackgroundPush({
       stockMovements: updatedMovementsOnSettle,
       supplierSettlements: updatedSettlementsList,
@@ -1808,12 +3343,895 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return newSettlement;
   };
 
+  const cancelSupplierSettlement = (settlementId: string): boolean => {
+    soundFx.playDelete();
+    const target = supplierSettlements.find((s) => s.id === settlementId);
+    if (!target) return false;
+
+    // Track cancelled settlement ID in localStorage so cloud pull won't resurrect it
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('huda_deleted_settlement_ids') || '[]';
+        const parsed: string[] = JSON.parse(raw);
+        if (!parsed.includes(settlementId)) {
+          parsed.push(settlementId);
+          localStorage.setItem('huda_deleted_settlement_ids', JSON.stringify(parsed));
+        }
+      } catch (e) {}
+    }
+
+    // 1. Revert stock movements: unset isSettled and settlementId
+    let updatedMovementsOnCancel: StockMovement[] = [];
+    setStockMovements((prev) => {
+      updatedMovementsOnCancel = prev.map((m) => {
+        if (m.settlementId === settlementId || (target.movementIds && target.movementIds.includes(m.id))) {
+          const { settlementId: _, ...rest } = m;
+          return {
+            ...rest,
+            isSettled: false,
+          };
+        }
+        return m;
+      });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsOnCancel));
+      }
+      return updatedMovementsOnCancel;
+    });
+
+    // 2. Remove settlement from supplierSettlements
+    let updatedSettlementsList: SupplierSettlement[] = [];
+    setSupplierSettlements((prev) => {
+      updatedSettlementsList = prev.filter((s) => s.id !== settlementId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_supplier_settlements', JSON.stringify(updatedSettlementsList));
+      }
+      return updatedSettlementsList;
+    });
+
+    // 3. Broadcast to all open tabs / windows
+    if (typeof window !== 'undefined') {
+      try {
+        syncChannelRef.current?.postMessage({
+          type: 'SETTLEMENTS_UPDATED',
+          supplierSettlements: updatedSettlementsList,
+          stockMovements: updatedMovementsOnCancel,
+        });
+      } catch (e) {}
+    }
+
+    // 4. Background push to Cloudflare
+    triggerBackgroundPush({
+      stockMovements: updatedMovementsOnCancel,
+      supplierSettlements: updatedSettlementsList,
+    });
+
+    return true;
+  };
+
+  const createSupplierReturn = (data: Omit<SupplierReturnVoucher, 'id' | 'createdAt'>): SupplierReturnVoucher => {
+    soundFx.playSuccess();
+    const dateCode = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const randomSuffix = Math.floor(100 + Math.random() * 900);
+    const voucherId = `RET-${dateCode}-${randomSuffix}`;
+    const nowIso = new Date().toISOString();
+
+    const newVoucher: SupplierReturnVoucher = {
+      ...data,
+      id: voucherId,
+      createdAt: nowIso,
+    };
+
+    // 1. Deduct stock for each returned item & create stock movement (OUT / RETURN)
+    let updatedProductsOnReturn: Product[] | null = null;
+    const newStockMovements: StockMovement[] = [];
+
+    data.items.forEach((item) => {
+      const movementId = `MOV-RET-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
+      newStockMovements.push({
+        id: movementId,
+        type: 'OUT',
+        productId: item.productId,
+        productTitle: item.productTitle,
+        variantId: item.variantId,
+        variantName: item.variantName,
+        quantity: item.quantity,
+        costPrice: item.costPrice,
+        totalCost: item.totalCost,
+        supplierName: data.supplierName,
+        referenceOrderNo: voucherId,
+        note: `[ส่งคืน Supplier] ${item.reason}${data.note ? ` - ${data.note}` : ''}`,
+        performedBy: data.performedBy,
+        createdAt: nowIso,
+        lotNumber: item.lotNumber,
+        isSettled: true, // Marked settled so it won't be counted as payable sold stock
+      });
+    });
+
+    // Update products stock
+    setProducts((prev) => {
+      const now = Date.now();
+      const updated = prev.map((p) => {
+        const matchingItems = data.items.filter((item) => item.productId === p.id);
+        if (matchingItems.length === 0) return p;
+
+        const updatedVariants = p.variants.map((v) => {
+          const itemToDeduct = matchingItems.find((item) => item.variantId === v.id);
+          if (itemToDeduct) {
+            const currentStock = typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity) ? v.stockQuantity : 0;
+            const newStock = Math.max(0, currentStock - itemToDeduct.quantity);
+            return { ...v, stockQuantity: newStock, updatedAt: now };
+          }
+          return v;
+        });
+        return { ...p, variants: updatedVariants, updatedAt: now };
+      });
+      updatedProductsOnReturn = updated;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_products', JSON.stringify(updated));
+      }
+      return updated;
+    });
+
+    // Update stock movements
+    let updatedMovementsOnReturn: StockMovement[] = [];
+    setStockMovements((prev) => {
+      updatedMovementsOnReturn = [...newStockMovements, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsOnReturn));
+      }
+      return updatedMovementsOnReturn;
+    });
+
+    // Save voucher
+    let updatedReturnsList: SupplierReturnVoucher[] = [];
+    setSupplierReturnVouchers((prev) => {
+      updatedReturnsList = [newVoucher, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_supplier_returns', JSON.stringify(updatedReturnsList));
+      }
+      return updatedReturnsList;
+    });
+
+    // Broadcast channel
+    try {
+      syncChannelRef.current?.postMessage({
+        type: 'SUPPLIER_RETURN_CREATED',
+        supplierReturnVouchers: updatedReturnsList,
+        stockMovements: updatedMovementsOnReturn,
+        products: updatedProductsOnReturn,
+      });
+    } catch (e) {}
+
+    // Cloud push
+    triggerBackgroundPush({
+      products: updatedProductsOnReturn || undefined,
+      stockMovements: updatedMovementsOnReturn,
+      supplierReturnVouchers: updatedReturnsList,
+    });
+
+    return newVoucher;
+  };
+
+  const deleteSupplierReturn = (voucherId: string, revertStock: boolean = true): boolean => {
+    soundFx.playDelete();
+    const targetVoucher = supplierReturnVouchers.find((v) => v.id === voucherId);
+    if (!targetVoucher) return false;
+
+    // 1. Revert stock if requested
+    let updatedProductsOnRevert: Product[] | null = null;
+    if (revertStock) {
+      setProducts((prev) => {
+        const now = Date.now();
+        const updated = prev.map((p) => {
+          const matchingItems = targetVoucher.items.filter((item) => item.productId === p.id);
+          if (matchingItems.length === 0) return p;
+
+          const updatedVariants = p.variants.map((v) => {
+            const itemToAddBack = matchingItems.find((item) => item.variantId === v.id);
+            if (itemToAddBack) {
+              const currentStock = typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity) ? v.stockQuantity : 0;
+              return { ...v, stockQuantity: currentStock + itemToAddBack.quantity, updatedAt: now };
+            }
+            return v;
+          });
+          return { ...p, variants: updatedVariants, updatedAt: now };
+        });
+        updatedProductsOnRevert = updated;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('huda_products', JSON.stringify(updated));
+        }
+        return updated;
+      });
+    }
+
+    // 2. Remove associated stock movements
+    let updatedMovementsOnRevert: StockMovement[] = [];
+    setStockMovements((prev) => {
+      updatedMovementsOnRevert = prev.filter((m) => m.referenceOrderNo !== voucherId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsOnRevert));
+      }
+      return updatedMovementsOnRevert;
+    });
+
+    // 3. Remove voucher
+    let updatedReturnsList: SupplierReturnVoucher[] = [];
+    setSupplierReturnVouchers((prev) => {
+      updatedReturnsList = prev.filter((v) => v.id !== voucherId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_supplier_returns', JSON.stringify(updatedReturnsList));
+      }
+      return updatedReturnsList;
+    });
+
+    // Broadcast & Cloud push
+    try {
+      syncChannelRef.current?.postMessage({
+        type: 'SUPPLIER_RETURN_DELETED',
+        supplierReturnVouchers: updatedReturnsList,
+        stockMovements: updatedMovementsOnRevert,
+        products: updatedProductsOnRevert,
+      });
+    } catch (e) {}
+
+    triggerBackgroundPush({
+      products: updatedProductsOnRevert || undefined,
+      stockMovements: updatedMovementsOnRevert,
+      supplierReturnVouchers: updatedReturnsList,
+    });
+
+    return true;
+  };
+
+  const cancelAndRestockOrder = async (
+    orderId: string,
+    options?: {
+      reason?: string;
+      refundPayment?: boolean;
+      performedBy?: string;
+    }
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      soundFx.playDelete();
+      const now = Date.now();
+      const nowIso = new Date().toISOString();
+
+      const targetOrder = (orders || []).find((o) => o.id === orderId);
+      if (!targetOrder) {
+        return { success: false, message: `ไม่พบคำสั่งซื้อ #${orderId}` };
+      }
+
+      if (targetOrder.orderStatus === 'cancelled') {
+        return { success: false, message: `คำสั่งซื้อ #${orderId} ได้รับการยกเลิกและคืนสต๊อกไปแล้ว` };
+      }
+
+      const safeOrderItems = Array.isArray(targetOrder.items) ? targetOrder.items : [];
+
+      // 1. Restock items back to product variants OR booth transfer
+      let updatedProductsList: Product[] = [];
+      if (targetOrder.boothTransferId) {
+        setBoothTransfers((prev) => {
+          const updated = (prev || []).map((bt) => {
+            if (bt.id !== targetOrder.boothTransferId) return bt;
+            const updatedItems = (bt.items || []).map((item) => {
+              const matchCancelled = safeOrderItems.find(
+                (oi) => oi && oi.productId === item.productId && oi.variantId === item.variantId
+              );
+              if (!matchCancelled) return item;
+              const newSold = Math.max(0, (item.soldQty || 0) - (matchCancelled.quantity || 0));
+              const expReturn = Math.max(0, (item.dispatchedQty || 0) - newSold);
+              return {
+                ...item,
+                soldQty: newSold,
+                expectedReturnQty: expReturn,
+                difference: (item.actualReturnedQty || 0) - expReturn,
+              };
+            });
+            const totalSoldQty = updatedItems.reduce((sum, i) => sum + (i.soldQty || 0), 0);
+            const totalSalesAmount = Math.max(0, (bt.totalSalesAmount || 0) - (targetOrder.netAmount || 0));
+            return {
+              ...bt,
+              items: updatedItems,
+              totalSoldQty,
+              totalSalesAmount,
+              updatedAt: new Date().toISOString(),
+            };
+          });
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_booth_transfers', JSON.stringify(updated));
+          }
+          triggerBackgroundPush({ boothTransfers: updated });
+          return updated;
+        });
+      } else {
+        setProducts((prevProducts) => {
+          updatedProductsList = (prevProducts || []).map((prod) => {
+            if (!prod) return prod;
+            const matchingItems = safeOrderItems.filter(
+              (item) => item && (item.productId === prod.id || (!item.productId && item.productTitle === prod.title))
+            );
+            if (matchingItems.length === 0) return prod;
+
+            const updatedVariants = (prod.variants || []).map((variant) => {
+              if (!variant) return variant;
+              const matchingItem = matchingItems.find(
+                (item) => item && (item.variantId === variant.id || (!item.variantId && item.variantName === variant.name))
+              );
+              if (!matchingItem) return variant;
+
+              const currentStock = (typeof variant.stockQuantity === 'number' && !isNaN(variant.stockQuantity)) ? variant.stockQuantity : 0;
+              return {
+                ...variant,
+                stockQuantity: currentStock + (matchingItem.quantity || 0),
+                updatedAt: now,
+              };
+            });
+
+            return { ...prod, variants: updatedVariants, updatedAt: now };
+          });
+
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_products', JSON.stringify(updatedProductsList));
+            window.dispatchEvent(
+              new CustomEvent('huda_order_restocked', {
+                detail: { orderId, items: safeOrderItems },
+              })
+            );
+          }
+          saveCloudProducts(updatedProductsList);
+          return updatedProductsList;
+        });
+      }
+
+      // 2. Void unsettled OUT movements (so store doesn't pay supplier settlement)
+      // AND record IN movements for return audit trail preserving exact lotNumber and costPrice
+      const returnAuditMovements: StockMovement[] = safeOrderItems.map((item, idx) => {
+        const itemCost = item.costPrice !== undefined && item.costPrice > 0 ? item.costPrice : Math.round((item.price || 0) * 0.5);
+        const qty = item.quantity || 1;
+        return {
+          id: `MOV-IN-RETURN-${now}-${idx}-${Math.floor(Math.random() * 1000)}`,
+          type: 'IN',
+          productId: item.productId,
+          productTitle: item.productTitle,
+          variantId: item.variantId,
+          variantName: item.variantName,
+          quantity: qty,
+          costPrice: itemCost,
+          totalCost: itemCost * qty,
+          supplierName: 'รับคืนจากลูกค้า / ยกเลิกออเดอร์',
+          referenceOrderNo: orderId,
+          lotNumber: item.lotNumber || '',
+          note: `รับคืนสินค้า / ยกเลิกออเดอร์ #${orderId}${options?.reason ? ` (${options.reason})` : ''}${item.lotNumber ? ` [ล็อต: ${item.lotNumber}]` : ''}`,
+          performedBy: options?.performedBy || 'ผู้ดูแลระบบ (คืนสินค้า)',
+          createdAt: nowIso,
+          isSettled: true, // Mark settled so it never queues up for supplier payout
+        };
+      });
+
+      let updatedMovementsList: StockMovement[] = [];
+      setStockMovements((prevMovements) => {
+        // Void OUT movements created for this order
+        const remainingMovements = (prevMovements || []).filter(
+          (m) => !(m && m.referenceOrderNo === orderId && m.type === 'OUT')
+        );
+        updatedMovementsList = [...returnAuditMovements, ...remainingMovements];
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsList));
+        }
+        return updatedMovementsList;
+      });
+
+      // 3. Update order status to 'cancelled'
+      const reasonText = options?.reason ? options.reason : 'ลูกค้าคืนสินค้า / ยกเลิกบิลขาย';
+      let updatedOrdersList: Order[] = [];
+      setOrders((prevOrders) => {
+        updatedOrdersList = (prevOrders || []).map((o) => {
+          if (o.id === orderId) {
+            const updatedNote = o.note
+              ? `${o.note} | [ยกเลิก/คืนสต๊อก: ${reasonText}]`
+              : `[ยกเลิก/คืนสต๊อก: ${reasonText}]`;
+            return {
+              ...o,
+              orderStatus: 'cancelled' as const,
+              paymentStatus: (options?.refundPayment ? 'refunded' : o.paymentStatus) as Order['paymentStatus'],
+              note: updatedNote,
+              cancelledAt: nowIso,
+              cancellationReason: reasonText,
+              updatedAt: nowIso,
+            };
+          }
+          return o;
+        });
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('huda_orders', JSON.stringify(updatedOrdersList));
+        }
+        saveCloudOrders(updatedOrdersList);
+        return updatedOrdersList;
+      });
+
+      if (typeof window !== 'undefined') {
+        try {
+          syncChannelRef.current?.postMessage({
+            type: 'ORDERS_UPDATED',
+            orders: updatedOrdersList,
+            products: updatedProductsList,
+            stockMovements: updatedMovementsList,
+          });
+        } catch (e) {}
+      }
+
+      // 4. Background push to Cloud Storage
+      triggerBackgroundPush({
+        products: updatedProductsList,
+        orders: updatedOrdersList,
+        stockMovements: updatedMovementsList,
+      });
+
+      const totalQty = safeOrderItems.reduce((s, it) => s + (it.quantity || 0), 0);
+      return {
+        success: true,
+        message: `ยกเลิกคำสั่งซื้อ #${orderId} สำเร็จ และดึงสินค้าคืนสต๊อก ${totalQty} ชิ้น เรียบร้อยแล้ว`,
+      };
+    } catch (err: any) {
+      console.error('Error in cancelAndRestockOrder:', err);
+      return {
+        success: false,
+        message: `เกิดข้อผิดพลาดในการคืนสต๊อก: ${err?.message || 'โปรดลองใหม่อีกครั้ง'}`,
+      };
+    }
+  };
+
+  const verifySupervisorPin = (pin: string): { valid: boolean; approverName?: string } => {
+    const trimmed = String(pin || '').trim();
+    const ownerCode = String(storeSettings?.adminPasscode || '1077').trim();
+    if (trimmed === ownerCode) {
+      return { valid: true, approverName: 'เจ้าของร้าน (Admin)' };
+    }
+    const matched = (staffUsers || []).find(
+      (u) =>
+        (u.isActive ?? u.active ?? true) &&
+        String(u.pin || '').trim() === trimmed &&
+        (u.role === 'OWNER' || u.permissions?.canVoidPOSOrder)
+    );
+    if (matched) {
+      return { valid: true, approverName: matched.name };
+    }
+    return { valid: false };
+  };
+
+  const refundOrderItems = async (params: {
+    orderId: string;
+    refundItems: Array<{
+      productId: string;
+      variantId: string;
+      quantity: number;
+      price: number;
+      productTitle: string;
+      variantName: string;
+    }>;
+    refundAmount: number;
+    refundMethod: 'cash' | 'transfer';
+    reason: string;
+    performedBy: string;
+    approvedBy?: string;
+  }): Promise<{ success: boolean; message: string; updatedOrder?: Order }> => {
+    try {
+      soundFx.playDelete();
+      const now = Date.now();
+      const nowIso = new Date().toISOString();
+
+      const targetOrder = (orders || []).find((o) => o.id === params.orderId);
+      if (!targetOrder) {
+        return { success: false, message: `ไม่พบคำสั่งซื้อ #${params.orderId}` };
+      }
+
+      if (targetOrder.orderStatus === 'cancelled') {
+        return { success: false, message: `คำสั่งซื้อ #${params.orderId} ได้รับการยกเลิกไปแล้ว` };
+      }
+
+      const safeRefundItems = Array.isArray(params.refundItems) ? params.refundItems : [];
+      const safeOrderItems = Array.isArray(targetOrder.items) ? targetOrder.items : [];
+
+      // 1. Restock refunded items to Booth Transfer or Central Products
+      let updatedProductsList: Product[] = [];
+      if (targetOrder.boothTransferId) {
+        setBoothTransfers((prev) => {
+          const updated = (prev || []).map((bt) => {
+            if (bt.id !== targetOrder.boothTransferId) return bt;
+            const updatedItems = (bt.items || []).map((item) => {
+              const matchRefund = safeRefundItems.find(
+                (ri) => ri && ri.productId === item.productId && ri.variantId === item.variantId
+              );
+              if (!matchRefund) return item;
+              const newSold = Math.max(0, (item.soldQty || 0) - (matchRefund.quantity || 0));
+              const expReturn = Math.max(0, (item.dispatchedQty || 0) - newSold);
+              return {
+                ...item,
+                soldQty: newSold,
+                expectedReturnQty: expReturn,
+                difference: (item.actualReturnedQty || 0) - expReturn,
+              };
+            });
+            const totalSoldQty = updatedItems.reduce((sum, i) => sum + (i.soldQty || 0), 0);
+            const totalSalesAmount = Math.max(0, (bt.totalSalesAmount || 0) - (params.refundAmount || 0));
+            return {
+              ...bt,
+              items: updatedItems,
+              totalSoldQty,
+              totalSalesAmount,
+              updatedAt: nowIso,
+            };
+          });
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_booth_transfers', JSON.stringify(updated));
+          }
+          triggerBackgroundPush({ boothTransfers: updated });
+          return updated;
+        });
+      } else {
+        setProducts((prevProducts) => {
+          updatedProductsList = (prevProducts || []).map((prod) => {
+            if (!prod) return prod;
+            const matchingRefunds = safeRefundItems.filter((ri) => ri && ri.productId === prod.id);
+            if (matchingRefunds.length === 0) return prod;
+            const updatedVariants = (prod.variants || []).map((variant) => {
+              if (!variant) return variant;
+              const matchVar = matchingRefunds.find((ri) => ri && ri.variantId === variant.id);
+              if (!matchVar) return variant;
+              const currentStock = typeof variant.stockQuantity === 'number' && !isNaN(variant.stockQuantity) ? variant.stockQuantity : 0;
+              return {
+                ...variant,
+                stockQuantity: currentStock + (matchVar.quantity || 0),
+                updatedAt: now,
+              };
+            });
+            return { ...prod, variants: updatedVariants, updatedAt: now };
+          });
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_products', JSON.stringify(updatedProductsList));
+          }
+          saveCloudProducts(updatedProductsList);
+          return updatedProductsList;
+        });
+      }
+
+      // 2. Determine if all items in order are refunded
+      const totalOrderItemsCount = safeOrderItems.reduce((s, it) => s + (it.quantity || 0), 0);
+      const totalRefundedCount = safeRefundItems.reduce((s, it) => s + (it.quantity || 0), 0);
+      const isFullRefund = totalRefundedCount >= totalOrderItemsCount || params.refundAmount >= (targetOrder.netAmount || 0);
+
+      // 3. Update order
+      let updatedOrderResult: Order | undefined;
+      let updatedOrdersList: Order[] = [];
+
+      setOrders((prev) => {
+        updatedOrdersList = (prev || []).map((order) => {
+          if (order.id !== params.orderId) return order;
+
+          const refundLog = `[คืนเงิน ฿${(params.refundAmount || 0).toLocaleString()} (${params.refundMethod === 'cash' ? 'เงินสด' : 'โอนคืน'}) | พนักงาน: ${params.performedBy}${params.approvedBy ? ` (อนุมัติโดย: ${params.approvedBy})` : ''} | เหตุผล: ${params.reason}]`;
+          const updatedNote = order.note ? `${order.note} | ${refundLog}` : refundLog;
+
+          const updatedOrder: Order = {
+            ...order,
+            orderStatus: isFullRefund ? 'cancelled' : order.orderStatus,
+            paymentStatus: isFullRefund ? 'refunded' : order.paymentStatus,
+            note: updatedNote,
+            updatedAt: nowIso,
+          };
+          updatedOrderResult = updatedOrder;
+          return updatedOrder;
+        });
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('huda_orders', JSON.stringify(updatedOrdersList));
+        }
+        saveCloudOrders(updatedOrdersList);
+        return updatedOrdersList;
+      });
+
+      // 4. Record stock movement IN for returned audit trail
+      const returnAuditMovements: StockMovement[] = safeRefundItems.map((item, idx) => {
+        const itemCost = Math.round((item.price || 0) * 0.5);
+        const qty = item.quantity || 1;
+        return {
+          id: `MOV-IN-REFUND-${now}-${idx}-${Math.floor(Math.random() * 1000)}`,
+          type: 'IN',
+          productId: item.productId,
+          productTitle: item.productTitle,
+          variantId: item.variantId,
+          variantName: item.variantName,
+          quantity: qty,
+          costPrice: itemCost,
+          totalCost: itemCost * qty,
+          supplierName: 'รับคืนสินค้า / ขอคืนเงินหน้าร้าน POS',
+          referenceOrderNo: params.orderId,
+          note: `รับคืนสินค้า POS #${params.orderId} (คืนเงิน ฿${(params.refundAmount || 0).toLocaleString()}) [${params.reason}]`,
+          performedBy: params.performedBy,
+          createdAt: nowIso,
+          isSettled: true,
+        };
+      });
+
+      let updatedMovementsList: StockMovement[] = [];
+      setStockMovements((prev) => {
+        updatedMovementsList = [...returnAuditMovements, ...(prev || [])];
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsList));
+        }
+        return updatedMovementsList;
+      });
+
+      triggerBackgroundPush({
+        products: updatedProductsList,
+        orders: updatedOrdersList,
+        stockMovements: updatedMovementsList,
+      });
+
+      return {
+        success: true,
+        message: `บันทึกขอคืนเงินบิล #${params.orderId} สำเร็จ (คืนเงิน ฿${(params.refundAmount || 0).toLocaleString()}) ดึงสต๊อกกลับเข้าระบบแล้ว`,
+        updatedOrder: updatedOrderResult,
+      };
+    } catch (err: any) {
+      console.error('Error in refundOrderItems:', err);
+      return {
+        success: false,
+        message: `เกิดข้อผิดพลาดในการคืนเงิน: ${err?.message || 'โปรดลองใหม่อีกครั้ง'}`,
+      };
+    }
+  };
+
+  const exchangeOrderItem = async (params: {
+    orderId: string;
+    boothTransferId?: string | null;
+    returnItem: {
+      productId: string;
+      variantId: string;
+      quantity: number;
+      price: number;
+      productTitle: string;
+      variantName: string;
+    };
+    newItem: {
+      productId: string;
+      variantId: string;
+      quantity: number;
+      price: number;
+      productTitle: string;
+      variantName: string;
+    };
+    priceDifference: number;
+    paymentMethodForDiff?: 'cash' | 'promptpay' | 'none';
+    performedBy: string;
+    approvedBy?: string;
+    reason?: string;
+  }): Promise<{ success: boolean; message: string; updatedOrder?: Order }> => {
+    try {
+      soundFx.playSuccess();
+      const now = Date.now();
+      const nowIso = new Date().toISOString();
+
+      const targetOrder = (orders || []).find((o) => o.id === params.orderId);
+      if (!targetOrder) {
+        return { success: false, message: `ไม่พบคำสั่งซื้อ #${params.orderId}` };
+      }
+
+      // 1. Adjust inventory
+      let updatedProductsList: Product[] = [];
+      const effectiveBoothId = params.boothTransferId || targetOrder.boothTransferId;
+      if (effectiveBoothId) {
+        setBoothTransfers((prev) => {
+          const updated = (prev || []).map((bt) => {
+            if (bt.id !== effectiveBoothId) return bt;
+            let foundNew = false;
+            const updatedItems = (bt.items || []).map((item) => {
+              if (item.productId === params.returnItem.productId && item.variantId === params.returnItem.variantId) {
+                const newSold = Math.max(0, (item.soldQty || 0) - (params.returnItem.quantity || 0));
+                const expReturn = Math.max(0, (item.dispatchedQty || 0) - newSold);
+                return {
+                  ...item,
+                  soldQty: newSold,
+                  expectedReturnQty: expReturn,
+                  difference: (item.actualReturnedQty || 0) - expReturn,
+                };
+              }
+              if (item.productId === params.newItem.productId && item.variantId === params.newItem.variantId) {
+                foundNew = true;
+                const newSold = (item.soldQty || 0) + (params.newItem.quantity || 0);
+                const expReturn = Math.max(0, (item.dispatchedQty || 0) - newSold);
+                return {
+                  ...item,
+                  soldQty: newSold,
+                  expectedReturnQty: expReturn,
+                  difference: (item.actualReturnedQty || 0) - expReturn,
+                };
+              }
+              return item;
+            });
+
+            if (!foundNew) {
+              updatedItems.push({
+                productId: params.newItem.productId,
+                variantId: params.newItem.variantId,
+                productTitle: params.newItem.productTitle,
+                variantName: params.newItem.variantName,
+                sku: '',
+                price: params.newItem.price,
+                dispatchedQty: 0,
+                soldQty: params.newItem.quantity || 1,
+                expectedReturnQty: -(params.newItem.quantity || 1),
+                actualReturnedQty: 0,
+                difference: -(params.newItem.quantity || 1),
+              });
+            }
+
+            const totalSalesAmount = Math.max(0, (bt.totalSalesAmount || 0) + (params.priceDifference || 0));
+            return {
+              ...bt,
+              items: updatedItems,
+              totalSalesAmount,
+              updatedAt: nowIso,
+            };
+          });
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_booth_transfers', JSON.stringify(updated));
+          }
+          triggerBackgroundPush({ boothTransfers: updated });
+          return updated;
+        });
+      } else {
+        setProducts((prev) => {
+          updatedProductsList = (prev || []).map((prod) => {
+            if (!prod) return prod;
+            let updatedVariants = prod.variants || [];
+            let changed = false;
+
+            if (prod.id === params.returnItem.productId) {
+              updatedVariants = updatedVariants.map((v) => {
+                if (v && v.id === params.returnItem.variantId) {
+                  changed = true;
+                  const currentStock = typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity) ? v.stockQuantity : 0;
+                  return { ...v, stockQuantity: currentStock + (params.returnItem.quantity || 0) };
+                }
+                return v;
+              });
+            }
+            if (prod.id === params.newItem.productId) {
+              updatedVariants = updatedVariants.map((v) => {
+                if (v && v.id === params.newItem.variantId) {
+                  changed = true;
+                  const currentStock = typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity) ? v.stockQuantity : 0;
+                  return { ...v, stockQuantity: Math.max(0, currentStock - (params.newItem.quantity || 0)) };
+                }
+                return v;
+              });
+            }
+
+            if (changed) {
+              return { ...prod, variants: updatedVariants, updatedAt: now };
+            }
+            return prod;
+          });
+
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_products', JSON.stringify(updatedProductsList));
+          }
+          saveCloudProducts(updatedProductsList);
+          return updatedProductsList;
+        });
+      }
+
+      // 2. Update order items list
+      let updatedOrderResult: Order | undefined;
+      let updatedOrdersList: Order[] = [];
+
+      setOrders((prev) => {
+        updatedOrdersList = (prev || []).map((order) => {
+          if (order.id !== params.orderId) return order;
+
+          const updatedItems: CartItem[] = [];
+          let returnedFound = false;
+
+          (order.items || []).forEach((it) => {
+            if (it && it.productId === params.returnItem.productId && it.variantId === params.returnItem.variantId && !returnedFound) {
+              returnedFound = true;
+              const remainingQty = (it.quantity || 1) - (params.returnItem.quantity || 1);
+              if (remainingQty > 0) {
+                updatedItems.push({ ...it, quantity: remainingQty });
+              }
+            } else if (it) {
+              updatedItems.push(it);
+            }
+          });
+
+          const existingNewItemIdx = updatedItems.findIndex(
+            (it) => it && it.productId === params.newItem.productId && it.variantId === params.newItem.variantId
+          );
+          if (existingNewItemIdx >= 0) {
+            updatedItems[existingNewItemIdx] = {
+              ...updatedItems[existingNewItemIdx],
+              quantity: (updatedItems[existingNewItemIdx].quantity || 0) + (params.newItem.quantity || 1),
+            };
+          } else {
+            updatedItems.push({
+              productId: params.newItem.productId,
+              productTitle: params.newItem.productTitle,
+              productImage: '',
+              variantId: params.newItem.variantId,
+              variantName: params.newItem.variantName,
+              price: params.newItem.price,
+              quantity: params.newItem.quantity || 1,
+              category: 'abaya_dubai',
+            });
+          }
+
+          const diffText =
+            params.priceDifference > 0
+              ? `ลูกค้าจ่ายเพิ่ม ฿${params.priceDifference.toLocaleString()} (${params.paymentMethodForDiff === 'cash' ? 'เงินสด' : 'สแกนจ่าย'})`
+              : params.priceDifference < 0
+              ? `ร้านคืนส่วนต่าง ฿${Math.abs(params.priceDifference).toLocaleString()}`
+              : 'ราคาเท่ากัน (฿0)';
+
+          const exchangeLog = `[เปลี่ยนสินค้า ${new Date().toLocaleTimeString('th-TH')}: คืน ${params.returnItem.productTitle} (${params.returnItem.variantName}) -> รับ ${params.newItem.productTitle} (${params.newItem.variantName}) | ${diffText} | พนักงาน: ${params.performedBy}${params.approvedBy ? ` (อนุมัติโดย: ${params.approvedBy})` : ''}${params.reason ? ` | เหตุผล: ${params.reason}` : ''}]`;
+
+          const updatedNote = order.note ? `${order.note} | ${exchangeLog}` : exchangeLog;
+
+          const updatedOrder: Order = {
+            ...order,
+            items: updatedItems,
+            netAmount: Math.max(0, (order.netAmount || 0) + (params.priceDifference || 0)),
+            totalAmount: Math.max(0, (order.totalAmount || 0) + (params.priceDifference || 0)),
+            note: updatedNote,
+            exchangedAt: nowIso,
+            exchangeDetails: exchangeLog,
+            performedBy: params.performedBy,
+            approvedBy: params.approvedBy,
+            updatedAt: nowIso,
+          };
+          updatedOrderResult = updatedOrder;
+          return updatedOrder;
+        });
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('huda_orders', JSON.stringify(updatedOrdersList));
+        }
+        saveCloudOrders(updatedOrdersList);
+        return updatedOrdersList;
+      });
+
+      triggerBackgroundPush({
+        ...(updatedProductsList.length > 0 ? { products: updatedProductsList } : {}),
+        orders: updatedOrdersList,
+      });
+
+      return {
+        success: true,
+        message: `ทำรายการเปลี่ยนสินค้าสำเร็จ! คืน ${params.returnItem.variantName} -> ได้รับ ${params.newItem.variantName} เรียบร้อยแล้ว`,
+        updatedOrder: updatedOrderResult,
+      };
+    } catch (err: any) {
+      console.error('Error in exchangeOrderItem:', err);
+      return {
+        success: false,
+        message: `เกิดข้อผิดพลาดในการเปลี่ยนสินค้า: ${err?.message || 'โปรดลองใหม่อีกครั้ง'}`,
+      };
+    }
+  };
+
   const updateOrderStatus = (
     orderId: string,
     orderStatus: Order['orderStatus'],
     trackingNumber?: string,
     courier?: string
   ) => {
+    if (orderStatus === 'cancelled') {
+      cancelAndRestockOrder(orderId, { reason: 'เปลี่ยนสถานะเป็น ยกเลิกออเดอร์ (Cancelled)' });
+      return;
+    }
+
     setOrders((prev) => {
       const updated = prev.map((order) => {
         if (order.id === orderId) {
@@ -1860,10 +4278,70 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const deleteOrder = (orderId: string) => {
+  const deleteOrders = (orderIds: string[], revertStock: boolean = true) => {
+    if (!orderIds || orderIds.length === 0) return;
+    const targetIdSet = new Set(orderIds);
+    const targetOrders = orders.filter((o) => targetIdSet.has(o.id));
+    let updatedProductsOnDelete: Product[] | null = null;
+
+    if (revertStock && targetOrders.length > 0) {
+      // Gather all items from valid non-cancelled orders to revert stock
+      const itemsToRevert: { productId?: string; productTitle: string; variantId?: string; variantName: string; quantity: number }[] = [];
+      targetOrders.forEach((o) => {
+        if (o.orderStatus !== 'cancelled' && Array.isArray(o.items)) {
+          o.items.forEach((item) => {
+            itemsToRevert.push({
+              productId: item.productId,
+              productTitle: item.productTitle,
+              variantId: item.variantId,
+              variantName: item.variantName,
+              quantity: item.quantity,
+            });
+          });
+        }
+      });
+
+      if (itemsToRevert.length > 0) {
+        const now = Date.now();
+        setProducts((prevProducts) => {
+          const updated = prevProducts.map((prod) => {
+            const matchingItems = itemsToRevert.filter(
+              (item) => item.productId === prod.id || (!item.productId && item.productTitle === prod.title)
+            );
+            if (matchingItems.length === 0) return prod;
+
+            const updatedVariants = prod.variants.map((variant) => {
+              const matchedForVariant = matchingItems.filter(
+                (item) => item.variantId === variant.id || (!item.variantId && item.variantName === variant.name)
+              );
+              if (matchedForVariant.length === 0) return variant;
+
+              const totalQtyToAdd = matchedForVariant.reduce((sum, it) => sum + (it.quantity || 0), 0);
+              const currentStock = (typeof variant.stockQuantity === 'number' && !isNaN(variant.stockQuantity)) ? variant.stockQuantity : 0;
+              return {
+                ...variant,
+                stockQuantity: currentStock + totalQtyToAdd,
+                updatedAt: now,
+              };
+            });
+
+            return { ...prod, variants: updatedVariants, updatedAt: now };
+          });
+
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('huda_products', JSON.stringify(updated));
+          }
+          saveCloudProducts(updated);
+          updatedProductsOnDelete = updated;
+          return updated;
+        });
+      }
+    }
+
     let updatedSetArr: string[] = [];
     setDeletedOrderIds((prevSet) => {
-      const updatedSet = new Set(Array.from(prevSet)).add(orderId);
+      const updatedSet = new Set(Array.from(prevSet));
+      orderIds.forEach((id) => updatedSet.add(id));
       updatedSetArr = Array.from(updatedSet);
       if (typeof window !== 'undefined') {
         localStorage.setItem('huda_deleted_order_ids', JSON.stringify(updatedSetArr));
@@ -1873,7 +4351,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     let updatedOrdersList: Order[] = [];
     setOrders((prev) => {
-      updatedOrdersList = prev.filter((o) => o.id !== orderId);
+      updatedOrdersList = prev.filter((o) => !targetIdSet.has(o.id));
       if (typeof window !== 'undefined') {
         localStorage.setItem('huda_orders', JSON.stringify(updatedOrdersList));
       }
@@ -1884,18 +4362,34 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Sync Stock Movements for Unsettled Sales Breakdown
     let updatedMovementsList: StockMovement[] = [];
     setStockMovements((prevMovements) => {
-      updatedMovementsList = prevMovements.filter((m) => m.referenceOrderNo !== orderId);
+      updatedMovementsList = prevMovements.filter((m) => !m.referenceOrderNo || !targetIdSet.has(m.referenceOrderNo));
       if (typeof window !== 'undefined') {
         localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsList));
       }
       return updatedMovementsList;
     });
 
+    if (typeof window !== 'undefined') {
+      try {
+        syncChannelRef.current?.postMessage({
+          type: 'ORDERS_UPDATED',
+          orders: updatedOrdersList,
+          products: updatedProductsOnDelete || undefined,
+          stockMovements: updatedMovementsList,
+        });
+      } catch (e) {}
+    }
+
     triggerBackgroundPush({
+      ...(updatedProductsOnDelete ? { products: updatedProductsOnDelete } : {}),
       orders: updatedOrdersList,
       deletedOrderIds: updatedSetArr,
       stockMovements: updatedMovementsList,
     });
+  };
+
+  const deleteOrder = (orderId: string, revertStock: boolean = false) => {
+    deleteOrders([orderId], revertStock);
   };
 
   const clearSampleOrders = async () => {
@@ -1939,9 +4433,10 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const updated = [timestamped, ...prev.filter((p) => p.id !== timestamped.id)].sort(sortProductsNatural);
       if (typeof window !== 'undefined') {
         localStorage.setItem('huda_products', JSON.stringify(updated));
+        syncChannelRef.current?.postMessage({ type: 'PRODUCTS_UPDATED', products: updated });
       }
       saveCloudProducts(updated);
-      triggerBackgroundPush({ products: updated });
+      triggerBackgroundPush({ products: updated }, true);
       return updated;
     });
   };
@@ -1988,6 +4483,16 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return updatedMovementsList;
     });
 
+    if (typeof window !== 'undefined') {
+      try {
+        syncChannelRef.current?.postMessage({
+          type: 'PRODUCTS_UPDATED',
+          products: updatedProductsList,
+          stockMovements: updatedMovementsList,
+        });
+      } catch (e) {}
+    }
+
     triggerBackgroundPush({
       products: updatedProductsList,
       stockMovements: updatedMovementsList,
@@ -2011,6 +4516,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (typeof window !== 'undefined') {
         localStorage.setItem('huda_products', JSON.stringify(updated));
+        syncChannelRef.current?.postMessage({ type: 'PRODUCTS_UPDATED', products: updated });
       }
       saveCloudProducts(updated);
       triggerBackgroundPush({ products: updated });
@@ -2042,9 +4548,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const testLineNotification = async (customMsg?: string): Promise<{ success: boolean; error?: string }> => {
+  const testLineNotification = async (customMsg?: string, settingsOverride?: StoreSettings): Promise<{ success: boolean; error?: string }> => {
     const msg = customMsg || `🔔 [HUDA ABAYA DUBAI]\n━━━━━━━━━━━━━━━\nทดสอบเชื่อมต่อระบบแจ้งเตือน LINE สำเร็จ 100%!\n\nระบบพร้อมส่งการแจ้งเตือน:\n✅ ออเดอร์ใหม่จากลูกค้า\n✅ ลูกค้าแนบสลิปโอนเงิน\n✅ สินค้าสต๊อกใกล้หมด\n✅ สรุปยอดขายประจำวัน\n━━━━━━━━━━━━━━━\n⏰ เวลาทดสอบ: ${new Date().toLocaleTimeString('th-TH')} น.`;
-    return sendLineNotification(msg, storeSettings);
+    return sendLineNotification(msg, settingsOverride || storeSettings);
   };
 
   return (
@@ -2055,6 +4561,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         orders,
         stockMovements,
         supplierSettlements,
+        supplierReturnVouchers,
         appliedCoupon,
         isCartOpen,
         isOrderTrackingOpen,
@@ -2084,7 +4591,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createOrder,
         updateOrderStatus,
         updateOrderPaymentStatus,
+        cancelAndRestockOrder,
         deleteOrder,
+        deleteOrders,
         clearSampleOrders,
         clearAllOrders,
         clearAllProducts,
@@ -2093,8 +4602,16 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateVariantStock,
         deleteProduct,
         recordStockIn,
+        recordStockInBatch,
         deleteStockMovement,
+        trashedStockMovements,
+        restoreStockMovement,
+        permanentlyDeleteStockMovement,
+        clearTrashedStockMovements,
         createSupplierSettlement,
+        cancelSupplierSettlement,
+        createSupplierReturn,
+        deleteSupplierReturn,
         setIsCartOpen,
         setIsOrderTrackingOpen,
         setIsAdminMode,
@@ -2108,6 +4625,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         syncProducts,
         syncFromGoogleSheet,
         testLineNotification,
+        notifyEventScheduleToLine,
         clearBrowserCacheAndReload,
         eventSchedules,
         eventBranches,
@@ -2118,11 +4636,29 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         deleteEventSchedule,
         addEventBranch,
         deleteEventBranch,
+        boothTransfers,
+        setBoothTransfers,
+        createBoothTransfer,
+        updateBoothTransfer,
+        deleteBoothTransfer,
+        replenishBoothTransfer,
+        reconcileAndReturnBoothTransfer,
         syncStatus,
         lastSyncTime,
         forceRealtimeSync,
         customOptions,
         saveCustomOption,
+        staffUsers,
+        currentStaff,
+        addStaffUser,
+        updateStaffUser,
+        deleteStaffUser,
+        setCurrentStaff,
+        refundOrderItems,
+        exchangeOrderItem,
+        verifySupervisorPin,
+        syncStaffUsersToCloud,
+        syncBoothTransfersToCloud,
       }}
     >
       {children}

@@ -55,7 +55,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0EA5E9',
+  themeColor: '#FAF9F6',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -70,7 +70,7 @@ export default function RootLayout({
   return (
     <html lang="th">
       <head>
-        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+                                <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />
         <meta name="build-version" content="2026-09-21-logo-pwa-v1" />
@@ -83,7 +83,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="HUDA ABAYA" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="theme-color" content="#0EA5E9" />
+        <meta name="theme-color" content="#FAF9F6" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -98,7 +98,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between antialiased selection:bg-sky-500 selection:text-white">
+      <body className="bg-[#FAF9F6] text-[#1C1917] min-h-screen flex flex-col justify-between antialiased selection:bg-[#B89352]/25 selection:text-[#1C1917]">
         <ShopProvider>
           <Navbar />
           <main className="flex-1">{children}</main>

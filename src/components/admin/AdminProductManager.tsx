@@ -1,12 +1,20 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Minus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp, FileSpreadsheet, ExternalLink, RefreshCw, CheckCircle, AlertCircle, HelpCircle, ChevronDown, Check, Lock, Unlock, KeyRound, Eye, EyeOff, ShieldAlert, PackagePlus } from 'lucide-react';
+import { Plus, Minus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp, FileSpreadsheet, ExternalLink, RefreshCw, CheckCircle, AlertCircle, HelpCircle, ChevronDown, Check, Lock, Unlock, KeyRound, Eye, EyeOff, ShieldAlert, PackagePlus, QrCode, Tag, Droplets, Copy } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CategoryType } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
-import { sortProductsNatural } from '../../utils/productUtils';
+import { sortProductsNatural, extractProductModelCode, generateStandardHudaLot, stripBottlePrefix } from '../../utils/productUtils';
 import { ColorIndicator, getEffectiveVariantColor } from '../../utils/colorUtils';
+import { ProductQRLabelModal } from './ProductQRLabelModal';
+import { LotSearchModal } from './LotSearchModal';
+import { QRScannerModal } from '../common/QRScannerModal';
+import { BatchStockCountModal, BatchCountItem } from './BatchStockCountModal';
+import { LotNumberManagerDropdown } from './LotNumberManagerDropdown';
+import { resolveScannedProduct } from '../../utils/qrUtils';
+import { soundFx } from '../../lib/soundEffects';
+import { PerfumeDecantLabelModal } from './PerfumeDecantLabelModal';
 
 export interface CategoryOptionItem {
   id: string;
@@ -31,6 +39,7 @@ export const AdminProductManager: React.FC = () => {
     updateVariantStock,
     deleteProduct,
     recordStockIn,
+    recordStockInBatch,
     selectedCategory,
     setSelectedCategory,
     syncProducts,
@@ -39,11 +48,82 @@ export const AdminProductManager: React.FC = () => {
     verifyAdminPasscode,
     customOptions,
     saveCustomOption,
+    stockMovements,
   } = useShop();
 
   const [adminSearch, setAdminSearch] = useState('');
+  const [adminCategory, setAdminCategory] = useState<string>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [qrLabelProduct, setQrLabelProduct] = useState<Product | null>(null);
+  const [qrLabelInitialLot, setQrLabelInitialLot] = useState<string | undefined>(undefined);
+  const [isPerfumeLabelModalOpen, setIsPerfumeLabelModalOpen] = useState(false);
+  const [perfumeLabelSelectedProduct, setPerfumeLabelSelectedProduct] = useState<Product | null>(null);
+  const [isLotSearchModalOpen, setIsLotSearchModalOpen] = useState(false);
+  const [isQRScannerStockInOpen, setIsQRScannerStockInOpen] = useState<boolean>(false);
+  const [isBatchStockCountOpen, setIsBatchStockCountOpen] = useState<boolean>(false);
+
+  const handleBatchStockSubmit = (items: BatchCountItem[], supplier: string, note: string, lotNum?: string) => {
+    const validItems = items.filter((item) => item.countedQty > 0);
+    if (validItems.length === 0) return;
+
+    const totalAdded = validItems.reduce((sum, item) => sum + item.countedQty, 0);
+    const batchPayload = validItems.map((item) => ({
+      productId: item.productId,
+      variantId: item.variantId,
+      quantity: item.countedQty,
+      costPrice: item.costPrice,
+      supplierName: supplier,
+      note: `${note} (ยิงนับ ${item.countedQty} ชิ้น)`,
+      lotNumber: lotNum || '',
+    }));
+
+    recordStockInBatch(batchPayload);
+
+    setStockSuccessToast({
+      message: `บันทึกรับเข้าสต๊อกสำเร็จ ${validItems.length} รายการ (${totalAdded} ชิ้น)${lotNum ? ` • ล็อต: ${lotNum}` : ''}`,
+      submessage: `อัปเดตจำนวนเข้าคลังสินค้าและระบบ POS เรียบร้อยแล้ว`,
+    });
+  };
+
+  const handleStockInQRScan = (decodedText: string) => {
+    const match = resolveScannedProduct(decodedText, products);
+    if (match) {
+      soundFx.playSuccess();
+      setQuickStockInItem({
+        productId: match.product.id,
+        productTitle: match.product.title,
+        variantId: match.variant.id,
+        variantName: match.variant.name,
+        currentStock: match.variant.stockQuantity,
+        costPrice: match.variant.costPrice || 0,
+        color: getEffectiveVariantColor(match.product, match.variant),
+      });
+      setQuickStockInQty('1');
+      if (match.lotNumber) {
+        setQuickStockInLotNumber(generateStandardHudaLot(match.product.title, match.product.id, match.lotNumber));
+      } else {
+        setQuickStockInLotNumber(generateStandardHudaLot(match.product.title, match.product.id, '1-69'));
+      }
+      setStockSuccessToast({
+        message: `สแกนพบ "${match.product.title} (${match.variant.name})"`,
+        submessage: match.lotNumber ? `อ่านเลขล็อตให้อัตโนมัติ: ${match.lotNumber}` : 'กรุณาระบุจำนวนเพื่อรับเข้าคลังสินค้า',
+      });
+      setIsQRScannerStockInOpen(false);
+    } else {
+      soundFx.playDelete();
+      alert(`ไม่พบสินค้าที่ตรงกับรหัส QR: "${decodedText}"`);
+    }
+  };
+
+  // Helper Word Saved Toast State
+  const [helperWordSavedToast, setHelperWordSavedToast] = useState<string | null>(null);
+  const showHelperWordToast = (word: string, label: string = 'คำช่วย') => {
+    setHelperWordSavedToast(`บันทึก${label} "${word}" เป็นคำช่วยเรียบร้อยแล้ว! พร้อมจำไว้เลือกครั้งต่อไป`);
+    setTimeout(() => {
+      setHelperWordSavedToast(null);
+    }, 3500);
+  };
 
   // Quick Direct Stock IN Modal State (Instant In-Place)
   const [quickStockInItem, setQuickStockInItem] = useState<{
@@ -58,6 +138,7 @@ export const AdminProductManager: React.FC = () => {
   const [quickStockInQty, setQuickStockInQty] = useState<string>('1');
   const [quickStockInCost, setQuickStockInCost] = useState<string>('');
   const [quickStockInSupplier, setQuickStockInSupplier] = useState<string>('โรงงานอาบายะห์ดูไบ');
+  const [quickStockInLotNumber, setQuickStockInLotNumber] = useState<string>('');
   const [quickStockInNote, setQuickStockInNote] = useState<string>('');
   const [isStockInNoteDropdownOpen, setIsStockInNoteDropdownOpen] = useState<boolean>(false);
   const stockInNoteDropdownRef = useRef<HTMLDivElement>(null);
@@ -90,6 +171,7 @@ export const AdminProductManager: React.FC = () => {
     if (!current.includes(trimmed)) {
       const updated = [trimmed, ...current];
       saveCustomOption('stockInNotes', updated);
+      showHelperWordToast(trimmed, 'คำช่วยหมายเหตุ/ล็อต');
     }
   };
 
@@ -149,6 +231,7 @@ export const AdminProductManager: React.FC = () => {
     if (!current.includes(trimmed)) {
       const updated = [trimmed, ...current];
       saveCustomOption('suppliers', updated);
+      showHelperWordToast(trimmed, 'คำช่วยซัพพลายเออร์');
     }
   };
 
@@ -298,6 +381,7 @@ export const AdminProductManager: React.FC = () => {
     setQuickStockInQty('1');
     setQuickStockInCost(costVal > 0 ? costVal.toString() : '');
     setQuickStockInSupplier(defaultSupplier);
+    setQuickStockInLotNumber(generateStandardHudaLot(prod.title, prod.id, '1-69'));
     setQuickStockInNote('');
     setIsStockInNoteDropdownOpen(false);
     setIsStockInSupplierDropdownOpen(false);
@@ -329,6 +413,7 @@ export const AdminProductManager: React.FC = () => {
       costPrice: cost,
       supplierName: supplierVal || 'โรงงานอาบายะห์ดูไบ',
       note: noteVal,
+      lotNumber: quickStockInLotNumber.trim(),
     });
 
     const vName = quickStockInItem.variantName;
@@ -409,6 +494,7 @@ export const AdminProductManager: React.FC = () => {
         console.error('Failed to save categories:', e);
       }
     }
+    saveCustomOption('categories', newList);
   };
 
   const getCategoryLabel = (catId: string, list: CategoryOptionItem[] = categoryOptions): string => {
@@ -450,6 +536,7 @@ export const AdminProductManager: React.FC = () => {
     setCategory(trimmed as CategoryType);
     setCategoryInput(trimmed);
     setIsCategoryDropdownOpen(false);
+    showHelperWordToast(trimmed, 'คำช่วยหมวดหมู่สินค้า');
   };
 
   const handleDeleteCategoryOption = (catToDelete: CategoryOptionItem) => {
@@ -553,6 +640,7 @@ export const AdminProductManager: React.FC = () => {
         console.error('Failed to save descriptions:', e);
       }
     }
+    saveCustomOption('descriptions', newList);
   };
 
   const handleAddNewDescriptionOption = (rawText: string, autoSelect: boolean = true) => {
@@ -699,6 +787,7 @@ export const AdminProductManager: React.FC = () => {
         console.error('Error saving category fabric map:', e);
       }
     }
+    saveCustomOption('fabrics', newMap);
   };
 
   const handleAddNewFabricOption = (newFabricName: string) => {
@@ -712,6 +801,7 @@ export const AdminProductManager: React.FC = () => {
         [activeCategoryKey]: updatedCatList,
       };
       saveCategoryFabricMap(updatedMap);
+      showHelperWordToast(trimmed, 'คำช่วยชนิดสินค้า');
     }
     setFabric(trimmed);
   };
@@ -775,21 +865,22 @@ export const AdminProductManager: React.FC = () => {
       'ขนาดมาตรฐาน (Free Size)',
     ],
     perfume: [
-      'ขวดสเปรย์ 10 ml',
-      'ขวดสเปรย์ 15 ml',
-      'ขวดสเปรย์ 30 ml',
-      'ขวดสเปรย์ 50 ml',
-      'ขวดสเปรย์ 100 ml',
-      'ขวดลูกกลิ้ง 3 ml',
-      'ขวดลูกกลิ้ง 6 ml',
-      'ขวดลูกกลิ้ง 10 ml',
-      'ขวดลูกกลิ้ง 12 ml',
-      'ขวดลูกกลิ้ง 15 ml',
+      'ลูกกลิ้ง 5 ml',
+      'สเปรย์ 10 ml',
+      'สเปรย์ 15 ml',
+      'สเปรย์ 30 ml',
+      'สเปรย์ 50 ml',
+      'สเปรย์ 100 ml',
+      'ลูกกลิ้ง 3 ml',
+      'ลูกกลิ้ง 6 ml',
+      'ลูกกลิ้ง 10 ml',
+      'ลูกกลิ้ง 12 ml',
+      'ลูกกลิ้ง 15 ml',
+      'เทสเตอร์ 3 ml',
+      'เทสเตอร์ 5 ml',
       'Attar Oil 12 ml',
-      'ขวดแก้วคริสตัล 6 ml',
-      'ขวดแก้วคริสตัล 12 ml',
-      'ขวดเทสเตอร์ 3 ml',
-      'ขวดเทสเตอร์ 5 ml',
+      'แก้วคริสตัล 6 ml',
+      'แก้วคริสตัล 12 ml',
       'ขนาดมาตรฐาน (Free Size)',
     ],
     incense: [
@@ -812,6 +903,23 @@ export const AdminProductManager: React.FC = () => {
     ],
   };
 
+  // Helper to sanitize array of sizes (remove bottle words/prefixes)
+  const sanitizeCategorySizes = (arr: string[]): string[] => {
+    return Array.from(new Set(arr.map(stripBottlePrefix).filter(Boolean)));
+  };
+
+  const sanitizeCategorySizeMap = (map: Record<string, string[]>): Record<string, string[]> => {
+    const cleaned: Record<string, string[]> = {};
+    for (const [k, arr] of Object.entries(map)) {
+      if (Array.isArray(arr)) {
+        cleaned[k] = sanitizeCategorySizes(arr);
+      } else {
+        cleaned[k] = arr as any;
+      }
+    }
+    return cleaned;
+  };
+
   // Category-specific Size / Volume Options Map State (Stored in localStorage)
   const [categorySizeMap, setCategorySizeMap] = useState<Record<string, string[]>>(() => {
     if (typeof window !== 'undefined') {
@@ -819,7 +927,9 @@ export const AdminProductManager: React.FC = () => {
         const stored = localStorage.getItem('huda_category_size_map_v1');
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (parsed && typeof parsed === 'object') return parsed;
+          if (parsed && typeof parsed === 'object') {
+            return sanitizeCategorySizeMap(parsed);
+          }
         }
       } catch (err) {
         console.error('Failed to parse saved category size map:', err);
@@ -845,18 +955,34 @@ export const AdminProductManager: React.FC = () => {
 
   // Helper to persist category size map
   const saveCategorySizeMap = (newMap: Record<string, string[]>) => {
-    setCategorySizeMap(newMap);
+    const cleanedMap = sanitizeCategorySizeMap(newMap);
+    setCategorySizeMap(cleanedMap);
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('huda_category_size_map_v1', JSON.stringify(newMap));
+        localStorage.setItem('huda_category_size_map_v1', JSON.stringify(cleanedMap));
       } catch (e) {
         console.error('Error saving category size map:', e);
       }
     }
+    saveCustomOption('sizes', cleanedMap);
   };
 
+  // Auto-clean any legacy sizes with "ขวด" from categorySizeMap and localStorage
+  useEffect(() => {
+    let hasBottleWord = false;
+    for (const arr of Object.values(categorySizeMap)) {
+      if (Array.isArray(arr) && arr.some((s) => s.includes('ขวด'))) {
+        hasBottleWord = true;
+        break;
+      }
+    }
+    if (hasBottleWord) {
+      saveCategorySizeMap(categorySizeMap);
+    }
+  }, [categorySizeMap]);
+
   const handleAddNewSizeOption = (newSizeName: string) => {
-    const trimmed = newSizeName.trim();
+    const trimmed = stripBottlePrefix(newSizeName.trim());
     if (!trimmed) return;
     const catList = currentCategorySizeOptions;
     if (!catList.includes(trimmed)) {
@@ -881,7 +1007,7 @@ export const AdminProductManager: React.FC = () => {
   };
 
   const handleSaveEditSizeOption = (idx: number, oldName: string) => {
-    const trimmed = editingSizeText.trim();
+    const trimmed = stripBottlePrefix(editingSizeText.trim());
     if (!trimmed) return;
     const updatedCatList = [...currentCategorySizeOptions];
     updatedCatList[idx] = trimmed;
@@ -951,6 +1077,14 @@ export const AdminProductManager: React.FC = () => {
     return matched.length > 0 ? matched : currentCategoryFabricOptions;
   }, [currentCategoryFabricOptions, fabric]);
 
+  const isTypedFabricNew = useMemo(() => {
+    const q = fabric.trim().toLowerCase();
+    if (!q) return false;
+    return !currentCategoryFabricOptions.some(
+      (opt) => opt.toLowerCase() === q
+    );
+  }, [currentCategoryFabricOptions, fabric]);
+
   // Comprehensive Category-Bound Color & Scent Presets
   const DEFAULT_CATEGORY_COLOR_PRESETS: Record<string, string[]> = {
     abaya: [
@@ -986,16 +1120,16 @@ export const AdminProductManager: React.FC = () => {
       'สีทูโทน (Two-Tone)',
     ],
     perfume: [
-      'กลิ่นดูไบออริจินัล (Dubai Original)',
-      'กลิ่นอัมเบอร์ทอง (Royal Amber & Musk)',
-      'กลิ่นกุหลาบดามัสกัสผสมอูด (Rose Damascena & Oud)',
-      'กลิ่นไม้หอมอูดบริสุทธิ์ (Pure Oud Wood)',
-      'กลิ่นมัสก์ขาวบริสุทธิ์ (White Musk)',
-      'กลิ่นวานิลลาดูไบ (Sweet Vanilla Dubai)',
-      'กลิ่นฟรุตตี้อาหรับ (Fruity Arabic EDP)',
-      'กลิ่นสดชื่นซีตรัส & อูด (Fresh Citrus & Oud)',
-      'กลิ่นคาร์ดามอม & สไปซ์ (Cardamom Spice)',
-      'กลิ่นชาฮานะห์ (Shahana Floral)',
+      'กลิ่นดูไบออริจินัล',
+      'กลิ่นอัมเบอร์ทอง',
+      'กลิ่นกุหลาบดามัสกัสผสมอูด',
+      'กลิ่นไม้หอมอูดบริสุทธิ์',
+      'กลิ่นมัสก์ขาวบริสุทธิ์',
+      'กลิ่นวานิลลาดูไบ',
+      'กลิ่นฟรุตตี้อาหรับ',
+      'กลิ่นสดชื่นซีตรัส & อูด',
+      'กลิ่นคาร์ดามอม & สไปซ์',
+      'กลิ่นชาฮานะห์',
     ],
     incense: [
       'ไม้หอมอูดออริจินัล (Original Oud Chips)',
@@ -1025,7 +1159,18 @@ export const AdminProductManager: React.FC = () => {
         const stored = localStorage.getItem('huda_category_color_map_v1');
         if (stored) {
           const parsed = JSON.parse(stored);
-          if (parsed && typeof parsed === 'object') return parsed;
+          if (parsed && typeof parsed === 'object') {
+            // Clean up old English parentheses from perfume scents (e.g. ' (Dubai Original)')
+            if (Array.isArray(parsed.perfume)) {
+              parsed.perfume = parsed.perfume.map((c: string) =>
+                c.replace(/\s*\([^)]*(?:dubai original|edp|spray|royal amber|rose damascena|pure oud|white musk|sweet vanilla|fruity arabic|fresh citrus|cardamom|shahana)[^)]*\)/gi, '').trim()
+              );
+              if (!parsed.perfume.includes('กลิ่นดูไบออริจินัล')) {
+                parsed.perfume = ['กลิ่นดูไบออริจินัล', ...parsed.perfume.filter((x: string) => !x.includes('ดูไบออริจินัล'))];
+              }
+            }
+            return parsed;
+          }
         }
       } catch (err) {
         console.error('Failed to parse saved category color map:', err);
@@ -1042,6 +1187,8 @@ export const AdminProductManager: React.FC = () => {
   const [openColorDropdownIdx, setOpenColorDropdownIdx] = useState<number | null>(null);
   const [editingColorIdx, setEditingColorIdx] = useState<number | null>(null);
   const [editingColorText, setEditingColorText] = useState<string>('');
+  const [copiedColorText, setCopiedColorText] = useState<string | null>(null);
+  const [newCustomColorInput, setNewCustomColorInput] = useState<string>('');
 
   const saveCategoryColorMap = (newMap: Record<string, string[]>) => {
     setCategoryColorMap(newMap);
@@ -1052,6 +1199,7 @@ export const AdminProductManager: React.FC = () => {
         console.error('Error saving category color map:', e);
       }
     }
+    saveCustomOption('colors', newMap);
   };
 
   const handleAddNewColorOption = (newColorName: string) => {
@@ -1065,7 +1213,25 @@ export const AdminProductManager: React.FC = () => {
         [activeCategoryKey]: updatedCatList,
       };
       saveCategoryColorMap(updatedMap);
+      soundFx.playSuccess();
     }
+  };
+
+  const handleCopyColorOption = (colorText: string, variantIdx: number) => {
+    if (!colorText) return;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(colorText);
+      }
+    } catch (_) {}
+    setCopiedColorText(colorText);
+    soundFx.playSuccess();
+    const updated = [...variants];
+    updated[variantIdx].color = colorText;
+    setVariants(updated);
+    setTimeout(() => {
+      setCopiedColorText(null);
+    }, 2500);
   };
 
   const handleDeleteColorOption = (colorToDelete: string) => {
@@ -1109,6 +1275,37 @@ export const AdminProductManager: React.FC = () => {
     }
   };
 
+  // Synchronize Cloud Custom Options across all devices in Real-time
+  useEffect(() => {
+    if (customOptions?.categories && Array.isArray(customOptions.categories) && customOptions.categories.length > 0) {
+      setCategoryOptions(customOptions.categories);
+    }
+  }, [customOptions?.categories]);
+
+  useEffect(() => {
+    if (customOptions?.fabrics && typeof customOptions.fabrics === 'object') {
+      setCategoryFabricMap((prev) => ({ ...prev, ...customOptions.fabrics }));
+    }
+  }, [customOptions?.fabrics]);
+
+  useEffect(() => {
+    if (customOptions?.sizes && typeof customOptions.sizes === 'object') {
+      setCategorySizeMap((prev) => ({ ...prev, ...customOptions.sizes }));
+    }
+  }, [customOptions?.sizes]);
+
+  useEffect(() => {
+    if (customOptions?.colors && typeof customOptions.colors === 'object') {
+      setCategoryColorMap((prev) => ({ ...prev, ...customOptions.colors }));
+    }
+  }, [customOptions?.colors]);
+
+  useEffect(() => {
+    if (customOptions?.descriptions && Array.isArray(customOptions.descriptions) && customOptions.descriptions.length > 0) {
+      setDescriptionOptions(customOptions.descriptions);
+    }
+  }, [customOptions?.descriptions]);
+
   // Standard Dubai Abaya Default Sizes
   const DEFAULT_DUBAI_SIZES = [
     { name: 'Size 52 (ส่วนสูง ~150-155 ซม. / ยาว 52")', sku: 'HD-ABY-52', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
@@ -1120,16 +1317,16 @@ export const AdminProductManager: React.FC = () => {
 
   // Standard Dubai Perfume Default Volumes/Sizes
   const DEFAULT_PERFUME_SIZES = [
-    { name: 'ขวดสเปรย์ 50 ml (EDP Spray)', sku: 'HD-PRF-50ML', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
-    { name: 'ขวดสเปรย์ 100 ml (EDP Premium Spray)', sku: 'HD-PRF-100ML', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
-    { name: 'ขวดแก้วคริสตัล 12 ml (Attar Pure Oil)', sku: 'HD-PRF-12ML', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
-    { name: 'ขวดเทสเตอร์ 3 ml (Sample Tester)', sku: 'HD-PRF-3ML', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
+    { name: 'สเปรย์ 50 ml', sku: 'HD-PRF-50ML', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
+    { name: 'สเปรย์ 100 ml', sku: 'HD-PRF-100ML', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
+    { name: 'แก้วคริสตัล 12 ml', sku: 'HD-PRF-12ML', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
+    { name: 'เทสเตอร์ 3 ml', sku: 'HD-PRF-3ML', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
   ];
 
   // Standard Dubai Incense Default Variants
   const DEFAULT_INCENSE_SIZES = [
-    { name: 'ขวด/กระปุก 50g (Standard Bukhoor)', sku: 'HD-INC-50G', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
-    { name: 'ขวด/กระปุก 100g (Premium Bukhoor)', sku: 'HD-INC-100G', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
+    { name: 'กระปุก 50g (Standard Bukhoor)', sku: 'HD-INC-50G', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
+    { name: 'กระปุก 100g (Premium Bukhoor)', sku: 'HD-INC-100G', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
     { name: 'เซ็ตเตาเผาหอม + ถ่านหอมดูไบ', sku: 'HD-INC-SET', price: 0, costPrice: 0, stockQuantity: 0, color: '' },
   ];
 
@@ -1143,6 +1340,18 @@ export const AdminProductManager: React.FC = () => {
   const [variants, setVariants] = useState<
     { name: string; sku: string; price: number; costPrice?: number; stockQuantity: number; color?: string }[]
   >([]);
+
+  // Auto-clean any legacy variant names in the modal with "ขวด"
+  useEffect(() => {
+    if (variants.some((v) => v.name && v.name.includes('ขวด'))) {
+      setVariants((prev) =>
+        prev.map((v) => ({
+          ...v,
+          name: stripBottlePrefix(v.name),
+        }))
+      );
+    }
+  }, [variants]);
 
   // Handle Category Change (keep fabric and variants clean for user to choose freely)
   const handleCategoryChange = (newCat: CategoryType) => {
@@ -1313,6 +1522,7 @@ export const AdminProductManager: React.FC = () => {
     } else {
       addProduct(newProductObj);
       setSelectedCategory('all');
+      setAdminCategory('all');
       setAdminSearch('');
       alert(`เพิ่มสินค้าใหม่ "${title}" เข้าสู่ระบบเรียบร้อยแล้ว! แสดงผลหน้าร้านทันที`);
     }
@@ -1395,6 +1605,7 @@ export const AdminProductManager: React.FC = () => {
     } else {
       addProduct(newProductObj);
       setSelectedCategory('all');
+      setAdminCategory('all');
       setAdminSearch('');
     }
 
@@ -1451,7 +1662,7 @@ export const AdminProductManager: React.FC = () => {
   };
 
   const handleAddSingleSize = (sizeName: string, andSaveOption: boolean = true) => {
-    const trimmed = sizeName.trim();
+    const trimmed = stripBottlePrefix(sizeName.trim());
     if (!trimmed) return;
     const skuCode = `HD-${category.toUpperCase()}-${trimmed.replace(/[^0-9A-Z]/gi, '')}`;
     setVariants((prev) => [
@@ -1467,6 +1678,7 @@ export const AdminProductManager: React.FC = () => {
     ]);
     if (andSaveOption) {
       handleAddNewSizeOption(trimmed);
+      showHelperWordToast(trimmed, 'คำช่วยขนาด/ไซส์');
     }
   };
 
@@ -1474,7 +1686,7 @@ export const AdminProductManager: React.FC = () => {
     setVariants([
       ...variants,
       { 
-        name: category === 'perfume' ? 'ขวดสเปรย์ 50 ml' : category === 'incense' ? 'กระปุก 50g' : category === 'other' ? 'ชิ้น/กล่อง (Standard)' : 'Size 52 (ส่วนสูง ~150-155 ซม.)', 
+        name: category === 'perfume' ? 'สเปรย์ 50 ml' : category === 'incense' ? 'กระปุก 50g' : category === 'other' ? 'ชิ้น/กล่อง (Standard)' : 'Size 52 (ส่วนสูง ~150-155 ซม.)', 
         sku: `SKU-${variants.length + 1}`, 
         price: 0, 
         costPrice: 0,
@@ -1493,7 +1705,7 @@ export const AdminProductManager: React.FC = () => {
     return products
       .filter((product) => {
         const matchesCat =
-          selectedCategory === 'all' || product.category === selectedCategory;
+          adminCategory === 'all' || product.category === adminCategory;
         const matchesSearch =
           !adminSearch ||
           product.title.toLowerCase().includes(adminSearch.toLowerCase()) ||
@@ -1501,7 +1713,7 @@ export const AdminProductManager: React.FC = () => {
         return matchesCat && matchesSearch;
       })
       .sort(sortProductsNatural);
-  }, [products, selectedCategory, adminSearch]);
+  }, [products, adminCategory, adminSearch]);
 
   const categories: { id: CategoryType; label: string }[] = useMemo(() => [
     { id: 'all', label: 'ทั้งหมด (All)' },
@@ -1510,6 +1722,13 @@ export const AdminProductManager: React.FC = () => {
 
   return (
     <div className="space-y-6 text-xs text-stone-950">
+      {/* Global Helper Word Toast Notification */}
+      {helperWordSavedToast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 border-2 border-emerald-300 text-xs sm:text-sm font-black animate-bounce max-w-[90vw] text-center">
+          <CheckCircle className="w-5 h-5 text-white shrink-0" />
+          <span>{helperWordSavedToast}</span>
+        </div>
+      )}
       
       {/* Header & Action Buttons Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border-2 border-amber-400/60 shadow-xl text-stone-950">
@@ -1544,6 +1763,49 @@ export const AdminProductManager: React.FC = () => {
           >
             <RotateCcw className="w-4 h-4 text-amber-700 animate-spin-slow" />
             <span>ซิงก์ดึงข้อมูลสินค้าด่วน</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsBatchStockCountOpen(true)}
+            className="px-4 py-2.5 bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 border border-emerald-500 cursor-pointer hover:scale-105 active:scale-95"
+            title="เปิดโหมดยิงสแกน QR หรือบาร์โค้ดสินค้ารัวๆ เพื่อสะสมนับจำนวนและรับเข้าสต๊อกพร้อมกัน"
+          >
+            <PackagePlus className="w-4 h-4 text-emerald-200" />
+            <span>📦 สแกนยิงนับสต๊อก (Batch Count)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsQRScannerStockInOpen(true)}
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 border border-emerald-700 cursor-pointer hover:scale-105 active:scale-95"
+            title="เปิดกล้องสแกน QR Code บนสินค้า เพื่อรับเข้าสต๊อกด่วน"
+          >
+            <Camera className="w-4 h-4 text-white" />
+            <span>📸 สแกน QR รับเข้าสต๊อก</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsLotSearchModalOpen(true)}
+            className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 border border-amber-600 cursor-pointer hover:scale-105 active:scale-95"
+            title="ค้นหาสินค้าจากเลขล็อตเมื่อป้ายบาร์โค้ดชำรุด หรือสั่งพิมพ์ป้ายใหม่มาติดแทน"
+          >
+            <Tag className="w-4 h-4 text-stone-950" />
+            <span>ค้นด้วยเลขล็อต (ป้ายชำรุด)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setPerfumeLabelSelectedProduct(null);
+              setIsPerfumeLabelModalOpen(true);
+            }}
+            className="px-4 py-2.5 bg-white hover:bg-amber-50 text-stone-950 font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 border border-stone-300 hover:border-amber-400 cursor-pointer hover:scale-105 active:scale-95"
+            title="พิมพ์สติ๊กเกอร์ติดขวดน้ำหอมแบ่ง 10ml / 5ml (Niimbot & สติ๊กเกอร์ม้วน)"
+          >
+            <Droplets className="w-4 h-4 text-amber-600" />
+            <span>🏷️ พิมพ์ป้ายขวดน้ำหอม (Niimbot)</span>
           </button>
 
           <button
@@ -1674,40 +1936,66 @@ export const AdminProductManager: React.FC = () => {
       </div>
 
       {/* Admin Category Filter & Search Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-4 rounded-2xl border-2 border-amber-400/60 shadow-md text-stone-950">
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-          <Filter className="w-4 h-4 text-amber-600 shrink-0 mr-1" />
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer ${
-                selectedCategory === cat.id
-                  ? 'bg-amber-400 text-stone-950 border-2 border-amber-500 shadow-md'
-                  : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
+      <div className="space-y-2 bg-white p-4 rounded-2xl border-2 border-amber-400/60 shadow-md text-stone-950">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+            <Filter className="w-4 h-4 text-amber-600 shrink-0 mr-1" />
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setAdminCategory(cat.id)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer ${
+                  adminCategory === cat.id
+                    ? 'bg-amber-400 text-stone-950 border-2 border-amber-500 shadow-md'
+                    : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative w-full md:w-96 flex items-center gap-2">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="ค้นหาชื่อสินค้าในหลังบ้าน..."
+                value={adminSearch}
+                onChange={(e) => setAdminSearch(e.target.value)}
+                className="w-full bg-white border-2 border-stone-400 rounded-xl py-2 pl-9 pr-3 text-xs sm:text-sm text-stone-950 font-black placeholder-stone-400 focus:outline-none focus:border-amber-500 shadow-sm"
+              />
+              <Search className="w-4 h-4 text-amber-600 absolute left-3 top-1/2 -translate-y-1/2" />
+            </div>
+            <VoiceInputButton
+              onTranscript={(text) => setAdminSearch(text)}
+              currentValue={adminSearch}
+              className="py-2 px-3 rounded-xl text-xs font-bold shrink-0"
+            />
+          </div>
         </div>
 
-        <div className="relative w-full md:w-96 flex items-center gap-2">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              placeholder="ค้นหาชื่อสินค้าในหลังบ้าน..."
-              value={adminSearch}
-              onChange={(e) => setAdminSearch(e.target.value)}
-              className="w-full bg-white border-2 border-stone-400 rounded-xl py-2 pl-9 pr-3 text-xs sm:text-sm text-stone-950 font-black placeholder-stone-400 focus:outline-none focus:border-amber-500 shadow-sm"
-            />
-            <Search className="w-4 h-4 text-amber-600 absolute left-3 top-1/2 -translate-y-1/2" />
+        {/* Dynamic Count & Reset Banner */}
+        <div className="flex items-center justify-between pt-2 border-t border-stone-200 text-xs font-bold text-stone-700">
+          <div className="flex items-center gap-2">
+            <Layers className="w-3.5 h-3.5 text-amber-700" />
+            <span>
+              แสดง <strong className="text-amber-950 font-black text-sm">{filteredAdminProducts.length}</strong> จากทั้งหมด <strong className="text-stone-950 font-black text-sm">{products.length}</strong> แบบสินค้า
+            </span>
           </div>
-          <VoiceInputButton
-            onTranscript={(text) => setAdminSearch(text)}
-            currentValue={adminSearch}
-            className="py-2 px-3 rounded-xl text-xs font-bold shrink-0"
-          />
+          {(adminCategory !== 'all' || adminSearch.trim()) && (
+            <button
+              type="button"
+              onClick={() => {
+                setAdminCategory('all');
+                setAdminSearch('');
+              }}
+              className="text-amber-800 hover:text-amber-950 bg-amber-100 hover:bg-amber-200 px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer border border-amber-300"
+              title="ล้างตัวกรองเพื่อดูสินค้าทั้งหมดในคลัง"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>แสดงสินค้าทั้งหมด ({products.length} แบบ)</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -1771,6 +2059,31 @@ export const AdminProductManager: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-2 self-end sm:self-center">
+                    {(product.category === 'perfume' || product.title.includes('น้ำหอม') || product.title.toLowerCase().includes('perfume')) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPerfumeLabelSelectedProduct(product);
+                          setIsPerfumeLabelModalOpen(true);
+                        }}
+                        className="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-950 font-black rounded-xl text-xs flex items-center gap-1.5 border border-amber-300 hover:border-amber-500 transition cursor-pointer shadow-xs hover:scale-105 active:scale-95"
+                        title="พิมพ์สติ๊กเกอร์ติดขวดน้ำหอมแบ่ง 10ml / 5ml กลิ่นนี้ (Niimbot & Thermal Roll)"
+                      >
+                        <Droplets className="w-4 h-4 text-amber-600" />
+                        <span>ป้ายขวด 10ml</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setQrLabelProduct(product)}
+                      className="px-3.5 py-2 bg-stone-100 hover:bg-amber-100 text-stone-900 hover:text-amber-950 font-black rounded-xl text-xs flex items-center gap-1.5 border border-stone-300 hover:border-amber-400 transition cursor-pointer shadow-xs hover:scale-105 active:scale-95"
+                      title="สร้างและพิมพ์ป้าย QR Code / ป้ายราคาสำหรับสินค้านี้"
+                    >
+                      <QrCode className="w-4 h-4 text-amber-700" />
+                      <span>ป้าย QR Code</span>
+                    </button>
+
                     <button
                       onClick={() => {
                         setEditingProduct(product);
@@ -1788,7 +2101,7 @@ export const AdminProductManager: React.FC = () => {
                         setNewImageUrlInput('');
                         setVariants(
                           product.variants.map((v) => ({
-                            name: v.name,
+                            name: stripBottlePrefix(v.name),
                             sku: v.sku,
                             price: v.price,
                             costPrice: v.costPrice ?? Math.round(v.price * 0.5),
@@ -1951,7 +2264,7 @@ export const AdminProductManager: React.FC = () => {
             </div>
 
             {/* Scrollable Form Body */}
-            <form id="admin-product-form" onSubmit={handleSaveProduct} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 text-xs no-scrollbar flex flex-col justify-between">
+            <form id="admin-product-form" onSubmit={handleSaveProduct} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 text-xs flex flex-col justify-between scroll-smooth">
               <div className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
@@ -2031,6 +2344,80 @@ export const AdminProductManager: React.FC = () => {
                         >
                           <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180 text-amber-600' : ''}`} />
                         </button>
+                      </div>
+                    </div>
+
+                    {/* Quick Add Helper Word Badge for Category if typed category is new */}
+                    {categoryInput.trim() && isTypedCategoryNew && (
+                      <div className="mt-2 p-2.5 bg-gradient-to-r from-amber-50 to-emerald-50 border-2 border-emerald-400 rounded-xl flex items-center justify-between gap-2 shadow-sm animate-pulse">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-base">🏷️</span>
+                          <div className="text-xs text-stone-900 font-bold truncate">
+                            หมวดหมู่ใหม่: <span className="font-black text-emerald-950 underline">"{categoryInput.trim()}"</span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleAddNewCategoryOption(categoryInput.trim());
+                          }}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg text-xs font-black shadow transition cursor-pointer flex items-center gap-1 shrink-0"
+                        >
+                          <span>➕ เพิ่มเป็นคำช่วย (จำไว้ใช้ครั้งต่อไป)</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Category Helper Word Quick Chips */}
+                    <div className="mt-2 bg-stone-50 border-2 border-amber-300/60 rounded-xl p-2.5 shadow-2xs">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-1.5 text-xs font-black text-stone-800">
+                          <span className="text-amber-600">📂</span>
+                          <span>คำช่วยหมวดหมู่สินค้าที่จดจำไว้:</span>
+                          <span className="text-[10px] bg-amber-200 text-amber-950 px-2 py-0.5 rounded-full font-black">
+                            {categoryOptions.length} หมวด
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-stone-500 font-bold">แตะ 1 ครั้งเพื่อเลือก</span>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto no-scrollbar py-0.5">
+                        {categoryOptions.map((catItem) => {
+                          const isSelected = category === catItem.id || categoryInput.trim().toLowerCase() === catItem.label.toLowerCase();
+                          return (
+                            <div
+                              key={catItem.id}
+                              className={`group inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition shadow-2xs ${
+                                isSelected
+                                  ? 'bg-amber-500 text-stone-950 ring-2 ring-amber-600 font-black'
+                                  : 'bg-white text-stone-800 border border-stone-300 hover:border-amber-400 hover:bg-amber-50'
+                              }`}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => handleSelectCategory(catItem)}
+                                className="cursor-pointer truncate max-w-[180px]"
+                                title={`คลิกเลือกหมวด "${catItem.label}"`}
+                              >
+                                {isSelected && <span className="mr-1 text-stone-950 font-black">✓</span>}
+                                {catItem.label}
+                              </button>
+                              {!catItem.isBuiltin && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteCategoryOption(catItem);
+                                  }}
+                                  className="p-0.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded transition cursor-pointer opacity-50 group-hover:opacity-100"
+                                  title={`ลบคำช่วย "${catItem.label}"`}
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -2225,16 +2612,110 @@ export const AdminProductManager: React.FC = () => {
                             ? 'คลิกเลือกชนิดเนื้อผ้า หรือพิมพ์ชนิดผ้าใหม่ เช่น ผ้าไหม...'
                             : 'คลิกเลือกชนิดเนื้อผ้า หรือพิมพ์ชนิดผ้าใหม่ เช่น ผ้าไหม, ผ้านิดา...'
                         }
-                        className="w-full bg-white border-2 border-stone-400 focus:border-amber-500 rounded-xl p-3 pr-10 text-stone-950 font-black text-sm placeholder-stone-400 focus:outline-none shadow-sm cursor-text"
+                        className="w-full bg-white border-2 border-stone-400 focus:border-amber-500 rounded-xl p-3 pr-16 text-stone-950 font-black text-sm placeholder-stone-400 focus:outline-none shadow-sm cursor-text"
                       />
-                      <button
-                        type="button"
-                        onClick={() => setIsFabricDropdownOpen(!isFabricDropdownOpen)}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-stone-600 hover:text-amber-800 transition cursor-pointer"
-                        title="เปิด/ปิด รายการตัวเลือก"
-                      >
-                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isFabricDropdownOpen ? 'rotate-180 text-amber-600' : ''}`} />
-                      </button>
+                      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                        {fabric && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFabric('');
+                              setIsFabricDropdownOpen(true);
+                            }}
+                            className="p-1 text-stone-400 hover:text-stone-800 hover:bg-stone-100 rounded-full transition cursor-pointer"
+                            title="เคลียร์ช่องให้ว่าง"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setIsFabricDropdownOpen(!isFabricDropdownOpen)}
+                          className="p-1.5 text-stone-600 hover:text-amber-800 transition cursor-pointer"
+                          title="เปิด/ปิด รายการตัวเลือก"
+                        >
+                          <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isFabricDropdownOpen ? 'rotate-180 text-amber-600' : ''}`} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Quick Add Helper Word Badge if user typed a new type not yet in list */}
+                    {fabric.trim() && isTypedFabricNew && (
+                      <div className="mt-2 p-2.5 bg-gradient-to-r from-amber-50 to-emerald-50 border-2 border-emerald-400 rounded-xl flex items-center justify-between gap-2 shadow-sm animate-pulse">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-base">✨</span>
+                          <div className="text-xs text-stone-900 font-bold truncate">
+                            ชนิดใหม่: <span className="font-black text-emerald-950 underline">"{fabric.trim()}"</span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleAddNewFabricOption(fabric.trim());
+                            setIsFabricDropdownOpen(false);
+                          }}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg text-xs font-black shadow transition cursor-pointer flex items-center gap-1 shrink-0"
+                        >
+                          <span>➕ เพิ่มเป็นคำช่วย (จำไว้ใช้ครั้งต่อไป)</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Helper Word Quick Chips for Fabric / Type */}
+                    <div className="mt-2 bg-stone-50 border-2 border-amber-300/60 rounded-xl p-2.5 shadow-2xs">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-1.5 text-xs font-black text-stone-800">
+                          <span className="text-amber-600">💡</span>
+                          <span>
+                            คำช่วย{category === 'perfume' ? 'ประเภทน้ำหอม' : category === 'incense' ? 'เครื่องหอม' : category === 'kaftan' ? 'เนื้อผ้าคัฟทาน' : category === 'combo' ? 'เซ็ตสินค้า' : category === 'other' ? 'ประเภทสินค้า' : 'ชนิดเนื้อผ้า'}ที่จดจำไว้:
+                          </span>
+                          <span className="text-[10px] bg-amber-200 text-amber-950 px-2 py-0.5 rounded-full font-black">
+                            {currentCategoryFabricOptions.length}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-stone-500 font-bold">แตะ 1 ครั้งเพื่อเลือก</span>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto no-scrollbar py-0.5">
+                        {currentCategoryFabricOptions.map((opt) => {
+                          const isSelected = fabric.trim().toLowerCase() === opt.trim().toLowerCase();
+                          return (
+                            <div
+                              key={opt}
+                              className={`group inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition shadow-2xs ${
+                                isSelected
+                                  ? 'bg-amber-500 text-stone-950 ring-2 ring-amber-600 font-black'
+                                  : 'bg-white text-stone-800 border border-stone-300 hover:border-amber-400 hover:bg-amber-50'
+                              }`}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFabric(opt);
+                                  setIsFabricDropdownOpen(false);
+                                }}
+                                className="cursor-pointer truncate max-w-[200px]"
+                                title={`คลิกเลือก "${opt}"`}
+                              >
+                                {isSelected && <span className="mr-1 text-stone-950 font-black">✓</span>}
+                                {opt}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteFabricOption(opt);
+                                }}
+                                className="p-0.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded transition cursor-pointer opacity-50 group-hover:opacity-100"
+                                title={`ลบคำช่วย "${opt}"`}
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
 
                     {/* Floating Dropdown List with Edit & Delete on each item */}
@@ -2820,7 +3301,7 @@ export const AdminProductManager: React.FC = () => {
                             }}
                             placeholder={
                               category === 'perfume'
-                                ? 'คลิกเลือกขนาดขวด หรือพิมพ์ขนาดใหม่ (เช่น ขวดลูกกลิ้ง 6 ml หรือ ขวดสเปรย์พกพา 15 ml)...'
+                                ? 'คลิกเลือกขนาด หรือพิมพ์ขนาดใหม่ (เช่น ลูกกลิ้ง 6 ml หรือ สเปรย์พกพา 15 ml)...'
                                 : 'คลิกเลือกขนาด หรือพิมพ์ไซส์ใหม่ (เช่น Size 60, Free Size, อก 44" ยาว 56")...'
                             }
                             className="w-full bg-white border-2 border-stone-400 rounded-xl px-3 py-2 pr-9 text-xs font-black text-stone-950 placeholder-stone-400 focus:outline-none focus:border-amber-500 shadow-inner"
@@ -3008,7 +3489,38 @@ export const AdminProductManager: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1 no-scrollbar">
+                  {/* Variants list summary header */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-amber-50/90 rounded-2xl border-2 border-amber-300 shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <PackagePlus className="w-4 h-4 text-amber-800" />
+                      <span className="font-serif font-black text-stone-950 text-xs sm:text-sm">
+                        รายการไซส์ / ตัวเลือกสต๊อกสินค้าทั้งหมด
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-stone-950 font-black text-xs font-mono">
+                        มีทั้งหมด {variants.length} รายการ
+                      </span>
+                    </div>
+                    {variants.length > 0 && (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[11px] text-stone-600 font-bold">ปุ่มลัดเลื่อนดู:</span>
+                        {variants.map((v, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => {
+                              document.getElementById(`variant-card-item-${i}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }}
+                            className="px-2 py-0.5 bg-white hover:bg-amber-400 text-stone-900 border border-stone-300 rounded-lg text-[10px] font-mono font-bold transition cursor-pointer shadow-2xs"
+                            title={`เลื่อนไปที่รายการที่ ${i + 1}`}
+                          >
+                            #{i + 1} {v.name ? (v.name.length > 10 ? v.name.slice(0, 10) + '...' : v.name) : `รายการ ${i + 1}`}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-4 pr-1">
                     {variants.length === 0 ? (
                       <div className="p-8 text-center bg-amber-50/50 rounded-2xl border-2 border-dashed border-amber-400 text-stone-900 space-y-2">
                         <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-200/80 flex items-center justify-center text-amber-900 text-xl font-black border border-amber-400 shadow-sm">
@@ -3029,12 +3541,13 @@ export const AdminProductManager: React.FC = () => {
                         return (
                         <div
                           key={idx}
-                          className="p-4 sm:p-5 rounded-2xl border-2 border-stone-300 hover:border-amber-400 shadow-sm space-y-3.5 transition-all bg-stone-50/60 hover:bg-white"
+                          id={`variant-card-item-${idx}`}
+                          className="p-4 sm:p-5 rounded-2xl border-2 border-stone-300 hover:border-amber-400 shadow-sm space-y-3.5 transition-all bg-stone-50/60 hover:bg-white scroll-mt-20"
                         >
                           <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 border-b-2 border-amber-400/30 pb-3">
                             <div className="flex items-center gap-2 flex-wrap min-w-0">
                               <span className="px-2.5 py-1 rounded-xl bg-amber-400 text-stone-950 font-black text-xs font-serif shadow-xs shrink-0">
-                                รายการที่ {idx + 1}
+                                รายการที่ {idx + 1} จาก {variants.length}
                               </span>
                               <span className="text-xs sm:text-sm font-black text-stone-950 font-serif truncate max-w-[200px] sm:max-w-xs" title={v.name || 'ไซส์/รายการใหม่'}>
                                 {v.name || 'ไซส์/รายการใหม่'}
@@ -3144,15 +3657,80 @@ export const AdminProductManager: React.FC = () => {
                               </div>
                             </div>
 
+                            {/* Toast / Status indicator when copied */}
+                            {copiedColorText && (
+                              <div className="flex items-center gap-1.5 text-[11px] text-emerald-800 font-black mt-1 bg-emerald-50 border border-emerald-300 px-2 py-1 rounded-lg">
+                                <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span>คัดลอก "{copiedColorText}" เรียบร้อยแล้ว!</span>
+                              </div>
+                            )}
+
+                            {/* Quick Pill to save newly typed color/scent for future use */}
+                            {v.color && v.color.trim() && !currentCategoryColorOptions.includes(v.color.trim()) && (
+                              <div className="flex items-center justify-between gap-1.5 text-[11px] mt-1 p-1.5 bg-amber-50 border border-amber-300 rounded-lg">
+                                <span className="text-amber-950 font-bold truncate">
+                                  ✨ {category === 'perfume' ? 'กลิ่นใหม่:' : 'สีใหม่:'} <strong className="underline">{v.color.trim()}</strong>
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddNewColorOption(v.color!.trim())}
+                                  className="px-2 py-0.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-black rounded text-[10px] shrink-0 cursor-pointer shadow-xs transition"
+                                  title="คลิกเพื่อบันทึกจำกลิ่น/สีนี้ไว้ใช้ในครั้งต่อไป"
+                                >
+                                  💾 บันทึกจำไว้ใช้ครั้งต่อไป
+                                </button>
+                              </div>
+                            )}
+
                             {/* Floating Dropdown for this variant's color */}
                             {openColorDropdownIdx === idx && (
-                              <div className="absolute z-50 left-0 right-0 mt-1 bg-white border-2 border-amber-400 rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
+                              <div className="absolute z-50 left-0 right-0 mt-1 bg-white border-2 border-amber-400 rounded-xl shadow-2xl overflow-hidden max-h-64 overflow-y-auto">
                                 {/* Dropdown Header */}
                                 <div className="p-2 bg-amber-100/90 border-b border-amber-300 flex items-center justify-between text-[11px] font-black text-amber-950">
                                   <span>
                                     🎨 ตัวเลือกหมวด {category === 'perfume' ? 'น้ำหอม' : category === 'incense' ? 'เครื่องหอม' : category === 'kaftan' ? 'คัฟทาน' : category === 'combo' ? 'เซ็ต' : category === 'other' ? 'ทั่วไป' : 'อาบายะห์'}
                                   </span>
-                                  <span className="text-[10px] text-stone-500 font-normal">✏️ แก้ไข | 🗑️ ลบ</span>
+                                  <span className="text-[10px] text-stone-600 font-bold">📋 คัดลอก | ✏️ แก้ไข | 🗑️ ลบ</span>
+                                </div>
+
+                                {/* Direct Input to add new color/scent to preset list */}
+                                <div className="p-1.5 bg-amber-50/70 border-b border-amber-200 flex items-center gap-1.5">
+                                  <input
+                                    type="text"
+                                    placeholder={category === 'perfume' ? '➕ พิมพ์กลิ่นใหม่เพื่อบันทึกจำ...' : '➕ พิมพ์สีใหม่เพื่อบันทึกจำ...'}
+                                    value={newCustomColorInput}
+                                    onChange={(e) => setNewCustomColorInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        if (newCustomColorInput.trim()) {
+                                          handleAddNewColorOption(newCustomColorInput.trim());
+                                          const updated = [...variants];
+                                          updated[idx].color = newCustomColorInput.trim();
+                                          setVariants(updated);
+                                          setNewCustomColorInput('');
+                                        }
+                                      }
+                                    }}
+                                    className="flex-1 bg-white border border-stone-300 rounded-lg px-2 py-1 text-xs font-black text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-amber-500"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (newCustomColorInput.trim()) {
+                                        handleAddNewColorOption(newCustomColorInput.trim());
+                                        const updated = [...variants];
+                                        updated[idx].color = newCustomColorInput.trim();
+                                        setVariants(updated);
+                                        setNewCustomColorInput('');
+                                      }
+                                    }}
+                                    disabled={!newCustomColorInput.trim()}
+                                    className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-stone-950 font-black rounded-lg text-xs whitespace-nowrap transition cursor-pointer flex items-center gap-1 shadow-xs"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    <span>บันทึกจำ</span>
+                                  </button>
                                 </div>
 
                                 {/* Quick Option to Clear / Leave Blank */}
@@ -3181,8 +3759,8 @@ export const AdminProductManager: React.FC = () => {
                                     }}
                                     className="w-full text-left px-3 py-2 bg-amber-50 hover:bg-amber-100 border-b border-amber-300 text-xs font-black text-amber-950 flex items-center justify-between transition cursor-pointer"
                                   >
-                                    <span className="truncate">➕ เพิ่ม <strong className="text-amber-900 underline">"{v.color.trim()}"</strong> เข้าหมวดนี้</span>
-                                    <span className="text-[10px] bg-amber-200 px-2 py-0.5 rounded-full border border-amber-400 font-bold shrink-0 ml-1">กดเพิ่ม</span>
+                                    <span className="truncate">➕ บันทึกจำ <strong className="text-amber-900 underline">"{v.color.trim()}"</strong> ไว้ใช้ครั้งต่อไป</span>
+                                    <span className="text-[10px] bg-amber-200 px-2 py-0.5 rounded-full border border-amber-400 font-bold shrink-0 ml-1">กดบันทึก</span>
                                   </button>
                                 )}
 
@@ -3257,6 +3835,17 @@ export const AdminProductManager: React.FC = () => {
                                               type="button"
                                               onClick={(e) => {
                                                 e.stopPropagation();
+                                                handleCopyColorOption(opt, idx);
+                                              }}
+                                              className="p-1 hover:bg-amber-200 text-stone-500 hover:text-amber-950 rounded transition cursor-pointer"
+                                              title={`คัดลอก "${opt}"`}
+                                            >
+                                              <Copy className="w-3.5 h-3.5" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
                                                 setEditingColorIdx(colorIdx);
                                                 setEditingColorText(opt);
                                               }}
@@ -3319,7 +3908,7 @@ export const AdminProductManager: React.FC = () => {
                             </div>
                             <input
                               type="text"
-                              placeholder={category === 'perfume' ? 'เช่น ขวดสเปรย์ 50 ml' : 'เช่น Size 56 (ส่วนสูง ~160-165 ซม. / ยาว 56")'}
+                              placeholder={category === 'perfume' ? 'เช่น สเปรย์ 50 ml' : 'เช่น Size 56 (ส่วนสูง ~160-165 ซม. / ยาว 56")'}
                               value={v.name}
                               onChange={(e) => {
                                 const updated = [...variants];
@@ -3341,11 +3930,32 @@ export const AdminProductManager: React.FC = () => {
                                 className="w-full bg-white border border-stone-300 rounded-xl px-2 py-1 text-xs text-stone-950 font-black hover:border-amber-500 transition cursor-pointer"
                               >
                                 <option value="" className="bg-white text-stone-950 font-bold">-- เลือกขนาดด่วน --</option>
-                                <option value="ขวดสเปรย์ 50 ml (EDP Spray)" className="bg-white text-stone-950 font-bold py-1">ขวดสเปรย์ 50 ml</option>
-                                <option value="ขวดสเปรย์ 100 ml (EDP Premium Spray)" className="bg-white text-stone-950 font-bold py-1">ขวดสเปรย์ 100 ml</option>
-                                <option value="Attar Oil 12 ml (Pure Oil)" className="bg-white text-stone-950 font-bold py-1">Attar Oil 12 ml</option>
-                                <option value="ขวดเทสเตอร์ 3 ml (Sample Tester)" className="bg-white text-stone-950 font-bold py-1">ขวดเทสเตอร์ 3 ml</option>
+                                {currentCategorySizeOptions.map((sz) => (
+                                  <option key={sz} value={sz} className="bg-white text-stone-950 font-bold py-1">
+                                    {sz}
+                                  </option>
+                                ))}
                               </select>
+                            )}
+
+                            {/* 1-Click Clean parenthesis button if variant name contains (EDP Spray) or (ส่วนสูง/ยาว) */}
+                            {v.name && /\((?:edp|spray|premium|ส่วนสูง|ยาว|ซม\.|attar|pure|sample|tester)/i.test(v.name) && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...variants];
+                                  updated[idx].name = v.name
+                                    .replace(/\s*\([^)]*(?:edp|spray|premium|ส่วนสูง|ยาว|ซม\.|height|length|attar|pure|sample|tester)[^)]*\)/gi, '')
+                                    .replace(/\s*\([^)]*edp[^)]*\)/gi, '')
+                                    .replace(/\s*\([^)]*spray[^)]*\)/gi, '')
+                                    .trim();
+                                  setVariants(updated);
+                                }}
+                                className="mt-1 px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 rounded-lg text-[11px] font-black transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                                title="คลิกเพื่อตัดข้อความในวงเล็บออกทันที"
+                              >
+                                <span>✨ ตัดคำในวงเล็บออก: &quot;{v.name.replace(/\s*\([^)]*(?:edp|spray|premium|ส่วนสูง|ยาว|ซม\.|height|length|attar|pure|sample|tester)[^)]*\)/gi, '').replace(/\s*\([^)]*edp[^)]*\)/gi, '').replace(/\s*\([^)]*spray[^)]*\)/gi, '').trim()}&quot;</span>
+                              </button>
                             )}
                           </div>
 
@@ -4030,10 +4640,28 @@ export const AdminProductManager: React.FC = () => {
                       onClick={() => handleSaveSupplierOption(quickStockInSupplier.trim())}
                       className="text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-black px-2 py-0.5 rounded shadow-xs cursor-pointer shrink-0 ml-1 transition"
                     >
-                      + บันทึกไว้ใช้ครั้งถัดไป
+                      + เพิ่มเป็นคำช่วย (จำไว้ใช้ครั้งต่อไป)
                     </button>
                   </div>
                 )}
+
+                {/* Quick Helper Chips for Supplier */}
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {stockInSupplierOptions.slice(0, 6).map((sup) => (
+                    <button
+                      key={sup}
+                      type="button"
+                      onClick={() => setQuickStockInSupplier(sup)}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md border transition cursor-pointer ${
+                        quickStockInSupplier === sup
+                          ? 'bg-amber-500 text-stone-950 border-amber-600 font-black'
+                          : 'bg-stone-100 text-stone-700 border-stone-200 hover:bg-amber-100'
+                      }`}
+                    >
+                      {sup}
+                    </button>
+                  ))}
+                </div>
 
                 {/* Dropdown Menu - Opens UPWARDS so it never covers anything below */}
                 {isStockInSupplierDropdownOpen && (
@@ -4165,11 +4793,23 @@ export const AdminProductManager: React.FC = () => {
                 )}
               </div>
 
+              {/* Lot / Batch Number */}
+              <LotNumberManagerDropdown
+                value={quickStockInLotNumber}
+                onChange={setQuickStockInLotNumber}
+                productTitle={quickStockInItem?.productTitle}
+                productId={quickStockInItem?.productId}
+                standardLot={quickStockInItem ? generateStandardHudaLot(quickStockInItem.productTitle, quickStockInItem.productId, quickStockInLotNumber || '1-69') : 'HUDA-001-1-69'}
+                title="เลขล็อตสินค้า (Lot / Batch No.):"
+                placeholder="เช่น 1-69, 2-69 หรือ HUDA-A001-2-69"
+                dropdownDirection="up"
+              />
+
               {/* Note / DO Number Dropdown with Custom Add (Opens UPWARDS so it never covers buttons) */}
               <div className="relative" ref={stockInNoteDropdownRef}>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-black text-stone-950">
-                    หมายเหตุ / ล็อต / เลขที่ DO
+                    หมายเหตุ / เลขที่ DO / รายละเอียดเพิ่มเติม
                   </label>
                   <div className="flex items-center gap-2">
                     {quickStockInNote && (
@@ -4220,10 +4860,28 @@ export const AdminProductManager: React.FC = () => {
                       onClick={() => handleSaveStockInNoteOption(quickStockInNote.trim())}
                       className="text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-black px-2 py-0.5 rounded shadow-xs cursor-pointer shrink-0 ml-1 transition"
                     >
-                      + บันทึกไว้ใช้ครั้งถัดไป
+                      + เพิ่มเป็นคำช่วย (จำไว้ใช้ครั้งต่อไป)
                     </button>
                   </div>
                 )}
+
+                {/* Quick Helper Chips for Note */}
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {stockInNoteOptions.slice(0, 6).map((note) => (
+                    <button
+                      key={note}
+                      type="button"
+                      onClick={() => setQuickStockInNote(note)}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md border transition cursor-pointer ${
+                        quickStockInNote === note
+                          ? 'bg-amber-500 text-stone-950 border-amber-600 font-black'
+                          : 'bg-stone-100 text-stone-700 border-stone-200 hover:bg-amber-100'
+                      }`}
+                    >
+                      {note}
+                    </button>
+                  ))}
+                </div>
 
                 {/* Dropdown Menu - Opens UPWARDS (bottom-full mb-2) so it NEVER covers the action buttons below */}
                 {isStockInNoteDropdownOpen && (
@@ -4398,6 +5056,54 @@ export const AdminProductManager: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* Product QR Tag / Price Label Modal */}
+      <ProductQRLabelModal
+        product={qrLabelProduct}
+        isOpen={!!qrLabelProduct}
+        onClose={() => {
+          setQrLabelProduct(null);
+          setQrLabelInitialLot(undefined);
+        }}
+        initialLotNumber={qrLabelInitialLot}
+      />
+
+      {/* Lot Number & Damaged Tag Search Modal */}
+      <LotSearchModal
+        isOpen={isLotSearchModalOpen}
+        onClose={() => setIsLotSearchModalOpen(false)}
+        onOpenQRLabel={(p, lot) => {
+          setQrLabelProduct(p);
+          setQrLabelInitialLot(lot);
+        }}
+      />
+
+      {/* QR Code Scanner for Quick Stock-In */}
+      <QRScannerModal
+        isOpen={isQRScannerStockInOpen}
+        onClose={() => setIsQRScannerStockInOpen(false)}
+        onScan={handleStockInQRScan}
+        title="สแกน QR Code รับสินค้าเข้าสต๊อก"
+        subtitle="นำกล้องส่องไปที่ QR Code บนป้ายสินค้าเพื่อระบุรายการและเพิ่มสต๊อกด่วน"
+      />
+
+      {/* Batch Stock Count & Intake Modal */}
+      <BatchStockCountModal
+        isOpen={isBatchStockCountOpen}
+        onClose={() => setIsBatchStockCountOpen(false)}
+        products={products}
+        onBatchSubmit={handleBatchStockSubmit}
+      />
+
+      {/* Perfume Decant 10ml Bottle Label Modal (Niimbot & Thermal Roll) */}
+      <PerfumeDecantLabelModal
+        product={perfumeLabelSelectedProduct}
+        isOpen={isPerfumeLabelModalOpen}
+        onClose={() => {
+          setIsPerfumeLabelModalOpen(false);
+          setPerfumeLabelSelectedProduct(null);
+        }}
+      />
 
       <datalist id="product-color-preset-list">
         {currentCategoryColorOptions.map((colorName) => (

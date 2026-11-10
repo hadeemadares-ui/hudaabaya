@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Star, Eye, ShoppingBag, Sparkles, Tag, Layers, Box } from 'lucide-react';
 import { Product } from '../../types';
 import { ProductModal } from './ProductModal';
 import { useShop } from '../../context/ShopContext';
@@ -11,41 +10,60 @@ interface ProductCardProps {
 }
 
 const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
-  abaya: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop',
-  kaftan: 'https://images.unsplash.com/photo-1563178406-4cdc2923acbc?q=80&w=1000&auto=format&fit=crop',
-  perfume: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop',
-  incense: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?q=80&w=1000&auto=format&fit=crop',
-  combo: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?q=80&w=1000&auto=format&fit=crop',
-  other: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop',
+  abaya: '/images/placeholder-abaya.jpg',
+  kaftan: '/images/placeholder-abaya.jpg',
+  perfume: '/images/placeholder-perfume.jpg',
+  incense: '/images/placeholder-perfume.jpg',
+  combo: '/images/placeholder-abaya.jpg',
+  other: '/images/placeholder-abaya.jpg',
 };
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const { formatPrice, setActive3DProduct } = useShop();
+const optimizeImageUrl = (url: string): string => {
+  if (!url) return url;
+  if (url.includes('images.unsplash.com')) {
+    return url.replace(/w=\d+/, 'w=500').replace(/q=\d+/, 'q=75');
+  }
+  return url;
+};
+
+export const ProductCard: React.FC<ProductCardProps> = ({ product: initialProduct }) => {
+  const { products, formatPrice } = useShop();
+  const product = products.find((p) => p.id === initialProduct.id) || initialProduct;
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Calculate price range & total stock across sizes
   const validPrices = product.variants.map((v) => Number(v.price) || 0).filter((p) => p > 0);
   const minPrice = validPrices.length > 0 ? Math.min(...validPrices) : (product.variants[0]?.price || 0);
   const maxPrice = validPrices.length > 0 ? Math.max(...validPrices) : (product.variants[0]?.price || 0);
   const totalStock = product.variants.reduce((sum, v) => sum + (Number(v.stockQuantity) || 0), 0);
 
   const defaultImg = DEFAULT_CATEGORY_IMAGES[product.category] || DEFAULT_CATEGORY_IMAGES.abaya;
-  const initialImg = (product.images && product.images.length > 0 && product.images[0] && typeof product.images[0] === 'string' && product.images[0].trim() !== '')
-    ? product.images[0]
-    : defaultImg;
+  const rawInitialImg =
+    product.images &&
+    product.images.length > 0 &&
+    product.images[0] &&
+    typeof product.images[0] === 'string' &&
+    product.images[0].trim() !== ''
+      ? product.images[0]
+      : defaultImg;
 
+  const initialImg = optimizeImageUrl(rawInitialImg);
   const [imgSrc, setImgSrc] = useState<string>(initialImg);
 
   useEffect(() => {
-    setImgSrc(initialImg);
-  }, [initialImg]);
+    const nextImg = optimizeImageUrl(rawInitialImg);
+    if (nextImg && nextImg !== imgSrc) {
+      setImgSrc(nextImg);
+    }
+  }, [rawInitialImg]);
 
   return (
     <>
-      <div className="group bg-white border border-[#E8E3DA] rounded-lg overflow-hidden hover:border-[#B89352] shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col justify-between hover:-translate-y-0.5">
-        
-        {/* Image Frame - Uncropped Full View */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-b from-[#FAF8F5] via-[#F5F2EC] to-[#EFECE5] flex items-center justify-center p-2 cursor-pointer group" onClick={() => setIsModalOpen(true)}>
+      <article
+        onClick={() => setIsModalOpen(true)}
+        className="group bg-white border border-stone-200/80 hover:border-stone-400 transition-all duration-300 flex flex-col justify-between cursor-pointer"
+      >
+        {/* Editorial Portrait Frame - Solid soft background, instant render, no blinking animation */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-[#F7F5F0] flex items-center justify-center p-2.5 sm:p-3">
           <img
             src={imgSrc}
             alt={product.title}
@@ -54,152 +72,102 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 setImgSrc(defaultImg);
               }
             }}
-            loading="lazy"
-            decoding="async"
-            className="w-full h-full object-contain object-center transform transition duration-500 group-hover:scale-105 drop-shadow-sm"
+            className="w-full h-full object-contain object-center transform transition duration-300 ease-out group-hover:scale-[1.03] relative z-1"
           />
-          
-          {/* Subtle image Overlay on Hover */}
-          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none" />
 
-          {/* Badges - Subtle & Clean */}
-          <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
-            {product.onSale && product.discountPercent && (
-              <span className="bg-[#B89352] text-white text-[10px] font-medium px-2 py-0.5 rounded-xs tracking-wider">
+          {/* Minimalist Editorial Status Tag */}
+          <div className="absolute top-3 left-3 flex flex-col gap-1 z-10">
+            {totalStock <= 0 ? (
+              <span className="bg-stone-900/90 text-white text-[10px] tracking-[0.15em] uppercase px-2.5 py-1">
+                SOLD OUT
+              </span>
+            ) : product.onSale && product.discountPercent ? (
+              <span className="bg-[#8C703E] text-white text-[10px] tracking-[0.12em] uppercase px-2.5 py-0.5">
                 -{product.discountPercent}%
               </span>
-            )}
-            {product.isNew && (
-              <span className="bg-[#1C1917] text-white text-[9px] font-medium px-2 py-0.5 rounded-xs uppercase tracking-wider">
-                NEW ARRIVAL
+            ) : product.isNew ? (
+              <span className="bg-white/95 text-[#141312] text-[9px] tracking-[0.18em] uppercase px-2.5 py-1 border border-stone-200">
+                NEW
               </span>
-            )}
+            ) : null}
           </div>
 
-          {/* Stock & 3D Interactive Badge */}
-          <div className="absolute top-2.5 right-2.5 z-10 flex flex-col items-end gap-1">
-            {totalStock > 0 ? (
-              <span className="bg-white/90 text-stone-800 text-[10px] font-medium px-2 py-0.5 rounded-xs border border-stone-200">
-                พร้อมส่ง ({totalStock})
-              </span>
-            ) : (
-              <span className="bg-stone-100 text-stone-500 text-[10px] font-medium px-2 py-0.5 rounded-xs border border-stone-200">
-                สินค้าหมด
-              </span>
-            )}
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setActive3DProduct(product);
-              }}
-              className="bg-white/90 hover:bg-[#1C1917] hover:text-white text-stone-700 text-[10px] font-medium px-2 py-0.5 rounded-xs border border-stone-200 flex items-center gap-1 transition"
-              title="ดูมุมมอง 3 มิติ 360°"
-            >
-              <Box className="w-3 h-3 text-[#B89352]" />
-              <span>3D</span>
-            </button>
-          </div>
-
-          {/* Quick View Button on Hover */}
-          <div className="absolute inset-x-3 bottom-3 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsModalOpen(true);
-              }}
-              className="w-full bg-[#1C1917]/90 hover:bg-[#1C1917] text-white font-medium text-xs py-2 rounded transition shadow-md flex items-center justify-center gap-1.5 backdrop-blur-xs"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>ดูรายละเอียด</span>
-            </button>
+          {/* Subtle Quick Action Bar on Hover */}
+          <div className="absolute inset-x-0 bottom-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+            <div className="w-full bg-[#141312]/90 text-white text-[11px] tracking-[0.15em] uppercase py-2.5 text-center backdrop-blur-xs">
+              {totalStock > 0 ? 'เลือกขนาด / สั่งซื้อ' : 'ดูรายละเอียด'}
+            </div>
           </div>
         </div>
 
-        {/* Product Details Info */}
-        <div className="p-4 space-y-2.5 flex-1 flex flex-col justify-between bg-white text-[#0A0A0A]">
-          <div>
-            {/* Category / Rating */}
-            <div className="flex items-center justify-between text-[11px] font-serif mb-1">
-              <span className="uppercase tracking-widest text-[10px] font-bold text-amber-900">
-                {product.category === 'abaya' && 'ชุดอาบายะห์ดูไบ'}
-                {product.category === 'kaftan' && 'ชุดคัฟทาน'}
-                {product.category === 'perfume' && 'น้ำหอมดูไบ'}
-                {product.category === 'incense' && 'เครื่องหอมดูไบ'}
-                {product.category === 'combo' && 'เซ็ตของขวัญพิเศษ'}
-                {product.category === 'other' && 'สินค้าทั่วไป'}
+        {/* Clean Editorial Typography */}
+        <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3 bg-white">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-[10px] tracking-[0.18em] uppercase text-[#8C703E] font-serif">
+              <span>
+                {product.category === 'abaya' && 'DUBAI ABAYA'}
+                {product.category === 'kaftan' && 'KAFTAN'}
+                {product.category === 'perfume' && 'PARFUM D’OUD'}
+                {product.category === 'incense' && 'BUKHOOR'}
+                {product.category === 'combo' && 'GIFT ENSEMBLE'}
+                {product.category === 'other' && 'COLLECTION'}
               </span>
-              <div className="flex items-center gap-1 text-amber-700">
-                <Star className="w-3 h-3 fill-amber-500 text-amber-600" />
-                <span className="font-extrabold text-[#0A0A0A] text-[11px]">{product.rating}</span>
-              </div>
+              {totalStock > 0 && (
+                <span className="text-stone-400 font-sans tracking-normal">
+                  คลัง {totalStock}
+                </span>
+              )}
             </div>
 
-            {/* Product Title */}
-            <h3
-              onClick={() => setIsModalOpen(true)}
-              className="text-sm font-serif font-extrabold text-[#0A0A0A] group-hover:text-amber-900 transition-colors line-clamp-2 cursor-pointer leading-snug"
-            >
+            <h3 className="text-sm sm:text-[15px] font-serif font-medium text-[#141312] group-hover:text-[#8C703E] transition-colors line-clamp-2 leading-snug">
               {product.title}
             </h3>
 
-            {/* Arabic Title */}
-            {product.arabicTitle && (
-              <p className="text-[11px] font-serif text-amber-900 dir-rtl mt-0.5 font-bold">
-                {product.arabicTitle}
-              </p>
-            )}
-
-            {/* Size Variants Display */}
-            <div className="mt-2 flex items-center gap-1 flex-wrap">
-              {product.variants.map((v) => (
-                <span
-                  key={v.id}
-                  className={`text-[10px] px-1.5 py-0.5 rounded-xs border font-bold ${
-                    v.stockQuantity > 0
-                      ? 'bg-stone-100 border-stone-300 text-stone-900'
-                      : 'bg-stone-50 border-stone-200 text-stone-400 line-through'
-                  }`}
-                  title={`${v.name} (สต๊อก ${v.stockQuantity})`}
-                >
-                  {v.name.replace('Size ', 'S')}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Pricing & Order Action */}
-          <div className="pt-2.5 border-t border-stone-200 flex items-center justify-between">
-            <div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-base sm:text-lg font-serif font-extrabold text-[#0A0A0A]">
-                  {formatPrice(minPrice)}
-                </span>
-                {maxPrice > minPrice && (
-                  <span className="text-xs text-stone-700 font-serif font-bold">
-                    - {formatPrice(maxPrice)}
+            {/* Available Sizes Pill Strip */}
+            {product.variants.length > 0 && (
+              <div className="pt-1 flex items-center gap-1.5 flex-wrap">
+                {product.variants.slice(0, 6).map((v) => (
+                  <span
+                    key={v.id}
+                    className={`text-[10px] px-1.5 py-0.5 border ${
+                      v.stockQuantity > 0
+                        ? 'border-stone-200 text-stone-600 bg-[#FAF9F6]'
+                        : 'border-stone-100 text-stone-300 line-through'
+                    }`}
+                  >
+                    {v.name.replace('Size ', '')}
                   </span>
+                ))}
+                {product.variants.length > 6 && (
+                  <span className="text-[10px] text-stone-400">+{product.variants.length - 6}</span>
                 )}
               </div>
-            </div>
-
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-[#0A0A0A] hover:bg-amber-800 text-white font-bold text-xs px-3.5 py-1.5 rounded transition flex items-center gap-1 cursor-pointer"
-            >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              <span>สั่งซื้อ</span>
-            </button>
+            )}
           </div>
 
+          {/* Price Row */}
+          <div className="pt-3 border-t border-stone-100 flex items-baseline justify-between">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-sm sm:text-base font-serif font-semibold text-[#141312] tracking-wide">
+                {formatPrice(minPrice)}
+              </span>
+              {maxPrice > minPrice && (
+                <span className="text-xs text-stone-400 font-serif">
+                  – {formatPrice(maxPrice)}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] tracking-[0.15em] uppercase text-stone-500 group-hover:text-[#141312] transition-colors">
+              สั่งซื้อ →
+            </span>
+          </div>
         </div>
+      </article>
 
-      </div>
-
-      {/* Product Detail Modal */}
       {isModalOpen && (
         <ProductModal product={product} onClose={() => setIsModalOpen(false)} />
       )}
     </>
   );
 };
+

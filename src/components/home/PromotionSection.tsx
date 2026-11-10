@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Tag, Copy, Check, Gift, Percent, Flame } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { INITIAL_COUPONS } from '../../data/mockProducts';
 import { useShop } from '../../context/ShopContext';
 
 export const PromotionSection: React.FC = () => {
-  const { applyCoupon, setIsCartOpen } = useShop();
+  const { applyCoupon } = useShop();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const handleCopy = (code: string) => {
@@ -17,76 +17,62 @@ export const PromotionSection: React.FC = () => {
   };
 
   return (
-    <section className="bg-[#FAF9F6] py-8 border-b border-stone-300 text-[#0A0A0A]">
+    <section className="bg-[#FAF9F6] py-8 border-b border-stone-200/80 text-[#141312]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800 font-bold">
-              <Tag className="w-4 h-4 text-amber-800" />
-            </div>
-            <div>
-              <h3 className="text-lg font-serif font-extrabold text-[#0A0A0A] tracking-tight">
-                สิทธิพิเศษ & โค้ดส่วนลด (Exclusive Offers)
-              </h3>
-              <p className="text-xs text-stone-900 font-semibold">
-                คัดลอกโค้ดเพื่อรับส่วนลดพิเศษในขั้นตอนชำระเงิน
-              </p>
-            </div>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          
+          <div className="shrink-0">
+            <p className="text-[10px] font-serif tracking-[0.22em] uppercase text-[#8C703E] mb-1">
+              CLIENT PRIVILEGES
+            </p>
+            <h3 className="text-base sm:text-lg font-serif font-medium text-[#141312] tracking-wide">
+              สิทธิพิเศษสำหรับลูกค้าออนไลน์
+            </h3>
           </div>
-        </div>
 
-        {/* Coupons Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {INITIAL_COUPONS.map((coupon) => (
-            <div
-              key={coupon.code}
-              className="relative bg-white border border-stone-300 rounded p-3.5 flex items-center justify-between shadow-xs hover:border-black transition-colors"
-            >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-serif font-extrabold text-amber-950 bg-amber-100 px-2 py-0.5 rounded-xs border border-amber-300">
-                    {coupon.discountType === 'percent'
-                      ? `ส่วนลด ${coupon.discountValue}%`
-                      : `ส่วนลด ฿${coupon.discountValue}`}
-                  </span>
-                  <span className="text-xs text-[#0A0A0A] font-mono font-extrabold tracking-wider">
-                    {coupon.code}
-                  </span>
-                </div>
-                <p className="text-xs text-stone-900 font-bold">
-                  {coupon.description}
-                </p>
-                <p className="text-[10px] text-stone-700 font-semibold">
-                  เมื่อซื้อขั้นต่ำ ฿{coupon.minSpend.toLocaleString()}
-                </p>
-              </div>
-
-              <button
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1 max-w-4xl">
+            {INITIAL_COUPONS.map((coupon) => (
+              <div
+                key={coupon.code}
                 onClick={() => handleCopy(coupon.code)}
-                className={`px-3 py-1.5 rounded text-xs font-bold transition-colors flex items-center gap-1.5 shrink-0 ${
-                  copiedCode === coupon.code
-                    ? 'bg-emerald-700 text-white'
-                    : 'bg-[#0A0A0A] hover:bg-amber-800 text-white'
-                }`}
+                className="group bg-white border border-stone-200/90 hover:border-[#141312] px-4 py-3 flex items-center justify-between transition-all cursor-pointer"
               >
-                {copiedCode === coupon.code ? (
-                  <>
-                    <Check className="w-3.5 h-3.5" />
-                    <span>ใช้แล้ว</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>คัดลอก</span>
-                  </>
-                )}
-              </button>
-            </div>
-          ))}
-        </div>
+                <div className="min-w-0 pr-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-semibold tracking-wider text-[#141312]">
+                      {coupon.code}
+                    </span>
+                    <span className="text-[11px] font-serif text-[#8C703E]">
+                      ({coupon.discountType === 'percent' ? `-${coupon.discountValue}%` : `-฿${coupon.discountValue}`})
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-500 truncate mt-0.5">
+                    ขั้นต่ำ ฿{coupon.minSpend.toLocaleString()}
+                  </p>
+                </div>
 
+                <span
+                  className={`text-[10px] tracking-widest uppercase px-2.5 py-1 transition shrink-0 ${
+                    copiedCode === coupon.code
+                      ? 'bg-[#141312] text-white'
+                      : 'text-[#141312] border border-stone-300 group-hover:bg-[#141312] group-hover:text-white group-hover:border-[#141312]'
+                  }`}
+                >
+                  {copiedCode === coupon.code ? (
+                    <span className="flex items-center gap-1">
+                      <Check className="w-3 h-3" /> ใช้โค้ดแล้ว
+                    </span>
+                  ) : (
+                    'รับสิทธิ์'
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+
+        </div>
       </div>
     </section>
   );
 };
+

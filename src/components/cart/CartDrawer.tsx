@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Trash2, ShoppingBag, ArrowRight, Tag, Truck, Sparkles } from 'lucide-react';
+import { X, Trash2, ShoppingBag, ArrowRight, Tag, Truck } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { CheckoutModal } from '../checkout/CheckoutModal';
 
@@ -25,7 +25,6 @@ export const CartDrawer: React.FC = () => {
 
   const rawSubtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  // Calculate coupon discount
   let discountValue = 0;
   if (appliedCoupon) {
     if (appliedCoupon.discountType === 'percent') {
@@ -35,7 +34,6 @@ export const CartDrawer: React.FC = () => {
     }
   }
 
-  // Free shipping threshold (2,000 THB)
   const freeShippingThreshold = 2000;
   const shippingFee = rawSubtotal >= freeShippingThreshold || rawSubtotal === 0 ? 0 : 80;
   const progressPercent = Math.min(100, (rawSubtotal / freeShippingThreshold) * 100);
@@ -56,116 +54,117 @@ export const CartDrawer: React.FC = () => {
 
   return (
     <>
-      {/* Drawer Overlay */}
-      <div className="fixed inset-0 z-50 overflow-hidden bg-dubai-black/80 backdrop-blur-sm">
+      <div
+        className="fixed inset-0 z-50 overflow-hidden bg-black/50 backdrop-blur-xs"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setIsCartOpen(false);
+        }}
+      >
         <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
-          <div className="w-screen max-w-md bg-dubai-card border-l-2 border-gold-400/40 text-white shadow-2xl flex flex-col justify-between">
+          <div className="w-screen max-w-md bg-white border-l border-stone-200 text-[#141312] shadow-2xl flex flex-col justify-between">
             
             {/* Drawer Header */}
-            <div className="p-4 sm:p-6 border-b border-gold-400/20 flex items-center justify-between bg-dubai-black">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gold-500/20 border border-gold-400 flex items-center justify-center">
-                  <ShoppingBag className="w-4 h-4 text-gold-400" />
-                </div>
-                <div>
-                  <h3 className="font-serif font-bold text-lg text-white">
-                    ตะกร้าสินค้า (Cart)
-                  </h3>
-                  <p className="text-xs text-gold-300/70">
-                    {cart.length} รายการ ({cart.reduce((sum, i) => sum + i.quantity, 0)} ชิ้น)
-                  </p>
-                </div>
+            <div className="p-5 sm:p-6 border-b border-stone-200 flex items-center justify-between bg-[#FAF9F6]">
+              <div>
+                <p className="text-[10px] font-serif tracking-[0.2em] uppercase text-[#8C703E]">
+                  SHOPPING BAG
+                </p>
+                <h3 className="font-serif font-normal text-lg text-[#141312] mt-0.5">
+                  ถุงช็อปปิ้ง ({cart.reduce((sum, i) => sum + i.quantity, 0)} ชิ้น)
+                </h3>
               </div>
               <button
                 onClick={() => setIsCartOpen(false)}
-                className="p-2 rounded-full text-gold-400 hover:text-white hover:bg-dubai-card transition"
+                className="p-2 text-stone-500 hover:text-[#141312] border border-stone-200 bg-white transition cursor-pointer"
                 aria-label="ปิดตะกร้า"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Free Shipping Progress */}
-            <div className="bg-dubai-black/60 px-6 py-2.5 border-b border-gold-400/10 text-xs">
-              <div className="flex items-center justify-between text-gold-300 mb-1 font-medium">
-                <span className="flex items-center gap-1">
-                  <Truck className="w-3.5 h-3.5 text-gold-400" />
+            <div className="bg-white px-6 py-3 border-b border-stone-200/80 text-xs">
+              <div className="flex items-center justify-between text-stone-600 mb-1.5">
+                <span className="flex items-center gap-1.5">
+                  <Truck className="w-3.5 h-3.5 text-[#8C703E]" />
                   {rawSubtotal >= freeShippingThreshold ? (
-                    <span className="text-emerald-400 font-bold">ยินดีด้วย! คุณได้รับสิทธิ์ส่งฟรีแล้ว</span>
+                    <span className="text-[#141312] font-medium">คุณได้รับสิทธิ์จัดส่งด่วนฟรีแล้ว</span>
                   ) : (
-                    <span>ช็อปอีก ฿{(freeShippingThreshold - rawSubtotal).toLocaleString()} เพื่อรับสิทธิ์ส่งฟรี!</span>
+                    <span>ช็อปเพิ่มอีก ฿{(freeShippingThreshold - rawSubtotal).toLocaleString()} เพื่อรับสิทธิ์ส่งฟรี</span>
                   )}
                 </span>
-                <span>{Math.round(progressPercent)}%</span>
+                <span className="font-mono text-[11px]">{Math.round(progressPercent)}%</span>
               </div>
-              <div className="w-full h-1.5 bg-dubai-dark rounded-full overflow-hidden border border-gold-400/20">
+              <div className="w-full h-1 bg-stone-100 overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-sky-500 via-cyan-400 to-sky-300 transition-all duration-500"
+                  className="h-full bg-[#141312] transition-all duration-500"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
             </div>
 
             {/* Cart Items List */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
               {cart.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center space-y-3 py-12">
-                  <div className="w-16 h-16 rounded-full bg-dubai-dark border border-gold-400/30 flex items-center justify-center text-gold-500/40">
-                    <ShoppingBag className="w-8 h-8" />
+                <div className="h-full flex flex-col items-center justify-center text-center space-y-4 py-12">
+                  <ShoppingBag className="w-8 h-8 text-stone-300 stroke-[1.25]" />
+                  <div className="space-y-1">
+                    <p className="font-serif text-[#141312] text-base">
+                      ยังไม่มีสินค้าในถุงช็อปปิ้ง
+                    </p>
+                    <p className="text-xs text-stone-500 max-w-xs">
+                      เลือกชมคอลเลกชันชุดอาบายะห์ คัฟทาน และน้ำหอมดูไบแท้เพื่อเพิ่มลงในถุงช็อปปิ้ง
+                    </p>
                   </div>
-                  <p className="font-serif text-gray-300 text-sm font-semibold">
-                    ไม่มีสินค้าในตะกร้า
-                  </p>
-                  <p className="text-xs text-gold-300/60 max-w-xs">
-                    เลือกชมชุดอาบายะห์ คัฟทาน และน้ำหอมจากดูไบ แล้วกดเพิ่มลงในตะกร้าได้เลยค่ะ
-                  </p>
                   <button
                     onClick={() => setIsCartOpen(false)}
-                    className="mt-2 px-5 py-2 rounded-full bg-gold-500 text-dubai-black font-bold text-xs"
+                    className="mt-2 px-6 py-2.5 bg-[#141312] text-white text-xs tracking-[0.18em] uppercase cursor-pointer"
                   >
-                    เลือกชมสินค้า
+                    เลือกชมคอลเลกชัน
                   </button>
                 </div>
               ) : (
                 cart.map((item) => (
                   <div
                     key={item.variantId}
-                    className="p-3 bg-dubai-black/60 border border-gold-400/20 rounded-xl flex gap-3 items-center hover:border-gold-400/40 transition"
+                    className="p-3.5 bg-[#FAF9F6] border border-stone-200/80 flex gap-3.5 items-center"
                   >
                     <img
-                      src={item.productImage}
+                      src={item.productImage || 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=75&w=500&auto=format&fit=crop'}
                       alt={item.productTitle}
-                      className="w-16 h-20 object-cover rounded-lg border border-gold-400/20 shrink-0 bg-dubai-dark"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=75&w=500&auto=format&fit=crop';
+                      }}
+                      className="w-16 h-20 object-contain bg-white border border-stone-200/60 p-1 shrink-0"
                     />
 
                     <div className="flex-1 min-w-0 space-y-1">
-                      <h4 className="text-xs font-serif font-bold text-sky-100 truncate">
+                      <h4 className="text-xs font-serif font-medium text-[#141312] truncate">
                         {item.productTitle}
                       </h4>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] bg-gold-500/20 text-gold-300 px-2 py-0.5 rounded border border-gold-400/30 font-medium">
-                          {item.variantName}
-                        </span>
-                      </div>
-                      <p className="text-xs font-serif font-extrabold text-gold-400">
+                      <p className="text-[11px] text-stone-500">
+                        ตัวเลือก: {item.variantName}
+                      </p>
+                      <p className="text-xs font-serif font-semibold text-[#141312]">
                         ฿{item.price.toLocaleString()}
                       </p>
 
                       {/* Quantity Controller */}
-                      <div className="flex items-center justify-between pt-1">
-                        <div className="flex items-center border border-gold-400/40 rounded bg-dubai-dark">
+                      <div className="flex items-center justify-between pt-1.5">
+                        <div className="flex items-center border border-stone-300 bg-white">
                           <button
                             onClick={() => updateCartQuantity(item.variantId, item.quantity - 1)}
-                            className="px-2 py-0.5 text-xs text-gold-400 hover:bg-gold-500/20"
+                            className="px-2.5 py-0.5 text-xs text-[#141312] hover:bg-stone-100 cursor-pointer"
                           >
                             -
                           </button>
-                          <span className="px-2 text-xs font-bold text-white">
+                          <span className="px-2.5 text-xs font-medium text-[#141312] border-x border-stone-200">
                             {item.quantity}
                           </span>
                           <button
                             onClick={() => updateCartQuantity(item.variantId, item.quantity + 1)}
-                            className="px-2 py-0.5 text-xs text-gold-400 hover:bg-gold-500/20"
+                            className="px-2.5 py-0.5 text-xs text-[#141312] hover:bg-stone-100 cursor-pointer"
                           >
                             +
                           </button>
@@ -173,10 +172,10 @@ export const CartDrawer: React.FC = () => {
 
                         <button
                           onClick={() => removeFromCart(item.variantId)}
-                          className="text-gray-400 hover:text-red-400 p-1"
+                          className="text-stone-400 hover:text-red-700 p-1 transition cursor-pointer"
                           title="ลบรายการนี้"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
@@ -187,19 +186,19 @@ export const CartDrawer: React.FC = () => {
 
             {/* Drawer Footer & Checkout */}
             {cart.length > 0 && (
-              <div className="p-4 sm:p-6 bg-dubai-black border-t border-gold-400/30 space-y-4">
+              <div className="p-5 sm:p-6 bg-[#FAF9F6] border-t border-stone-200 space-y-4">
                 
                 {/* Coupon Code Input Form */}
                 <div>
                   {appliedCoupon ? (
-                    <div className="flex items-center justify-between bg-gold-500/10 border border-gold-400/40 p-2 rounded-lg text-xs">
-                      <span className="text-gold-300 font-semibold flex items-center gap-1">
-                        <Tag className="w-3.5 h-3.5 text-gold-400" />
-                        ใช้คูปอง: <strong className="font-mono text-white">{appliedCoupon.code}</strong>
+                    <div className="flex items-center justify-between bg-white border border-stone-300 p-2.5 text-xs">
+                      <span className="text-[#141312] flex items-center gap-1.5">
+                        <Tag className="w-3.5 h-3.5 text-[#8C703E]" />
+                        โค้ดส่วนลด: <strong className="font-mono">{appliedCoupon.code}</strong>
                       </span>
                       <button
                         onClick={removeCoupon}
-                        className="text-red-400 hover:underline text-[11px]"
+                        className="text-stone-500 hover:text-black underline text-[11px] cursor-pointer"
                       >
                         ยกเลิก
                       </button>
@@ -208,14 +207,14 @@ export const CartDrawer: React.FC = () => {
                     <form onSubmit={handleApplyCoupon} className="flex gap-2">
                       <input
                         type="text"
-                        placeholder="กรอกโค้ดส่วนลด (เช่น HUDA100)"
+                        placeholder="รหัสส่วนลดพิเศษ (เช่น HUDA100)"
                         value={couponCodeInput}
                         onChange={(e) => setCouponCodeInput(e.target.value)}
-                        className="flex-1 bg-dubai-dark border border-gold-400/30 rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
+                        className="flex-1 bg-white border border-stone-300 px-3 py-2 text-xs text-[#141312] placeholder-stone-400 focus:outline-none focus:border-[#141312]"
                       />
                       <button
                         type="submit"
-                        className="px-3 py-1.5 bg-dubai-card border border-gold-400/50 hover:bg-gold-500 hover:text-dubai-black text-gold-300 font-bold text-xs rounded-lg transition"
+                        className="px-4 py-2 bg-white border border-[#141312] hover:bg-[#141312] hover:text-white text-[#141312] text-xs tracking-wider uppercase transition cursor-pointer"
                       >
                         ใช้โค้ด
                       </button>
@@ -223,8 +222,8 @@ export const CartDrawer: React.FC = () => {
                   )}
                   {couponMessage && (
                     <p
-                      className={`text-[10px] mt-1 ${
-                        couponMessage.type === 'success' ? 'text-emerald-400' : 'text-red-400'
+                      className={`text-[11px] mt-1.5 ${
+                        couponMessage.type === 'success' ? 'text-emerald-700' : 'text-red-700'
                       }`}
                     >
                       {couponMessage.text}
@@ -233,23 +232,23 @@ export const CartDrawer: React.FC = () => {
                 </div>
 
                 {/* Subtotal Calculation */}
-                <div className="space-y-1.5 text-xs border-t border-gold-400/10 pt-3">
-                  <div className="flex justify-between text-gray-300">
-                    <span>ยอดรวมสินค้า (Subtotal):</span>
+                <div className="space-y-1.5 text-xs border-t border-stone-200 pt-3">
+                  <div className="flex justify-between text-stone-600">
+                    <span>ยอดรวมสินค้า</span>
                     <span>฿{rawSubtotal.toLocaleString()}</span>
                   </div>
                   {discountValue > 0 && (
-                    <div className="flex justify-between text-emerald-400">
-                      <span>ส่วนลดคูปอง:</span>
+                    <div className="flex justify-between text-[#8C703E]">
+                      <span>ส่วนลดสิทธิพิเศษ</span>
                       <span>-฿{discountValue.toLocaleString()}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-gray-300">
-                    <span>ค่าจัดส่ง ด่วน:</span>
-                    <span>{shippingFee === 0 ? <strong className="text-emerald-400">ส่งฟรี</strong> : `฿${shippingFee}`}</span>
+                  <div className="flex justify-between text-stone-600">
+                    <span>ค่าจัดส่งด่วน</span>
+                    <span>{shippingFee === 0 ? 'ฟรี' : `฿${shippingFee}`}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-serif font-bold text-gold-400 pt-2 border-t border-gold-400/20">
-                    <span>ยอดชำระสุทธิ (Net Total):</span>
+                  <div className="flex justify-between text-sm font-serif font-semibold text-[#141312] pt-2.5 border-t border-stone-200">
+                    <span>ยอดชำระสุทธิ</span>
                     <span className="text-lg">฿{netTotal.toLocaleString()}</span>
                   </div>
                 </div>
@@ -257,10 +256,10 @@ export const CartDrawer: React.FC = () => {
                 {/* Checkout Trigger Button */}
                 <button
                   onClick={() => setIsCheckoutOpen(true)}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-stone-950 font-extrabold text-sm uppercase tracking-wider shadow-gold-glow hover:shadow-gold-strong transition flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-4 bg-[#141312] hover:bg-[#292624] text-white text-xs tracking-[0.2em] uppercase transition flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <span>ดำเนินการสั่งซื้อ & ชำระเงิน</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>ดำเนินการชำระเงิน</span>
+                  <ArrowRight className="w-4 h-4 text-[#D4B57B]" />
                 </button>
 
               </div>
@@ -270,7 +269,6 @@ export const CartDrawer: React.FC = () => {
         </div>
       </div>
 
-      {/* Checkout Modal Launcher */}
       {isCheckoutOpen && (
         <CheckoutModal
           onClose={() => setIsCheckoutOpen(false)}
@@ -283,3 +281,4 @@ export const CartDrawer: React.FC = () => {
     </>
   );
 };
+

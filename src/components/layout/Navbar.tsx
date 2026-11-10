@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Search, Sparkles, User, PackageSearch, Bot, Globe, Lock, QrCode, Compass, Volume2, VolumeX } from 'lucide-react';
+import { ShoppingBag, Search, User, PackageSearch, Lock, QrCode, MapPin, X } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { CategoryType, CurrencyType } from '../../types';
 import { DEFAULT_LOGO_BASE64 } from '../../data/logoData';
-import { VoiceInputButton } from '../common/VoiceInputButton';
 
 export const Navbar: React.FC = () => {
   const {
@@ -13,7 +12,6 @@ export const Navbar: React.FC = () => {
     setIsCartOpen,
     setIsOrderTrackingOpen,
     isAdminMode,
-    setIsAdminMode,
     isAdminAuthenticated,
     setIsAdminAuthenticated,
     setIsAdminLoginModalOpen,
@@ -25,21 +23,18 @@ export const Navbar: React.FC = () => {
     storeSettings,
     currency,
     setCurrency,
-    setIsAIConciergeOpen,
-    isSoundMuted,
-    toggleSound,
   } = useShop();
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const DEFAULT_CATEGORIES: { id: CategoryType; label: string }[] = [
-    { id: 'all', label: 'ทั้งหมด (All)' },
+    { id: 'all', label: 'คอลเลกชันทั้งหมด' },
     { id: 'abaya', label: 'ชุดอาบายะห์ (Abaya)' },
     { id: 'kaftan', label: 'ชุดคัฟทาน (Kaftan)' },
     { id: 'perfume', label: 'น้ำหอมดูไบ (Dubai Oud)' },
-    { id: 'incense', label: 'เครื่องหอมดูไบ (Incense & Bukhoor)' },
-    { id: 'combo', label: 'เซ็ตสุดคุ้ม (Combo Set)' },
-    { id: 'other', label: 'อื่นๆ (ของเล่นเด็ก ขนม ฯลฯ)' },
+    { id: 'incense', label: 'เครื่องหอม (Bukhoor)' },
+    { id: 'combo', label: 'เซ็ตของขวัญ (Gift Sets)' },
+    { id: 'other', label: 'ไลฟ์สไตล์ & อื่นๆ' },
   ];
 
   const [categories, setCategories] = useState<{ id: CategoryType; label: string }[]>(DEFAULT_CATEGORIES);
@@ -52,7 +47,7 @@ export const Navbar: React.FC = () => {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
             setCategories([
-              { id: 'all', label: 'ทั้งหมด (All)' },
+              { id: 'all', label: 'คอลเลกชันทั้งหมด' },
               ...parsed.map((item: any) => ({ id: item.id as CategoryType, label: item.label })),
             ]);
             return;
@@ -68,20 +63,18 @@ export const Navbar: React.FC = () => {
   }, []);
 
   const currencies: { id: CurrencyType; label: string }[] = [
-    { id: 'THB', label: '฿ THB' },
-    { id: 'AED', label: 'د.إ AED' },
-    { id: 'USD', label: '$ USD' },
-    { id: 'EUR', label: '€ EUR' },
+    { id: 'THB', label: 'THB (฿)' },
+    { id: 'AED', label: 'AED (د.إ)' },
+    { id: 'USD', label: 'USD ($)' },
+    { id: 'EUR', label: 'EUR (€)' },
   ];
 
   const defaultMapUrl = 'https://www.google.com/maps/dir//%E0%B8%A3%E0%B9%89%E0%B8%B2%E0%B8%99+HUDA+ABAYA+DUBAI+11%2F2+%E0%B8%96%E0%B8%99%E0%B8%99+%E0%B8%84%E0%B8%A5%E0%B8%AD%E0%B8%87%E0%B8%AA%E0%B8%B4%E0%B8%9A%E0%B8%AA%E0%B8%B2%E0%B8%A1+%E0%B9%81%E0%B8%82%E0%B8%A7%E0%B8%87%E0%B8%AB%E0%B8%99%E0%B8%AD%E0%B8%87%E0%B8%88%E0%B8%AD%E0%B8%81+%E0%B9%80%E0%B8%82%E0%B8%95%E0%B8%AB%E0%B8%99%E0%B8%AD%E0%B8%87%E0%B8%88%E0%B8%AD%E0%B8%81+%E0%B8%81%E0%B8%A3%E0%B8%B8%E0%B8%87%E0%B9%80%E0%B8%97%E0%B8%9E%E0%B8%A1%E0%B8%AB%E0%B8%B2%E0%B8%99%E0%B8%84%E0%B8%A3+10530/@13.8461503,100.8564361,4592m/data=!3m1!1e3!4m8!4m7!1m0!1m5!1m1!1s0x311d73004172d045:0xca04d1c0a845986e!2m2!1d100.894964!2d13.8839807';
 
   const handleAdminBtnClick = () => {
     if (isAdminMode && isAdminAuthenticated) {
-      // If currently inside backoffice, clicking this button returns to storefront & locks backoffice
       logoutAdmin();
     } else {
-      // If at storefront and clicks to enter backoffice ("กดเข้า หลังบ้าน") -> ALWAYS prompt for passcode!
       setIsAdminAuthenticated(false);
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('huda_admin_authenticated');
@@ -108,59 +101,63 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white backdrop-blur-md border-b border-stone-200 text-[#0A0A0A] shadow-xs transition-all">
-      {/* Top Announcement Bar */}
-      <div className="bg-white text-[#0A0A0A] border-b border-stone-200 text-xs py-2 px-4 tracking-wider flex items-center justify-between font-normal">
-        <div className="hidden md:flex items-center gap-2 text-[11px] text-stone-900 font-semibold">
-          <Globe className="w-3.5 h-3.5 text-amber-700" />
-          <span>นำเข้าชุดอาบายะห์และน้ำหอมแท้จากดูไบ UAE | 100% Authentic Import</span>
-        </div>
+    <header className="sticky top-0 z-40 bg-[#FAF9F6]/95 backdrop-blur-md border-b border-stone-200/80 text-[#1C1917] transition-all">
+      {/* Top Editorial Announcement Strip */}
+      <div className="bg-[#141312] text-[#E6E2DC] text-[11px] py-2 px-4 sm:px-6 lg:px-8 tracking-widest">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div className="hidden lg:flex items-center gap-2 text-stone-400 font-light tracking-[0.15em] uppercase text-[10px]">
+            <span>DUBAI • BANGKOK</span>
+            <span className="text-[#B89352]">|</span>
+            <span>AUTHENTIC EMIRATI HAUTE COUTURE</span>
+          </div>
 
-        <div className="flex items-center justify-center gap-2 mx-auto md:mx-0 text-[11px] sm:text-xs">
-          <Sparkles className="w-3.5 h-3.5 text-amber-700" />
-          <span className="font-extrabold tracking-wide text-[#0A0A0A]">{storeSettings.topAnnouncement}</span>
-          <Sparkles className="w-3.5 h-3.5 text-amber-700" />
-        </div>
+          <div className="text-center mx-auto lg:mx-0 font-normal tracking-wider text-[11px] text-[#F5F2EC] truncate">
+            {storeSettings.topAnnouncement}
+          </div>
 
-        {/* Currency & Sound Switcher */}
-        <div className="hidden md:flex items-center gap-2 border-l border-stone-300 pl-3">
-          <span className="text-[10px] text-stone-900 font-serif uppercase tracking-widest font-bold">Currency:</span>
-          {currencies.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setCurrency(c.id)}
-              className={`text-[10px] font-mono px-2 py-0.5 transition rounded-sm border ${
-                currency === c.id
-                  ? 'bg-[#0A0A0A] text-white font-extrabold border-[#0A0A0A]'
-                  : 'bg-white text-stone-900 hover:text-black border-stone-300 font-bold'
-              }`}
+          {/* Currency & Store Locator */}
+          <div className="hidden md:flex items-center gap-4 text-[10px] tracking-widest uppercase">
+            <a
+              href={storeSettings.mapUrl || defaultMapUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-stone-300 hover:text-white transition flex items-center gap-1"
             >
-              {c.label}
-            </button>
-          ))}
+              <MapPin className="w-3 h-3 text-[#B89352]" />
+              <span>บูติกหนองจอก</span>
+            </a>
 
-          {/* UI Sound FX Toggle */}
-          <button
-            onClick={toggleSound}
-            className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full transition border cursor-pointer ${
-              isSoundMuted
-                ? 'bg-stone-100 text-stone-600 border-stone-300'
-                : 'bg-amber-100 text-amber-950 border-amber-400 font-extrabold shadow-xs'
-            }`}
-            title={isSoundMuted ? 'เปิดเสียงเอฟเฟกต์การคลิกและพิมพ์ (Unmute UI Sound)' : 'เปิดใช้งานเสียงเอฟเฟกต์แล้ว (Mute Sound)'}
-          >
-            {isSoundMuted ? <VolumeX className="w-3 h-3 text-stone-600" /> : <Volume2 className="w-3 h-3 text-amber-800" />}
-            <span>{isSoundMuted ? 'ปิดเสียง' : 'มีเสียงพิมพ์/คลิก'}</span>
-          </button>
+            <span className="text-stone-700">|</span>
+
+            <div className="flex items-center gap-1">
+              {currencies.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setCurrency(c.id)}
+                  className={`px-1.5 py-0.5 transition cursor-pointer ${
+                    currency === c.id
+                      ? 'text-[#B89352] font-semibold border-b border-[#B89352]'
+                      : 'text-stone-400 hover:text-white'
+                  }`}
+                >
+                  {c.id}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* Main Maison Brand Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 sm:h-24 md:h-26 gap-3">
+        <div className="flex items-center justify-between h-20 sm:h-24 gap-4 sm:gap-8">
           
-          {/* Main Store Logo & Name */}
-          <div className="flex items-center gap-3 sm:gap-4 cursor-pointer group shrink-0" onClick={() => handleCategoryClick('all')}>
-            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full p-0.5 bg-gradient-to-tr from-amber-600 via-amber-400 to-amber-600 shadow-xs flex items-center justify-center shrink-0 group-hover:scale-105 transition duration-300">
+          {/* Brand Identity */}
+          <div
+            className="flex items-center gap-3.5 cursor-pointer group shrink-0"
+            onClick={() => handleCategoryClick('all')}
+          >
+            <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-full overflow-hidden border border-[#DCD6CD] bg-white p-0.5 shrink-0 transition duration-500 group-hover:border-[#B89352]">
               <img
                 src={storeSettings.logoImageUrl || DEFAULT_LOGO_BASE64}
                 onError={(e) => {
@@ -168,195 +165,176 @@ export const Navbar: React.FC = () => {
                   target.src = DEFAULT_LOGO_BASE64;
                 }}
                 alt={storeSettings.storeName}
-                className="w-full h-full rounded-full object-contain bg-white p-0.5 border border-stone-300"
+                className="w-full h-full rounded-full object-contain"
               />
             </div>
-            <div className="flex flex-col justify-center">
-              <h1 className="font-serif text-base sm:text-xl md:text-2xl lg:text-3xl font-extrabold tracking-tight text-[#0A0A0A] group-hover:text-amber-800 transition-colors leading-tight">
+            <div className="flex flex-col">
+              <h1 className="font-serif text-lg sm:text-2xl md:text-[26px] font-semibold tracking-[0.08em] text-[#141312] leading-none">
                 {storeSettings.storeName}
               </h1>
-              <p className="text-[9px] sm:text-[11px] text-amber-800 tracking-widest uppercase font-serif font-bold mt-0.5">
+              <p className="text-[9px] sm:text-[10px] text-[#8C703E] tracking-[0.22em] uppercase font-serif mt-1.5">
                 {storeSettings.storeTagline}
               </p>
             </div>
           </div>
 
-          {/* Desktop Search Input - Widened & Luxurious */}
-          <div className="hidden md:flex flex-1 max-w-xl xl:max-w-3xl mx-3 sm:mx-6 items-center gap-2.5">
-            <div className="relative flex-1">
+          {/* Minimalist Editorial Search Input */}
+          <div className="hidden md:flex flex-1 max-w-md lg:max-w-lg mx-4">
+            <div className="relative w-full">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
               <input
                 type="text"
-                placeholder="ค้นหาชุดอาบายะห์, เดรส, น้ำหอมดูไบ..."
+                placeholder="ค้นหาอาบายะห์, คัฟทาน, น้ำหอมดูไบ หรือรหัสสินค้า..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white border-2 border-stone-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 rounded-full py-2.5 sm:py-3 pl-11 pr-14 text-sm text-stone-950 font-bold placeholder-stone-400 transition-all outline-none shadow-sm"
+                className="w-full bg-white border border-stone-300/90 focus:border-[#141312] rounded-none py-2.5 pl-10 pr-9 text-xs text-[#141312] placeholder-stone-400 transition-colors outline-none tracking-wide"
               />
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-stone-500 hover:text-black font-bold bg-stone-100 hover:bg-stone-200 px-2 py-0.5 rounded-full transition"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-[#141312] transition"
+                  aria-label="ล้างคำค้นหา"
                 >
-                  ล้าง
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
-            <VoiceInputButton
-              onTranscript={(text) => setSearchQuery(text)}
-              currentValue={searchQuery}
-              className="py-2.5 px-3.5 rounded-full text-xs shadow-xs font-bold shrink-0 border-2"
-            />
           </div>
 
-          {/* Header Utilities / Actions */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Right Navigation Actions */}
+          <div className="flex items-center gap-2 sm:gap-5 shrink-0">
             
-            {/* GPS Map Link */}
-            <a
-              href={storeSettings.mapUrl || defaultMapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden xl:flex items-center gap-1.5 text-xs text-stone-900 hover:text-black transition bg-white px-3 py-1.5 rounded-full border border-stone-300 hover:border-black shadow-xs font-bold"
-              title="แผนที่นำทาง GPS ร้าน HUDA ABAYA DUBAI"
-            >
-              <Compass className="w-3.5 h-3.5 text-amber-700" />
-              <span>แผนที่ร้าน</span>
-            </a>
-
-            {/* Install App QR */}
-            <button
-              onClick={triggerQRModal}
-              className="hidden sm:flex items-center gap-1.5 text-xs text-stone-900 hover:text-black transition bg-white px-3 py-1.5 rounded-full border border-stone-300 hover:border-black shadow-xs font-bold"
-              title="สแกน QR Code เพื่อใช้งานบนแอปพลิเคชัน"
-            >
-              <QrCode className="w-3.5 h-3.5 text-amber-700" />
-              <span>แอปพลิเคชัน</span>
-            </button>
-
-            {/* AI Stylist */}
-            <button
-              onClick={() => setIsAIConciergeOpen(true)}
-              className="flex items-center gap-1.5 text-xs text-amber-950 hover:text-black transition bg-amber-100/90 hover:bg-amber-200 px-3 py-1.5 rounded-full border border-amber-300 shadow-xs font-extrabold"
-              title="ผู้ช่วยสไตลิสต์ดูไบ AI ช่วยเลือกไซส์"
-            >
-              <Bot className="w-3.5 h-3.5 text-amber-700" />
-              <span className="hidden sm:inline">AI Stylist</span>
-            </button>
-
             {/* Order Tracking */}
             <button
               onClick={() => setIsOrderTrackingOpen(true)}
-              className="hidden md:flex items-center gap-1.5 text-xs text-stone-900 hover:text-black transition bg-white px-3 py-1.5 rounded-full border border-stone-300 hover:border-black font-bold"
+              className="hidden sm:flex items-center gap-1.5 text-xs text-stone-700 hover:text-[#141312] transition tracking-wide py-1.5 cursor-pointer"
             >
-              <PackageSearch className="w-3.5 h-3.5 text-amber-700" />
-              <span>ติดตามพัสดุ</span>
+              <PackageSearch className="w-4 h-4 text-[#8C703E]" />
+              <span>ติดตามคำสั่งซื้อ</span>
             </button>
 
-            {/* Admin Management Button */}
+            {/* Mobile App QR */}
+            <button
+              onClick={triggerQRModal}
+              className="hidden lg:flex items-center gap-1.5 text-xs text-stone-700 hover:text-[#141312] transition tracking-wide py-1.5 cursor-pointer"
+              title="ใช้งานผ่านมือถือ"
+            >
+              <QrCode className="w-4 h-4 text-[#8C703E]" />
+              <span>Mobile App</span>
+            </button>
+
+            {/* Admin Portal Button */}
             <button
               onClick={handleAdminBtnClick}
-              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition border font-bold cursor-pointer ${
+              className={`flex items-center gap-1.5 text-xs px-3.5 py-2 transition tracking-wider uppercase cursor-pointer ${
                 isAdminMode && isAdminAuthenticated
-                  ? 'bg-[#0A0A0A] text-white border-[#0A0A0A] hover:bg-stone-800 shadow-sm'
-                  : 'bg-white text-stone-900 border-stone-300 hover:border-black shadow-xs'
+                  ? 'bg-[#141312] text-white'
+                  : 'text-stone-700 hover:text-[#141312] border border-stone-300/80 hover:border-[#141312] bg-white'
               }`}
-              title={isAdminMode && isAdminAuthenticated ? 'คลิกเพื่อออกจากหลังบ้านกลับสู่หน้าร้าน' : 'เข้าสู่ระบบหลังบ้าน (ต้องใส่รหัสผ่านทุกครั้ง)'}
+              title={isAdminMode && isAdminAuthenticated ? 'ออกจากระบบจัดการกลับสู่หน้าร้าน' : 'สำหรับผู้ดูแลร้านค้า'}
             >
-              {isAdminMode && isAdminAuthenticated ? <User className="w-3.5 h-3.5 text-amber-400" /> : <Lock className="w-3.5 h-3.5 text-amber-700" />}
-              <span className="hidden sm:inline">{isAdminMode && isAdminAuthenticated ? 'กลับหน้าร้าน' : 'หลังบ้าน'}</span>
+              {isAdminMode && isAdminAuthenticated ? (
+                <User className="w-3.5 h-3.5 text-[#B89352]" />
+              ) : (
+                <Lock className="w-3.5 h-3.5 text-stone-500" />
+              )}
+              <span className="hidden sm:inline font-medium text-[11px]">
+                {isAdminMode && isAdminAuthenticated ? 'หน้าร้าน' : 'จัดการร้าน'}
+              </span>
             </button>
 
-            {/* Shopping Cart Button */}
+            {/* Shopping Bag */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative p-2.5 text-[#0A0A0A] hover:text-amber-800 transition bg-white rounded-full border border-stone-300 hover:border-black shadow-xs"
+              className="relative flex items-center gap-2 px-3.5 py-2 bg-[#141312] hover:bg-[#292624] text-white transition cursor-pointer"
               aria-label="ตะกร้าสินค้า"
             >
-              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-[#0A0A0A]" />
-              {totalCartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-amber-600 text-white text-[10px] font-extrabold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center shadow-xs">
-                  {totalCartCount}
-                </span>
-              )}
+              <ShoppingBag className="w-4 h-4 text-[#D4B57B]" />
+              <span className="text-xs font-serif tracking-wider">{totalCartCount}</span>
             </button>
           </div>
         </div>
 
-        {/* Mobile Search Input */}
-        <div className="md:hidden pb-3 space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                placeholder="ค้นหาชุดอาบายะห์, เดรส, น้ำหอมดูไบ..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white border-2 border-stone-300 focus:border-amber-500 rounded-full py-2.5 pl-10 pr-12 text-sm text-stone-950 font-bold placeholder-stone-400 focus:outline-none shadow-sm"
-              />
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-stone-500 hover:text-black font-bold bg-stone-100 px-2 py-0.5 rounded-full"
-                >
-                  ล้าง
-                </button>
-              )}
-            </div>
-            <VoiceInputButton
-              onTranscript={(text) => setSearchQuery(text)}
-              currentValue={searchQuery}
-              className="py-2.5 px-3 rounded-full text-xs shadow-xs shrink-0 border-2"
+        {/* Mobile Search & Quick Links */}
+        <div className="md:hidden pb-3 space-y-2.5">
+          <div className="relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <input
+              type="text"
+              placeholder="ค้นหาอาบายะห์, คัฟทาน, น้ำหอมดูไบ..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white border border-stone-300 focus:border-[#141312] py-2 pl-10 pr-9 text-xs text-[#141312] placeholder-stone-400 focus:outline-none"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-[#141312]"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          <div className="flex items-center justify-between text-[11px] text-stone-900 font-semibold">
-            <a
-              href={storeSettings.mapUrl || defaultMapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="sm:hidden text-amber-900 flex items-center gap-1 underline font-bold"
-            >
-              <Compass className="w-3.5 h-3.5 text-amber-700" />
-              <span>นำทาง GPS</span>
-            </a>
+          <div className="flex items-center justify-between text-[11px] text-stone-600 pt-0.5">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsOrderTrackingOpen(true)}
+                className="flex items-center gap-1 text-stone-700 hover:text-black font-medium"
+              >
+                <PackageSearch className="w-3.5 h-3.5 text-[#8C703E]" />
+                <span>เช็คพัสดุ</span>
+              </button>
+              <a
+                href={storeSettings.mapUrl || defaultMapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-stone-700 hover:text-black font-medium"
+              >
+                <MapPin className="w-3.5 h-3.5 text-[#8C703E]" />
+                <span>แผนที่ร้าน</span>
+              </a>
+            </div>
 
-            <div className="flex items-center gap-1.5 ml-auto">
-              <span className="text-stone-900 font-bold">สกุลเงิน:</span>
-              <div className="flex gap-1">
-                {currencies.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => setCurrency(c.id)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono ${
-                      currency === c.id ? 'bg-[#0A0A0A] text-white font-bold' : 'bg-white border border-stone-300 text-stone-900 font-bold'
-                    }`}
-                  >
-                    {c.label}
-                  </button>
-                ))}
-              </div>
+            <div className="flex items-center gap-1">
+              {currencies.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setCurrency(c.id)}
+                  className={`px-1.5 py-0.5 text-[10px] tracking-wider ${
+                    currency === c.id
+                      ? 'bg-[#141312] text-white font-medium'
+                      : 'text-stone-500'
+                  }`}
+                >
+                  {c.id}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Category Navigation Bar */}
-        <nav className="flex items-center gap-2 overflow-x-auto py-2.5 no-scrollbar border-t border-stone-300">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => handleCategoryClick(cat.id)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
-                selectedCategory === cat.id
-                  ? 'bg-[#0A0A0A] text-white font-extrabold shadow-xs'
-                  : 'bg-white text-stone-900 hover:text-black hover:bg-stone-100 border border-stone-300'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
+        {/* Editorial Category Navigation Bar */}
+        <nav className="flex items-center justify-start md:justify-center gap-6 sm:gap-8 overflow-x-auto py-3 no-scrollbar border-t border-stone-200/80">
+          {categories.map((cat) => {
+            const isActive = selectedCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => handleCategoryClick(cat.id)}
+                className={`relative py-1 text-xs sm:text-[13px] tracking-wide whitespace-nowrap transition-colors cursor-pointer ${
+                  isActive
+                    ? 'text-[#141312] font-semibold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1.5px] after:bg-[#141312]'
+                    : 'text-stone-500 hover:text-[#141312] font-normal'
+                }`}
+              >
+                {cat.label}
+              </button>
+            );
+          })}
         </nav>
       </div>
     </header>
   );
 };
+

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Star, ShoppingBag, Check, ShieldCheck, Ruler, Sparkles, AlertCircle, Truck, Palette, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Check, ShieldCheck, Ruler, AlertCircle, Truck, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product, ProductVariant } from '../../types';
 import { useShop } from '../../context/ShopContext';
 import { ColorIndicator } from '../../utils/colorUtils';
@@ -13,25 +13,25 @@ interface ProductModalProps {
 }
 
 const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
-  abaya: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop',
-  kaftan: 'https://images.unsplash.com/photo-1563178406-4cdc2923acbc?q=80&w=1000&auto=format&fit=crop',
-  perfume: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop',
-  incense: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?q=80&w=1000&auto=format&fit=crop',
-  combo: 'https://images.unsplash.com/photo-1518895949257-7621c3c786d7?q=80&w=1000&auto=format&fit=crop',
-  other: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop',
+  abaya: '/images/placeholder-abaya.jpg',
+  kaftan: '/images/placeholder-abaya.jpg',
+  perfume: '/images/placeholder-perfume.jpg',
+  incense: '/images/placeholder-perfume.jpg',
+  combo: '/images/placeholder-abaya.jpg',
+  other: '/images/placeholder-abaya.jpg',
 };
 
-export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) => {
-  const { addToCart } = useShop();
+export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProduct, onClose }) => {
+  const { products, addToCart } = useShop();
+  // Always derive live product from ShopContext so stock updates instantly in realtime!
+  const product = products.find((p) => p.id === initialProduct.id) || initialProduct;
   const [mounted, setMounted] = useState<boolean>(false);
 
   useEffect(() => {
     setMounted(true);
-    // Lock body scroll on mobile and desktop while modal is active
     const originalStyle = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
-    // Handle Escape key to close modal
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
@@ -46,11 +46,17 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
   }, [onClose]);
 
   const defaultImg = DEFAULT_CATEGORY_IMAGES[product.category] || DEFAULT_CATEGORY_IMAGES.abaya;
-  const initialImg = (product.images && product.images.length > 0 && product.images[0] && typeof product.images[0] === 'string' && product.images[0].trim() !== '')
-    ? product.images[0]
-    : defaultImg;
+  const initialImg =
+    product.images &&
+    product.images.length > 0 &&
+    product.images[0] &&
+    typeof product.images[0] === 'string' &&
+    product.images[0].trim() !== ''
+      ? product.images[0]
+      : defaultImg;
 
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(product.variants[0]);
+  const [selectedVariantId, setSelectedVariantId] = useState<string>(initialProduct.variants[0]?.id || '');
+  const selectedVariant = product.variants.find((v) => v.id === selectedVariantId) || product.variants[0];
   const [selectedImage, setSelectedImage] = useState<string>(initialImg);
   const [quantity, setQuantity] = useState<number>(1);
   const [showSizeGuide, setShowSizeGuide] = useState<boolean>(false);
@@ -94,14 +100,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
     setTimeout(() => {
       setAddedSuccess(false);
       onClose();
-    }, 1000);
+    }, 900);
   };
 
   if (!mounted || typeof document === 'undefined') return null;
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[99999] overflow-y-auto bg-dubai-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 cursor-pointer"
+      className="fixed inset-0 z-[99999] overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6 cursor-pointer"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -109,55 +115,33 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
       }}
     >
       <div
-        className="relative bg-dubai-card border-2 border-gold-400/50 rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl text-white my-3 sm:my-8 cursor-default"
+        className="relative bg-white border border-stone-200 max-w-4xl w-full overflow-hidden shadow-2xl text-[#141312] my-3 sm:my-8 cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
-        
-        {/* Prominent Close Button */}
+        {/* Close Button */}
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            e.preventDefault();
             onClose();
           }}
-          onTouchEnd={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            onClose();
-          }}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 z-50 bg-dubai-black/90 text-gold-400 hover:text-white p-2.5 sm:p-3 rounded-full border border-gold-400/60 shadow-2xl transition cursor-pointer active:scale-95 touch-manipulation"
+          className="absolute top-4 right-4 z-50 bg-white/95 hover:bg-[#141312] text-[#141312] hover:text-white p-2.5 border border-stone-200 transition cursor-pointer"
           aria-label="ปิดหน้าต่าง"
-          title="ปิดหน้าต่างและกลับสู่หน้าหลัก"
         >
-          <X className="w-6 h-6 sm:w-5 sm:h-5 text-gold-400" />
+          <X className="w-4 h-4" />
         </button>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-12">
           
-          {/* Left Column: Image Gallery */}
-          <div className="md:col-span-6 space-y-4">
+          {/* Left Column: Portrait Gallery */}
+          <div className="md:col-span-6 bg-[#F7F5F0] p-6 flex flex-col justify-between border-b md:border-b-0 md:border-r border-stone-200/80">
             <div
-              className="relative aspect-[4/5] rounded-xl overflow-hidden border border-gold-400/30 bg-dubai-black cursor-crosshair group select-none"
+              className="relative aspect-[4/5] overflow-hidden bg-white border border-stone-200/60 cursor-crosshair group select-none"
               onMouseEnter={() => setShowLoupe(true)}
               onMouseLeave={() => setShowLoupe(false)}
               onMouseMove={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 handlePointerMove(e.clientX - rect.left, e.clientY - rect.top, rect);
-              }}
-              onTouchStart={(e) => {
-                setShowLoupe(true);
-                if (e.touches[0]) {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  handlePointerMove(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, rect);
-                }
-              }}
-              onTouchEnd={() => setShowLoupe(false)}
-              onTouchMove={(e) => {
-                if (e.touches[0]) {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  handlePointerMove(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, rect);
-                }
               }}
               onClick={() => {
                 setZoomScale(1);
@@ -172,16 +156,16 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                     setSelectedImage(defaultImg);
                   }
                 }}
-                className="w-full h-full object-contain object-center transition duration-300 p-2 drop-shadow-md group-hover:scale-[1.02]"
+                className="w-full h-full object-contain object-center transition duration-500 p-3"
               />
-              
-              {product.onSale && (
-                <span className="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow z-10">
-                  ลดพิเศษ {product.discountPercent}%
+
+              {product.onSale && product.discountPercent && (
+                <span className="absolute top-3 left-3 bg-[#8C703E] text-white text-[10px] tracking-[0.15em] uppercase px-2.5 py-1 z-10">
+                  -{product.discountPercent}%
                 </span>
               )}
 
-              {/* Magnifying Loupe Lens (แว่นขยายส่องจุดขยายภาพ) */}
+              {/* Subtle Magnifying Loupe */}
               {showLoupe && (
                 <div
                   style={{
@@ -189,138 +173,135 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                     left: `${loupePos.x - 70}px`,
                     backgroundImage: `url(${selectedImage})`,
                     backgroundPosition: `${loupePos.xPercent}% ${loupePos.yPercent}%`,
-                    backgroundSize: '380%',
+                    backgroundSize: '360%',
                   }}
-                  className="absolute w-36 h-36 rounded-full border-4 border-gold-400 shadow-2xl pointer-events-none z-30 bg-no-repeat ring-4 ring-black/70"
-                >
-                  <div className="absolute inset-0 rounded-full border border-white/60 flex items-center justify-center">
-                    <div className="w-2.5 h-2.5 rounded-full bg-gold-400 ring-2 ring-white/90 shadow-sm" />
-                  </div>
-                </div>
+                  className="hidden sm:block absolute w-36 h-36 rounded-full border-2 border-[#141312] shadow-xl pointer-events-none z-30 bg-no-repeat bg-white"
+                />
               )}
 
-              <div className="absolute bottom-3 inset-x-3 flex items-center justify-between pointer-events-none z-10">
-                <span className="bg-dubai-black/85 text-gold-300 text-[10px] font-bold px-2.5 py-1 rounded-full border border-gold-400/30 backdrop-blur-xs flex items-center gap-1 shadow">
-                  🔬 วางเมาส์/นิ้วเพื่อส่องจุดขยาย
-                </span>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setZoomScale(1);
-                    setIsZoomOpen(true);
-                  }}
-                  className="pointer-events-auto bg-dubai-black/90 hover:bg-gold-500 hover:text-stone-950 text-gold-400 px-3 py-1 rounded-full border border-gold-400/40 text-[11px] font-bold transition flex items-center gap-1 shadow-lg backdrop-blur-sm cursor-pointer"
-                >
-                  <ZoomIn className="w-3.5 h-3.5" />
-                  <span>🔍 เต็มจอ</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setZoomScale(1);
+                  setIsZoomOpen(true);
+                }}
+                className="absolute bottom-3 right-3 bg-white/90 hover:bg-[#141312] hover:text-white text-[#141312] px-3 py-1.5 border border-stone-200 text-[10px] tracking-widest uppercase transition flex items-center gap-1.5 cursor-pointer z-10"
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+                <span>ขยายภาพ</span>
+              </button>
             </div>
 
-            {/* Thumbnail switcher */}
+            {/* Thumbnail Strip */}
             {product.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="flex gap-2.5 overflow-x-auto pt-4">
                 {product.images.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedImage(img)}
-                    className={`w-16 h-20 rounded-lg overflow-hidden border-2 shrink-0 transition ${
-                      selectedImage === img ? 'border-gold-400 scale-105' : 'border-gold-400/20 opacity-70'
+                    className={`w-16 h-20 overflow-hidden border transition shrink-0 bg-white ${
+                      selectedImage === img ? 'border-[#141312]' : 'border-stone-200 opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt={`thumb-${idx}`} className="w-full h-full object-contain bg-stone-900 p-0.5" />
+                    <img src={img} alt={`thumb-${idx}`} className="w-full h-full object-contain p-1" />
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Right Column: Product Specs & Size/Color Variant Selection */}
-          <div className="md:col-span-6 space-y-5 flex flex-col justify-between">
-            <div className="space-y-3">
+          {/* Right Column: Editorial Specifications & Variant Selection */}
+          <div className="md:col-span-6 p-6 sm:p-8 flex flex-col justify-between space-y-6 bg-white">
+            <div className="space-y-5">
               
-              {/* Category & Rating */}
-              <div className="flex items-center justify-between text-xs text-gold-400">
-                <span className="uppercase font-serif tracking-wider font-semibold">
-                  HUDA ABAYA DUBAI • {product.origin || 'Imported UAE'}
-                </span>
-                <div className="flex items-center gap-1 bg-dubai-black px-2.5 py-1 rounded-full border border-gold-400/30">
-                  <Star className="w-3.5 h-3.5 fill-gold-400 text-gold-400" />
-                  <span className="font-bold text-white">{product.rating}</span>
-                  <span className="text-gray-400 text-[10px]">({product.reviewsCount} รีวิว)</span>
+              {/* Eyebrow */}
+              <div className="text-[10px] font-serif tracking-[0.22em] uppercase text-[#8C703E]">
+                HUDA ABAYA DUBAI • {product.origin || 'IMPORTED UAE'}
+              </div>
+
+              {/* Product Title & Price */}
+              <div className="space-y-2 border-b border-stone-200 pb-4">
+                <h2 className="text-xl sm:text-2xl font-serif font-normal text-[#141312] leading-snug">
+                  {product.title}
+                </h2>
+                {product.arabicTitle && (
+                  <p className="text-xs font-serif text-[#8C703E] dir-rtl">
+                    {product.arabicTitle}
+                  </p>
+                )}
+
+                <div className="pt-2 flex items-baseline gap-3">
+                  <span className="text-2xl font-serif font-semibold text-[#141312]">
+                    ฿{(selectedVariant.price * quantity).toLocaleString()}
+                  </span>
+                  {selectedVariant.originalPrice && (
+                    <span className="text-xs text-stone-400 line-through">
+                      ฿{(selectedVariant.originalPrice * quantity).toLocaleString()}
+                    </span>
+                  )}
                 </div>
               </div>
 
-              {/* Title & Arabic */}
-              <h2 className="text-xl sm:text-2xl font-serif font-bold text-sky-100 leading-tight">
-                {product.title}
-              </h2>
-              {product.arabicTitle && (
-                <p className="text-sm font-serif text-gold-400/80 dir-rtl">
-                  {product.arabicTitle}
-                </p>
-              )}
-
-              {/* Colors Available Badge */}
-              {product.colors && product.colors.length > 0 && (
-                <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                  <span className="text-xs text-sky-200 font-bold flex items-center gap-1 bg-dubai-black px-2.5 py-1 rounded-full border border-gold-400/30">
-                    <Palette className="w-3.5 h-3.5 text-gold-400" />
-                    <span>ตัวเลือกสี:</span>
-                  </span>
-                  {product.colors.map((c, idx) => (
-                    <span key={idx} className="text-xs text-stone-200 bg-dubai-black/80 px-2.5 py-0.5 rounded-full border border-gold-400/20 shadow-xs">
-                      <ColorIndicator color={c} dotClassName="w-3 h-3" />
-                    </span>
-                  ))}
-                </div>
-              )}
-
               {/* Description */}
-              <p className="text-xs text-gray-300 leading-relaxed border-t border-gold-400/10 pt-2">
+              <p className="text-xs sm:text-[13px] text-stone-600 leading-relaxed font-light">
                 {product.description}
               </p>
 
-              {/* Fabric Specs */}
-              {product.fabric && (
-                <div className="bg-dubai-black/60 p-2.5 rounded-lg border border-gold-400/20 text-xs flex items-center justify-between">
-                  <span className="text-gold-300 font-medium">เนื้อผ้า (Fabric):</span>
-                  <span className="text-white font-semibold">{product.fabric}</span>
+              {/* Fabric & Color Specs */}
+              {(product.fabric || (product.colors && product.colors.length > 0)) && (
+                <div className="space-y-2 pt-1 text-xs border-t border-stone-100">
+                  {product.fabric && (
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-stone-500">เนื้อผ้า (Material):</span>
+                      <span className="text-[#141312] font-medium">{product.fabric}</span>
+                    </div>
+                  )}
+                  {product.colors && product.colors.length > 0 && (
+                    <div className="flex items-center justify-between py-1 flex-wrap gap-2">
+                      <span className="text-stone-500">โทนสี (Colorway):</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {product.colors.map((c, idx) => (
+                          <span key={idx} className="text-xs text-[#141312]">
+                            <ColorIndicator color={c} dotClassName="w-2.5 h-2.5" />
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Fragrance Notes (For Perfumes) */}
+              {/* Fragrance Notes */}
               {product.fragranceNotes && (
-                <div className="bg-dubai-black/70 p-3 rounded-lg border border-gold-400/30 text-xs space-y-1.5">
-                  <p className="font-serif font-bold text-gold-400 flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5" /> Fragrance Pyramid Notes:
+                <div className="bg-[#FAF9F6] p-3.5 border border-stone-200/80 text-xs space-y-1">
+                  <p className="font-serif text-[11px] tracking-widest uppercase text-[#8C703E] mb-1">
+                    OLFACTORY NOTES
                   </p>
-                  <p className="text-gray-300"><span className="text-gold-300">Top Note:</span> {product.fragranceNotes.top}</p>
-                  <p className="text-gray-300"><span className="text-gold-300">Heart Note:</span> {product.fragranceNotes.heart}</p>
-                  <p className="text-gray-300"><span className="text-gold-300">Base Note:</span> {product.fragranceNotes.base}</p>
+                  <p className="text-stone-600"><span className="text-[#141312] font-medium">Top:</span> {product.fragranceNotes.top}</p>
+                  <p className="text-stone-600"><span className="text-[#141312] font-medium">Heart:</span> {product.fragranceNotes.heart}</p>
+                  <p className="text-stone-600"><span className="text-[#141312] font-medium">Base:</span> {product.fragranceNotes.base}</p>
                 </div>
               )}
 
-              {/* Size & Color Variant Picker Header */}
-              <div className="pt-2 border-t border-gold-400/20">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-serif font-bold text-gold-300 uppercase tracking-wider flex items-center gap-1">
-                    <span>เลือกสีและไซส์สินค้า:</span>
+              {/* Variant Selector */}
+              <div className="space-y-2.5 pt-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-serif tracking-[0.15em] uppercase text-[#141312] font-medium">
+                    เลือกขนาด / ตัวเลือก ({selectedVariant.name})
                   </label>
                   {(product.category === 'abaya' || product.category === 'kaftan') && (
                     <button
+                      type="button"
                       onClick={() => setShowSizeGuide(!showSizeGuide)}
-                      className="text-xs text-gold-400 hover:text-gold-300 flex items-center gap-1 underline"
+                      className="text-xs text-[#8C703E] hover:text-[#141312] flex items-center gap-1 underline cursor-pointer"
                     >
                       <Ruler className="w-3.5 h-3.5" />
-                      <span>ตารางเทียบไซส์ (Size Guide)</span>
+                      <span>ตารางเทียบไซส์</span>
                     </button>
                   )}
                 </div>
 
-                {/* Variant Options Grid */}
                 <div className="grid grid-cols-2 gap-2">
                   {product.variants.map((v) => {
                     const isSelected = selectedVariant.id === v.id;
@@ -329,44 +310,35 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                     return (
                       <button
                         key={v.id}
+                        type="button"
                         disabled={isOutOfStock}
                         onClick={() => {
-                          setSelectedVariant(v);
+                          setSelectedVariantId(v.id);
                           setQuantity(1);
                         }}
-                        className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between relative ${
+                        className={`p-3 border text-left transition flex flex-col justify-between cursor-pointer ${
                           isSelected
-                            ? 'bg-gold-500/20 border-gold-400 text-gold-200 ring-1 ring-gold-400 shadow-gold-glow'
+                            ? 'border-[#141312] bg-[#FAF9F6]'
                             : isOutOfStock
-                            ? 'bg-dubai-black/40 border-red-900/40 text-gray-500 cursor-not-allowed opacity-60'
-                            : 'bg-dubai-black border-gold-400/20 text-gray-200 hover:border-gold-400/60'
+                            ? 'border-stone-200 bg-stone-50 text-stone-400 cursor-not-allowed opacity-60'
+                            : 'border-stone-200 bg-white hover:border-stone-400'
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold">{v.name}</span>
-                          {isSelected && <Check className="w-3.5 h-3.5 text-gold-400" />}
+                          <span className="text-xs font-medium text-[#141312]">{v.name}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-[#141312]" />}
                         </div>
-                        
+
                         {v.color && (
-                          <span className="text-[10px] text-sky-200 block font-serif mt-0.5">
+                          <span className="text-[10px] text-stone-600 block mt-0.5">
                             <ColorIndicator color={v.color} dotClassName="w-2.5 h-2.5" />
                           </span>
                         )}
 
-                        <div className="flex items-center justify-between mt-1 pt-1 border-t border-gold-400/10">
-                          <span className="text-xs font-serif font-semibold text-gold-300">
-                            ฿{v.price.toLocaleString()}
-                          </span>
-                          <span
-                            className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                              isOutOfStock
-                                ? 'bg-red-950 text-red-400'
-                                : v.stockQuantity <= 3
-                                ? 'bg-sky-950 text-sky-300'
-                                : 'bg-emerald-950 text-emerald-300'
-                            }`}
-                          >
-                            {isOutOfStock ? 'สินค้าหมด' : `คงเหลือ ${v.stockQuantity}`}
+                        <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-stone-100 text-[11px]">
+                          <span className="font-serif text-[#141312]">฿{v.price.toLocaleString()}</span>
+                          <span className={isOutOfStock ? 'text-stone-400' : 'text-[#8C703E]'}>
+                            {isOutOfStock ? 'หมด' : `มี ${v.stockQuantity}`}
                           </span>
                         </div>
                       </button>
@@ -375,37 +347,26 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                 </div>
               </div>
 
-              {/* Quantity Picker & Pricing Summary */}
-              <div className="pt-2 flex items-center justify-between bg-dubai-black/60 p-3 rounded-xl border border-gold-400/20">
-                <div>
-                  <span className="text-[11px] text-gray-400 block">ราคาสินค้า (ตัวเลือกที่เลือก):</span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-serif font-extrabold text-gold-400">
-                      ฿{(selectedVariant.price * quantity).toLocaleString()}
-                    </span>
-                    {selectedVariant.originalPrice && (
-                      <span className="text-xs text-gray-400 line-through">
-                        ฿{(selectedVariant.originalPrice * quantity).toLocaleString()}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center border border-gold-400/40 rounded-lg overflow-hidden bg-dubai-dark">
+              {/* Quantity Selector */}
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-xs text-stone-600">จำนวนที่ต้องการ:</span>
+                <div className="flex items-center border border-stone-300 bg-white">
                   <button
+                    type="button"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     disabled={quantity <= 1}
-                    className="px-3 py-1.5 text-gold-400 hover:bg-gold-500/20 transition text-sm font-bold"
+                    className="px-3.5 py-1.5 text-sm text-[#141312] hover:bg-stone-100 disabled:opacity-40 transition cursor-pointer"
                   >
                     -
                   </button>
-                  <span className="px-3 py-1.5 text-xs font-bold text-white">
+                  <span className="px-4 py-1.5 text-xs font-medium text-[#141312] border-x border-stone-200">
                     {quantity}
                   </span>
                   <button
+                    type="button"
                     onClick={() => setQuantity(Math.min(selectedVariant.stockQuantity, quantity + 1))}
                     disabled={quantity >= selectedVariant.stockQuantity}
-                    className="px-3 py-1.5 text-gold-400 hover:bg-gold-500/20 transition text-sm font-bold"
+                    className="px-3.5 py-1.5 text-sm text-[#141312] hover:bg-stone-100 disabled:opacity-40 transition cursor-pointer"
                   >
                     +
                   </button>
@@ -414,125 +375,107 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
 
             </div>
 
-            {/* Action Buttons */}
-            <div className="space-y-2 pt-2">
+            {/* Primary CTA */}
+            <div className="space-y-3 pt-4 border-t border-stone-200">
               <button
+                type="button"
                 disabled={selectedVariant.stockQuantity <= 0}
                 onClick={handleAddToCart}
-                className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-lg ${
+                className={`w-full py-4 text-xs tracking-[0.2em] uppercase font-medium transition flex items-center justify-center gap-2 ${
                   addedSuccess
-                    ? 'bg-emerald-600 text-white'
+                    ? 'bg-emerald-800 text-white'
                     : selectedVariant.stockQuantity > 0
-                    ? 'bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-500 text-stone-950 font-black hover:shadow-gold-strong shadow-gold-glow cursor-pointer'
-                    : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                    ? 'bg-[#141312] hover:bg-[#292624] text-white cursor-pointer'
+                    : 'bg-stone-200 text-stone-500 cursor-not-allowed'
                 }`}
               >
                 {addedSuccess ? (
                   <>
-                    <Check className="w-5 h-5" />
-                    <span>เพิ่มเข้าตะกร้าสินค้าสำเร็จ!</span>
+                    <Check className="w-4 h-4" />
+                    <span>เพิ่มลงในถุงช็อปปิ้งแล้ว</span>
                   </>
                 ) : selectedVariant.stockQuantity > 0 ? (
-                  <>
-                    <ShoppingBag className="w-5 h-5" />
-                    <span>เพิ่มเข้าตะกร้าสั่งซื้อ (฿{(selectedVariant.price * quantity).toLocaleString()})</span>
-                  </>
+                  <span>เพิ่มลงในถุงช็อปปิ้ง — ฿{(selectedVariant.price * quantity).toLocaleString()}</span>
                 ) : (
                   <>
-                    <AlertCircle className="w-5 h-5" />
-                    <span>สินค้าตัวเลือกนี้หมดชั่วคราว</span>
+                    <AlertCircle className="w-4 h-4" />
+                    <span>สินค้าหมดชั่วคราว</span>
                   </>
                 )}
               </button>
 
-              <div className="flex items-center justify-center gap-4 text-[11px] text-gold-300/70 pt-1">
-                <span className="flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-gold-400" /> นำเข้าดูไบ 100%
+              <div className="flex items-center justify-center gap-6 text-[11px] text-stone-500 pt-1">
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#8C703E]" /> สินค้านำเข้าจากดูไบ UAE
                 </span>
-                <span className="flex items-center gap-1">
-                  <Truck className="w-3.5 h-3.5 text-gold-400" /> จัดส่งฟรีเมื่อครบ 2,000.-
+                <span className="flex items-center gap-1.5">
+                  <Truck className="w-3.5 h-3.5 text-[#8C703E]" /> จัดส่งฟรีเมื่อช็อปครบ ฿2,000
                 </span>
               </div>
             </div>
 
           </div>
-
         </div>
 
-        {/* Prominent Bottom Close Button Bar for Mobile & Desktop */}
-        <div className="p-3.5 bg-dubai-black/95 border-t-2 border-gold-400/30 flex items-center justify-center">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-            onTouchEnd={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-            className="w-full sm:w-auto px-8 py-2.5 bg-dubai-black hover:bg-gold-500 hover:text-stone-950 text-gold-400 border border-gold-400/50 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg cursor-pointer active:scale-95 touch-manipulation"
-          >
-            <X className="w-5 h-5 text-gold-400 hover:text-stone-950" />
-            <span>✕ ปิดหน้าต่างสินค้า (กลับสู่หน้าหลัก)</span>
-          </button>
-        </div>
-
-        {/* Size Guide Modal Overlay */}
+        {/* Size Guide Overlay */}
         {showSizeGuide && (
-          <div className="absolute inset-0 bg-dubai-black/95 z-30 p-6 overflow-y-auto flex flex-col justify-between">
+          <div className="absolute inset-0 bg-white z-30 p-6 sm:p-10 overflow-y-auto flex flex-col justify-between">
             <div>
-              <div className="flex items-center justify-between border-b border-gold-400/30 pb-3 mb-4">
-                <h3 className="font-serif text-lg font-bold text-gold-400 flex items-center gap-2">
-                  <Ruler className="w-5 h-5" />
-                  <span>ตารางเทียบขนาดมาตรฐานชุดอาบายะห์ (Standard Abaya Size Chart)</span>
-                </h3>
+              <div className="flex items-center justify-between border-b border-stone-200 pb-4 mb-6">
+                <div>
+                  <p className="text-[10px] font-serif tracking-[0.22em] uppercase text-[#8C703E]">
+                    SIZE SPECIFICATIONS
+                  </p>
+                  <h3 className="font-serif text-lg sm:text-xl text-[#141312] mt-1">
+                    ตารางเทียบขนาดมาตรฐานชุดอาบายะห์ดูไบ
+                  </h3>
+                </div>
                 <button
                   onClick={() => setShowSizeGuide(false)}
-                  className="text-gold-400 hover:text-white p-1"
+                  className="text-stone-500 hover:text-[#141312] p-2 border border-stone-200"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <p className="text-xs text-gray-300 mb-4">
-                ชุดอาบายะห์เน้นการสวมใส่ที่พริ้วไหว สบาย ไม่รัดรูป ขนาดไซส์อิงตามความสูงและรอบอกเป็นหลัก:
+              <p className="text-xs text-stone-600 mb-6">
+                ขนาดของชุดอาบายะห์ดูไบวัดจากความยาวชุดเป็นนิ้ว (52–58) โดยอ้างอิงตามส่วนสูงของผู้สวมใส่เป็นหลัก:
               </p>
 
-              <div className="overflow-x-auto border border-gold-400/30 rounded-xl mb-4">
-                <table className="w-full text-xs text-left text-gray-200">
-                  <thead className="bg-dubai-black text-gold-400 font-serif">
+              <div className="overflow-x-auto border border-stone-200">
+                <table className="w-full text-xs text-left text-[#141312]">
+                  <thead className="bg-[#FAF9F6] text-stone-600 font-serif border-b border-stone-200">
                     <tr>
-                      <th className="p-3 border-b border-gold-400/30">ไซส์ดูไบ (Size)</th>
-                      <th className="p-3 border-b border-gold-400/30">ความสูงที่แนะนำ (Height)</th>
-                      <th className="p-3 border-b border-gold-400/30">ความยาวชุด (Length)</th>
-                      <th className="p-3 border-b border-gold-400/30">รอบอกที่แนะนำ (Bust)</th>
+                      <th className="p-3.5 font-medium">ขนาด (Size)</th>
+                      <th className="p-3.5 font-medium">ส่วนสูงที่แนะนำ</th>
+                      <th className="p-3.5 font-medium">ความยาวชุด</th>
+                      <th className="p-3.5 font-medium">รอบอก</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gold-400/10 font-mono">
-                    <tr className="bg-gold-500/10">
-                      <td className="p-3 font-bold text-gold-300">Size 52</td>
-                      <td className="p-3 font-bold text-emerald-400">~150 - 155 ซม.</td>
-                      <td className="p-3">52 นิ้ว (132 ซม.)</td>
-                      <td className="p-3">36" - 38"</td>
+                  <tbody className="divide-y divide-stone-200">
+                    <tr>
+                      <td className="p-3.5 font-medium">Size 52</td>
+                      <td className="p-3.5">150 – 155 ซม.</td>
+                      <td className="p-3.5">52 นิ้ว (132 ซม.)</td>
+                      <td className="p-3.5">38 – 42 นิ้ว</td>
                     </tr>
                     <tr>
-                      <td className="p-3 font-bold text-gold-300">Size 54</td>
-                      <td className="p-3 font-bold text-emerald-400">~155 - 160 ซม.</td>
-                      <td className="p-3">54 นิ้ว (137 ซม.)</td>
-                      <td className="p-3">38" - 40"</td>
+                      <td className="p-3.5 font-medium">Size 54</td>
+                      <td className="p-3.5">156 – 160 ซม.</td>
+                      <td className="p-3.5">54 นิ้ว (137 ซม.)</td>
+                      <td className="p-3.5">40 – 44 นิ้ว</td>
                     </tr>
                     <tr>
-                      <td className="p-3 font-bold text-gold-300">Size 56</td>
-                      <td className="p-3 font-bold text-emerald-400">~160 - 165 ซม.</td>
-                      <td className="p-3">56 นิ้ว (142 ซม.)</td>
-                      <td className="p-3">40" - 42"</td>
+                      <td className="p-3.5 font-medium">Size 56</td>
+                      <td className="p-3.5">161 – 166 ซม.</td>
+                      <td className="p-3.5">56 นิ้ว (142 ซม.)</td>
+                      <td className="p-3.5">42 – 46 นิ้ว</td>
                     </tr>
                     <tr>
-                      <td className="p-3 font-bold text-gold-300">Size 58</td>
-                      <td className="p-3 font-bold text-emerald-400">~165 - 170 ซม.</td>
-                      <td className="p-3">58 นิ้ว (147 ซม.)</td>
-                      <td className="p-3">42" - 44"</td>
+                      <td className="p-3.5 font-medium">Size 58</td>
+                      <td className="p-3.5">167 – 173 ซม.</td>
+                      <td className="p-3.5">58 นิ้ว (147 ซม.)</td>
+                      <td className="p-3.5">44 – 48 นิ้ว</td>
                     </tr>
                   </tbody>
                 </table>
@@ -541,77 +484,58 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
 
             <button
               onClick={() => setShowSizeGuide(false)}
-              className="w-full py-2.5 bg-gold-500 text-dubai-black font-bold text-xs rounded-xl"
+              className="w-full py-3.5 bg-[#141312] text-white text-xs tracking-[0.2em] uppercase mt-6 cursor-pointer"
             >
-              เข้าใจแล้ว ปิดตารางไซส์
+              ปิดตารางเทียบขนาด
             </button>
           </div>
         )}
-
       </div>
 
-      {/* High-Resolution Fullscreen Image Zoom Lightbox Modal */}
+      {/* Fullscreen Lightbox */}
       {isZoomOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col justify-between p-4">
-          {/* Top Bar */}
-          <div className="flex items-center justify-between text-white border-b border-gold-400/30 pb-3 z-10">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-serif font-bold text-gold-400">
-                🔍 {product.title}
-              </span>
-              {product.images.length > 1 && (
-                <span className="text-xs text-gray-300 bg-dubai-black px-2.5 py-0.5 rounded-full border border-gold-400/30">
-                  รูปภาพที่ {product.images.indexOf(selectedImage) + 1} / {product.images.length}
-                </span>
-              )}
-            </div>
+        <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col justify-between p-4">
+          <div className="flex items-center justify-between text-white border-b border-white/15 pb-3 z-10">
+            <span className="text-xs sm:text-sm font-serif tracking-wide text-stone-200">
+              {product.title}
+            </span>
 
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setZoomScale((s) => Math.min(s + 0.5, 3.5))}
-                className="p-2 bg-dubai-black hover:bg-gold-500 hover:text-stone-950 text-gold-400 rounded-full border border-gold-400/40 transition cursor-pointer"
-                title="ซูมขยาย (+)"
+                className="p-2 bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+                title="ซูมเข้า"
               >
-                <ZoomIn className="w-5 h-5" />
+                <ZoomIn className="w-4 h-4" />
               </button>
-
               <button
                 onClick={() => setZoomScale((s) => Math.max(s - 0.5, 1))}
-                className="p-2 bg-dubai-black hover:bg-gold-500 hover:text-stone-950 text-gold-400 rounded-full border border-gold-400/40 transition cursor-pointer"
-                title="ซูมลด (-)"
+                className="p-2 bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+                title="ซูมออก"
               >
-                <ZoomOut className="w-5 h-5" />
+                <ZoomOut className="w-4 h-4" />
               </button>
-
               <button
                 onClick={() => setZoomScale(1)}
-                className="p-2 bg-dubai-black hover:bg-gold-500 hover:text-stone-950 text-gold-400 rounded-full border border-gold-400/40 transition cursor-pointer"
-                title="รีเซ็ตขนาด (100%)"
+                className="p-2 bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+                title="รีเซ็ต"
               >
-                <RotateCcw className="w-5 h-5" />
+                <RotateCcw className="w-4 h-4" />
               </button>
-
               <button
                 onClick={() => {
                   setIsZoomOpen(false);
                   setZoomScale(1);
                 }}
-                className="p-2 bg-red-900/80 hover:bg-red-600 text-white rounded-full border border-red-500/40 transition cursor-pointer ml-2"
-                title="ปิดหน้าต่างซูม"
+                className="p-2 bg-white text-[#141312] transition cursor-pointer ml-2"
+                title="ปิด"
               >
-                <X className="w-6 h-6" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Main Zoom Canvas Area */}
           <div className="relative flex-1 flex items-center justify-center overflow-hidden my-2">
-            {/* Spot Focus Instruction Badge */}
-            <div className="absolute top-2 z-20 bg-dubai-black/80 text-gold-300 text-xs px-3 py-1 rounded-full border border-gold-400/30 backdrop-blur-xs shadow-md">
-              🔬 เลื่อน pointer/นิ้ว ส่องขยายจุดเฉพาะ (Spot Focus) | คลิกที่ภาพเพื่อซูมขยาย 2.5x-3.5x
-            </div>
-
-            {/* Prev Arrow */}
             {product.images.length > 1 && (
               <button
                 onClick={() => {
@@ -619,24 +543,17 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                   const prevIdx = currentIdx > 0 ? currentIdx - 1 : product.images.length - 1;
                   setSelectedImage(product.images[prevIdx]);
                 }}
-                className="absolute left-3 z-20 p-3 bg-dubai-black/80 hover:bg-gold-500 hover:text-stone-950 text-gold-400 rounded-full border border-gold-400/40 transition shadow-xl cursor-pointer"
+                className="absolute left-3 z-20 p-3 bg-white/10 hover:bg-white/25 text-white transition cursor-pointer"
               >
-                <ChevronLeft className="w-6 h-6" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
             )}
 
-            {/* Zoomed Image Container with Dynamic Spot Focus Origin */}
             <div
               className="w-full h-full flex items-center justify-center overflow-auto p-2 cursor-crosshair select-none"
               onMouseMove={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 handleFullscreenPointerMove(e.clientX, e.clientY, rect);
-              }}
-              onTouchMove={(e) => {
-                if (e.touches[0]) {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  handleFullscreenPointerMove(e.touches[0].clientX, e.touches[0].clientY, rect);
-                }
               }}
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -651,11 +568,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                   transform: `scale(${zoomScale})`,
                   transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
                 }}
-                className="max-h-[82vh] max-w-[92vw] object-contain transition-transform duration-200 shadow-2xl rounded-lg"
+                className="max-h-[82vh] max-w-[92vw] object-contain transition-transform duration-200"
               />
             </div>
 
-            {/* Next Arrow */}
             {product.images.length > 1 && (
               <button
                 onClick={() => {
@@ -663,33 +579,16 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product, onClose }) 
                   const nextIdx = currentIdx < product.images.length - 1 ? currentIdx + 1 : 0;
                   setSelectedImage(product.images[nextIdx]);
                 }}
-                className="absolute right-3 z-20 p-3 bg-dubai-black/80 hover:bg-gold-500 hover:text-stone-950 text-gold-400 rounded-full border border-gold-400/40 transition shadow-xl cursor-pointer"
+                className="absolute right-3 z-20 p-3 bg-white/10 hover:bg-white/25 text-white transition cursor-pointer"
               >
-                <ChevronRight className="w-6 h-6" />
+                <ChevronRight className="w-5 h-5" />
               </button>
             )}
           </div>
-
-          {/* Bottom Thumbnail Selector Bar inside Lightbox */}
-          {product.images.length > 1 && (
-            <div className="flex justify-center gap-2 overflow-x-auto py-2 border-t border-gold-400/20 z-10">
-              {product.images.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setSelectedImage(img)}
-                  className={`w-14 h-16 rounded-lg overflow-hidden border-2 shrink-0 transition ${
-                    selectedImage === img ? 'border-gold-400 scale-105 ring-2 ring-gold-400' : 'border-gold-400/20 opacity-60'
-                  }`}
-                >
-                  <img src={img} alt={`zoom-thumb-${idx}`} className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       )}
-
     </div>,
     document.body
   );
 };
+

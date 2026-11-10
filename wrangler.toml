@@ -2,6 +2,11 @@ name = "hudaabaya"
 pages_build_output_dir = "out"
 compatibility_date = "2024-09-01"
 
+[[d1_databases]]
+binding = "DB"
+database_name = "smartstore-db"
+database_id = "255731b5-f7e3-4a8a-9f46-1f30ce15c70b"
+
 [[kv_namespaces]]
 binding = "HUDA_KV"
 id = "fca4baa2f4b44ace9bc404df8161c7c3"

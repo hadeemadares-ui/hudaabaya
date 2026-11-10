@@ -3,11 +3,15 @@ import { Product, Order, StoreSettings, RealtimeSyncPayload } from '../types';
 export function getBaseApiUrl(): string {
   if (typeof window !== 'undefined') {
     const origin = window.location.origin;
-    // In Capacitor or standalone mobile wrappers, origin is capacitor:// or file:// or empty or localhost without standard Next dev port
+    // Always connect to Cloudflare production API when running in mobile app (Capacitor/file)
+    // or when running locally on PC (localhost / 127.0.0.1 / local network IP),
+    // ensuring computer and mobile phone are ALWAYS on the exact same live database!
     if (
       origin.startsWith('capacitor://') ||
       origin.startsWith('file://') ||
-      (origin.includes('localhost') && window.location.port !== '3000') ||
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1') ||
+      origin.includes('192.168.') ||
       Boolean((window as any).Capacitor?.isNativePlatform?.())
     ) {
       return 'https://hudaabaya.pages.dev';
@@ -164,10 +168,11 @@ export async function saveCloudSettings(settings: Partial<StoreSettings>): Promi
 }
 
 // Master Real-Time Multi-Device Sync API
-export async function fetchRealtimeSync(clientVersion: number = 0): Promise<RealtimeSyncPayload | null> {
+export async function fetchRealtimeSync(clientVersion: number = 0, force: boolean = false): Promise<RealtimeSyncPayload | null> {
   try {
     const base = getBaseApiUrl();
-    const res = await fetch(`${base}/api/sync?v=${clientVersion}&_t=${Date.now()}`, { cache: 'no-store' });
+    const forceQuery = force ? '&force=1' : '';
+    const res = await fetch(`${base}/api/sync?v=${clientVersion}${forceQuery}&_t=${Date.now()}`, { cache: 'no-store' });
     if (!res.ok) return null;
     const data = await res.json();
     if (data?.success) {

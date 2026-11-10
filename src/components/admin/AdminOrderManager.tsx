@@ -1,17 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Package, Truck, CheckCircle, Clock, Eye, EyeOff, Edit3, X, ExternalLink, ShieldCheck, Trash2, Lock, KeyRound, AlertCircle } from 'lucide-react';
+import { Package, Truck, CheckCircle, Clock, Eye, EyeOff, Edit3, X, ExternalLink, ShieldCheck, Trash2, Lock, KeyRound, AlertCircle, RotateCcw, Smartphone, Laptop, Phone, ShoppingBag, Printer } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Order } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
+import { formatThaiDateTime } from '../../utils/dateUtils';
+import { OrderShippingLabelModal } from './OrderShippingLabelModal';
 
 export const AdminOrderManager: React.FC = () => {
-  const { orders, updateOrderStatus, updateOrderPaymentStatus, deleteOrder, verifyAdminPasscode } = useShop();
+  const { orders, updateOrderStatus, updateOrderPaymentStatus, cancelAndRestockOrder, deleteOrder, verifyAdminPasscode, verifySupervisorPin, storeSettings } = useShop();
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [shippingLabelOrder, setShippingLabelOrder] = useState<Order | null>(null);
   const [trackingInput, setTrackingInput] = useState('');
   const [courierInput, setCourierInput] = useState('Flash Express');
+  const [viewMode, setViewMode] = useState<'auto' | 'cards' | 'table'>('auto');
 
   // Admin PIN verification modal for deleting order
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
@@ -35,12 +39,67 @@ export const AdminOrderManager: React.FC = () => {
       return;
     }
 
-    deleteOrder(orderToDelete.id);
+    deleteOrder(orderToDelete.id, true);
     alert(`ลบคำสั่งซื้อ #${orderToDelete.id} เรียบร้อยแล้ว!`);
     setOrderToDelete(null);
     setAdminPinInput('');
     setPinError('');
     setShowAdminPin(false);
+  };
+
+  // Return & Restock Modal states
+  const [orderToReturn, setOrderToReturn] = useState<Order | null>(null);
+  const [returnReason, setReturnReason] = useState('ลูกค้าขอคืนสินค้า');
+  const [refundChecked, setRefundChecked] = useState(true);
+  const [returnAdminPin, setReturnAdminPin] = useState('');
+  const [showReturnPin, setShowReturnPin] = useState(false);
+  const [returnPinError, setReturnPinError] = useState('');
+  const [isProcessingReturn, setIsProcessingReturn] = useState(false);
+
+  const handleConfirmReturnAndRestock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!orderToReturn) return;
+
+    const trimmedPin = returnAdminPin.trim();
+    if (!trimmedPin) {
+      setReturnPinError('กรุณากรอกรหัสผ่าน Admin เพื่อยืนยันการคืนสินค้า');
+      return;
+    }
+
+    const isValid = verifyAdminPasscode(trimmedPin) || (verifySupervisorPin ? verifySupervisorPin(trimmedPin).valid : false);
+    if (!isValid) {
+      setReturnPinError('รหัสผ่านไม่ถูกต้อง (กรุณากรอกรหัส Admin หรือ PIN พนักงานที่มีสิทธิ์)');
+      return;
+    }
+
+    setIsProcessingReturn(true);
+    try {
+      const res = await cancelAndRestockOrder(orderToReturn.id, {
+        reason: returnReason.trim() || 'ลูกค้าขอคืนสินค้า',
+        refundPayment: refundChecked,
+      });
+
+      if (res.success) {
+        alert(res.message);
+        if (selectedOrder && selectedOrder.id === orderToReturn.id) {
+          setSelectedOrder({
+            ...selectedOrder,
+            orderStatus: 'cancelled',
+            paymentStatus: refundChecked ? 'refunded' : selectedOrder.paymentStatus,
+            cancellationReason: returnReason.trim() || 'ลูกค้าขอคืนสินค้า',
+          });
+        }
+        setOrderToReturn(null);
+        setReturnReason('ลูกค้าขอคืนสินค้า');
+        setReturnAdminPin('');
+        setReturnPinError('');
+        setShowReturnPin(false);
+      } else {
+        alert(res.message);
+      }
+    } finally {
+      setIsProcessingReturn(false);
+    }
   };
 
   const handleUpdateTracking = (orderId: string) => {
@@ -67,120 +126,418 @@ export const AdminOrderManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Orders Table */}
-      <div className="bg-stone-950 border-2 border-amber-400/40 rounded-2xl overflow-hidden shadow-2xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left text-white">
-            <thead className="bg-stone-900 text-amber-300 font-serif border-b-2 border-amber-400/50 text-xs sm:text-sm">
-              <tr>
-                <th className="p-3.5 font-extrabold">เลขคำสั่งซื้อ</th>
-                <th className="p-3.5 font-extrabold">ลูกค้า</th>
-                <th className="p-3.5 font-extrabold">รายการสินค้า & ไซส์</th>
-                <th className="p-3.5 font-extrabold">ยอดรวม</th>
-                <th className="p-3.5 font-extrabold">การชำระเงิน</th>
-                <th className="p-3.5 font-extrabold">สถานะออเดอร์</th>
-                <th className="p-3.5 text-center font-extrabold">การจัดการ</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-amber-400/20">
-              {orders.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="p-10 text-center text-amber-200 font-extrabold text-sm">
-                    ยังไม่มีรายการสั่งซื้อเข้ามา (ยอดขาย ฿0)
-                  </td>
-                </tr>
-              ) : (
-                orders.map((order) => (
-                  <tr key={order.id} className="hover:bg-stone-900/60 transition">
-                    <td className="p-3.5 font-mono font-extrabold text-amber-300 text-xs sm:text-sm">
-                      {order.id}
-                      <span className="block text-[11px] text-stone-200 font-sans font-bold mt-0.5">
-                        {new Date(order.createdAt).toLocaleDateString('th-TH')}
-                      </span>
-                    </td>
+      {/* View Mode Switcher & Stats Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-stone-900 p-3 rounded-2xl border-2 border-amber-400/40 shadow-md">
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 font-extrabold text-xs">
+            คำสั่งซื้อทั้งหมด ({orders.length} รายการ)
+          </span>
+          <span className="hidden sm:inline text-stone-400 text-xs font-bold">
+            • ปรับการแสดงผลให้ดูง่ายทั้งบนมือถือและคอมพิวเตอร์
+          </span>
+        </div>
 
-                    <td className="p-3.5">
-                      <strong className="text-white block font-extrabold text-xs sm:text-sm">{order.customerName}</strong>
-                      <span className="text-amber-200 font-bold font-mono text-xs">{order.customerPhone}</span>
-                    </td>
-
-                    <td className="p-3.5 max-w-xs space-y-1">
-                      {order.items.map((item, idx) => (
-                        <div key={idx} className="truncate text-stone-100 font-bold text-xs">
-                          • {item.productTitle} <span className="text-amber-300 font-extrabold">({item.variantName})</span> x{item.quantity}
-                        </div>
-                      ))}
-                    </td>
-
-                    <td className="p-3.5 font-serif font-extrabold text-amber-300 text-sm sm:text-base">
-                      ฿{order.netAmount.toLocaleString()}
-                    </td>
-
-                    <td className="p-3.5">
-                      <div className="space-y-1">
-                        <span className="px-2.5 py-1 rounded-lg bg-stone-900 text-xs text-amber-300 font-mono uppercase font-extrabold border border-amber-400/40 inline-block">
-                          {order.paymentMethod}
-                        </span>
-                        <div>
-                          {order.paymentStatus === 'paid' && (
-                            <span className="text-xs text-emerald-400 font-extrabold bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500/50">ชำระแล้ว</span>
-                          )}
-                          {order.paymentStatus === 'slip_uploaded' && (
-                            <span className="text-xs text-amber-300 font-extrabold bg-amber-950 px-2 py-0.5 rounded border border-amber-500/50 animate-pulse">แนบสลิปแล้ว/รอตรวจ</span>
-                          )}
-                          {order.paymentStatus === 'pending' && (
-                            <span className="text-xs text-cyan-300 font-extrabold bg-cyan-950 px-2 py-0.5 rounded border border-cyan-500/50">รอชำระเงิน/COD</span>
-                          )}
-                          {order.paymentStatus === 'rejected' && (
-                            <span className="text-xs text-red-300 font-extrabold bg-red-950 px-2 py-0.5 rounded border border-red-500/50">ปฏิเสธสลิป</span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="p-3.5">
-                      <span className={`px-3 py-1 rounded-full text-xs font-extrabold inline-block ${
-                        order.orderStatus === 'shipped'
-                          ? 'bg-emerald-950 text-emerald-300 border-2 border-emerald-500/60'
-                          : 'bg-amber-950 text-amber-300 border-2 border-amber-500/60'
-                      }`}>
-                        {order.orderStatus}
-                      </span>
-                    </td>
-
-                    <td className="p-3.5 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setTrackingInput(order.trackingNumber || '');
-                            setCourierInput(order.courier || 'Flash Express');
-                          }}
-                          className="px-3 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-stone-950 font-extrabold rounded-xl text-xs hover:scale-105 transition shadow cursor-pointer border border-amber-300"
-                        >
-                          รายละเอียด / อัปเดต
-                        </button>
-                        <button
-                          onClick={() => {
-                            setOrderToDelete(order);
-                            setAdminPinInput('');
-                            setShowAdminPin(false);
-                            setPinError('');
-                          }}
-                          className="p-2 bg-red-950 border-2 border-red-600/70 text-red-200 hover:text-white rounded-xl text-xs transition cursor-pointer"
-                          title="ลบเฉพาะคำสั่งซื้อนี้ออกจากระบบ (ต้องใส่รหัส Admin)"
-                        >
-                          <Trash2 className="w-4 h-4 text-red-400" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        <div className="flex items-center gap-1 bg-stone-950 p-1 rounded-xl border border-amber-400/30">
+          <button
+            type="button"
+            onClick={() => setViewMode('cards')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
+              viewMode === 'cards' || viewMode === 'auto'
+                ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-stone-950 shadow font-extrabold md:bg-none md:text-stone-300 md:hover:text-white'
+                : 'text-stone-300 hover:text-white'
+            }`}
+            title="แสดงแบบการ์ด: ข้อมูลครบทุกจุด ไม่ต้องเลื่อนจอซ้าย-ขวา เหมาะกับมือถือ"
+          >
+            <Smartphone className="w-3.5 h-3.5" />
+            <span>📱 การ์ดมือถือ (เห็นครบ 100%)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('table')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
+              viewMode === 'table'
+                ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-stone-950 shadow font-extrabold'
+                : 'text-stone-300 hover:text-white'
+            }`}
+            title="แสดงแบบตารางกว้าง: เลื่อนซ้าย-ขวาได้เหมือนในคอมพิวเตอร์"
+          >
+            <Laptop className="w-3.5 h-3.5" />
+            <span>💻 ตารางเต็ม (แบบในคอม)</span>
+          </button>
         </div>
       </div>
+
+      {/* 📱 MOBILE CARD VIEW (Active by default on mobile or when 'cards' is selected) */}
+      {(viewMode === 'cards' || viewMode === 'auto') && (
+        <div className={`${viewMode === 'auto' ? 'block md:hidden' : 'block'} space-y-3.5`}>
+          {orders.length === 0 ? (
+            <div className="bg-stone-950 border-2 border-amber-400/40 rounded-2xl p-10 text-center text-amber-200 font-extrabold text-sm shadow-xl">
+              ยังไม่มีรายการสั่งซื้อเข้ามา (ยอดขาย ฿0)
+            </div>
+          ) : (
+            orders.map((order) => (
+              <div
+                key={order.id}
+                className="bg-stone-950 border-2 border-amber-400/40 hover:border-amber-400 rounded-2xl p-4 shadow-xl space-y-3 transition"
+              >
+                {/* Card Header: Order ID, Date & Payment Status Badge */}
+                <div className="flex items-start justify-between gap-2 border-b border-amber-400/20 pb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-black text-amber-300 text-sm sm:text-base">
+                        #{order.id}
+                      </span>
+                      {order.paymentStatus === 'paid' && (
+                        <span className="text-[11px] text-emerald-300 font-black bg-emerald-950 px-2.5 py-0.5 rounded-full border border-emerald-500/50">
+                          ชำระแล้ว
+                        </span>
+                      )}
+                      {order.paymentStatus === 'slip_uploaded' && (
+                        <span className="text-[11px] text-amber-200 font-black bg-amber-950 px-2.5 py-0.5 rounded-full border border-amber-400/60 animate-pulse">
+                          แนบสลิป/รอตรวจ
+                        </span>
+                      )}
+                      {order.paymentStatus === 'pending' && (
+                        <span className="text-[11px] text-cyan-300 font-black bg-cyan-950 px-2.5 py-0.5 rounded-full border border-cyan-500/50">
+                          รอชำระเงิน/COD
+                        </span>
+                      )}
+                      {order.paymentStatus === 'rejected' && (
+                        <span className="text-[11px] text-red-300 font-black bg-red-950 px-2.5 py-0.5 rounded-full border border-red-500/50">
+                          ปฏิเสธสลิป
+                        </span>
+                      )}
+                      {order.paymentStatus === 'refunded' && (
+                        <span className="text-[11px] text-rose-300 font-black bg-rose-950 px-2.5 py-0.5 rounded-full border border-rose-500/50">
+                          คืนเงินแล้ว
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-stone-200 font-sans font-bold mt-1 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span>{formatThaiDateTime(order.createdAt)}</span>
+                    </div>
+                  </div>
+
+                  {/* Order delivery status badge */}
+                  <div className="text-right shrink-0">
+                    {order.orderStatus === 'shipped' && (
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-black inline-block bg-emerald-950 text-emerald-300 border border-emerald-500/60">
+                        จัดส่งแล้ว
+                      </span>
+                    )}
+                    {order.orderStatus === 'delivered' && (
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-black inline-block bg-teal-950 text-teal-300 border border-teal-500/60">
+                        จัดส่งสำเร็จ
+                      </span>
+                    )}
+                    {order.orderStatus === 'cancelled' && (
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-black inline-flex items-center gap-1 bg-rose-950 text-rose-300 border border-rose-500/70">
+                        <RotateCcw className="w-3 h-3 text-rose-400" />
+                        <span>ยกเลิก/คืนสต๊อก</span>
+                      </span>
+                    )}
+                    {order.orderStatus !== 'shipped' && order.orderStatus !== 'delivered' && order.orderStatus !== 'cancelled' && (
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-black inline-block bg-amber-950 text-amber-300 border border-amber-500/60">
+                        {order.orderStatus}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Customer Info Box */}
+                <div className="bg-stone-900/80 rounded-xl p-3 border border-amber-400/20 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-amber-400 font-black">👤 ลูกค้า:</span>
+                    <strong className="text-white font-extrabold text-sm">{order.customerName}</strong>
+                  </div>
+                  {order.customerPhone && (
+                    <a
+                      href={`tel:${order.customerPhone}`}
+                      className="text-amber-300 font-mono font-black flex items-center gap-1 hover:underline bg-stone-950 px-2 py-1 rounded-lg border border-amber-400/30"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{order.customerPhone}</span>
+                    </a>
+                  )}
+                </div>
+
+                {/* Full Items List (No truncation - shows complete data) */}
+                <div className="space-y-1.5">
+                  <div className="text-[11px] text-amber-300 font-black flex items-center gap-1">
+                    <ShoppingBag className="w-3.5 h-3.5 text-amber-400" />
+                    <span>รายการสินค้า ({order.items.length} รายการ):</span>
+                  </div>
+                  <div className="bg-stone-900/50 rounded-xl p-2.5 border border-stone-800 space-y-1.5">
+                    {order.items.map((item, idx) => (
+                      <div key={idx} className="flex justify-between items-start gap-2 text-xs border-b border-stone-800/80 pb-1.5 last:border-b-0 last:pb-0">
+                        <div className="text-stone-100 font-bold leading-snug">
+                          • {item.productTitle}{' '}
+                          <span className="text-amber-300 font-extrabold">({item.variantName})</span>
+                        </div>
+                        <div className="text-right whitespace-nowrap text-amber-200 font-black font-mono shrink-0">
+                          x{item.quantity}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Payment method & Total amount */}
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-amber-400/20">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-stone-300 font-bold">วิธีชำระ:</span>
+                    <span className="px-2 py-0.5 rounded-lg bg-stone-900 text-xs text-amber-300 font-mono uppercase font-black border border-amber-400/40">
+                      {order.paymentMethod}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs text-stone-400 mr-1.5 font-bold">ยอดสุทธิ:</span>
+                    <span className="font-serif font-black text-amber-300 text-lg">
+                      ฿{order.netAmount.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Action Buttons: Full touch-friendly targets */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedOrder(order);
+                        setTrackingInput(order.trackingNumber || '');
+                        setCourierInput(order.courier || 'Flash Express');
+                      }}
+                      className="py-2.5 px-3 bg-gradient-to-r from-amber-400 to-yellow-500 text-stone-950 font-black rounded-xl text-xs hover:scale-[1.01] transition shadow cursor-pointer border border-amber-300 flex items-center justify-center gap-1.5"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>รายละเอียด</span>
+                    </button>
+
+                    <button
+                      onClick={() => setShippingLabelOrder(order)}
+                      className="py-2.5 px-3 bg-white hover:bg-stone-100 text-stone-950 font-black rounded-xl text-xs transition shadow cursor-pointer border-2 border-amber-400 flex items-center justify-center gap-1.5"
+                      title="พิมพ์ใบปะหน้ากล่องพัสดุ (สติ๊กเกอร์ความร้อน)"
+                    >
+                      <Printer className="w-4 h-4 text-amber-700" />
+                      <span>🖨️ พิมพ์ใบปะหน้า</span>
+                    </button>
+                  </div>
+
+                  <div className="flex gap-2">
+                    {order.orderStatus !== 'cancelled' ? (
+                      <button
+                        onClick={() => {
+                          setOrderToReturn(order);
+                          setReturnReason('ลูกค้าขอคืนสินค้า');
+                          setRefundChecked(order.paymentStatus === 'paid' || order.paymentStatus === 'slip_uploaded');
+                          setReturnAdminPin('');
+                          setShowReturnPin(false);
+                          setPinError('');
+                        }}
+                        className="flex-1 py-2 px-2 bg-rose-950 hover:bg-rose-900 border-2 border-rose-500/70 text-rose-200 hover:text-white rounded-xl text-xs font-black transition shadow cursor-pointer flex items-center justify-center gap-1"
+                        title="ลูกค้าขอคืนสินค้า / ยกเลิกบิลขาย & ดึงสต๊อกคืนคลัง"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+                        <span>คืนของ/สต๊อก</span>
+                      </button>
+                    ) : (
+                      <div className="flex-1 py-2 px-2 bg-stone-900 border border-stone-700/60 text-stone-400 rounded-xl text-[11px] font-bold text-center flex items-center justify-center">
+                        คืนสต๊อกแล้ว
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        setOrderToDelete(order);
+                        setAdminPinInput('');
+                        setShowAdminPin(false);
+                        setPinError('');
+                      }}
+                      className="px-3 py-2 bg-red-950 border-2 border-red-600/70 text-red-200 hover:text-white rounded-xl text-xs transition cursor-pointer flex items-center justify-center"
+                      title="ลบเฉพาะคำสั่งซื้อนี้ออกจากระบบ"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-400" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* 💻 DESKTOP TABLE VIEW (Active on desktop or when 'table' is selected) */}
+      {(viewMode === 'table' || viewMode === 'auto') && (
+        <div className={`${viewMode === 'auto' ? 'hidden md:block' : 'block'} bg-stone-950 border-2 border-amber-400/40 rounded-2xl overflow-hidden shadow-2xl`}>
+          {/* Mobile Swipe Hint Banner */}
+          <div className="md:hidden bg-amber-400/10 border-b border-amber-400/30 px-3.5 py-2 text-[11px] text-amber-300 font-bold flex items-center justify-between">
+            <span>👉 ปัดหน้าจอซ้าย-ขวา เพื่อดูตาราง 7 คอลัมน์แบบเต็มเหมือนในคอม</span>
+            <span className="text-[10px] text-stone-400 font-mono">7 คอลัมน์</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[880px] text-xs text-left text-white">
+              <thead className="bg-stone-900 text-amber-300 font-serif border-b-2 border-amber-400/50 text-xs sm:text-sm">
+                <tr>
+                  <th className="p-3.5 font-extrabold">เลขคำสั่งซื้อ</th>
+                  <th className="p-3.5 font-extrabold">ลูกค้า</th>
+                  <th className="p-3.5 font-extrabold">รายการสินค้า & ไซส์</th>
+                  <th className="p-3.5 font-extrabold">ยอดรวม</th>
+                  <th className="p-3.5 font-extrabold">การชำระเงิน</th>
+                  <th className="p-3.5 font-extrabold">สถานะออเดอร์</th>
+                  <th className="p-3.5 text-center font-extrabold">การจัดการ</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-amber-400/20">
+                {orders.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-10 text-center text-amber-200 font-extrabold text-sm">
+                      ยังไม่มีรายการสั่งซื้อเข้ามา (ยอดขาย ฿0)
+                    </td>
+                  </tr>
+                ) : (
+                  orders.map((order) => (
+                    <tr key={order.id} className="hover:bg-stone-900/60 transition">
+                      <td className="p-3.5 font-mono font-extrabold text-amber-300 text-xs sm:text-sm">
+                        {order.id}
+                        <span className="block text-[11px] text-stone-200 font-sans font-bold mt-0.5 whitespace-nowrap">
+                          {formatThaiDateTime(order.createdAt)}
+                        </span>
+                      </td>
+
+                      <td className="p-3.5">
+                        <strong className="text-white block font-extrabold text-xs sm:text-sm">{order.customerName}</strong>
+                        <span className="text-amber-200 font-bold font-mono text-xs">{order.customerPhone}</span>
+                      </td>
+
+                      <td className="p-3.5 max-w-xs space-y-1">
+                        {order.items.map((item, idx) => (
+                          <div key={idx} className="text-stone-100 font-bold text-xs">
+                            • {item.productTitle} <span className="text-amber-300 font-extrabold">({item.variantName})</span> x{item.quantity}
+                          </div>
+                        ))}
+                      </td>
+
+                      <td className="p-3.5 font-serif font-extrabold text-amber-300 text-sm sm:text-base">
+                        ฿{order.netAmount.toLocaleString()}
+                      </td>
+
+                      <td className="p-3.5">
+                        <div className="space-y-1">
+                          <span className="px-2.5 py-1 rounded-lg bg-stone-900 text-xs text-amber-300 font-mono uppercase font-extrabold border border-amber-400/40 inline-block">
+                            {order.paymentMethod}
+                          </span>
+                          <div>
+                            {order.paymentStatus === 'paid' && (
+                              <span className="text-xs text-emerald-400 font-extrabold bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500/50">ชำระแล้ว</span>
+                            )}
+                            {order.paymentStatus === 'slip_uploaded' && (
+                              <span className="text-xs text-amber-300 font-extrabold bg-amber-950 px-2 py-0.5 rounded border border-amber-500/50 animate-pulse">แนบสลิปแล้ว/รอตรวจ</span>
+                            )}
+                            {order.paymentStatus === 'pending' && (
+                              <span className="text-xs text-cyan-300 font-extrabold bg-cyan-950 px-2 py-0.5 rounded border border-cyan-500/50">รอชำระเงิน/COD</span>
+                            )}
+                            {order.paymentStatus === 'rejected' && (
+                              <span className="text-xs text-red-300 font-extrabold bg-red-950 px-2 py-0.5 rounded border border-red-500/50">ปฏิเสธสลิป</span>
+                            )}
+                            {order.paymentStatus === 'refunded' && (
+                              <span className="text-xs text-rose-300 font-extrabold bg-rose-950 px-2 py-0.5 rounded border border-rose-500/50">คืนเงินแล้ว</span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="p-3.5">
+                        {order.orderStatus === 'shipped' && (
+                          <span className="px-3 py-1 rounded-full text-xs font-extrabold inline-block bg-emerald-950 text-emerald-300 border-2 border-emerald-500/60">
+                            จัดส่งแล้ว (shipped)
+                          </span>
+                        )}
+                        {order.orderStatus === 'delivered' && (
+                          <span className="px-3 py-1 rounded-full text-xs font-extrabold inline-block bg-teal-950 text-teal-300 border-2 border-teal-500/60">
+                            จัดส่งสำเร็จ (delivered)
+                          </span>
+                        )}
+                        {order.orderStatus === 'cancelled' && (
+                          <span className="px-3 py-1 rounded-full text-xs font-extrabold inline-flex items-center gap-1.5 bg-rose-950 text-rose-300 border-2 border-rose-500/70 shadow-sm">
+                            <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+                            <span>ยกเลิก / คืนสต๊อกแล้ว</span>
+                          </span>
+                        )}
+                        {order.orderStatus !== 'shipped' && order.orderStatus !== 'delivered' && order.orderStatus !== 'cancelled' && (
+                          <span className="px-3 py-1 rounded-full text-xs font-extrabold inline-block bg-amber-950 text-amber-300 border-2 border-amber-500/60">
+                            {order.orderStatus}
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="p-3.5 text-center">
+                        <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setTrackingInput(order.trackingNumber || '');
+                              setCourierInput(order.courier || 'Flash Express');
+                            }}
+                            className="px-3 py-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-stone-950 font-extrabold rounded-xl text-xs hover:scale-105 transition shadow cursor-pointer border border-amber-300"
+                          >
+                            รายละเอียด
+                          </button>
+
+                          <button
+                            onClick={() => setShippingLabelOrder(order)}
+                            className="px-3 py-2 bg-white hover:bg-stone-100 text-stone-950 font-black rounded-xl text-xs hover:scale-105 transition shadow cursor-pointer border-2 border-amber-400 flex items-center gap-1.5"
+                            title="พิมพ์ใบปะหน้ากล่องพัสดุ (Flash, Kerry, EMS)"
+                          >
+                            <Printer className="w-3.5 h-3.5 text-amber-700" />
+                            <span>พิมพ์ใบปะหน้า</span>
+                          </button>
+
+                          {order.orderStatus !== 'cancelled' ? (
+                            <button
+                              onClick={() => {
+                                setOrderToReturn(order);
+                                setReturnReason('ลูกค้าขอคืนสินค้า');
+                                setRefundChecked(order.paymentStatus === 'paid' || order.paymentStatus === 'slip_uploaded');
+                                setReturnAdminPin('');
+                                setShowReturnPin(false);
+                                setPinError('');
+                              }}
+                              className="px-2.5 py-2 bg-rose-950 hover:bg-rose-900 border-2 border-rose-500/70 text-rose-200 hover:text-white rounded-xl text-xs font-extrabold transition shadow cursor-pointer flex items-center gap-1"
+                              title="ลูกค้าขอคืนสินค้า / ยกเลิกบิลขาย & ดึงสต๊อกคืนคลัง"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+                              <span>คืนของ/สต๊อก</span>
+                            </button>
+                          ) : (
+                            <span className="px-2.5 py-1.5 bg-stone-900 border border-stone-700/60 text-stone-400 rounded-xl text-[11px] font-bold">
+                              คืนสต๊อกแล้ว
+                            </span>
+                          )}
+
+                          <button
+                            onClick={() => {
+                              setOrderToDelete(order);
+                              setAdminPinInput('');
+                              setShowAdminPin(false);
+                              setPinError('');
+                            }}
+                            className="p-2 bg-red-950 border-2 border-red-600/70 text-red-200 hover:text-white rounded-xl text-xs transition cursor-pointer"
+                            title="ลบเฉพาะคำสั่งซื้อนี้ออกจากระบบ (ต้องใส่รหัส Admin)"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Order Detail & Tracking Modal for Admin */}
       {selectedOrder && (
@@ -300,7 +657,69 @@ export const AdminOrderManager: React.FC = () => {
               >
                 บันทึกเลขพัสดุ & เปลี่ยนสถานะเป็น "จัดส่งแล้ว"
               </button>
+
+              <button
+                type="button"
+                onClick={() => setShippingLabelOrder(selectedOrder)}
+                className="w-full py-3 bg-white hover:bg-amber-50 text-stone-950 font-black rounded-xl text-xs sm:text-sm shadow-md hover:scale-[1.01] transition cursor-pointer border-2 border-amber-400 flex items-center justify-center gap-2"
+              >
+                <Printer className="w-4 h-4 text-amber-800" />
+                <span>🖨️ พิมพ์ใบปะหน้ากล่องพัสดุ (Shipping Label)</span>
+              </button>
             </div>
+
+            {/* Return & Restock Action Box in Detail Modal */}
+            {selectedOrder.orderStatus === 'cancelled' ? (
+              <div className="p-4 bg-rose-950/80 rounded-2xl border-2 border-rose-500/70 space-y-2 text-xs">
+                <div className="flex items-center gap-2 text-rose-300 font-extrabold text-sm">
+                  <RotateCcw className="w-5 h-5 text-rose-400" />
+                  <span>ออเดอร์นี้ถูกยกเลิกและคืนสต๊อกเข้าคลังสินค้าแล้ว</span>
+                </div>
+                <div className="space-y-1 text-stone-300">
+                  <p>• เหตุผล: <strong className="text-white">{selectedOrder.cancellationReason || 'ลูกค้าขอคืนสินค้า / ยกเลิกคำสั่งซื้อ'}</strong></p>
+                  {selectedOrder.cancelledAt && (
+                    <p>• วันเวลาที่ทำรายการ: <span className="font-mono text-stone-300">{formatThaiDateTime(selectedOrder.cancelledAt)}</span></p>
+                  )}
+                  <p className="text-emerald-400 font-bold">✓ สต๊อกสินค้าถูกนำกลับเข้าคลังเรียบร้อยแล้ว</p>
+                  <p className="text-emerald-400 font-bold">✓ ยอดค้างจ่าย Supplier ถูกตัดออกเรียบร้อยแล้ว</p>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-stone-900 rounded-2xl border-2 border-rose-500/50 space-y-2.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-serif font-extrabold text-rose-300 text-sm flex items-center gap-2">
+                    <RotateCcw className="w-4 h-4 text-rose-400" />
+                    <span>รายการคืนสินค้า / ยกเลิกบิลขาย (Return & Restock)</span>
+                  </span>
+                  <span className="text-[11px] text-rose-400 font-bold bg-rose-950 px-2.5 py-0.5 rounded-full border border-rose-500/40">
+                    ดึงสต๊อกกลับอัตโนมัติ
+                  </span>
+                </div>
+
+                <p className="text-stone-300 text-[11px] leading-relaxed">
+                  หากลูกค้าต้องการคืนของ หรือต้องการยกเลิกคำสั่งซื้อนี้ ระบบจะทำการ:
+                  <br /><span className="text-rose-200 font-bold">1. คืนสต๊อกสินค้า</span> ทั้งหมด ({(selectedOrder?.items || []).reduce((s, it) => s + (it.quantity || 0), 0)} ชิ้น) กลับเข้าสู่คลังหลักทันที
+                  <br /><span className="text-rose-200 font-bold">2. ตัดยอดค้างจ่าย Supplier</span> (Void MOV-OUT) เพื่อไม่ให้ร้านค้าจ่ายเงินซ้ำซ้อน
+                  <br /><span className="text-rose-200 font-bold">3. บันทึกประวัติรับคืนสินค้า</span> พร้อมระบุเลขล็อตเดิม ({(selectedOrder?.items || []).map(i => i.lotNumber || 'ล็อตมาตรฐาน').join(', ')})
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOrderToReturn(selectedOrder);
+                    setReturnReason('ลูกค้าขอคืนสินค้า');
+                    setRefundChecked(selectedOrder.paymentStatus === 'paid' || selectedOrder.paymentStatus === 'slip_uploaded');
+                    setReturnAdminPin('');
+                    setShowReturnPin(false);
+                    setReturnPinError('');
+                  }}
+                  className="w-full py-2.5 bg-gradient-to-r from-rose-700 to-red-700 hover:from-rose-600 hover:to-red-600 text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer border border-rose-400 transition"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>ทำรายการคืนสินค้า & คืนสต๊อกให้ออเดอร์นี้</span>
+                </button>
+              </div>
+            )}
 
             <div className="flex justify-end pt-2">
               <button
@@ -315,6 +734,220 @@ export const AdminOrderManager: React.FC = () => {
       )}
 
       {/* Admin Passcode Verification Modal for Deleting Order */}
+
+      {/* Return & Restock Modal */}
+      {orderToReturn && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white border-2 border-rose-500 rounded-3xl max-w-lg w-full p-5 sm:p-6 text-stone-950 shadow-2xl space-y-4 text-left animate-scale-up">
+            {/* Header */}
+            <div className="flex justify-between items-center border-b-2 border-rose-200 pb-3">
+              <div className="flex items-center gap-2.5 text-rose-600">
+                <div className="p-2 bg-rose-100 rounded-xl border border-rose-300">
+                  <RotateCcw className="w-5 h-5 text-rose-600" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-black text-base text-stone-950">
+                    ทำรายการคืนสินค้า & คืนสต๊อกเข้าคลัง
+                  </h3>
+                  <span className="text-[10px] text-rose-600 font-extrabold block">
+                    Customer Return & Auto-Restock
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setOrderToReturn(null);
+                  setReturnAdminPin('');
+                  setReturnPinError('');
+                }}
+                className="text-stone-500 hover:text-stone-950 p-1.5 rounded-full border border-stone-300 hover:bg-stone-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Order Details & Items to Restock */}
+            <div className="bg-rose-50/80 border border-rose-200 rounded-2xl p-4 text-xs space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-stone-600 font-bold">เลขที่คำสั่งซื้อ:</span>
+                <span className="font-black text-rose-950 font-mono text-sm">#{orderToReturn.id}</span>
+              </div>
+              <div className="flex items-center justify-between border-t border-rose-200/60 pt-1.5">
+                <span className="text-stone-600 font-bold">ลูกค้า:</span>
+                <span className="font-black text-stone-950">{orderToReturn.customerName || 'ลูกค้าหน้าร้าน/Walk-in'}</span>
+              </div>
+              <div className="flex items-center justify-between border-t border-rose-200/60 pt-1.5">
+                <span className="text-stone-600 font-bold">ยอดขายบิลนี้:</span>
+                <span className="font-black text-stone-950 font-serif text-sm">฿{orderToReturn.netAmount.toLocaleString()}</span>
+              </div>
+
+              <div className="border-t border-rose-200/60 pt-2 space-y-1.5">
+                <span className="text-rose-900 font-black block">รายการสินค้าที่จะถูกดึงกลับเข้าสต๊อก (+Stock):</span>
+                <div className="space-y-1 bg-white p-2.5 rounded-xl border border-rose-200 max-h-36 overflow-y-auto">
+                  {(orderToReturn.items || []).map((it, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs py-1 border-b last:border-0 border-stone-100">
+                      <div>
+                        <strong className="text-stone-900 block">{it.productTitle}</strong>
+                        <span className="text-stone-500 text-[11px]">
+                          ไซส์: <strong className="text-stone-700">{it.variantName}</strong>
+                          {it.lotNumber && (
+                            <span className="ml-1.5 px-1.5 py-0.5 bg-amber-100 text-amber-900 rounded font-mono font-bold text-[10px]">
+                              ล็อต: {it.lotNumber}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded-lg text-xs border border-emerald-300">
+                        +{it.quantity} ชิ้น
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Explanatory Checklist */}
+            <div className="bg-amber-50 p-3 rounded-2xl border border-amber-200 text-[11px] text-amber-950 font-bold space-y-1">
+              <p className="font-black text-amber-900 text-xs">✨ สิ่งที่ระบบจะจัดการให้อัตโนมัติทันที:</p>
+              <p>✓ <strong>คืนจำนวนสินค้าเข้าสต๊อก:</strong> สินค้าจะกลับไปเป็นสต๊อกพร้อมขายทันที</p>
+              <p>✓ <strong>ตัดยอดเคลียร์ Supplier:</strong> ยกเลิกใบรอจ่าย MOV-OUT ของบิลนี้ทันที เพื่อไม่ให้ร้านค้าจ่ายเงินซ้ำซ้อน</p>
+              <p>✓ <strong>บันทึกประวัติการคืน:</strong> เก็บประวัติรับคืนสินค้าใน Stock Movement พร้อมระบุเลขล็อตและต้นทุนเดิม</p>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleConfirmReturnAndRestock} className="space-y-3 pt-1">
+              <div>
+                <label className="block text-stone-950 font-black mb-1 text-xs">
+                  เหตุผลการคืนสินค้า / ยกเลิกออเดอร์:
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={returnReason}
+                  onChange={(e) => setReturnReason(e.target.value)}
+                  placeholder="เช่น ลูกค้าขอเปลี่ยนใจ, ไซส์ไม่พอดี, มีตำหนิ"
+                  className="w-full bg-white border-2 border-stone-300 rounded-xl p-2.5 text-stone-900 font-bold text-xs focus:outline-none focus:border-rose-500 shadow-inner"
+                />
+
+                {/* Quick tags */}
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {['ลูกค้าเปลี่ยนใจ', 'ไซส์ไม่พอดี', 'สินค้ามีตำหนิ/ชำรุด', 'พนักงานคีย์บิลผิด', 'เปลี่ยนเป็นรุ่นอื่น'].map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setReturnReason(tag)}
+                      className="px-2 py-0.5 bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-700 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Refund Checkbox */}
+              <label className="flex items-center gap-2 p-2.5 bg-stone-100 rounded-xl border border-stone-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={refundChecked}
+                  onChange={(e) => setRefundChecked(e.target.checked)}
+                  className="w-4 h-4 text-rose-600 rounded border-stone-300 focus:ring-rose-500"
+                />
+                <span className="text-xs text-stone-900 font-extrabold">
+                  บันทึกว่าคืนเงินให้ลูกค้าแล้ว (Mark as Refunded)
+                </span>
+              </label>
+
+              {/* Admin Passcode */}
+              <div>
+                <label className="block text-stone-950 font-black mb-1.5 flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-1.5">
+                    <KeyRound className="w-4 h-4 text-rose-600" />
+                    <span>ใส่รหัสผ่าน Admin เพื่อยืนยัน *</span>
+                  </span>
+                  <span className="text-[10px] text-stone-500 font-bold">
+                    (รหัสเริ่มต้น: 1077)
+                  </span>
+                </label>
+
+                <div className="relative flex items-center">
+                  <input
+                    type={showReturnPin ? 'text' : 'password'}
+                    required
+                    autoFocus
+                    value={returnAdminPin}
+                    onChange={(e) => {
+                      setReturnAdminPin(e.target.value);
+                      setReturnPinError('');
+                    }}
+                    placeholder="กรอกรหัส Admin เช่น 1077"
+                    className="w-full bg-white border-2 border-rose-400 rounded-xl p-3 pr-20 text-stone-950 font-mono font-black text-center text-lg tracking-widest focus:outline-none focus:border-rose-600 shadow-inner"
+                  />
+
+                  <div className="absolute right-2 flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowReturnPin((prev) => !prev)}
+                      className="p-1.5 text-stone-500 hover:text-stone-950 rounded-lg cursor-pointer"
+                      title={showReturnPin ? 'ซ่อนรหัส' : 'แสดงรหัส'}
+                    >
+                      {showReturnPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                    <VoiceInputButton
+                      isNumber={true}
+                      onTranscript={(text) => {
+                        const num = text.replace(/[^0-9]/g, '');
+                        if (num) {
+                          setReturnAdminPin(num);
+                          setReturnPinError('');
+                        }
+                      }}
+                      onNumberTranscript={(num) => {
+                        setReturnAdminPin(String(num));
+                        setReturnPinError('');
+                      }}
+                      className="scale-90"
+                      title="พูดรหัสผ่าน Admin"
+                    />
+                  </div>
+                </div>
+
+                {returnPinError && (
+                  <p className="text-xs font-black text-rose-600 mt-1.5 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{returnPinError}</span>
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOrderToReturn(null);
+                    setReturnAdminPin('');
+                    setReturnPinError('');
+                  }}
+                  className="px-4 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-950 font-black rounded-xl text-xs transition cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isProcessingReturn}
+                  className="px-5 py-2.5 bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black rounded-xl text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer border border-rose-700 disabled:opacity-50"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>{isProcessingReturn ? 'กำลังประมวลผล...' : 'ยืนยันคืนสินค้า & คืนสต๊อก'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {orderToDelete && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in">
           <div className="bg-white border-2 border-red-500 rounded-3xl max-w-md w-full p-5 sm:p-6 text-stone-950 shadow-2xl space-y-4 text-left animate-scale-up">
@@ -354,7 +987,7 @@ export const AdminOrderManager: React.FC = () => {
               </div>
               <div className="flex items-center justify-between border-t border-red-200/60 pt-1.5">
                 <span className="text-stone-600 font-bold">วันที่ / เวลา:</span>
-                <span className="font-bold text-stone-900">{new Date(orderToDelete.createdAt).toLocaleString('th-TH')}</span>
+                <span className="font-bold text-stone-900">{formatThaiDateTime(orderToDelete.createdAt)}</span>
               </div>
               <div className="flex items-center justify-between border-t border-red-200/60 pt-1.5">
                 <span className="text-stone-600 font-bold">ลูกค้า:</span>
@@ -463,6 +1096,15 @@ export const AdminOrderManager: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Shipping Label Print Modal */}
+      {shippingLabelOrder && (
+        <OrderShippingLabelModal
+          order={shippingLabelOrder}
+          onClose={() => setShippingLabelOrder(null)}
+          storeSettings={storeSettings}
+        />
       )}
     </div>
   );

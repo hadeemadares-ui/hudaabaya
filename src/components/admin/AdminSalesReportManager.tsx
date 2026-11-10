@@ -1,17 +1,79 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Calendar, TrendingUp, DollarSign, Package, PieChart, Download, ArrowUpRight, ArrowDownRight, Layers, FileSpreadsheet, RefreshCw, Sparkles, Filter, Edit2, Trash2, X, Save, Printer, CheckSquare, Square, Sliders, FileText, Check, ChevronRight, Lock, KeyRound, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Calendar, TrendingUp, DollarSign, Package, PieChart, Download, ArrowUpRight, ArrowDownRight, Layers, FileSpreadsheet, RefreshCw, Sparkles, Filter, Edit2, Trash2, X, Save, Printer, CheckSquare, Square, Sliders, FileText, Check, ChevronRight, Lock, KeyRound, Eye, EyeOff, AlertCircle, RotateCcw, Smartphone, Laptop } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Product, Order, CartItem, CategoryType } from '../../types';
 import { VoiceNumberInput } from '../common/VoiceNumberInput';
 import { VoiceInputButton } from '../common/VoiceInputButton';
+import { formatThaiDateTime } from '../../utils/dateUtils';
+
+// Helper to extract clean local YYYY-MM-DD in user's timezone (Thailand UTC+7 safe)
+const getLocalDateString = (dateVal: any): string => {
+  if (!dateVal) return '';
+  let d: Date;
+  if (dateVal instanceof Date) {
+    d = dateVal;
+  } else if (typeof dateVal === 'number') {
+    d = new Date(dateVal);
+  } else if (typeof dateVal === 'string' && !isNaN(Number(dateVal)) && Number(dateVal) > 100000000000) {
+    d = new Date(Number(dateVal));
+  } else {
+    d = new Date(dateVal);
+  }
+  if (isNaN(d.getTime())) return '';
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Accurate unified cost resolver: checks item.costPrice -> catalog variant costPrice -> 50% fallback
+const resolveItemCost = (
+  item: { price?: number; costPrice?: number; productId?: string; variantId?: string; productTitle?: string; variantName?: string },
+  allProducts: Product[]
+): number => {
+  if (typeof item.costPrice === 'number' && item.costPrice > 0) {
+    return item.costPrice;
+  }
+  const matchedProd = allProducts.find(
+    (p) => (item.productId && p.id === item.productId) || p.title === item.productTitle
+  );
+  const matchedVar = matchedProd?.variants.find(
+    (v) => (item.variantId && v.id === item.variantId) || v.name === item.variantName
+  );
+  if (typeof matchedVar?.costPrice === 'number' && matchedVar.costPrice > 0) {
+    return matchedVar.costPrice;
+  }
+  const fallbackPrice = Number(item.price) || Number(matchedVar?.price) || 0;
+  return Math.round(fallbackPrice * 0.5);
+};
 
 export const AdminSalesReportManager: React.FC = () => {
-  const { orders, products, createOrder, deleteOrder, addProduct, updateProduct, verifyAdminPasscode } = useShop();
+  const {
+    orders,
+    products,
+    createOrder,
+    deleteOrder,
+    deleteOrders,
+    addProduct,
+    updateProduct,
+    verifyAdminPasscode,
+    forceRealtimeSync,
+    syncStatus,
+    lastSyncTime,
+    boothTransfers,
+  } = useShop();
+
+  useEffect(() => {
+    if (forceRealtimeSync) {
+      forceRealtimeSync(false, false).catch(() => {});
+    }
+  }, []);
 
   // Filter Mode: 'today' | 'month' | 'year' | 'all' | 'custom'
   const [filterMode, setFilterMode] = useState<'today' | 'month' | 'year' | 'all' | 'custom'>('all');
+  const [recentOrdersViewMode, setRecentOrdersViewMode] = useState<'auto' | 'cards' | 'table'>('auto');
   
   // Custom Date Range State (YYYY-MM-DD)
   const [startDate, setStartDate] = useState<string>(() => {
@@ -155,7 +217,7 @@ export const AdminSalesReportManager: React.FC = () => {
         let totalQty = 0;
         const itemsFormatted = o.items.map((it) => {
           totalQty += it.quantity;
-          const cost = it.costPrice !== undefined && it.costPrice > 0 ? it.costPrice : Math.round(it.price * 0.5);
+          const cost = resolveItemCost(it, products);
           orderCost += cost * it.quantity;
           return `${it.productTitle} (${it.variantName || 'ธรรมดา'}) x${it.quantity}`;
         }).join(' | ');
@@ -164,7 +226,7 @@ export const AdminSalesReportManager: React.FC = () => {
 
         return {
           id: o.id,
-          date: new Date(o.createdAt).toLocaleString('th-TH'),
+          date: formatThaiDateTime(o.createdAt),
           customerName: o.customerName || 'ลูกค้าหน้าร้าน',
           customerPhone: o.customerPhone || '-',
           customerAddress: o.customerAddress || '-',
@@ -187,7 +249,7 @@ export const AdminSalesReportManager: React.FC = () => {
 
       const map: Record<string, { title: string; variant: string; unitsSold: number; revenue: number; cost: number; latestSaleDate: string; staffName: string }> = {};
       filteredOrders.forEach((o) => {
-        const saleDateStr = new Date(o.createdAt).toLocaleString('th-TH');
+        const saleDateStr = formatThaiDateTime(o.createdAt);
         const staffStr = o.note?.includes('พนักงาน:')
           ? o.note.split('พนักงาน:')[1].split('\n')[0].trim()
           : (o.customerName && !o.customerName.includes('หน้าร้าน') && !o.customerName.includes('Walk-in') && !o.customerName.includes('ทดลอง'))
@@ -272,7 +334,7 @@ export const AdminSalesReportManager: React.FC = () => {
         location: ev.location,
         dates: `${ev.startDate} ถึง ${ev.endDate}`,
         operatingHours: ev.operatingHours,
-        status: ev.status === 'ACTIVE' ? 'กำลังขายอยู่' : ev.status === 'UPCOMING' ? 'เร็วๆ นี้' : 'เสร็จสิ้นแล้ว',
+        status: ev.status === 'ACTIVE' ? 'กำลังขายอยู่' : ev.status === 'UPCOMING' ? 'เร็วๆ นี้' : ev.status === 'TRANSFERRED' ? 'ปล่อยต่อ' : ev.status === 'CANCELLED' ? 'ไม่ได้งาน/ยกเลิก' : 'เสร็จสิ้นแล้ว',
         salesTarget: ev.salesTarget,
         productsToPrepare: ev.productsToPrepare,
         assignedStaff: ev.assignedStaff || '-',
@@ -383,29 +445,106 @@ export const AdminSalesReportManager: React.FC = () => {
     alert(`สร้างออเดอร์ทดลองสำเร็จ 1 รายการ (${sampleProd.title} - ฿${sampleVar.price.toLocaleString()})! หน้ารายงานจะแสดงรายรับ ต้นทุน และกำไรทันที`);
   };
 
-  // Helper to test if date string falls within selected filter
-  const isDateInFilterRange = (dateStr: string) => {
-    if (!dateStr) return false;
-    const orderDate = new Date(dateStr);
+  const totalBoothSoldQty = useMemo(
+    () => (boothTransfers || []).reduce((sum, b) => sum + (Number(b.totalSoldQty) || 0), 0),
+    [boothTransfers]
+  );
+  const totalBoothSalesAmount = useMemo(
+    () => (boothTransfers || []).reduce((sum, b) => sum + (Number(b.totalSalesAmount) || 0), 0),
+    [boothTransfers]
+  );
+
+  const getFilterModeLabel = (mode: string) => {
+    switch (mode) {
+      case 'today':
+        return 'วันนี้ (Today / 24 ชม.)';
+      case 'month':
+        return 'เดือนนี้ (This Month)';
+      case 'year':
+        return 'ปีนี้ (This Year)';
+      case 'all':
+        return 'สะสมทั้งหมด (All Time)';
+      case 'custom':
+        return 'กำหนดช่วงวันที่เอง';
+      default:
+        return mode;
+    }
+  };
+
+  const getBangkokYMD = (d: Date): string => {
+    try {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(d);
+    } catch {
+      return d.toISOString().slice(0, 10);
+    }
+  };
+
+  const getLocalYMD = (d: Date): string => {
+    try {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch {
+      return '';
+    }
+  };
+
+  // Helper to test if date string falls within selected filter (resilient to timezones, UTC & 24h shifts)
+  const isDateInFilterRange = (dateVal: any) => {
+    if (!dateVal) return true;
+    let orderDate: Date;
+    if (dateVal instanceof Date) {
+      orderDate = dateVal;
+    } else if (typeof dateVal === 'number') {
+      orderDate = new Date(dateVal);
+    } else if (typeof dateVal === 'string' && !isNaN(Number(dateVal)) && Number(dateVal) > 100000000000) {
+      orderDate = new Date(Number(dateVal));
+    } else {
+      orderDate = new Date(dateVal);
+    }
+    if (isNaN(orderDate.getTime())) return true;
     const now = new Date();
 
     if (filterMode === 'today') {
-      return (
-        orderDate.getFullYear() === now.getFullYear() &&
-        orderDate.getMonth() === now.getMonth() &&
-        orderDate.getDate() === now.getDate()
-      );
+      const thaiToday = getBangkokYMD(now);
+      const localToday = getLocalYMD(now);
+      const orderThai = getBangkokYMD(orderDate);
+      const orderLocal = getLocalYMD(orderDate);
+
+      // 1. Matches today's date in Thailand timezone (UTC+7) or client's local timezone
+      if (orderThai === thaiToday || orderLocal === localToday) {
+        return true;
+      }
+
+      // 2. Also match if order was placed within the last 24 hours (covers night market / overnight events)
+      const diffMs = now.getTime() - orderDate.getTime();
+      if (diffMs >= 0 && diffMs <= 24 * 60 * 60 * 1000) {
+        return true;
+      }
+
+      // 3. Fallback string prefix match (e.g. "2026-11-09")
+      if (typeof dateVal === 'string' && (dateVal.startsWith(thaiToday) || dateVal.startsWith(localToday))) {
+        return true;
+      }
+
+      return false;
     }
 
     if (filterMode === 'month') {
-      return (
-        orderDate.getFullYear() === now.getFullYear() &&
-        orderDate.getMonth() === now.getMonth()
-      );
+      const thaiMonth = getBangkokYMD(now).slice(0, 7);
+      const localMonth = getLocalYMD(now).slice(0, 7);
+      const orderThaiMonth = getBangkokYMD(orderDate).slice(0, 7);
+      const orderLocalMonth = getLocalYMD(orderDate).slice(0, 7);
+      return orderThaiMonth === thaiMonth || orderLocalMonth === localMonth;
     }
 
     if (filterMode === 'year') {
-      return orderDate.getFullYear() === now.getFullYear();
+      const thaiYear = getBangkokYMD(now).slice(0, 4);
+      const localYear = getLocalYMD(now).slice(0, 4);
+      const orderThaiYear = getBangkokYMD(orderDate).slice(0, 4);
+      const orderLocalYear = getLocalYMD(orderDate).slice(0, 4);
+      return orderThaiYear === thaiYear || orderLocalYear === localYear;
     }
 
     if (filterMode === 'all') {
@@ -414,9 +553,8 @@ export const AdminSalesReportManager: React.FC = () => {
 
     if (filterMode === 'custom') {
       if (!startDate || !endDate) return true;
-      const start = new Date(`${startDate}T00:00:00`);
-      const end = new Date(`${endDate}T23:59:59`);
-      return orderDate >= start && orderDate <= end;
+      const orderYMD = getBangkokYMD(orderDate) || getLocalYMD(orderDate);
+      return orderYMD >= startDate && orderYMD <= endDate;
     }
 
     return true;
@@ -424,7 +562,7 @@ export const AdminSalesReportManager: React.FC = () => {
 
   // Filter orders by date & paid status (include all completed / paid / delivered / shipped)
   const filteredOrders = orders.filter(
-    (o) => (o.paymentStatus === 'paid' || o.orderStatus === 'delivered' || o.orderStatus === 'shipped' || o.orderStatus === 'pending') && isDateInFilterRange(o.createdAt)
+    (o) => o.orderStatus !== 'cancelled' && isDateInFilterRange(o.createdAt)
   );
 
   // Modal state for editing product details directly from Sales Report table
@@ -493,6 +631,16 @@ export const AdminSalesReportManager: React.FC = () => {
   let totalRevenue = 0;
   let totalCost = 0;
   let totalItemsSold = 0;
+  let totalDiscount = 0;
+
+  // Payment Breakdown for Cash Drawer Reconciliation
+  const paymentBreakdown = {
+    cash: { amount: 0, count: 0, label: 'เงินสด (Cash)' },
+    promptpay: { amount: 0, count: 0, label: 'พร้อมเพย์ / โอนธนาคาร' },
+    card: { amount: 0, count: 0, label: 'รูดบัตร EDC' },
+    govt: { amount: 0, count: 0, label: 'โครงการรัฐ' },
+    other: { amount: 0, count: 0, label: 'อื่นๆ' },
+  };
 
   // Aggregate Product Performance
   const productSalesMap = new Map<
@@ -514,28 +662,46 @@ export const AdminSalesReportManager: React.FC = () => {
 
   filteredOrders.forEach((order) => {
     totalRevenue += order.netAmount;
+    totalDiscount += order.discountAmount || 0;
     
-    const saleDateStr = new Date(order.createdAt).toLocaleString('th-TH');
+    // Categorize Payment Channel
+    const pm = String(order.paymentMethod || '').toLowerCase();
+    if (pm === 'cash') {
+      paymentBreakdown.cash.amount += order.netAmount;
+      paymentBreakdown.cash.count += 1;
+    } else if (pm === 'promptpay' || pm === 'bank_transfer' || pm === 'transfer') {
+      paymentBreakdown.promptpay.amount += order.netAmount;
+      paymentBreakdown.promptpay.count += 1;
+    } else if (pm === 'card' || pm === 'credit_card') {
+      paymentBreakdown.card.amount += order.netAmount;
+      paymentBreakdown.card.count += 1;
+    } else if (pm === 'govt' || pm === 'government_half') {
+      paymentBreakdown.govt.amount += order.netAmount;
+      paymentBreakdown.govt.count += 1;
+    } else {
+      paymentBreakdown.other.amount += order.netAmount;
+      paymentBreakdown.other.count += 1;
+    }
+    
+    const saleDateStr = formatThaiDateTime(order.createdAt);
     const staffStr = order.note?.includes('พนักงาน:')
       ? order.note.split('พนักงาน:')[1].split('\n')[0].trim()
       : (order.customerName && !order.customerName.includes('หน้าร้าน') && !order.customerName.includes('Walk-in') && !order.customerName.includes('ทดลอง'))
         ? order.customerName
         : 'เจ้าของร้าน (Admin)';
 
-    order.items.forEach((item) => {
-      totalItemsSold += item.quantity;
+    (order.items || []).forEach((item) => {
+      const qty = item.quantity || 1;
+      totalItemsSold += qty;
       
-      // Cost price calculation: fallback to 50% of price if not specified
-      const itemCostPrice = item.costPrice !== undefined && item.costPrice > 0 
-        ? item.costPrice 
-        : Math.round(item.price * 0.5);
-      
-      const itemTotalCost = itemCostPrice * item.quantity;
-      const itemTotalRevenue = item.price * item.quantity;
+      // Accurate Cost price calculation with catalog fallback
+      const itemCostPrice = resolveItemCost(item, products);
+      const itemTotalCost = itemCostPrice * qty;
+      const itemTotalRevenue = (item.price || 0) * qty;
       totalCost += itemTotalCost;
 
-      const matchedProd = products.find((p) => p.id === item.productId || p.title === item.productTitle);
-      const matchedVar = matchedProd?.variants.find((v) => v.id === item.variantId || v.name === item.variantName);
+      const matchedProd = products.find((p) => (item.productId && p.id === item.productId) || p.title === item.productTitle);
+      const matchedVar = matchedProd?.variants.find((v) => (item.variantId && v.id === item.variantId) || v.name === item.variantName);
 
       const resolvedProductId = item.productId || matchedProd?.id || '';
       const resolvedVariantId = item.variantId || matchedVar?.id || '';
@@ -544,7 +710,7 @@ export const AdminSalesReportManager: React.FC = () => {
       const existing = productSalesMap.get(key);
 
       if (existing) {
-        existing.quantity += item.quantity;
+        existing.quantity += qty;
         existing.revenue += itemTotalRevenue;
         existing.cost += itemTotalCost;
         existing.profit += itemTotalRevenue - itemTotalCost;
@@ -557,9 +723,9 @@ export const AdminSalesReportManager: React.FC = () => {
           productId: resolvedProductId,
           variantId: resolvedVariantId,
           productTitle: item.productTitle,
-          variantName: item.variantName,
+          variantName: item.variantName || 'ธรรมดา',
           category: item.category || matchedProd?.category || 'all',
-          quantity: item.quantity,
+          quantity: qty,
           revenue: itemTotalRevenue,
           cost: itemTotalCost,
           profit: itemTotalRevenue - itemTotalCost,
@@ -618,10 +784,10 @@ export const AdminSalesReportManager: React.FC = () => {
         { label: 'วันที่ออเดอร์', value: new Date(matchingOrder.createdAt).toLocaleString('th-TH') },
         { label: 'ยอดขายออเดอร์', value: `฿${matchingOrder.netAmount.toLocaleString()}` },
       ],
-      warningText: '*ระบบจะลบออเดอร์ขายล่าสุดออก 1 รายการเพื่อปรับปรุงรายงาน (สินค้าในคลังหลักจะไม่ถูกลบ)',
+      warningText: '✅ ระบบจะคืนจำนวนสินค้าในออเดอร์นี้กลับเข้าสต๊อกคลังเดิมให้โดยอัตโนมัติ',
       execute: () => {
-        deleteOrder(matchingOrder.id);
-        alert(`ลบประวัติรายการขายล่าสุด (ออเดอร์ #${matchingOrder.id}) เรียบร้อยแล้ว!`);
+        deleteOrder(matchingOrder.id, true);
+        alert(`ลบประวัติรายการขายล่าสุด (ออเดอร์ #${matchingOrder.id}) พร้อมคืนสต๊อกสินค้าเดิมเรียบร้อยแล้ว!`);
       },
     });
   };
@@ -659,20 +825,44 @@ export const AdminSalesReportManager: React.FC = () => {
       return;
     }
 
+    // Calculate total quantity of this item to return back to original stock
+    let totalItemsToReturn = 0;
+    ordersToDelete.forEach((o) => {
+      if (o.orderStatus !== 'cancelled' && Array.isArray(o.items)) {
+        o.items.forEach((it) => {
+          const matchProd =
+            (item.productId && it.productId === item.productId) ||
+            it.productTitle === item.productTitle ||
+            item.productTitle.includes(it.productTitle) ||
+            it.productTitle.includes(item.productTitle);
+          const matchVar =
+            !item.variantName ||
+            (item.variantId && it.variantId === item.variantId) ||
+            it.variantName === item.variantName ||
+            item.variantName.includes(it.variantName) ||
+            it.variantName.includes(item.variantName);
+          if (matchProd && matchVar) {
+            totalItemsToReturn += it.quantity;
+          }
+        });
+      }
+    });
+
     openAdminDeleteModal({
       type: 'all_for_product',
-      title: 'ยืนยันลบประวัติรายการขายทั้งหมด',
+      title: 'ยืนยันลบประวัติรายการขายทั้งหมด (พร้อมคืนสต๊อก)',
       subtitle: 'Security Passcode Required - ต้องใส่รหัสผ่าน Admin',
       details: [
-        { label: 'ประเภทการลบ', value: 'ลบประวัติขายทั้งหมดของสินค้านี้', badge: 'bg-red-100 text-red-950 border-red-300' },
+        { label: 'ประเภทการลบ', value: 'ลบประวัติขายทั้งหมด & คืนสต๊อกกลับที่เดิม', badge: 'bg-red-100 text-red-950 border-red-300' },
         { label: 'สินค้า / แบบ', value: item.productTitle },
         { label: 'ไซส์ / ปริมาณ', value: item.variantName || '-' },
-        { label: 'จำนวนออเดอร์ที่ถูกลบ', value: `${ordersToDelete.length} รายการ` },
+        { label: 'จำนวนออเดอร์ที่จะลบ', value: `${ordersToDelete.length} รายการ` },
+        { label: 'จำนวนสินค้าคืนกลับสต๊อก', value: `+${totalItemsToReturn} ชิ้น (คืนเข้าคลังทันที)`, badge: 'bg-emerald-100 text-emerald-950 border-emerald-300 font-bold' },
       ],
-      warningText: '*หมายเหตุ: สินค้าในคลังหลัก (Product Catalog) จะยังคงอยู่ตามปกติ 100%',
+      warningText: '✅ ระบบจะคืนจำนวนสินค้าที่เคยขายไปกลับเข้าสู่สต๊อกคลังเดิมให้โดยอัตโนมัติ 100%',
       execute: () => {
-        ordersToDelete.forEach((o) => deleteOrder(o.id));
-        alert(`ลบประวัติรายการขายทั้งหมด (${ordersToDelete.length} รายการ) ของ "${item.productTitle}" เรียบร้อยแล้วครับ!`);
+        deleteOrders(ordersToDelete.map((o) => o.id), true);
+        alert(`ลบประวัติรายการขายทั้งหมด (${ordersToDelete.length} รายการ) ของ "${item.productTitle}" พร้อมคืนสต๊อกสินค้าเดิม (+${totalItemsToReturn} ชิ้น) เรียบร้อยแล้วครับ!`);
       },
     });
   };
@@ -686,17 +876,17 @@ export const AdminSalesReportManager: React.FC = () => {
       title: 'ยืนยันลบรายการคำสั่งซื้อ & ใบเสร็จ',
       subtitle: 'Security Passcode Required - ต้องใส่รหัสผ่าน Admin',
       details: [
-        { label: 'ประเภทการลบ', value: 'ลบคำสั่งซื้อขาย', badge: 'bg-red-100 text-red-950 border-red-300' },
+        { label: 'ประเภทการลบ', value: 'ลบคำสั่งซื้อขาย & คืนสต๊อกสินค้า', badge: 'bg-red-100 text-red-950 border-red-300' },
         { label: 'เลขที่ออเดอร์ (ID)', value: `#${o.id}` },
         { label: 'วันที่ / เวลา', value: new Date(o.createdAt).toLocaleString('th-TH') },
         { label: 'ลูกค้า', value: `${o.customerName || 'ลูกค้าหน้าร้าน'}${o.customerPhone ? ` (${o.customerPhone})` : ''}` },
         { label: 'รายการสินค้า', value: itemsStr },
         { label: 'ยอดขายสุทธิ', value: `฿${o.netAmount.toLocaleString()} (${o.paymentMethod || 'เงินสด'})` },
       ],
-      warningText: '*คำเตือน: ข้อมูลคำสั่งซื้อและประวัติการชำระเงินของออเดอร์นี้จะถูกลบออกจากระบบอย่างถาวร',
+      warningText: '✅ ระบบจะคืนสต๊อกสินค้าในคำสั่งซื้อนี้กลับเข้าสู่คลังให้อัตโนมัติ',
       execute: () => {
-        deleteOrder(o.id);
-        alert(`ลบออเดอร์ #${o.id} เรียบร้อยแล้ว!`);
+        deleteOrder(o.id, true);
+        alert(`ลบออเดอร์ #${o.id} พร้อมคืนสต๊อกสินค้าเดิมเรียบร้อยแล้ว!`);
       },
     });
   };
@@ -824,9 +1014,9 @@ export const AdminSalesReportManager: React.FC = () => {
     csvContent += 'เลขที่ออเดอร์,วันที่ทำรายการ,ชื่อลูกค้า,เบอร์โทรศัพท์,รายการสินค้า,ยอดขายสุทธิ (บาท),ต้นทุนรวม (บาท),กำไรสุทธิ (บาท),วิธีชำระเงิน\n';
 
     filteredOrders.forEach((o) => {
-      const dateFormatted = new Date(o.createdAt).toLocaleString('th-TH');
+      const dateFormatted = formatThaiDateTime(o.createdAt);
       const itemsFormatted = o.items.map((i) => `${i.productTitle} (${i.variantName}) x${i.quantity}`).join(' | ');
-      const orderCost = o.items.reduce((sum, i) => sum + (i.costPrice || Math.round(i.price * 0.5)) * i.quantity, 0);
+      const orderCost = (o.items || []).reduce((sum, i) => sum + resolveItemCost(i, products) * (i.quantity || 1), 0);
       const orderProfit = o.netAmount - orderCost;
       
       csvContent += `"${o.id}","${dateFormatted}","${o.customerName}","${o.customerPhone}","${itemsFormatted}",${o.netAmount},${orderCost},${orderProfit},"${o.paymentMethod}"\n`;
@@ -867,6 +1057,18 @@ export const AdminSalesReportManager: React.FC = () => {
           </button>
 
           <button
+            type="button"
+            onClick={async () => {
+              if (forceRealtimeSync) await forceRealtimeSync(true, true);
+            }}
+            className="px-3.5 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-900 font-black text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 border border-stone-300 cursor-pointer"
+            title="กดเพื่อดึงและอัปเดตข้อมูลยอดขายล่าสุดแบบเรียลไทม์ทันที"
+          >
+            <RotateCcw className={`w-3.5 h-3.5 ${syncStatus === 'syncing' ? 'animate-spin text-amber-600' : 'text-stone-700'}`} />
+            <span>{syncStatus === 'syncing' ? 'กำลังซิงค์...' : '🔄 อัปเดตข้อมูลล่าสุด'}</span>
+          </button>
+
+          <button
             onClick={handleExportCSV}
             className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 border border-emerald-700 cursor-pointer"
           >
@@ -889,7 +1091,7 @@ export const AdminSalesReportManager: React.FC = () => {
                 : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
             }`}
           >
-            วันนี้ (Today)
+            วันนี้ (Today / 24 ชม.)
           </button>
 
           <button
@@ -992,24 +1194,68 @@ export const AdminSalesReportManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Notice Banner when 0 Orders exist with 1-Tap Sample Order Creator */}
+      {/* Notice Banner when 0 Orders exist or when filter yields 0 */}
       {filteredOrders.length === 0 && (
-        <div className="bg-amber-50 border-2 border-amber-400 rounded-2xl p-4 text-xs text-stone-950 shadow-md space-y-2">
+        <div className="bg-amber-50 border-2 border-amber-400 rounded-2xl p-4 text-xs text-stone-950 shadow-md space-y-2.5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="font-black text-stone-950 text-sm flex items-center gap-1.5">
-                <span>สถานะ: ยังไม่มีคำสั่งซื้อที่ชำระเงินในระบบ (0 รายการ)</span>
+                {orders.length > 0 ? (
+                  <span className="text-amber-900 font-extrabold">
+                    ⚠️ ไม่พบรายการขายในช่วงเวลา "{getFilterModeLabel(filterMode)}" (พบออเดอร์ในระบบทั้งหมด {orders.length} รายการ)
+                  </span>
+                ) : (
+                  <span>สถานะ: อุปกรณ์นี้ยังไม่มีคำสั่งซื้อในระบบ (0 รายการ)</span>
+                )}
               </div>
-              <p className="text-xs text-stone-800 font-extrabold mt-1">
-                ต้นทุนและกำไรสุทธิจะคำนวณและแสดงผลในตารางด้านล่างทันทีเมื่อคุณขายสินค้าผ่าน POS หรือเมื่อมีลูกค้าสั่งซื้อเข้ามาครับ
+              <p className="text-xs text-stone-800 font-bold mt-1">
+                {orders.length > 0 ? (
+                  <>
+                    ออเดอร์ที่มีอยู่อาจบันทึกไว้ในวันอื่น หรือหากขายสินค้าจากอุปกรณ์อื่น คุณสามารถกดสลับไปดู <strong>"สะสมทั้งหมด"</strong> หรือกด <strong>"ซิงค์ข้อมูลล่าสุด"</strong> ได้ครับ
+                  </>
+                ) : (
+                  <>
+                    ต้นทุนและกำไรสุทธิจะคำนวณและแสดงผลในตารางทันทีเมื่อคุณขายสินค้าผ่าน POS หรือเมื่อมีลูกค้าสั่งซื้อเข้ามาครับ (หากเพิ่งขายบนมือถือ ให้กดซิงค์ข้อมูล)
+                  </>
+                )}
               </p>
+              {totalBoothSoldQty > 0 && (
+                <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-200/80 border border-amber-400 text-stone-950 font-black text-[11px]">
+                  <span>🏪 มีการบันทึกยอดขายผ่าน "ตารางบูธสาขา" {totalBoothSoldQty} ชิ้น (ยอดขาย ฿{totalBoothSalesAmount.toLocaleString()})</span>
+                </div>
+              )}
             </div>
-            <button
-              onClick={handleCreateSampleOrder}
-              className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow-md transition shrink-0 whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5 border border-amber-500"
-            >
-              <span>ทดลองสร้างออเดอร์ตัวอย่าง 1 รายการ</span>
-            </button>
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              {orders.length > 0 && filterMode !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => setFilterMode('all')}
+                  className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow-md transition whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5 border border-amber-500"
+                >
+                  <span>👉 ดูสะสมทั้งหมด ({orders.length} ออเดอร์)</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={async () => {
+                  if (forceRealtimeSync) await forceRealtimeSync(true, true);
+                }}
+                className="px-3.5 py-2.5 bg-white hover:bg-stone-100 text-stone-900 font-black text-xs rounded-xl shadow-xs transition whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5 border border-stone-300"
+                title="กดเพื่อดึงและอัปเดตข้อมูลยอดขายล่าสุดแบบเรียลไทม์ทันที"
+              >
+                <RotateCcw className={`w-3.5 h-3.5 ${syncStatus === 'syncing' ? 'animate-spin text-amber-600' : 'text-stone-700'}`} />
+                <span>{syncStatus === 'syncing' ? 'กำลังซิงค์...' : '🔄 ซิงค์ข้อมูลล่าสุด'}</span>
+              </button>
+              {orders.length === 0 && (
+                <button
+                  type="button"
+                  onClick={handleCreateSampleOrder}
+                  className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow-md transition whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5 border border-amber-500"
+                >
+                  <span>ทดลองสร้างออเดอร์ตัวอย่าง 1 รายการ</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1028,7 +1274,13 @@ export const AdminSalesReportManager: React.FC = () => {
           <p className="text-2xl sm:text-3xl font-serif font-black text-amber-900">
             ฿{totalRevenue.toLocaleString()}
           </p>
-          <p className="text-[10px] text-stone-700 font-black">จากออเดอร์ที่ชำระเงินแล้ว</p>
+          {totalDiscount > 0 ? (
+            <p className="text-[10px] text-amber-900 font-bold">
+              ก่อนหักลด ฿{(totalRevenue + totalDiscount).toLocaleString()} (หักลด ฿{totalDiscount.toLocaleString()})
+            </p>
+          ) : (
+            <p className="text-[10px] text-stone-700 font-black">จากออเดอร์ที่ชำระเงินแล้ว</p>
+          )}
         </div>
 
         {/* Total Cost Card */}
@@ -1088,6 +1340,81 @@ export const AdminSalesReportManager: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Payment Channel Reconciliation Bar (สรุปยอดเงินแยกตามช่องทางรับชำระ กระทบยอดลิ้นชัก/บัญชี) */}
+      <div className="bg-white border-2 border-amber-400/80 rounded-2xl p-4 shadow-md space-y-2.5 text-stone-950">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200 pb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <h4 className="font-serif font-black text-xs sm:text-sm text-stone-950 flex items-center gap-1.5">
+              <span>สรุปยอดรับชำระเงินแยกตามช่องทาง (Payment Reconciliation &amp; Cash Drawer)</span>
+            </h4>
+          </div>
+          <span className="text-[11px] font-black text-stone-600">
+            ยอดขายสุทธิรวม: <strong className="text-amber-900 font-serif font-black text-xs sm:text-sm">฿{totalRevenue.toLocaleString()}</strong> ({filteredOrders.length} บิล)
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-0.5 text-xs">
+          {/* Cash */}
+          <div className="bg-amber-50/70 border border-amber-300 rounded-xl p-3 space-y-1">
+            <div className="flex items-center justify-between text-[11px] font-black text-amber-950">
+              <span>💵 เงินสด (Cash)</span>
+              <span className="text-[10px] bg-amber-200 text-amber-950 px-1.5 py-0.5 rounded-md font-mono font-bold">
+                {paymentBreakdown.cash.count} บิล
+              </span>
+            </div>
+            <div className="text-base sm:text-lg font-serif font-black text-amber-900">
+              ฿{paymentBreakdown.cash.amount.toLocaleString()}
+            </div>
+            <p className="text-[9.5px] text-stone-600 font-bold">ยอดเงินสดในลิ้นชัก</p>
+          </div>
+
+          {/* PromptPay / Transfer */}
+          <div className="bg-sky-50/70 border border-sky-300 rounded-xl p-3 space-y-1">
+            <div className="flex items-center justify-between text-[11px] font-black text-sky-950">
+              <span>📱 พร้อมเพย์ / โอน</span>
+              <span className="text-[10px] bg-sky-200 text-sky-950 px-1.5 py-0.5 rounded-md font-mono font-bold">
+                {paymentBreakdown.promptpay.count} บิล
+              </span>
+            </div>
+            <div className="text-base sm:text-lg font-serif font-black text-sky-900">
+              ฿{paymentBreakdown.promptpay.amount.toLocaleString()}
+            </div>
+            <p className="text-[9.5px] text-stone-600 font-bold">ยอดเงินโอนเข้าบัญชี</p>
+          </div>
+
+          {/* Credit Card EDC */}
+          <div className="bg-purple-50/70 border border-purple-300 rounded-xl p-3 space-y-1">
+            <div className="flex items-center justify-between text-[11px] font-black text-purple-950">
+              <span>💳 รูดบัตร (EDC)</span>
+              <span className="text-[10px] bg-purple-200 text-purple-950 px-1.5 py-0.5 rounded-md font-mono font-bold">
+                {paymentBreakdown.card.count} บิล
+              </span>
+            </div>
+            <div className="text-base sm:text-lg font-serif font-black text-purple-900">
+              ฿{paymentBreakdown.card.amount.toLocaleString()}
+            </div>
+            <p className="text-[9.5px] text-stone-600 font-bold">ยอดสลิปเครื่องรูดบัตร</p>
+          </div>
+
+          {/* Government / Other */}
+          <div className="bg-stone-50 border border-stone-300 rounded-xl p-3 space-y-1">
+            <div className="flex items-center justify-between text-[11px] font-black text-stone-800">
+              <span>🏛️ โครงการรัฐ / อื่นๆ</span>
+              <span className="text-[10px] bg-stone-200 text-stone-900 px-1.5 py-0.5 rounded-md font-mono font-bold">
+                {paymentBreakdown.govt.count + paymentBreakdown.other.count} บิล
+              </span>
+            </div>
+            <div className="text-base sm:text-lg font-serif font-black text-stone-950">
+              ฿{(paymentBreakdown.govt.amount + paymentBreakdown.other.amount).toLocaleString()}
+            </div>
+            <p className="text-[9.5px] text-stone-600 font-bold">คนละครึ่ง / อื่นๆ</p>
+          </div>
+        </div>
+      </div>
+
+
 
       {/* Visual Charts & Analytics Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1244,8 +1571,14 @@ export const AdminSalesReportManager: React.FC = () => {
           </span>
         </div>
 
+        {/* Mobile swipe hint banner */}
+        <div className="sm:hidden bg-amber-500/10 border-b border-amber-300 px-3.5 py-2 text-[11px] text-amber-950 font-bold flex items-center justify-between">
+          <span>👉 เลื่อนหน้าจอซ้าย-ขวา เพื่อดูตารางสรุป 10 คอลัมน์แบบเต็มเหมือนในคอม</span>
+          <span className="text-[10px] text-stone-500 font-mono">10 คอลัมน์</span>
+        </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left text-stone-950">
+          <table className="w-full min-w-[960px] text-xs text-left text-stone-950">
             <thead className="bg-amber-100 text-stone-950 font-serif border-b-2 border-amber-400 font-black">
               <tr>
                 <th className="p-3 font-black">ลำดับ</th>
@@ -1264,7 +1597,29 @@ export const AdminSalesReportManager: React.FC = () => {
               {productSalesList.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="p-8 text-center text-stone-700 font-black">
-                    ยังไม่มีข้อมูลยอดขายในช่วงเวลาที่เลือก
+                    <div className="space-y-2">
+                      <p className="text-stone-800 font-black text-sm">
+                        {orders.length > 0
+                          ? `ไม่พบรายการขายสินค้าในช่วงเวลา "${getFilterModeLabel(filterMode)}"`
+                          : 'ยังไม่มีข้อมูลยอดขายในระบบ'}
+                      </p>
+                      {orders.length > 0 && filterMode !== 'all' ? (
+                        <p className="text-xs text-stone-600 font-bold">
+                          พบคำสั่งซื้อในระบบทั้งหมด {orders.length} รายการ (อยู่นอกช่วงเวลาที่เลือก){' '}
+                          <button
+                            type="button"
+                            onClick={() => setFilterMode('all')}
+                            className="underline text-amber-800 hover:text-amber-900 font-black ml-1 cursor-pointer"
+                          >
+                            คลิกดูสะสมทั้งหมด
+                          </button>
+                        </p>
+                      ) : (
+                        <p className="text-xs text-stone-500 font-normal">
+                          เมื่อมีการขายผ่าน POS ยอดขาย ต้นทุน และกำไรสุทธิจะปรากฏที่นี่โดยอัตโนมัติ
+                        </p>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -1330,85 +1685,271 @@ export const AdminSalesReportManager: React.FC = () => {
                 ))
               )}
             </tbody>
+            {productSalesList.length > 0 && (
+              <tfoot className="bg-amber-100/90 font-serif font-black border-t-2 border-amber-500 text-stone-950">
+                <tr>
+                  <td colSpan={5} className="p-3 text-right font-black text-xs">
+                    รวมทั้งสิ้น ({productSalesList.length} รายการ):
+                  </td>
+                  <td className="p-3 text-center font-mono font-black text-sm text-stone-950">
+                    {totalItemsSold} ชิ้น
+                  </td>
+                  <td className="p-3 text-right font-serif font-black text-amber-900 text-sm">
+                    ฿{productSalesList.reduce((s, it) => s + it.revenue, 0).toLocaleString()}
+                  </td>
+                  <td className="p-3 text-right font-mono font-black text-stone-950">
+                    ฿{productSalesList.reduce((s, it) => s + it.cost, 0).toLocaleString()}
+                  </td>
+                  <td className="p-3 text-right font-serif font-black text-emerald-800 text-sm">
+                    +฿{productSalesList.reduce((s, it) => s + it.profit, 0).toLocaleString()}
+                  </td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
       </div>
 
       {/* Recent Orders History Table with Direct Order Deletion */}
       <div className="bg-white border-2 border-amber-400/60 rounded-2xl overflow-hidden shadow-xl space-y-3 p-4 text-stone-950">
-        <div className="flex items-center justify-between border-b border-stone-200 pb-2">
-          <h4 className="font-serif font-black text-sm text-stone-950 flex items-center gap-1.5">
-            <FileSpreadsheet className="w-4 h-4 text-amber-600" />
-            <span>ตารางประวัติรายการคำสั่งซื้อ &amp; ใบเสร็จทั้งหมด (Recent Orders Transactions)</span>
-          </h4>
-          <span className="text-[11px] text-stone-700 font-black">
-            แสดง {filteredOrders.length} รายการออเดอร์ขาย
-          </span>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-200 pb-2">
+          <div>
+            <h4 className="font-serif font-black text-sm text-stone-950 flex items-center gap-1.5">
+              <FileSpreadsheet className="w-4 h-4 text-amber-600" />
+              <span>ตารางประวัติรายการคำสั่งซื้อ &amp; ใบเสร็จทั้งหมด (Recent Orders Transactions)</span>
+            </h4>
+            <span className="text-[11px] text-stone-700 font-black">
+              แสดง {filteredOrders.length} รายการออเดอร์ขาย
+            </span>
+          </div>
+
+          {/* View Switcher for mobile */}
+          <div className="flex items-center gap-1 bg-stone-100 p-1 rounded-xl border border-stone-300">
+            <button
+              type="button"
+              onClick={() => setRecentOrdersViewMode('cards')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-black transition flex items-center gap-1 cursor-pointer ${
+                recentOrdersViewMode === 'cards' || recentOrdersViewMode === 'auto'
+                  ? 'bg-amber-400 text-stone-950 shadow-xs font-extrabold sm:bg-transparent sm:text-stone-700'
+                  : 'text-stone-600 hover:text-stone-950'
+              }`}
+              title="แสดงแบบการ์ด: เหมาะสำหรับดูบนมือถือ ข้อมูลครบไม่โดนตัด"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>📱 การ์ดมือถือ</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRecentOrdersViewMode('table')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-black transition flex items-center gap-1 cursor-pointer ${
+                recentOrdersViewMode === 'table'
+                  ? 'bg-amber-400 text-stone-950 shadow-xs font-extrabold'
+                  : 'text-stone-600 hover:text-stone-950'
+              }`}
+              title="แสดงแบบตารางกว้าง: เลื่อนซ้าย-ขวาได้เหมือนในคอมพิวเตอร์"
+            >
+              <Laptop className="w-3.5 h-3.5" />
+              <span>💻 ตารางเต็ม</span>
+            </button>
+          </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left text-stone-950">
-            <thead className="bg-amber-100 text-stone-950 font-serif border-b-2 border-amber-400 font-black">
-              <tr>
-                <th className="p-3 font-black">เลขที่ออเดอร์ (Order ID)</th>
-                <th className="p-3 font-black">วันที่ / เวลา</th>
-                <th className="p-3 font-black">ชื่อลูกค้า / ช่องทาง</th>
-                <th className="p-3 font-black">รายการสินค้า &amp; ไซส์</th>
-                <th className="p-3 text-right font-black">ยอดขายสุทธิ</th>
-                <th className="p-3 text-center font-black">วิธีชำระเงิน</th>
-                <th className="p-3 text-center font-black">จัดการ (Actions)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-200">
-              {filteredOrders.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="p-8 text-center text-stone-700 font-black">
-                    ยังไม่มีรายการออเดอร์ในระบบ
-                  </td>
-                </tr>
-              ) : (
-                filteredOrders.map((o) => {
-                  const itemsStr = o.items.map((it) => `${it.productTitle} (${it.variantName}) x${it.quantity}`).join(', ');
-                  const pmText = String(o.paymentMethod || '') === 'cash' ? 'เงินสด (Cash)' : String(o.paymentMethod || '') === 'promptpay' ? 'พร้อมเพย์ QR' : String(o.paymentMethod || '') === 'card' ? 'รูดบัตร EDC' : o.paymentMethod;
-                  
-                  return (
-                    <tr key={o.id} className="hover:bg-amber-50/60 transition">
-                      <td className="p-3 font-mono font-black text-amber-950">{o.id}</td>
-                      <td className="p-3 font-bold whitespace-nowrap text-stone-800">
-                        {new Date(o.createdAt).toLocaleString('th-TH')}
-                      </td>
-                      <td className="p-3 font-black text-stone-950">
-                        {o.customerName || 'ลูกค้าหน้าร้าน'}
-                        {o.customerPhone && <div className="text-[10px] text-stone-600 font-mono">{o.customerPhone}</div>}
-                      </td>
-                      <td className="p-3 font-bold max-w-xs truncate text-stone-900" title={itemsStr}>
-                        {itemsStr}
-                      </td>
-                      <td className="p-3 text-right font-serif font-black text-amber-900 text-sm">
-                        ฿{o.netAmount.toLocaleString()}
-                      </td>
-                      <td className="p-3 text-center font-bold">
-                        <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-950 border border-stone-300 text-[10px] font-black">
-                          {pmText}
-                        </span>
-                      </td>
-                      <td className="p-3 text-center">
-                        <button
-                          onClick={() => handleDeleteSpecificOrder(o)}
-                          className="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-950 border border-red-400 rounded-lg text-[11px] font-black flex items-center gap-1 transition mx-auto cursor-pointer"
-                          title="ลบรายการออเดอร์นี้ออกจากระบบ (ต้องใส่รหัส Admin)"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-red-700" />
-                          <span>ลบออเดอร์นี้</span>
-                        </button>
+        {/* 📱 Mobile Cards for Recent Orders */}
+        {(recentOrdersViewMode === 'cards' || recentOrdersViewMode === 'auto') && (
+          <div className={`${recentOrdersViewMode === 'auto' ? 'block sm:hidden' : 'block'} space-y-3`}>
+            {filteredOrders.length === 0 ? (
+              <div className="p-8 text-center text-stone-700 font-black bg-stone-50 rounded-xl border border-stone-200 space-y-2">
+                <p className="text-stone-800 font-black text-sm">
+                  {orders.length > 0
+                    ? `ไม่พบออเดอร์ในช่วงเวลา "${getFilterModeLabel(filterMode)}"`
+                    : 'ยังไม่มีรายการออเดอร์ในระบบ'}
+                </p>
+                {orders.length > 0 && filterMode !== 'all' && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setFilterMode('all')}
+                      className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-stone-950 rounded-lg text-xs font-black shadow-xs cursor-pointer"
+                    >
+                      👉 ดูสะสมทั้งหมด ({orders.length} ออเดอร์)
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              filteredOrders.map((o) => {
+                const pmText = String(o.paymentMethod || '') === 'cash' ? 'เงินสด (Cash)' : String(o.paymentMethod || '') === 'promptpay' ? 'พร้อมเพย์ QR' : String(o.paymentMethod || '') === 'card' ? 'รูดบัตร EDC' : o.paymentMethod;
+
+                return (
+                  <div key={o.id} className="bg-stone-50 border border-stone-200 hover:border-amber-400 rounded-xl p-3.5 shadow-sm space-y-2.5 text-xs text-stone-950">
+                    <div className="flex items-start justify-between gap-2 border-b border-stone-200 pb-2">
+                      <div>
+                        <div className="font-mono font-black text-amber-900 text-sm">#{o.id}</div>
+                        <div className="text-[11px] text-stone-600 font-bold mt-0.5">{formatThaiDateTime(o.createdAt)}</div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full bg-stone-200 text-stone-900 border border-stone-300 text-[10px] font-black">
+                        {pmText}
+                      </span>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-2 border border-stone-200 flex justify-between items-center text-xs">
+                      <span className="font-bold text-stone-600">👤 ลูกค้า:</span>
+                      <div className="font-black text-right">
+                        <span>{o.customerName || 'ลูกค้าหน้าร้าน'}</span>
+                        {o.customerPhone && <div className="text-[10px] text-stone-500 font-mono">{o.customerPhone}</div>}
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-2 border border-stone-200 space-y-1">
+                      <span className="text-[11px] font-bold text-stone-500">🛍️ รายการสินค้า ({o.items.length} รายการ):</span>
+                      <div className="font-bold text-stone-800 leading-snug space-y-0.5">
+                        {o.items.map((it, i) => (
+                          <div key={i} className="flex justify-between items-start gap-2">
+                            <span>• {it.productTitle} ({it.variantName})</span>
+                            <span className="font-mono text-amber-900 font-black shrink-0">x{it.quantity}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-stone-200">
+                      <div>
+                        <span className="text-stone-500 text-[11px] font-bold">ยอดขายสุทธิ: </span>
+                        <span className="font-serif font-black text-amber-900 text-base">฿{o.netAmount.toLocaleString()}</span>
+                      </div>
+
+                      <button
+                        onClick={() => handleDeleteSpecificOrder(o)}
+                        className="px-2.5 py-1.5 bg-red-100 hover:bg-red-200 text-red-950 border border-red-400 rounded-lg text-xs font-black flex items-center gap-1 transition cursor-pointer"
+                        title="ลบรายการออเดอร์นี้ออกจากระบบ (ต้องใส่รหัส Admin)"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-red-700" />
+                        <span>ลบออเดอร์</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            {filteredOrders.length > 0 && (
+              <div className="bg-amber-100 border-2 border-amber-400 rounded-xl p-3.5 flex items-center justify-between text-xs font-black text-stone-950 shadow-xs">
+                <span>รวมยอดขายสุทธิ ({filteredOrders.length} ออเดอร์):</span>
+                <span className="font-serif text-amber-950 text-base font-black">฿{totalRevenue.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 💻 Desktop Table View for Recent Orders */}
+        {(recentOrdersViewMode === 'table' || recentOrdersViewMode === 'auto') && (
+          <div className={`${recentOrdersViewMode === 'auto' ? 'hidden sm:block' : 'block'} border border-stone-200 rounded-xl overflow-hidden`}>
+            {/* Mobile swipe hint banner if forced into table mode */}
+            <div className="sm:hidden bg-amber-500/10 border-b border-amber-300 px-3.5 py-2 text-[11px] text-amber-950 font-bold flex items-center justify-between">
+              <span>👉 เลื่อนหน้าจอซ้าย-ขวา เพื่อดูตาราง 7 คอลัมน์แบบเต็มเหมือนในคอม</span>
+              <span className="text-[10px] text-stone-500 font-mono">7 คอลัมน์</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[880px] text-xs text-left text-stone-950">
+                <thead className="bg-amber-100 text-stone-950 font-serif border-b-2 border-amber-400 font-black">
+                  <tr>
+                    <th className="p-3 font-black">เลขที่ออเดอร์ (Order ID)</th>
+                    <th className="p-3 font-black">วันที่ / เวลา</th>
+                    <th className="p-3 font-black">ชื่อลูกค้า / ช่องทาง</th>
+                    <th className="p-3 font-black">รายการสินค้า &amp; ไซส์</th>
+                    <th className="p-3 text-right font-black">ยอดขายสุทธิ</th>
+                    <th className="p-3 text-center font-black">วิธีชำระเงิน</th>
+                    <th className="p-3 text-center font-black">จัดการ (Actions)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-200">
+                  {filteredOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="p-8 text-center text-stone-700 font-black">
+                        <div className="space-y-2">
+                          <p className="text-stone-800 font-black text-sm">
+                            {orders.length > 0
+                              ? `ไม่พบรายการออเดอร์ในช่วงเวลา "${getFilterModeLabel(filterMode)}"`
+                              : 'ยังไม่มีรายการออเดอร์ในระบบ'}
+                          </p>
+                          {orders.length > 0 && filterMode !== 'all' ? (
+                            <p className="text-xs text-stone-600 font-bold">
+                              พบคำสั่งซื้อในระบบทั้งหมด {orders.length} รายการ (อยู่นอกช่วงเวลาที่เลือก){' '}
+                              <button
+                                type="button"
+                                onClick={() => setFilterMode('all')}
+                                className="underline text-amber-800 hover:text-amber-900 font-black ml-1 cursor-pointer"
+                              >
+                                คลิกดูสะสมทั้งหมด
+                              </button>
+                            </p>
+                          ) : (
+                            <p className="text-xs text-stone-500 font-normal">
+                              เมื่อมีการทำรายการขายผ่าน POS บิลจะแสดงที่นี่ทันที
+                            </p>
+                          )}
+                        </div>
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                  ) : (
+                    filteredOrders.map((o) => {
+                      const itemsStr = o.items.map((it) => `${it.productTitle} (${it.variantName}) x${it.quantity}`).join(', ');
+                      const pmText = String(o.paymentMethod || '') === 'cash' ? 'เงินสด (Cash)' : String(o.paymentMethod || '') === 'promptpay' ? 'พร้อมเพย์ QR' : String(o.paymentMethod || '') === 'card' ? 'รูดบัตร EDC' : o.paymentMethod;
+                      
+                      return (
+                        <tr key={o.id} className="hover:bg-amber-50/60 transition">
+                          <td className="p-3 font-mono font-black text-amber-950">{o.id}</td>
+                          <td className="p-3 font-bold whitespace-nowrap text-stone-800">
+                            {formatThaiDateTime(o.createdAt)}
+                          </td>
+                          <td className="p-3 font-black text-stone-950">
+                            {o.customerName || 'ลูกค้าหน้าร้าน'}
+                            {o.customerPhone && <div className="text-[10px] text-stone-600 font-mono">{o.customerPhone}</div>}
+                          </td>
+                          <td className="p-3 font-bold max-w-xs truncate text-stone-900" title={itemsStr}>
+                            {itemsStr}
+                          </td>
+                          <td className="p-3 text-right font-serif font-black text-amber-900 text-sm">
+                            ฿{o.netAmount.toLocaleString()}
+                          </td>
+                          <td className="p-3 text-center font-bold">
+                            <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-950 border border-stone-300 text-[10px] font-black">
+                              {pmText}
+                            </span>
+                          </td>
+                          <td className="p-3 text-center">
+                            <button
+                              onClick={() => handleDeleteSpecificOrder(o)}
+                              className="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-950 border border-red-400 rounded-lg text-[11px] font-black flex items-center gap-1 transition mx-auto cursor-pointer"
+                              title="ลบรายการออเดอร์นี้ออกจากระบบ (ต้องใส่รหัส Admin)"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-red-700" />
+                              <span>ลบออเดอร์นี้</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+                {filteredOrders.length > 0 && (
+                  <tfoot className="bg-amber-100/90 font-serif font-black border-t-2 border-amber-500 text-stone-950">
+                    <tr>
+                      <td colSpan={4} className="p-3 text-right font-black text-xs">
+                        รวมยอดขายสุทธิทั้งสิ้น ({filteredOrders.length} คำสั่งซื้อ):
+                      </td>
+                      <td className="p-3 text-right font-serif font-black text-amber-900 text-base">
+                        ฿{totalRevenue.toLocaleString()}
+                      </td>
+                      <td colSpan={2}></td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Admin Passcode Confirmation Modal for All Deletions */}
@@ -1985,7 +2526,7 @@ export const AdminSalesReportManager: React.FC = () => {
                   รายงานสรุปข้อมูลตามตัวกรองอิสระ (Custom Report Summary)
                 </h3>
                 <p className="text-xs text-stone-700 font-bold">
-                  ดึงข้อมูล ณ วันที่ {new Date().toLocaleDateString('th-TH')} | จำนวนรวม {getFilteredReportData().length} รายการ
+                  ดึงข้อมูล ณ {formatThaiDateTime(new Date())} | จำนวนรวม {getFilteredReportData().length} รายการ
                 </p>
               </div>
 

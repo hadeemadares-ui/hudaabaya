@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Store, CreditCard, MapPin, Megaphone, CheckCircle2, Save, AlertTriangle, QrCode, Building, Truck, Wallet, Lock, Camera, Image as ImageIcon, Link as LinkIcon, Trash2, RotateCcw, FileSpreadsheet, Bell, MessageSquare, Send, HelpCircle, ExternalLink } from 'lucide-react';
+import { Store, CreditCard, MapPin, Megaphone, CheckCircle2, Save, AlertTriangle, QrCode, Building, Truck, Wallet, Lock, Camera, Image as ImageIcon, Link as LinkIcon, Trash2, RotateCcw, FileSpreadsheet, Bell, MessageSquare, Send, HelpCircle, ExternalLink, Sparkles, ShieldCheck } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 
 export const AdminSettingsManager: React.FC = () => {
@@ -9,15 +9,20 @@ export const AdminSettingsManager: React.FC = () => {
 
   const [form, setForm] = useState({
     ...storeSettings,
+    showHeroBanner: storeSettings.showHeroBanner ?? true,
     adminPasscode: storeSettings.adminPasscode || '1077',
     lineNotifyEnabled: storeSettings.lineNotifyEnabled ?? true,
     lineNotifyOnNewOrder: storeSettings.lineNotifyOnNewOrder ?? true,
     lineNotifyOnSlipUpload: storeSettings.lineNotifyOnSlipUpload ?? true,
     lineNotifyOnLowStock: storeSettings.lineNotifyOnLowStock ?? true,
+    lineNotifyOnEventSchedule: storeSettings.lineNotifyOnEventSchedule ?? true,
     lineWebhookUrl: storeSettings.lineWebhookUrl || '',
-    lineNotifyToken: storeSettings.lineNotifyToken || 'F5oQJACUmI8/SB64i2W+SPKwCnUVTCIfA5fAbdiW3KqjiaVa7rZ3ikE2rjoeROJ6CdGtlw+Fm/4wv7PnCbIVHnigM+j9mT4V6UqbSwOJRqLFQAWPLqwDHFqzrqTIbcVUI4QXjau+CL7JsfCxxSHuFo9PbdgDzCFqoOLOYbqAITQ=',
+    lineNotifyToken: (!storeSettings.lineNotifyToken || storeSettings.lineNotifyToken.startsWith('F5oQJ')) ? 'T7zjWvPiXBVw8gI5BqSaofwCbvKLIU92hOtUsg9/XNn7dUSjPFlRhgmv6IYXQ6vGCdGtlw+Fm/4wv7PnCbIVHnigM+j9mT4V6UqbSwOJRqKxWTYTYAD/id0JGKr+hEdCoAG2Aw4KZ5FRmloIsvmWf49PbdgDzCFqoOLOYbqAITQ=' : storeSettings.lineNotifyToken,
     lineChannelId: storeSettings.lineChannelId || '2011949895',
     lineChannelSecret: storeSettings.lineChannelSecret || '45811e9faeabea629c67ebcbb52d8236',
+    slipVerifyEnabled: storeSettings.slipVerifyEnabled ?? true,
+    slipVerifyDemoMode: storeSettings.slipVerifyDemoMode ?? true,
+    slipVerifyApiKey: storeSettings.slipVerifyApiKey || '',
   });
   const [savedMsg, setSavedMsg] = useState(false);
   const [isFormInitialized, setIsFormInitialized] = useState(false);
@@ -30,16 +35,21 @@ export const AdminSettingsManager: React.FC = () => {
     if (!isFormInitialized && storeSettings.storeName) {
       setForm({
         ...storeSettings,
-        adminPasscode: storeSettings.adminPasscode || '1077',
+        showHeroBanner: storeSettings.showHeroBanner ?? true,
+    adminPasscode: storeSettings.adminPasscode || '1077',
         contactAddress: storeSettings.contactAddress || '11/2 ถนน คลองสิบสาม แขวงหนองจอก เขตหนองจอก กรุงเทพมหานคร 10530',
         lineNotifyEnabled: storeSettings.lineNotifyEnabled ?? true,
         lineNotifyOnNewOrder: storeSettings.lineNotifyOnNewOrder ?? true,
         lineNotifyOnSlipUpload: storeSettings.lineNotifyOnSlipUpload ?? true,
         lineNotifyOnLowStock: storeSettings.lineNotifyOnLowStock ?? true,
+    lineNotifyOnEventSchedule: storeSettings.lineNotifyOnEventSchedule ?? true,
         lineWebhookUrl: storeSettings.lineWebhookUrl || '',
-        lineNotifyToken: storeSettings.lineNotifyToken || 'F5oQJACUmI8/SB64i2W+SPKwCnUVTCIfA5fAbdiW3KqjiaVa7rZ3ikE2rjoeROJ6CdGtlw+Fm/4wv7PnCbIVHnigM+j9mT4V6UqbSwOJRqLFQAWPLqwDHFqzrqTIbcVUI4QXjau+CL7JsfCxxSHuFo9PbdgDzCFqoOLOYbqAITQ=',
+        lineNotifyToken: (!storeSettings.lineNotifyToken || storeSettings.lineNotifyToken.startsWith('F5oQJ')) ? 'T7zjWvPiXBVw8gI5BqSaofwCbvKLIU92hOtUsg9/XNn7dUSjPFlRhgmv6IYXQ6vGCdGtlw+Fm/4wv7PnCbIVHnigM+j9mT4V6UqbSwOJRqKxWTYTYAD/id0JGKr+hEdCoAG2Aw4KZ5FRmloIsvmWf49PbdgDzCFqoOLOYbqAITQ=' : storeSettings.lineNotifyToken,
         lineChannelId: storeSettings.lineChannelId || '2011949895',
         lineChannelSecret: storeSettings.lineChannelSecret || '45811e9faeabea629c67ebcbb52d8236',
+    slipVerifyEnabled: storeSettings.slipVerifyEnabled ?? true,
+    slipVerifyDemoMode: storeSettings.slipVerifyDemoMode ?? true,
+    slipVerifyApiKey: storeSettings.slipVerifyApiKey || '',
       });
       setIsFormInitialized(true);
     }
@@ -440,6 +450,78 @@ export const AdminSettingsManager: React.FC = () => {
             </div>
           </div>
 
+          {/* Section 4.5: Slip Verification Settings (EasySlip / Mini QR) */}
+          <div className="space-y-4 p-4 sm:p-5 bg-stone-900 rounded-2xl border-2 border-emerald-500/50 shadow-md">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h4 className="font-serif font-extrabold text-emerald-300 text-sm sm:text-base flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                <span>ระบบสแกนตรวจสลิปโอนเงินอัตโนมัติ (Slip Verification API)</span>
+              </h4>
+              <span className="text-[11px] font-black bg-emerald-950 text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-500/60">
+                ✨ ป้องกันสลิปปลอม 100%
+              </span>
+            </div>
+
+            <p className="text-xs text-stone-300 leading-relaxed font-bold">
+              ช่วยให้แคชเชียร์ใช้กล้อง POS หรือปืนยิงสแกน <strong className="text-emerald-300">Mini QR</strong> บนหน้าจอมือถือของลูกค้า (หรือสแกนจากรูปสลิป) เพื่อตรวจเช็คยอดเงินเข้าจริงจากระบบธนาคารทันที ไม่ต้องคอยเพ่งตัวเลขในสลิป
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {/* Enable Toggle */}
+              <label className="flex items-center justify-between p-3 bg-stone-950 rounded-xl border border-stone-700 cursor-pointer hover:border-emerald-500/60 transition">
+                <span className="text-xs font-bold text-stone-200">เปิดใช้งานตรวจสลิปใน POS</span>
+                <input
+                  type="checkbox"
+                  checked={form.slipVerifyEnabled}
+                  onChange={(e) => setForm({ ...form, slipVerifyEnabled: e.target.checked })}
+                  className="w-4 h-4 accent-emerald-500 cursor-pointer"
+                />
+              </label>
+
+              {/* Demo Mode Toggle */}
+              <label className="flex items-center justify-between p-3 bg-stone-950 rounded-xl border border-stone-700 cursor-pointer hover:border-amber-500/60 transition">
+                <div className="space-y-0.5">
+                  <span className="text-xs font-bold text-stone-200 block">โหมดทดสอบจำลอง (Demo Mode)</span>
+                  <span className="text-[10px] text-amber-400 font-medium">ทดลองใช้งานได้ฟรีโดยไม่ต้องต่อ API จริง</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={form.slipVerifyDemoMode}
+                  onChange={(e) => setForm({ ...form, slipVerifyDemoMode: e.target.checked })}
+                  className="w-4 h-4 accent-amber-500 cursor-pointer"
+                />
+              </label>
+            </div>
+
+            {/* EasySlip API Key */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between">
+                <label className="block text-emerald-200 font-extrabold text-xs sm:text-sm">
+                  EasySlip API Key (สำหรับเชื่อมต่อระบบธนาคารจริง):
+                </label>
+                <a
+                  href="https://easyslip.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-amber-400 hover:text-amber-300 text-xs font-bold flex items-center gap-1 underline"
+                >
+                  <span>สมัครรับ API Key ฟรีที่ EasySlip.com</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+              <input
+                type="password"
+                placeholder={form.slipVerifyDemoMode ? "กำลังใช้งานในโหมดทดสอบ (ไม่ต้องใส่ API Key)" : "วาง EasySlip API Key ของคุณที่นี่..."}
+                value={form.slipVerifyApiKey || ''}
+                onChange={(e) => setForm({ ...form, slipVerifyApiKey: e.target.value })}
+                className="w-full bg-stone-950 border-2 border-emerald-500/60 rounded-xl p-3 text-white font-mono text-sm focus:outline-none focus:border-emerald-400 shadow-inner"
+              />
+              <p className="text-[11px] text-stone-400">
+                💡 หากเปิด <strong className="text-amber-300">โหมดทดสอบ</strong> ระบบจะจำลองการอ่าน Mini QR และตรวจยอดเงินได้ทันทีฟรี! เมื่อต้องการต่อระบบตรวจสลิปธนาคารจริง สามารถสมัคร EasySlip (ฟรี 50 สลิปแรก เริ่มต้น ~0.20 บาท/สลิป) แล้วนำ API Key มาวางได้ทันที
+              </p>
+            </div>
+          </div>
+
           {/* Section 5: Low Stock Threshold Alert */}
           <div className="space-y-3.5 p-4 sm:p-5 bg-stone-900 rounded-2xl border-2 border-amber-400/40 shadow-md">
             <h4 className="font-serif font-extrabold text-amber-300 text-sm sm:text-base flex items-center gap-2">
@@ -482,6 +564,37 @@ export const AdminSettingsManager: React.FC = () => {
                 onChange={(e) => setForm({ ...form, topAnnouncement: e.target.value })}
                 className="w-full bg-stone-950 border-2 border-amber-400/60 rounded-xl p-3 text-white font-extrabold text-sm focus:outline-none focus:border-amber-400 shadow-inner"
               />
+            </div>
+          </div>
+
+          {/* Section 6.5: สไลด์โชว์สินค้าหน้าแรก (Hero Banner / Slideshow) */}
+          <div className="space-y-3.5 p-4 sm:p-5 bg-stone-900 rounded-2xl border-2 border-amber-400/40 shadow-md">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-amber-500/20 rounded-xl border border-amber-400 text-amber-300">
+                  <Sparkles className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <h4 className="font-serif font-extrabold text-amber-300 text-sm sm:text-base flex items-center gap-2">
+                    <span>สไลด์โชว์สินค้าหน้าแรก (Hero Banner / Slideshow)</span>
+                  </h4>
+                  <p className="text-[11px] text-stone-300 font-bold mt-0.5">
+                    เปิดหรือปิดแถบภาพสไลด์โชว์สินค้าขนาดใหญ่ด้านบนสุดของหน้าแรก
+                  </p>
+                </div>
+              </div>
+
+              <label className="flex items-center gap-2.5 bg-stone-950 px-4 py-2.5 rounded-xl border-2 border-amber-400/60 cursor-pointer shrink-0 shadow-inner hover:border-amber-400 transition">
+                <input
+                  type="checkbox"
+                  checked={form.showHeroBanner !== false}
+                  onChange={(e) => setForm({ ...form, showHeroBanner: e.target.checked })}
+                  className="w-5 h-5 accent-amber-500 rounded cursor-pointer"
+                />
+                <span className={`text-xs font-black ${form.showHeroBanner !== false ? 'text-emerald-400' : 'text-stone-400'}`}>
+                  {form.showHeroBanner !== false ? '✓ เปิดแสดงสไลด์โชว์' : '✕ ปิดสไลด์โชว์ (ซ่อน)'}
+                </span>
+              </label>
             </div>
           </div>
 
@@ -568,6 +681,16 @@ export const AdminSettingsManager: React.FC = () => {
                 />
                 <span className="text-xs font-bold text-stone-200">⚠️ เมื่อสต๊อกสินค้าใกล้หมด</span>
               </label>
+
+              <label className="flex items-center gap-2 bg-stone-950 p-2.5 rounded-xl border border-stone-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.lineNotifyOnEventSchedule}
+                  onChange={(e) => setForm({ ...form, lineNotifyOnEventSchedule: e.target.checked })}
+                  className="w-4 h-4 accent-emerald-500 rounded"
+                />
+                <span className="text-xs font-bold text-stone-200">🎪 ตารางออกบูธ/ตลาดนัด</span>
+              </label>
             </div>
 
             {/* Connection Inputs */}
@@ -609,17 +732,20 @@ export const AdminSettingsManager: React.FC = () => {
                   />
                 </div>
 
-                <div>
+                                <div>
                   <label className="block text-emerald-200 mb-1 font-extrabold text-xs sm:text-sm">
-                    Target User ID หรือ Group ID (เช่น U1234...)
+                    Target User ID หรือ Group ID (เช่น U1234... หรือ C1234...)
                   </label>
                   <input
                     type="text"
                     value={form.lineUserId || ''}
                     onChange={(e) => setForm({ ...form, lineUserId: e.target.value })}
-                    placeholder="User ID ของคุณ หรือ Group ID ห้องแชตไลน์"
+                    placeholder="User ID ของคุณ (U...) หรือ Group ID ของกลุ่มไลน์ (C...)"
                     className="w-full bg-stone-950 border-2 border-stone-700 rounded-xl p-3 text-amber-200 font-mono font-bold text-xs focus:outline-none focus:border-amber-400 shadow-inner"
                   />
+                  <span className="text-[11px] text-amber-300 font-bold block mt-1.5 leading-relaxed">
+                    👥 <strong>ต้องการแจ้งเตือนเข้ากลุ่ม LINE:</strong> เชิญ LINE Official Account ของร้านเข้ากลุ่ม แล้วใส่ Group ID (ขึ้นต้นด้วย C...) ในช่องนี้ ทุกคนในกลุ่มจะเห็นข้อความพร้อมกัน
+                  </span>
                 </div>
               </div>
             </div>
@@ -632,7 +758,7 @@ export const AdminSettingsManager: React.FC = () => {
                   setIsTestingLine(true);
                   setLineTestFeedback(null);
                   updateStoreSettings(form);
-                  const res = await testLineNotification();
+                  const res = await testLineNotification(undefined, form);
                   setIsTestingLine(false);
                   if (res.success) {
                     setLineTestFeedback({ success: true, message: '✅ ส่งข้อความทดสอบเข้า LINE เรียบร้อยแล้ว! ตรวจสอบแชตของคุณได้เลยครับ' });

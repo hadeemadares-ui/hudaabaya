@@ -18,7 +18,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791012468428-0",
-        "name": "ขวดสเปรย์ 100 ml (EDP Premium Spray)",
+        "name": "สเปรย์ 100 ml",
         "sku": "HD-PRF-100ML",
         "price": 990,
         "costPrice": 600,
@@ -27,7 +27,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       },
       {
         "id": "var-1791012468428-1",
-        "name": "ขวดสเปรย์ 10 ml",
+        "name": "สเปรย์ 10 ml",
         "sku": "HD-PERFUME-50ml",
         "price": 100,
         "costPrice": 70,
@@ -57,7 +57,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791019340342-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-50ML",
         "price": 200,
         "costPrice": 55,
@@ -87,7 +87,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791019358098-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-50ML",
         "price": 200,
         "costPrice": 55,
@@ -117,7 +117,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791019372033-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-50ML",
         "price": 200,
         "costPrice": 55,
@@ -147,7 +147,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791019577114-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-50ML",
         "price": 200,
         "costPrice": 55,
@@ -177,7 +177,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791019627876-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-50ML",
         "price": 200,
         "costPrice": 55,
@@ -207,7 +207,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791019627876-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-50ML",
         "price": 200,
         "costPrice": 55,
@@ -229,7 +229,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "เครื่องหอม / ไม้หอมดูไบ (Bukhoor Dubai)",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "ไม้หอมอูดออริจินัล",
@@ -238,7 +238,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791011564255-0",
-        "name": "ขวด/กระปุก 50g (Standard Bukhoor)",
+        "name": "กระปุก 50g (Standard Bukhoor)",
         "sku": "HD-INC-50G",
         "price": 0,
         "costPrice": 0,
@@ -247,7 +247,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       },
       {
         "id": "var-1791011564255-1",
-        "name": "ขวด/กระปุก 100g (Premium Bukhoor)",
+        "name": "กระปุก 100g (Premium Bukhoor)",
         "sku": "HD-INC-100G",
         "price": 0,
         "costPrice": 0,
@@ -286,7 +286,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791163995816-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-50ML",
         "price": 200,
         "costPrice": 55,
@@ -316,7 +316,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791019665650-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-50ML",
         "price": 200,
         "costPrice": 55,
@@ -346,7 +346,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791019682424-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-50ML",
         "price": 200,
         "costPrice": 55,
@@ -376,7 +376,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791019770614-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-50ML",
         "price": 200,
         "costPrice": 55,
@@ -406,7 +406,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791019756966-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-50ML",
         "price": 200,
         "costPrice": 55,
@@ -436,7 +436,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791019780426-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-50ML",
         "price": 200,
         "costPrice": 55,
@@ -466,7 +466,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791019803467-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-50ML",
         "price": 200,
         "costPrice": 55,
@@ -488,7 +488,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "Nida Silk Dubai Original",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -553,7 +553,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791019793358-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-50ML",
         "price": 200,
         "costPrice": 55,
@@ -583,7 +583,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791019814235-0",
-        "name": "ขวดลูกกลิ้ง 5ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-12ML",
         "price": 200,
         "costPrice": 55,
@@ -613,7 +613,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791019828041-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-12ML",
         "price": 200,
         "costPrice": 55,
@@ -643,7 +643,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791019844418-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "HD-PRF-50ML",
         "price": 200,
         "costPrice": 55,
@@ -673,7 +673,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791005112447-0",
-        "name": "ขวดสเปรย์ 100 ml (EDP Premium Spray)",
+        "name": "สเปรย์ 100 ml",
         "sku": "HD-PRF-100ML",
         "price": 990,
         "costPrice": 600,
@@ -704,7 +704,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791164168916-0",
-        "name": "ขวดลูกกลิ้ง 5 ml",
+        "name": "ลูกกลิ้ง 5 ml",
         "sku": "SKU-1",
         "price": 200,
         "costPrice": 55,
@@ -734,7 +734,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1792325366906-1",
-        "name": "ขวดสเปรย์ (Original)",
+        "name": "สเปรย์ (Original)",
         "sku": "HD-PRF-น้ำห",
         "price": 990,
         "costPrice": 490,
@@ -764,7 +764,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791005341354-0",
-        "name": "ขวดสเปรย์ 100 ml (EDP Premium Spray)",
+        "name": "สเปรย์ 100 ml",
         "sku": "HD-PRF-100ML",
         "price": 990,
         "costPrice": 600,
@@ -794,7 +794,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791004940194-0",
-        "name": "ขวดสเปรย์ 100 ml (EDP Premium Spray)",
+        "name": "สเปรย์ 100 ml",
         "sku": "HD-PRF-100ML",
         "price": 990,
         "costPrice": 600,
@@ -825,7 +825,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791003628038-0",
-        "name": "ขวดสเปรย์ 100 ml (EDP Spray)",
+        "name": "สเปรย์ 100 ml",
         "sku": "HD-PRF-50ML",
         "price": 990,
         "costPrice": 600,
@@ -921,8 +921,9 @@ export const INITIAL_PRODUCTS: Product[] = [
         "sku": "HD-ABAYA-Size52150155",
         "price": 1290,
         "costPrice": 900,
-        "stockQuantity": 0,
-        "color": "สีดำ (Black)"
+        "stockQuantity": 2,
+        "color": "สีดำ (Black)",
+        "updatedAt": 1794188901073
       },
       {
         "id": "var-1791699602714-1",
@@ -1087,7 +1088,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "Nida Silk Dubai",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -1184,7 +1185,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -1319,7 +1320,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -1424,7 +1425,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "Nida Silk Dubai Original",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -1472,7 +1473,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "Nida Silk Dubai Original",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -1529,7 +1530,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "Nida Silk Dubai Original",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -1586,7 +1587,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -1643,7 +1644,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -1700,7 +1701,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีฟ้าสกายบลู (Sky Blue)"
@@ -1730,7 +1731,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -1787,7 +1788,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "Nida Silk Dubai Original",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -1835,7 +1836,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -1892,7 +1893,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -1949,7 +1950,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2006,7 +2007,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2063,7 +2064,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2120,7 +2121,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2177,7 +2178,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2234,7 +2235,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2291,7 +2292,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2348,7 +2349,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2405,7 +2406,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2462,7 +2463,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2519,7 +2520,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "-",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2576,7 +2577,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "Nida Silk Dubai",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2633,7 +2634,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "Nida Silk Dubai Original",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2681,7 +2682,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "Nida Silk Dubai",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2738,7 +2739,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "Nida Silk Dubai",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2795,7 +2796,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "Nida Silk Dubai",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2852,7 +2853,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "Nida Silk Dubai",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2909,7 +2910,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "Nida Silk Dubai",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -2966,7 +2967,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "Nida Silk Dubai",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -3023,7 +3024,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "Nida Silk Dubai",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -3080,7 +3081,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "Nida Silk Dubai",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีดำ (Black)"
@@ -3137,7 +3138,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "ผ้านาดา",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "สีชมพู",
@@ -3203,7 +3204,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1792325366781-1",
-        "name": "ขวดสเปรย์ (Original)",
+        "name": "สเปรย์ (Original)",
         "sku": "HD-PRF-asda",
         "price": 990,
         "costPrice": 490,
@@ -3281,7 +3282,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791012826804-0",
-        "name": "ขวดสเปรย์ 75 ml (EDP Premium Spray)",
+        "name": "สเปรย์ 75 ml",
         "sku": "HD-PRF-100ML",
         "price": 1270,
         "costPrice": 700,
@@ -3290,7 +3291,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       },
       {
         "id": "var-1791012826804-1",
-        "name": "ขวดลูกกลิ้ง 10 ml",
+        "name": "ลูกกลิ้ง 10 ml",
         "sku": "SKU-2",
         "price": 150,
         "costPrice": 103,
@@ -3320,7 +3321,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1792325366241-1",
-        "name": "ขวดสเปรย์ (Original)",
+        "name": "สเปรย์ (Original)",
         "sku": "HD-PRF-Latt",
         "price": 990,
         "costPrice": 490,
@@ -3350,7 +3351,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "variants": [
       {
         "id": "var-1791005743070-0",
-        "name": "ขวดสเปรย์ 100 ml (EDP Premium Spray)",
+        "name": "สเปรย์ 100 ml",
         "sku": "HD-PRF-100ML",
         "price": 990,
         "costPrice": 600,
@@ -3468,7 +3469,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "fabric": "",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop"
+      "/images/placeholder-abaya.jpg"
     ],
     "colors": [
       "ไม้บาคัวร์"
@@ -3570,7 +3571,7 @@ export const INITIAL_ORDERS: any[] = [
         productTitle: 'น้ำหอมดูไบแท้ Royal Oud Amber Dubai 100ml',
         productImage: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop',
         variantId: 'var-oud-100',
-        variantName: 'ขวดสเปรย์ 100 ml (EDP Premium)',
+        variantName: 'สเปรย์ 100 ml',
         price: 2590,
         costPrice: 1290,
         quantity: 1,
