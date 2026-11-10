@@ -950,7 +950,7 @@ export const AdminProductManager: React.FC = () => {
   }, [currentCategorySizeOptions, customVariantInput]);
 
   // State for inline editing of a size option
-  const [editingSizeIdx, setEditingSizeIdx] = useState<number | null>(null);
+  const [editingSizeName, setEditingSizeName] = useState<string | null>(null);
   const [editingSizeText, setEditingSizeText] = useState<string>('');
 
   // Helper to persist category size map
@@ -1006,11 +1006,17 @@ export const AdminProductManager: React.FC = () => {
     }
   };
 
-  const handleSaveEditSizeOption = (idx: number, oldName: string) => {
+  const handleSaveEditSizeOption = (oldName: string) => {
     const trimmed = stripBottlePrefix(editingSizeText.trim());
     if (!trimmed) return;
+    const realIdx = currentCategorySizeOptions.findIndex((s) => s === oldName);
+    if (realIdx === -1) {
+      setEditingSizeName(null);
+      setEditingSizeText('');
+      return;
+    }
     const updatedCatList = [...currentCategorySizeOptions];
-    updatedCatList[idx] = trimmed;
+    updatedCatList[realIdx] = trimmed;
     const updatedMap = {
       ...categorySizeMap,
       [activeCategoryKey]: updatedCatList,
@@ -1022,7 +1028,7 @@ export const AdminProductManager: React.FC = () => {
       prev.map((v) => (v.name === oldName ? { ...v, name: trimmed } : v))
     );
 
-    setEditingSizeIdx(null);
+    setEditingSizeName(null);
     setEditingSizeText('');
   };
 
@@ -1055,7 +1061,7 @@ export const AdminProductManager: React.FC = () => {
       }
       if (sizeDropdownRef.current && !sizeDropdownRef.current.contains(event.target as Node)) {
         setIsSizeDropdownOpen(false);
-        setEditingSizeIdx(null);
+        setEditingSizeName(null);
       }
       if (descriptionDropdownRef.current && !descriptionDropdownRef.current.contains(event.target as Node)) {
         setIsDescriptionDropdownOpen(false);
@@ -1063,7 +1069,7 @@ export const AdminProductManager: React.FC = () => {
       }
       if (!(event.target as HTMLElement).closest('[data-color-dropdown]')) {
         setOpenColorDropdownIdx(null);
-        setEditingColorIdx(null);
+        setEditingColorName(null);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -1185,7 +1191,7 @@ export const AdminProductManager: React.FC = () => {
 
   // State for Color Dropdown and inline editing
   const [openColorDropdownIdx, setOpenColorDropdownIdx] = useState<number | null>(null);
-  const [editingColorIdx, setEditingColorIdx] = useState<number | null>(null);
+  const [editingColorName, setEditingColorName] = useState<string | null>(null);
   const [editingColorText, setEditingColorText] = useState<string>('');
   const [copiedColorText, setCopiedColorText] = useState<string | null>(null);
   const [newCustomColorInput, setNewCustomColorInput] = useState<string>('');
@@ -1245,11 +1251,17 @@ export const AdminProductManager: React.FC = () => {
     }
   };
 
-  const handleSaveEditColorOption = (idx: number, oldName: string) => {
+  const handleSaveEditColorOption = (oldName: string) => {
     const trimmed = editingColorText.trim();
     if (!trimmed) return;
+    const realIdx = currentCategoryColorOptions.findIndex((c) => c === oldName);
+    if (realIdx === -1) {
+      setEditingColorName(null);
+      setEditingColorText('');
+      return;
+    }
     const updatedCatList = [...currentCategoryColorOptions];
-    updatedCatList[idx] = trimmed;
+    updatedCatList[realIdx] = trimmed;
     const updatedMap = {
       ...categoryColorMap,
       [activeCategoryKey]: updatedCatList,
@@ -1261,7 +1273,7 @@ export const AdminProductManager: React.FC = () => {
       prev.map((v) => (v.color === oldName ? { ...v, color: trimmed } : v))
     );
 
-    setEditingColorIdx(null);
+    setEditingColorName(null);
     setEditingColorText('');
   };
 
@@ -3333,7 +3345,10 @@ export const AdminProductManager: React.FC = () => {
 
                       {/* Floating Dropdown Menu */}
                       {isSizeDropdownOpen && (
-                        <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border-2 border-amber-400 rounded-xl shadow-2xl overflow-hidden max-h-64 overflow-y-auto">
+                        <div
+                          ref={sizeDropdownRef}
+                          className="absolute z-50 left-0 w-full min-w-[320px] sm:min-w-[420px] mt-1.5 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl overflow-hidden max-h-80 overflow-y-auto"
+                        >
                           {/* Header */}
                           <div className="p-2 bg-amber-100/90 border-b border-amber-300 flex items-center justify-between text-[11px] font-black text-amber-950">
                             <span>
@@ -3360,12 +3375,18 @@ export const AdminProductManager: React.FC = () => {
 
                           {/* List of size options */}
                           <div className="divide-y divide-stone-100">
-                            {filteredCategorySizeOptions.map((opt, idx) => {
-                              const isEditing = editingSizeIdx === idx;
+                            {filteredCategorySizeOptions.map((opt) => {
+                              const isEditing = editingSizeName === opt;
 
                               if (isEditing) {
                                 return (
-                                  <div key={idx} className="p-2 bg-amber-50/90 flex items-center gap-1.5 border-b border-amber-300">
+                                  <div key={opt} className="p-2.5 bg-amber-50/95 border-y-2 border-amber-400 space-y-2 shadow-inner">
+                                    <div className="flex items-center justify-between text-[11px] font-black text-amber-950">
+                                      <span className="flex items-center gap-1">
+                                        ✏️ แก้ไขขนาด: <strong className="underline text-amber-900 font-mono">{opt}</strong>
+                                      </span>
+                                      <span className="text-[10px] text-stone-500 font-normal">กด Enter เพื่อบันทึก</span>
+                                    </div>
                                     <input
                                       type="text"
                                       value={editingSizeText}
@@ -3373,30 +3394,32 @@ export const AdminProductManager: React.FC = () => {
                                       onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                           e.preventDefault();
-                                          handleSaveEditSizeOption(idx, opt);
+                                          handleSaveEditSizeOption(opt);
                                         } else if (e.key === 'Escape') {
-                                          setEditingSizeIdx(null);
+                                          setEditingSizeName(null);
                                         }
                                       }}
                                       autoFocus
-                                      className="flex-1 bg-white border-2 border-amber-500 rounded-lg px-2.5 py-1 text-xs font-black text-stone-950 focus:outline-none shadow-inner"
+                                      placeholder="พิมพ์ชื่อขนาดหรือไซส์ใหม่..."
+                                      className="w-full bg-white border-2 border-amber-500 rounded-xl px-3 py-2 text-xs font-black text-stone-950 focus:outline-none shadow-sm"
                                     />
-                                    <button
-                                      type="button"
-                                      onClick={() => handleSaveEditSizeOption(idx, opt)}
-                                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black shadow transition cursor-pointer"
-                                      title="บันทึกการแก้ไข"
-                                    >
-                                      บันทึก
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => setEditingSizeIdx(null)}
-                                      className="px-2 py-1 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-lg text-xs font-black transition cursor-pointer"
-                                      title="ยกเลิก"
-                                    >
-                                      ยกเลิก
-                                    </button>
+                                    <div className="flex items-center justify-end gap-2 pt-0.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditingSizeName(null)}
+                                        className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-700 rounded-xl text-xs font-black transition cursor-pointer"
+                                      >
+                                        ยกเลิก
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSaveEditSizeOption(opt)}
+                                        className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-md transition cursor-pointer flex items-center gap-1.5 border border-emerald-700"
+                                      >
+                                        <Check className="w-3.5 h-3.5 text-white" />
+                                        <span>บันทึกชื่อนี้</span>
+                                      </button>
+                                    </div>
                                   </div>
                                 );
                               }
@@ -3424,7 +3447,7 @@ export const AdminProductManager: React.FC = () => {
                                       type="button"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setEditingSizeIdx(idx);
+                                        setEditingSizeName(opt);
                                         setEditingSizeText(opt);
                                       }}
                                       className="p-1 hover:bg-amber-200 text-stone-500 hover:text-amber-950 rounded transition cursor-pointer"
@@ -3684,7 +3707,7 @@ export const AdminProductManager: React.FC = () => {
 
                             {/* Floating Dropdown for this variant's color */}
                             {openColorDropdownIdx === idx && (
-                              <div className="absolute z-50 left-0 right-0 mt-1 bg-white border-2 border-amber-400 rounded-xl shadow-2xl overflow-hidden max-h-64 overflow-y-auto">
+                              <div className="absolute z-50 left-0 w-full min-w-[320px] sm:min-w-[400px] mt-1 bg-white border-2 border-amber-400 rounded-2xl shadow-2xl overflow-hidden max-h-80 overflow-y-auto">
                                 {/* Dropdown Header */}
                                 <div className="p-2 bg-amber-100/90 border-b border-amber-300 flex items-center justify-between text-[11px] font-black text-amber-950">
                                   <span>
@@ -3767,13 +3790,19 @@ export const AdminProductManager: React.FC = () => {
                                 {/* Options List */}
                                 <div className="divide-y divide-stone-100">
                                   {currentCategoryColorOptions
-                                    .filter((opt) => !v.color || !v.color.trim() || opt.toLowerCase().includes(v.color.trim().toLowerCase()))
-                                    .map((opt, colorIdx) => {
-                                      const isEditing = editingColorIdx === colorIdx;
+                                    .filter((opt) => !v.color || !v.color.trim() || opt.toLowerCase().includes(v.color.trim().toLowerCase()) || editingColorName === opt)
+                                    .map((opt) => {
+                                      const isEditing = editingColorName === opt;
 
                                       if (isEditing) {
                                         return (
-                                          <div key={colorIdx} className="p-1.5 bg-amber-50/90 flex items-center gap-1 border-b border-amber-300">
+                                          <div key={opt} className="p-2.5 bg-amber-50/95 border-y-2 border-amber-400 space-y-2 shadow-inner">
+                                            <div className="flex items-center justify-between text-[11px] font-black text-amber-950">
+                                              <span className="flex items-center gap-1">
+                                                ✏️ แก้ไขชื่อ: <strong className="underline text-amber-900 font-mono">{opt}</strong>
+                                              </span>
+                                              <span className="text-[10px] text-stone-500 font-normal">กด Enter เพื่อบันทึก</span>
+                                            </div>
                                             <input
                                               type="text"
                                               value={editingColorText}
@@ -3781,28 +3810,32 @@ export const AdminProductManager: React.FC = () => {
                                               onKeyDown={(e) => {
                                                 if (e.key === 'Enter') {
                                                   e.preventDefault();
-                                                  handleSaveEditColorOption(colorIdx, opt);
+                                                  handleSaveEditColorOption(opt);
                                                 } else if (e.key === 'Escape') {
-                                                  setEditingColorIdx(null);
+                                                  setEditingColorName(null);
                                                 }
                                               }}
                                               autoFocus
-                                              className="flex-1 bg-white border-2 border-amber-500 rounded-lg px-2 py-1 text-xs font-black text-stone-950 focus:outline-none shadow-inner"
+                                              placeholder={category === 'perfume' ? 'พิมพ์ชื่อกลิ่นที่ต้องการ...' : 'พิมพ์ชื่อสีที่ต้องการ...'}
+                                              className="w-full bg-white border-2 border-amber-500 rounded-xl px-3 py-2 text-xs font-black text-stone-950 focus:outline-none shadow-sm"
                                             />
-                                            <button
-                                              type="button"
-                                              onClick={() => handleSaveEditColorOption(colorIdx, opt)}
-                                              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black transition cursor-pointer"
-                                            >
-                                              บันทึก
-                                            </button>
-                                            <button
-                                              type="button"
-                                              onClick={() => setEditingColorIdx(null)}
-                                              className="px-2 py-1 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-lg text-xs font-black transition cursor-pointer"
-                                            >
-                                              ยกเลิก
-                                            </button>
+                                            <div className="flex items-center justify-end gap-2 pt-0.5">
+                                              <button
+                                                type="button"
+                                                onClick={() => setEditingColorName(null)}
+                                                className="px-3 py-1.5 bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-700 rounded-xl text-xs font-black transition cursor-pointer"
+                                              >
+                                                ยกเลิก
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleSaveEditColorOption(opt)}
+                                                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-md transition cursor-pointer flex items-center gap-1.5 border border-emerald-700"
+                                              >
+                                                <Check className="w-3.5 h-3.5 text-white" />
+                                                <span>บันทึกชื่อนี้</span>
+                                              </button>
+                                            </div>
                                           </div>
                                         );
                                       }
@@ -3846,7 +3879,7 @@ export const AdminProductManager: React.FC = () => {
                                               type="button"
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                setEditingColorIdx(colorIdx);
+                                                setEditingColorName(opt);
                                                 setEditingColorText(opt);
                                               }}
                                               className="p-1 hover:bg-amber-200 text-stone-400 hover:text-amber-950 rounded transition cursor-pointer"
