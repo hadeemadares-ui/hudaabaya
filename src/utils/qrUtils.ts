@@ -34,6 +34,7 @@ export function resolveScannedProduct(
   }
 
   const text = rawText.trim();
+  if (!text) return null;
 
   // 1. Format: HUDA:PRODUCT_ID:VARIANT_ID or HUDA:PRODUCT_ID:VARIANT_ID:LOT_NUMBER
   if (text.startsWith('HUDA:')) {
@@ -94,9 +95,30 @@ export function resolveScannedProduct(
     } catch (e) {}
   }
 
-  // 4. Format: SKU matching (e.g. HUDA-A005-1-69, HUDA-766470, etc.)
+  // 4. Match by exact Product ID
+  const directProduct = products.find((p) => p.id === text);
+  if (directProduct) {
+    return { product: directProduct, variant: directProduct.variants[0], matchType: 'id' };
+  }
+
+  // 5. Match by exact Variant ID
+  for (const p of products) {
+    const vMatch = p.variants.find((v) => v.id === text);
+    if (vMatch) {
+      return { product: p, variant: vMatch, matchType: 'id' };
+    }
+  }
+
+  // Normalized search representations
+  const lowerText = text.toLowerCase();
+  const cleanCode = text
+    .replace(/^HUDA[-_:]?/i, '')
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase();
+
+  // 6. Format: SKU matching starting with HUDA- (e.g. HUDA-A005-1-69, HUDA-C006, etc.)
   if (text.toUpperCase().startsWith('HUDA-')) {
-    // 4.1 Match by Product Model Code in title (e.g. "A001" in "A001ดำเพชรเงิน" or "A005" in "A005 ฟาราช่า" for "HUDA-A001-2-69")
+    // 6.1 Match by Product Model Code in title (e.g. "A001", "C006", "A019")
     for (const p of products) {
       const modelCode = extractProductModelCode(p.title, p.id);
       if (modelCode && modelCode.length >= 2) {
@@ -107,7 +129,7 @@ export function resolveScannedProduct(
       }
     }
 
-    // 4.2 Candidate SKU matching with variant name
+    // 6.2 Candidate SKU matching with variant name
     for (const p of products) {
       for (const v of p.variants) {
         const cleanProd = p.id.replace('huda-prod-', '').replace(/[^a-zA-Z0-9]/g, '').slice(-6).toUpperCase();
@@ -119,7 +141,7 @@ export function resolveScannedProduct(
       }
     }
 
-    // 4.3 Match short SKU format: HUDA-[PROD_ID_SHORT]-[LOT] or HUDA-[PROD_ID_SHORT]
+    // 6.3 Match short SKU format: HUDA-[PROD_ID_SHORT]-[LOT] or HUDA-[PROD_ID_SHORT]
     for (const p of products) {
       const cleanProd = p.id.replace('huda-prod-', '').replace(/[^a-zA-Z0-9]/g, '').slice(-6).toUpperCase();
       if (text.toUpperCase().startsWith(`HUDA-${cleanProd}`)) {
@@ -129,25 +151,61 @@ export function resolveScannedProduct(
     }
   }
 
-  // 5. Match by exact Product ID
-  const directProduct = products.find((p) => p.id === text);
-  if (directProduct) {
-    return { product: directProduct, variant: directProduct.variants[0], matchType: 'id' };
-  }
-
-  // 6. Match by exact Variant ID
-  for (const p of products) {
-    const vMatch = p.variants.find((v) => v.id === text);
-    if (vMatch) {
-      return { product: p, variant: vMatch, matchType: 'id' };
+  // 7. Match by Product Model Code directly (e.g. user scans or types "c006", "C006", "c-006", "a019", "A-019")
+  if (cleanCode && cleanCode.length >= 2) {
+    for (const p of products) {
+      const modelCode = extractProductModelCode(p.title, p.id);
+      const cleanModel = modelCode ? modelCode.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
+      if (cleanModel && (cleanModel === cleanCode || (cleanCode.startsWith(cleanModel) && cleanModel.length >= 3))) {
+        const remainder = cleanCode.slice(cleanModel.length).trim();
+        return { product: p, variant: p.variants[0], matchType: 'sku', lotNumber: remainder || undefined };
+      }
     }
   }
 
-  // 7. Match by Product Title (fuzzy or exact)
-  const lowerText = text.toLowerCase();
-  const titleMatch = products.find((p) => p.title.toLowerCase() === lowerText);
-  if (titleMatch) {
-    return { product: titleMatch, variant: titleMatch.variants[0], matchType: 'title' };
+  // 8. Match by Variant SKU or Barcode
+  for (const p of products) {
+    for (const v of p.variants) {
+      const vSku = v.sku?.toLowerCase();
+      const vCleanSku = v.sku ? v.sku.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
+      if (
+        (vSku && (vSku === lowerText || vCleanSku === cleanCode)) ||
+        (v.barcode && (v.barcode.toLowerCase() === lowerText || v.barcode.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() === cleanCode))
+      ) {
+        return { product: p, variant: v, matchType: 'sku' };
+      }
+    }
+  }
+
+  // 9. Match by Product Title: Exact, StartsWith, or Substring
+  // 9.1 Exact Title match
+  const exactTitleMatch = products.find((p) => p.title.toLowerCase() === lowerText);
+  if (exactTitleMatch) {
+    return { product: exactTitleMatch, variant: exactTitleMatch.variants[0], matchType: 'title' };
+  }
+
+  // 9.2 Title starts with search text (e.g. "C006 asdaaf ameerat al arab" starts with "c006")
+  const startsWithMatch = products.find((p) => p.title.trim().toLowerCase().startsWith(lowerText));
+  if (startsWithMatch) {
+    return { product: startsWithMatch, variant: startsWithMatch.variants[0], matchType: 'title' };
+  }
+
+  // 9.3 Title includes search text (if input length >= 3, e.g. "ameerat" or "asdaaf")
+  if (lowerText.length >= 3) {
+    const includesMatch = products.find((p) => p.title.toLowerCase().includes(lowerText));
+    if (includesMatch) {
+      return { product: includesMatch, variant: includesMatch.variants[0], matchType: 'title' };
+    }
+  }
+
+  // 9.4 Variant name includes search text
+  if (lowerText.length >= 2) {
+    for (const p of products) {
+      const vMatch = p.variants.find((v) => v.name.toLowerCase().includes(lowerText));
+      if (vMatch) {
+        return { product: p, variant: vMatch, matchType: 'title' };
+      }
+    }
   }
 
   return null;

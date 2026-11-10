@@ -5,6 +5,7 @@ export interface ProductVariant {
   id: string;
   name: string; // e.g. Size 52 (สีดำ), Size 54 (สีทอง)
   sku: string;
+  barcode?: string;
   price: number;
   costPrice?: number; // Optional Cost Price per variant
   originalPrice?: number;

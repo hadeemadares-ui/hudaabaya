@@ -66,7 +66,9 @@ export async function onRequestPost(context: any) {
     const { action, product, products, productId, deletedIds } = body;
 
     if (action === 'sync_all_products' && Array.isArray(products)) {
-      globalProducts = products;
+      if (products.length > 0 || currentProds.length === 0) {
+        globalProducts = products;
+      }
       if (Array.isArray(deletedIds)) {
         globalDeletedIds = Array.from(new Set([...globalDeletedIds, ...deletedIds]));
       }

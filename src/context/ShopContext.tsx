@@ -592,6 +592,22 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     deletedStockMovementIdsRef.current = deletedStockMovementIds;
   }, [deletedStockMovementIds]);
 
+  const productsRef = useRef<Product[]>(products);
+  const ordersRef = useRef<Order[]>(orders);
+  const stockMovementsRef = useRef<StockMovement[]>(stockMovements);
+
+  useEffect(() => {
+    productsRef.current = products;
+  }, [products]);
+
+  useEffect(() => {
+    ordersRef.current = orders;
+  }, [orders]);
+
+  useEffect(() => {
+    stockMovementsRef.current = stockMovements;
+  }, [stockMovements]);
+
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isOrderTrackingOpen, setIsOrderTrackingOpen] = useState<boolean>(false);
@@ -2124,6 +2140,21 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       window.addEventListener('storage', handleStorageEvent);
 
+      const handleCustomProductsUpdate = (e: any) => {
+        if (e.detail?.products && Array.isArray(e.detail.products) && e.detail.products.length > 0) {
+          productsRef.current = e.detail.products;
+          setProducts(e.detail.products);
+        }
+      };
+      const handleCustomOrdersUpdate = (e: any) => {
+        if (e.detail?.orders && Array.isArray(e.detail.orders)) {
+          ordersRef.current = e.detail.orders;
+          setOrders(e.detail.orders);
+        }
+      };
+      window.addEventListener('huda_products_updated', handleCustomProductsUpdate);
+      window.addEventListener('huda_orders_updated', handleCustomOrdersUpdate);
+
       // Initial immediate outbox flush & sync
       forceRealtimeSync();
 
@@ -2157,6 +2188,8 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         window.removeEventListener('focus', handleWindowFocus);
         window.removeEventListener('online', handleOnline);
         window.removeEventListener('storage', handleStorageEvent);
+        window.removeEventListener('huda_products_updated', handleCustomProductsUpdate);
+        window.removeEventListener('huda_orders_updated', handleCustomOrdersUpdate);
         try { syncChannelRef.current?.close(); } catch (e) {}
       };
 
@@ -2753,35 +2786,38 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const now = Date.now();
 
-    let updatedProductsList: Product[] = [];
+    const currentProds = productsRef.current && productsRef.current.length > 0 ? productsRef.current : products;
+    let updatedProductsList: Product[] = currentProds;
     if (!newOrder.boothTransferId) {
-      setProducts((prevProducts) => {
-        updatedProductsList = prevProducts.map((prod) => {
-          const matchingItems = newOrder.items.filter((item) => item.productId === prod.id);
-          if (matchingItems.length === 0) return prod;
+      updatedProductsList = currentProds.map((prod) => {
+        const matchingItems = newOrder.items.filter((item) => item.productId === prod.id);
+        if (matchingItems.length === 0) return prod;
 
-          const updatedVariants = prod.variants.map((variant) => {
-            const orderedItem = matchingItems.find((item) => item.variantId === variant.id);
-            if (!orderedItem) return variant;
-            const updatedStock = Math.max(0, variant.stockQuantity - orderedItem.quantity);
+        const updatedVariants = prod.variants.map((variant) => {
+          const orderedItem = matchingItems.find((item) => item.variantId === variant.id);
+          if (!orderedItem) return variant;
+          const currentStock = typeof variant.stockQuantity === 'number' && !isNaN(variant.stockQuantity) ? variant.stockQuantity : 0;
+          const updatedStock = Math.max(0, currentStock - orderedItem.quantity);
 
-            return {
-              ...variant,
-              stockQuantity: updatedStock,
-              updatedAt: now,
-            };
-          });
-
-          return { ...prod, variants: updatedVariants, updatedAt: now };
+          return {
+            ...variant,
+            stockQuantity: updatedStock,
+            updatedAt: now,
+          };
         });
 
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('huda_products', JSON.stringify(updatedProductsList));
-          syncChannelRef.current?.postMessage({ type: 'PRODUCTS_UPDATED', products: updatedProductsList });
-        }
-        saveCloudProducts(updatedProductsList);
-        return updatedProductsList;
+        return { ...prod, variants: updatedVariants, updatedAt: now };
       });
+
+      productsRef.current = updatedProductsList;
+      setProducts(updatedProductsList);
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_products', JSON.stringify(updatedProductsList));
+        window.dispatchEvent(new CustomEvent('huda_products_updated', { detail: { products: updatedProductsList } }));
+        syncChannelRef.current?.postMessage({ type: 'PRODUCTS_UPDATED', products: updatedProductsList });
+      }
+      saveCloudProducts(updatedProductsList);
     } else {
       // Order placed from Booth POS: record sold quantity against the booth transfer
       setBoothTransfers((prev) => {
@@ -2823,15 +2859,15 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     }
 
-    let updatedOrdersList: Order[] = [];
-    setOrders((prev) => {
-      updatedOrdersList = [newOrder, ...prev];
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_orders', JSON.stringify(updatedOrdersList));
-      }
-      saveCloudOrders(updatedOrdersList);
-      return updatedOrdersList;
-    });
+    const currentOrders = ordersRef.current && ordersRef.current.length > 0 ? ordersRef.current : orders;
+    const updatedOrdersList: Order[] = [newOrder, ...currentOrders.filter((o) => o.id !== newOrder.id)];
+    ordersRef.current = updatedOrdersList;
+    setOrders(updatedOrdersList);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('huda_orders', JSON.stringify(updatedOrdersList));
+      window.dispatchEvent(new CustomEvent('huda_orders_updated', { detail: { orders: updatedOrdersList } }));
+    }
+    saveCloudOrders(updatedOrdersList);
 
     // Auto-record Stock OUT movement for sold items to enable Supplier Settlement
     const newStockOutMovements: StockMovement[] = newOrder.items.map((item, idx) => {
@@ -2880,14 +2916,13 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     });
 
-    let updatedMovementsList: StockMovement[] = [];
-    setStockMovements((prev) => {
-      updatedMovementsList = [...newStockOutMovements, ...prev];
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsList));
-      }
-      return updatedMovementsList;
-    });
+    const currentMovements = stockMovementsRef.current && stockMovementsRef.current.length > 0 ? stockMovementsRef.current : stockMovements;
+    const updatedMovementsList: StockMovement[] = [...newStockOutMovements, ...currentMovements];
+    stockMovementsRef.current = updatedMovementsList;
+    setStockMovements(updatedMovementsList);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsList));
+    }
 
     if (typeof window !== 'undefined') {
       try {
@@ -2934,91 +2969,84 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const now = Date.now();
     const nowIso = new Date().toISOString();
 
-    let updatedProductsList: Product[] = [];
-    setProducts((prevProducts) => {
-      // Map of incoming increments: `${productId}:${variantId}`
-      const incomingMap = new Map<string, { quantity: number; costPrice: number }>();
-      items.forEach((it) => {
-        const key = `${it.productId}:${it.variantId}`;
-        const existing = incomingMap.get(key);
-        if (existing) {
-          existing.quantity += it.quantity;
-          if (it.costPrice > 0) existing.costPrice = it.costPrice;
-        } else {
-          incomingMap.set(key, { quantity: it.quantity, costPrice: it.costPrice });
+    const currentProds = productsRef.current && productsRef.current.length > 0 ? productsRef.current : products;
+    const updatedProductsList: Product[] = currentProds.map((p) => {
+      const matchingItems = items.filter((it) => it.productId === p.id);
+      if (matchingItems.length === 0) return p;
+
+      let prodChanged = false;
+      const updatedVariants = p.variants.map((v) => {
+        // Match variant by ID or fallback if product has only 1 variant
+        const matchingItem = matchingItems.find(
+          (it) => it.variantId === v.id || (!it.variantId && p.variants.length === 1) || p.variants.length === 1
+        );
+        if (matchingItem && matchingItem.quantity > 0) {
+          prodChanged = true;
+          const currentStock = typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity) ? v.stockQuantity : 0;
+          const newStock = Math.max(0, currentStock + matchingItem.quantity);
+          const newCost = matchingItem.costPrice > 0 ? matchingItem.costPrice : (v.costPrice || 0);
+          return {
+            ...v,
+            stockQuantity: newStock,
+            costPrice: newCost,
+            updatedAt: now,
+          };
         }
+        return v;
       });
 
-      updatedProductsList = prevProducts.map((p) => {
-        let prodChanged = false;
-        const updatedVariants = p.variants.map((v) => {
-          const inc = incomingMap.get(`${p.id}:${v.id}`);
-          if (inc) {
-            prodChanged = true;
-            const currentStock = typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity) ? v.stockQuantity : 0;
-            const newStock = Math.max(0, currentStock + inc.quantity);
-            const newCost = inc.costPrice > 0 ? inc.costPrice : (v.costPrice || 0);
-            return {
-              ...v,
-              stockQuantity: newStock,
-              costPrice: newCost,
-              updatedAt: now,
-            };
-          }
-          return v;
-        });
-
-        if (prodChanged) {
-          return { ...p, variants: updatedVariants, updatedAt: now };
-        }
-        return p;
-      });
-
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('huda_products', JSON.stringify(updatedProductsList));
-        } catch (e) {}
+      if (prodChanged) {
+        return { ...p, variants: updatedVariants, updatedAt: now };
       }
-      return updatedProductsList;
+      return p;
     });
 
-    let updatedMovementsList: StockMovement[] = [];
-    setStockMovements((prevMovements) => {
-      const newMovements: StockMovement[] = items.map((it, idx) => {
-        const prod = updatedProductsList.find((p) => p.id === it.productId) || products.find((p) => p.id === it.productId);
-        const variant = prod?.variants.find((v) => v.id === it.variantId);
-        const cost = it.costPrice > 0 ? it.costPrice : (variant?.costPrice || 0);
-
-        return {
-          id: `MOV-IN-${now}-${idx}-${Math.floor(Math.random() * 1000)}`,
-          type: 'IN',
-          productId: it.productId,
-          productTitle: prod?.title || 'สินค้า',
-          variantId: it.variantId,
-          variantName: variant?.name || 'ไซส์/รายการ',
-          quantity: it.quantity,
-          costPrice: cost,
-          totalCost: cost * it.quantity,
-          supplierName: it.supplierName || 'โรงงานอาบายะห์ดูไบ',
-          note: it.note || 'บันทึกรับสินค้าเข้าสต๊อก (Stock In)',
-          performedBy: 'ผู้ดูแลระบบหลังบ้าน',
-          createdAt: nowIso,
-          isSettled: true,
-          lotNumber: it.lotNumber || '',
-        };
-      });
-
-      updatedMovementsList = [...newMovements, ...prevMovements];
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsList));
-        } catch (e) {}
-      }
-      return updatedMovementsList;
-    });
+    productsRef.current = updatedProductsList;
+    setProducts(updatedProductsList);
 
     if (typeof window !== 'undefined') {
       try {
+        localStorage.setItem('huda_products', JSON.stringify(updatedProductsList));
+        window.dispatchEvent(
+          new CustomEvent('huda_products_updated', {
+            detail: { products: updatedProductsList },
+          })
+        );
+      } catch (e) {}
+    }
+
+    const currentMovements = stockMovementsRef.current && stockMovementsRef.current.length > 0 ? stockMovementsRef.current : stockMovements;
+    const newMovements: StockMovement[] = items.map((it, idx) => {
+      const prod = updatedProductsList.find((p) => p.id === it.productId);
+      const variant = prod?.variants.find((v) => v.id === it.variantId) || prod?.variants[0];
+      const cost = it.costPrice > 0 ? it.costPrice : (variant?.costPrice || 0);
+
+      return {
+        id: `MOV-IN-${now}-${idx}-${Math.floor(Math.random() * 1000)}`,
+        type: 'IN',
+        productId: it.productId,
+        productTitle: prod?.title || 'สินค้า',
+        variantId: it.variantId || variant?.id || '',
+        variantName: variant?.name || 'ไซส์/รายการ',
+        quantity: it.quantity,
+        costPrice: cost,
+        totalCost: cost * it.quantity,
+        supplierName: it.supplierName || (prod?.category === 'perfume' ? 'ซัพพลายเออร์น้ำหอมดูไบ' : 'โรงงานอาบายะห์ดูไบ'),
+        note: it.note || 'บันทึกรับสินค้าเข้าสต๊อก (Stock In)',
+        performedBy: 'ผู้ดูแลระบบหลังบ้าน',
+        createdAt: nowIso,
+        isSettled: true,
+        lotNumber: it.lotNumber || '',
+      };
+    });
+
+    const updatedMovementsList = [...newMovements, ...currentMovements];
+    stockMovementsRef.current = updatedMovementsList;
+    setStockMovements(updatedMovementsList);
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsList));
         window.dispatchEvent(
           new CustomEvent('huda_stock_in_completed', {
             detail: {
@@ -3041,7 +3069,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     triggerBackgroundPush({
       products: updatedProductsList,
       stockMovements: updatedMovementsList,
-    });
+    }, true);
   };
 
   const recordStockIn = (data: {
@@ -3082,51 +3110,53 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let updatedProductsOnDelete: Product[] | null = null;
     // If it was a Stock IN movement and revertStock is true, reduce stock back
     if (targetMovement && targetMovement.type === 'IN' && revertStock && targetMovement.productId && targetMovement.variantId) {
-      setProducts((prev) => {
-        const now = Date.now();
-        const updated = prev.map((p) => {
-          if (p.id === targetMovement.productId) {
-            const updatedVariants = p.variants.map((v) => {
-              if (v.id === targetMovement.variantId) {
-                const currentStock = (typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity)) ? v.stockQuantity : 0;
-                const newStock = Math.max(0, currentStock - targetMovement.quantity);
-                return { ...v, stockQuantity: newStock, updatedAt: now };
-              }
-              return v;
-            });
-            return { ...p, variants: updatedVariants, updatedAt: now };
-          }
-          return p;
-        });
-
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('huda_products', JSON.stringify(updated));
+      const now = Date.now();
+      const currentProds = productsRef.current && productsRef.current.length > 0 ? productsRef.current : products;
+      const updated = currentProds.map((p) => {
+        if (p.id === targetMovement.productId) {
+          const updatedVariants = p.variants.map((v) => {
+            if (v.id === targetMovement.variantId) {
+              const currentStock = (typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity)) ? v.stockQuantity : 0;
+              const newStock = Math.max(0, currentStock - targetMovement.quantity);
+              return { ...v, stockQuantity: newStock, updatedAt: now };
+            }
+            return v;
+          });
+          return { ...p, variants: updatedVariants, updatedAt: now };
         }
-        saveCloudProducts(updated);
-        updatedProductsOnDelete = updated;
-        return updated;
+        return p;
       });
+
+      productsRef.current = updated;
+      setProducts(updated);
+      updatedProductsOnDelete = updated;
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_products', JSON.stringify(updated));
+        window.dispatchEvent(
+          new CustomEvent('huda_products_updated', {
+            detail: { products: updated },
+          })
+        );
+      }
+      saveCloudProducts(updated);
     }
 
-    let updatedMovementsOnDelete: StockMovement[] = [];
-    setStockMovements((prev) => {
-      updatedMovementsOnDelete = prev.filter((m) => m.id !== movementId);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsOnDelete));
-      }
-      return updatedMovementsOnDelete;
-    });
+    const currentMovements = stockMovementsRef.current && stockMovementsRef.current.length > 0 ? stockMovementsRef.current : stockMovements;
+    const updatedMovementsOnDelete = currentMovements.filter((m) => m.id !== movementId);
+    stockMovementsRef.current = updatedMovementsOnDelete;
+    setStockMovements(updatedMovementsOnDelete);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsOnDelete));
+    }
 
-    let updatedDeletedMovs: string[] = [];
-    setDeletedStockMovementIds((prev) => {
-      const next = new Set(Array.from(prev)).add(movementId);
-      updatedDeletedMovs = Array.from(next);
-      deletedStockMovementIdsRef.current = next;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_deleted_stock_movement_ids', JSON.stringify(updatedDeletedMovs));
-      }
-      return next;
-    });
+    const nextDeletedSet = new Set(Array.from(deletedStockMovementIdsRef.current)).add(movementId);
+    const updatedDeletedMovs = Array.from(nextDeletedSet);
+    deletedStockMovementIdsRef.current = nextDeletedSet;
+    setDeletedStockMovementIds(nextDeletedSet);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('huda_deleted_stock_movement_ids', JSON.stringify(updatedDeletedMovs));
+    }
 
     if (typeof window !== 'undefined') {
       try {
@@ -3162,60 +3192,62 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 1. If stock was reverted during deletion and it was IN movement, restore stock back to variant!
     if (movement.type === 'IN' && revertedStock && movement.productId && movement.variantId) {
-      setProducts((prev) => {
-        const now = Date.now();
-        const updated = prev.map((p) => {
-          if (p.id === movement.productId) {
-            const updatedVariants = p.variants.map((v) => {
-              if (v.id === movement.variantId) {
-                const currentStock = typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity) ? v.stockQuantity : 0;
-                const newStock = Math.max(0, currentStock + movement.quantity);
-                return { ...v, stockQuantity: newStock, updatedAt: now };
-              }
-              return v;
-            });
-            return { ...p, variants: updatedVariants, updatedAt: now };
-          }
-          return p;
-        });
-
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('huda_products', JSON.stringify(updated));
-          } catch (e) {}
+      const now = Date.now();
+      const currentProds = productsRef.current && productsRef.current.length > 0 ? productsRef.current : products;
+      const updated = currentProds.map((p) => {
+        if (p.id === movement.productId) {
+          const updatedVariants = p.variants.map((v) => {
+            if (v.id === movement.variantId) {
+              const currentStock = typeof v.stockQuantity === 'number' && !isNaN(v.stockQuantity) ? v.stockQuantity : 0;
+              const newStock = Math.max(0, currentStock + movement.quantity);
+              return { ...v, stockQuantity: newStock, updatedAt: now };
+            }
+            return v;
+          });
+          return { ...p, variants: updatedVariants, updatedAt: now };
         }
-        saveCloudProducts(updated);
-        updatedProductsOnRestore = updated;
-        return updated;
+        return p;
       });
+
+      productsRef.current = updated;
+      setProducts(updated);
+      updatedProductsOnRestore = updated;
+
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('huda_products', JSON.stringify(updated));
+          window.dispatchEvent(
+            new CustomEvent('huda_products_updated', {
+              detail: { products: updated },
+            })
+          );
+        } catch (e) {}
+      }
+      saveCloudProducts(updated);
     }
 
     // 2. Remove movementId from deletedStockMovementIds
-    let updatedDeletedMovs: string[] = [];
-    setDeletedStockMovementIds((prev) => {
-      const next = new Set(Array.from(prev));
-      next.delete(movementId);
-      updatedDeletedMovs = Array.from(next);
-      deletedStockMovementIdsRef.current = next;
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('huda_deleted_stock_movement_ids', JSON.stringify(updatedDeletedMovs));
-        } catch (e) {}
-      }
-      return next;
-    });
+    const nextDeletedSet = new Set(Array.from(deletedStockMovementIdsRef.current));
+    nextDeletedSet.delete(movementId);
+    const updatedDeletedMovs = Array.from(nextDeletedSet);
+    deletedStockMovementIdsRef.current = nextDeletedSet;
+    setDeletedStockMovementIds(nextDeletedSet);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('huda_deleted_stock_movement_ids', JSON.stringify(updatedDeletedMovs));
+      } catch (e) {}
+    }
 
     // 3. Add movement back to stockMovements
-    let updatedMovements: StockMovement[] = [];
-    setStockMovements((prev) => {
-      updatedMovements = [movement, ...prev.filter((m) => m.id !== movementId)];
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovements));
-        } catch (e) {}
-      }
-      return updatedMovements;
-    });
+    const currentMovements = stockMovementsRef.current && stockMovementsRef.current.length > 0 ? stockMovementsRef.current : stockMovements;
+    const updatedMovements: StockMovement[] = [movement, ...currentMovements.filter((m) => m.id !== movementId)];
+    stockMovementsRef.current = updatedMovements;
+    setStockMovements(updatedMovements);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovements));
+      } catch (e) {}
+    }
 
     // 4. Remove from trashedStockMovements
     setTrashedStockMovements((prev) => {

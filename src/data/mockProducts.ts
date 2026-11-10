@@ -3189,7 +3189,7 @@ export const INITIAL_PRODUCTS: Product[] = [
   },
   {
     "id": "huda-prod-1792325366781-1065",
-    "title": "asdaaf ameerat al arab",
+    "title": "C006 asdaaf ameerat al arab",
     "arabicTitle": "",
     "category": "perfume",
     "description": "สินค้าคุณภาพสูง นำเข้าจากเมืองดูไบ UAE แท้ 100%",

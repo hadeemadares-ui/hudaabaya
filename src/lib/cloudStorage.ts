@@ -58,6 +58,10 @@ export async function fetchCloudProducts(): Promise<Product[]> {
 
 export async function saveCloudProducts(products: Product[]): Promise<boolean> {
   try {
+    if (!Array.isArray(products) || products.length === 0) {
+      console.warn('saveCloudProducts: products array is empty, skipping to protect inventory');
+      return false;
+    }
     const base = getBaseApiUrl();
     const clean = sanitizeProducts(products);
     const res = await fetch(`${base}/api/products`, {
