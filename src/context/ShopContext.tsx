@@ -894,8 +894,20 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   });
                 }
 
+                // Smart Image Protection: Never let cloud overwrite real camera/album photos with empty or fallback paths
+                const localHasCameraPhoto = Array.isArray(localProd.images) && localProd.images.some(img => typeof img === 'string' && img.startsWith('data:image/'));
+                const cloudHasCameraPhoto = Array.isArray(cloudProd.images) && cloudProd.images.some(img => typeof img === 'string' && img.startsWith('data:image/'));
+
+                let resolvedImages = cloudUpdated >= localUpdated ? cloudProd.images : localProd.images;
+                if (localHasCameraPhoto && !cloudHasCameraPhoto) {
+                  resolvedImages = localProd.images;
+                } else if (cloudHasCameraPhoto) {
+                  resolvedImages = cloudProd.images;
+                }
+
                 mergedList.push({
                   ...(cloudUpdated >= localUpdated ? cloudProd : localProd),
+                  images: resolvedImages,
                   variants: mergedVariants,
                 });
               }

@@ -94,9 +94,6 @@ const KNOWN_STATIC_IMAGE_PRODUCT_IDS = new Set([
   'huda-prod-1792325366781-1065',
   'huda-prod-1792325366906-6881',
   'huda-prod-1792325367505-7107',
-  'huda-prod-1794316876026-862',
-  'huda-prod-1794318257371-219',
-  'huda-prod-1794318895489-717',
 ]);
 
 async function saveProductsToKV(env: any, prods: any[], delIds: any[]) {

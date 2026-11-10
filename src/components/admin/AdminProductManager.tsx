@@ -697,6 +697,9 @@ export const AdminProductManager: React.FC = () => {
   const [imagesList, setImagesList] = useState<string[]>([]);
   const [newImageUrlInput, setNewImageUrlInput] = useState<string>('');
   const [customVariantInput, setCustomVariantInput] = useState<string>('');
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
 
   // Comprehensive Default Presets Per Category
   const DEFAULT_CATEGORY_FABRIC_PRESETS: Record<string, string[]> = {
@@ -1376,45 +1379,129 @@ export const AdminProductManager: React.FC = () => {
     alert('ซิงก์ดึงข้อมูลสินค้าล่าสุดจากทุกเครื่องขึ้นคลาวด์และแสดงผลตรงกัน 100% เรียบร้อยแล้ว!');
   };
 
-  // Smart Image Compression Handler for Camera & Gallery uploads
-  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          const rawBase64 = reader.result;
-          const img = new Image();
-          img.src = rawBase64;
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const maxDim = 600; // Compress high-res camera photos to max 600px
-            let width = img.width;
-            let height = img.height;
-            if (width > maxDim || height > maxDim) {
-              if (width > height) {
-                height = Math.round((height * maxDim) / width);
-                width = maxDim;
-              } else {
-                width = Math.round((width * maxDim) / height);
-                height = maxDim;
-              }
-            }
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx?.drawImage(img, 0, 0, width, height);
-            const compressed = canvas.toDataURL('image/jpeg', 0.75);
-            setImagesList((prev) => [...prev, compressed]);
-          };
-          img.onerror = () => {
-            setImagesList((prev) => [...prev, rawBase64]);
-          };
+  // High-Performance Multi-Device Image Compression Engine (iOS Safari / Android / Desktop)
+  const compressImageFile = async (file: File): Promise<string> => {
+    // 1. Modern native fast decoding via createImageBitmap (auto-handles orientation & iOS HEIC)
+    try {
+      if (typeof window !== 'undefined' && 'createImageBitmap' in window) {
+        const bitmap = await createImageBitmap(file);
+        const canvas = document.createElement('canvas');
+        const maxDim = 800; // Crisp 800px HD resolution for luxury Dubai products
+        let width = bitmap.width;
+        let height = bitmap.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
         }
-      };
-      reader.readAsDataURL(file);
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(bitmap, 0, 0, width, height);
+          bitmap.close();
+          return canvas.toDataURL('image/jpeg', 0.82);
+        }
+      }
+    } catch (e) {
+      // Fallback below
     }
-    e.target.value = '';
+
+    // 2. Reliable URL.createObjectURL + HTMLImageElement
+    return new Promise<string>((resolve) => {
+      let objectUrl = '';
+      try {
+        objectUrl = URL.createObjectURL(file);
+      } catch (e) {
+        // Fallback to FileReader if ObjectURL failed
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+        reader.readAsDataURL(file);
+        return;
+      }
+
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const maxDim = 800;
+          let width = img.naturalWidth || img.width;
+          let height = img.naturalHeight || img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.82);
+            URL.revokeObjectURL(objectUrl);
+            resolve(compressed);
+            return;
+          }
+        } catch (err) {}
+        URL.revokeObjectURL(objectUrl);
+        // Fallback to raw FileReader
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+        reader.readAsDataURL(file);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+        reader.readAsDataURL(file);
+      };
+      img.src = objectUrl;
+    });
+  };
+
+  // Smart Image Upload Handler for Camera & Gallery
+  const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isCamera = false) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsProcessingImage(true);
+    try {
+      const newImages: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file && (file.type.startsWith('image/') || file.name.match(/\.(jpg|jpeg|png|webp|heic|heif)$/i))) {
+          const compressed = await compressImageFile(file);
+          if (compressed) {
+            newImages.push(compressed);
+          }
+        }
+      }
+
+      if (newImages.length > 0) {
+        soundFx.playSuccess();
+        // Place newly photographed or selected image as the FIRST (Cover) image immediately!
+        setImagesList((prev) => [...newImages, ...prev]);
+      }
+    } catch (err) {
+      console.error('Image processing error:', err);
+    } finally {
+      setIsProcessingImage(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleClearAllImages = () => {
+    if (confirm('ต้องการล้างรูปภาพเดิมทั้งหมดของสินค้านี้เพื่อถ่ายหรืออัปโหลดใหม่หรือไม่?')) {
+      setImagesList([]);
+    }
   };
 
   const handleAddUrlImage = () => {
@@ -2936,30 +3023,64 @@ export const AdminProductManager: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      <label className="cursor-pointer px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black rounded-xl text-xs sm:text-sm flex items-center gap-1.5 shadow transition border border-amber-500">
-                        <Camera className="w-4 h-4 text-stone-950" />
-                        <span>ถ่ายภาพเพิ่มจากกล้อง</span>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {/* Direct Camera Button */}
+                        <button
+                          type="button"
+                          onClick={() => cameraInputRef.current?.click()}
+                          disabled={isProcessingImage}
+                          className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 active:scale-95 text-stone-950 font-black rounded-xl text-xs sm:text-sm flex items-center gap-2 shadow transition border border-amber-500 cursor-pointer disabled:opacity-50"
+                        >
+                          <Camera className="w-4 h-4 text-stone-950" />
+                          <span>{isProcessingImage ? 'กำลังประมวลผลรูปถ่าย...' : '📸 ถ่ายภาพจากกล้อง (ตั้งเป็นปกทันที)'}</span>
+                        </button>
                         <input
+                          ref={cameraInputRef}
                           type="file"
                           accept="image/*"
                           capture="environment"
-                          className="hidden"
-                          onChange={handleImageFileUpload}
+                          className="sr-only"
+                          onChange={(e) => handleImageFileUpload(e, true)}
                         />
-                      </label>
 
-                      <label className="cursor-pointer px-4 py-2.5 bg-stone-100 hover:bg-stone-200 border-2 border-stone-300 text-stone-950 font-black rounded-xl text-xs sm:text-sm flex items-center gap-1.5 transition">
-                        <ImageIcon className="w-4 h-4 text-stone-700" />
-                        <span>เพิ่มจากอัลบั้มภาพ</span>
+                        {/* Gallery / Album Button */}
+                        <button
+                          type="button"
+                          onClick={() => galleryInputRef.current?.click()}
+                          disabled={isProcessingImage}
+                          className="px-4 py-2.5 bg-stone-100 hover:bg-stone-200 active:scale-95 border-2 border-stone-300 text-stone-950 font-black rounded-xl text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
+                        >
+                          <ImageIcon className="w-4 h-4 text-stone-700" />
+                          <span>🖼️ เลือกจากอัลบั้ม (หลายรูปได้)</span>
+                        </button>
                         <input
+                          ref={galleryInputRef}
                           type="file"
                           accept="image/*"
-                          className="hidden"
-                          onChange={handleImageFileUpload}
+                          multiple
+                          className="sr-only"
+                          onChange={(e) => handleImageFileUpload(e, false)}
                         />
-                      </label>
+                      </div>
+
+                      {imagesList.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleClearAllImages}
+                          className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 font-black text-xs rounded-lg border border-red-300 transition flex items-center gap-1 cursor-pointer"
+                        >
+                          🗑️ ลบรูปเดิมทั้งหมด เพื่อถ่ายใหม่
+                        </button>
+                      )}
                     </div>
+
+                    {isProcessingImage && (
+                      <div className="p-3 bg-amber-50 border border-amber-300 rounded-xl flex items-center gap-2.5 text-xs text-amber-900 font-black animate-pulse">
+                        <span className="w-3.5 h-3.5 border-2 border-amber-600 border-t-transparent rounded-full animate-spin"></span>
+                        <span>กำลังประมวลผลรูปภาพและบีบอัดแบบคมชัดพิเศษ กรุณารอสักครู่...</span>
+                      </div>
+                    )}
 
                     <div className="pt-1 flex items-center gap-2">
                       <div className="relative flex-1">
