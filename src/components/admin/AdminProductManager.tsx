@@ -1743,93 +1743,138 @@ export const AdminProductManager: React.FC = () => {
       )}
       
       {/* Header & Action Buttons Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border-2 border-amber-400/60 shadow-xl text-stone-950">
-        <div>
-          <h3 className="font-serif font-black text-lg text-stone-950 flex items-center gap-2">
-            <Layers className="w-5 h-5 text-amber-600" />
-            <span>จัดการสต๊อกสินค้าเสื้อผ้า และน้ำหอมดูไบ (Dubai Catalog POS)</span>
-          </h3>
-          <p className="text-xs text-stone-800 font-extrabold mt-1">
-            รองรับไซส์อาบายะห์ดูไบ (Size 52-58), ปริมาณน้ำหอมดูไบ (ml), ตัวเลือกสี/กลิ่น และปรับสต๊อกเรียลไทม์
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
-          <button
-            onClick={() => {
-              if (typeof window !== 'undefined') {
-                window.dispatchEvent(new CustomEvent('switch_admin_tab_reports'));
-              }
-            }}
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 border border-emerald-700 cursor-pointer"
-            title="เปิดดูสรุปต้นทุนสินค้า และกำไรคาดการณ์ในคลัง"
-          >
-            <TrendingUp className="w-4 h-4 text-white" />
-            <span>ดูสรุปต้นทุน &amp; กำไรคลัง</span>
-          </button>
-
-          <button
-            onClick={handleForceSync}
-            className="px-4 py-2.5 bg-amber-100 hover:bg-amber-200 text-stone-950 border border-amber-400 font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-            title="ดึงข้อมูลสินค้าล่าสุดจากทุกเครื่องให้ตรงกัน 100%"
-          >
-            <RotateCcw className="w-4 h-4 text-amber-700 animate-spin-slow" />
-            <span>ซิงก์ดึงข้อมูลสินค้าด่วน</span>
-          </button>
+      <div className="bg-white p-5 sm:p-6 rounded-3xl border-2 border-amber-400 shadow-xl text-stone-950 space-y-4">
+        {/* Top: Title & Primary CTA */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-stone-200">
+          <div>
+            <h3 className="font-serif font-black text-lg sm:text-xl text-stone-950 flex items-center gap-2.5">
+              <span className="p-2 bg-amber-500/10 rounded-xl border border-amber-400/40 text-amber-700">
+                <Layers className="w-5 h-5" />
+              </span>
+              <span>จัดการสต๊อกสินค้าเสื้อผ้า และน้ำหอมดูไบ (Dubai Catalog POS)</span>
+            </h3>
+            <p className="text-xs text-stone-600 font-bold mt-1.5 flex items-center gap-2 flex-wrap">
+              <span>รองรับไซส์อาบายะห์ดูไบ (Size 52-58)</span>
+              <span className="text-stone-300">•</span>
+              <span>ปริมาณน้ำหอมดูไบ (ml)</span>
+              <span className="text-stone-300">•</span>
+              <span>ตัวเลือกสี/กลิ่น</span>
+              <span className="text-stone-300">•</span>
+              <span className="text-emerald-700 font-black">ปรับสต๊อกเรียลไทม์ 0ms</span>
+            </p>
+          </div>
 
           <button
             type="button"
-            onClick={() => setIsBatchStockCountOpen(true)}
-            className="px-4 py-2.5 bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 border border-emerald-500 cursor-pointer hover:scale-105 active:scale-95"
-            title="เปิดโหมดยิงสแกน QR หรือบาร์โค้ดสินค้ารัวๆ เพื่อสะสมนับจำนวนและรับเข้าสต๊อกพร้อมกัน"
-          >
-            <PackagePlus className="w-4 h-4 text-emerald-200" />
-            <span>📦 สแกนยิงนับสต๊อก (Batch Count)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsQRScannerStockInOpen(true)}
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 border border-emerald-700 cursor-pointer hover:scale-105 active:scale-95"
-            title="เปิดกล้องสแกน QR Code บนสินค้า เพื่อรับเข้าสต๊อกด่วน"
-          >
-            <Camera className="w-4 h-4 text-white" />
-            <span>📸 สแกน QR รับเข้าสต๊อก</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsLotSearchModalOpen(true)}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 border border-amber-600 cursor-pointer hover:scale-105 active:scale-95"
-            title="ค้นหาสินค้าจากเลขล็อตเมื่อป้ายบาร์โค้ดชำรุด หรือสั่งพิมพ์ป้ายใหม่มาติดแทน"
-          >
-            <Tag className="w-4 h-4 text-stone-950" />
-            <span>ค้นด้วยเลขล็อต (ป้ายชำรุด)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setPerfumeLabelSelectedProduct(null);
-              setIsPerfumeLabelModalOpen(true);
-            }}
-            className="px-4 py-2.5 bg-white hover:bg-amber-50 text-stone-950 font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 border border-stone-300 hover:border-amber-400 cursor-pointer hover:scale-105 active:scale-95"
-            title="พิมพ์สติ๊กเกอร์ติดขวดน้ำหอมแบ่ง 10ml / 5ml (Niimbot & สติ๊กเกอร์ม้วน)"
-          >
-            <Droplets className="w-4 h-4 text-amber-600" />
-            <span>🏷️ พิมพ์ป้ายขวดน้ำหอม (Niimbot)</span>
-          </button>
-
-          <button
             onClick={() => {
               resetForm();
               setIsAddModalOpen(true);
             }}
-            className="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 border border-amber-500 cursor-pointer"
+            className="px-5 py-3 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-stone-950 font-black text-sm rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 border-2 border-amber-500 cursor-pointer active:scale-95 shrink-0"
           >
-            <Plus className="w-4 h-4 text-stone-950" />
+            <Plus className="w-5 h-5 stroke-[2.5]" />
             <span>เพิ่มแบบสินค้าใหม่</span>
           </button>
+        </div>
+
+        {/* Action Tools Grid - จัดหมวดหมู่ชัดเจน มองเห็นง่าย ไม่ซ้อนทับกัน */}
+        <div className="space-y-3 pt-1">
+          {/* Group 1: ⚡ ระบบสแกนรับเข้า & เช็กสต๊อกคลัง (Stock Scanning & Intake) */}
+          <div>
+            <div className="text-[11px] font-black uppercase tracking-wider text-emerald-800 mb-2 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>⚡ ระบบสแกนและรับเข้าสต๊อกด่วน:</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {/* 📸 สแกน QR รับเข้าสต๊อก - โดดเด่นเป็นพิเศษ */}
+              <button
+                type="button"
+                onClick={() => setIsQRScannerStockInOpen(true)}
+                className="px-4 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-black text-xs sm:text-sm rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 border-2 border-emerald-400 cursor-pointer active:scale-95 hover:scale-[1.01]"
+                title="เปิดกล้องสแกน QR Code บนสินค้า เพื่อรับเข้าสต๊อกด่วน"
+              >
+                <div className="p-1 bg-white/20 rounded-lg">
+                  <Camera className="w-5 h-5 text-white" />
+                </div>
+                <span>📸 สแกน QR รับเข้าสต๊อก</span>
+              </button>
+
+              {/* 📦 สแกนยิงนับสต๊อก (Batch Count) */}
+              <button
+                type="button"
+                onClick={() => setIsBatchStockCountOpen(true)}
+                className="px-4 py-3 bg-gradient-to-r from-teal-700 to-emerald-800 hover:from-teal-600 hover:to-emerald-700 text-white font-black text-xs sm:text-sm rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 border-2 border-teal-500 cursor-pointer active:scale-95 hover:scale-[1.01]"
+                title="เปิดโหมดยิงสแกน QR หรือบาร์โค้ดสินค้ารัวๆ เพื่อสะสมนับจำนวนและรับเข้าสต๊อกพร้อมกัน"
+              >
+                <div className="p-1 bg-white/20 rounded-lg">
+                  <PackagePlus className="w-5 h-5 text-emerald-200" />
+                </div>
+                <span>📦 สแกนยิงนับสต๊อก (Batch Count)</span>
+              </button>
+
+              {/* 🔍 ค้นด้วยเลขล็อต (ป้ายชำรุด) */}
+              <button
+                type="button"
+                onClick={() => setIsLotSearchModalOpen(true)}
+                className="px-4 py-3 bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-stone-950 font-black text-xs sm:text-sm rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 border-2 border-amber-600 cursor-pointer active:scale-95 hover:scale-[1.01]"
+                title="ค้นหาสินค้าจากเลขล็อตเมื่อป้ายบาร์โค้ดชำรุด หรือสั่งพิมพ์ป้ายใหม่มาติดแทน"
+              >
+                <div className="p-1 bg-amber-500/20 rounded-lg">
+                  <Tag className="w-5 h-5 text-stone-950" />
+                </div>
+                <span>🔍 ค้นด้วยเลขล็อต (ป้ายชำรุด)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Group 2: 🏷️ พิมพ์ป้าย, สรุปต้นทุนกำไร & ซิงก์ข้อมูล (Printing & Management) */}
+          <div>
+            <div className="text-[11px] font-black uppercase tracking-wider text-stone-600 mb-2 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-stone-400" />
+              <span>🏷️ พิมพ์ป้าย, สรุปต้นทุนกำไร &amp; ซิงก์ข้อมูล:</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {/* 🏷️ พิมพ์ป้ายขวดน้ำหอม (Niimbot) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setPerfumeLabelSelectedProduct(null);
+                  setIsPerfumeLabelModalOpen(true);
+                }}
+                className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-950 font-black text-xs sm:text-sm rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2.5 border-2 border-stone-300 hover:border-amber-400 cursor-pointer active:scale-95"
+                title="พิมพ์สติ๊กเกอร์ติดขวดน้ำหอมแบ่ง 10ml / 5ml (Niimbot & สติ๊กเกอร์ม้วน)"
+              >
+                <Droplets className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>🏷️ พิมพ์ป้ายขวดน้ำหอม (Niimbot)</span>
+              </button>
+
+              {/* 📊 ดูสรุปต้นทุน & กำไรคลัง */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('switch_admin_tab_reports'));
+                  }
+                }}
+                className="px-4 py-2.5 bg-emerald-800 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2.5 border-2 border-emerald-600 cursor-pointer active:scale-95"
+                title="เปิดดูสรุปต้นทุนสินค้า และกำไรคาดการณ์ในคลัง"
+              >
+                <TrendingUp className="w-4 h-4 text-white shrink-0" />
+                <span>📊 ดูสรุปต้นทุน &amp; กำไรคลัง</span>
+              </button>
+
+              {/* 🔄 ซิงก์ดึงข้อมูลสินค้าด่วน */}
+              <button
+                type="button"
+                onClick={handleForceSync}
+                className="px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-stone-950 font-black text-xs sm:text-sm rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2.5 border-2 border-amber-300 hover:border-amber-400 cursor-pointer active:scale-95"
+                title="ดึงข้อมูลสินค้าล่าสุดจากทุกเครื่องให้ตรงกัน 100%"
+              >
+                <RotateCcw className="w-4 h-4 text-amber-700 animate-spin-slow shrink-0" />
+                <span>🔄 ซิงก์ดึงข้อมูลสินค้าด่วน</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
