@@ -13,7 +13,7 @@ const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
   abaya: '/images/placeholder-abaya.jpg',
   kaftan: '/images/placeholder-abaya.jpg',
   perfume: '/images/placeholder-perfume.jpg',
-  incense: '/images/placeholder-perfume.jpg',
+  incense: '/images/placeholder-incense.jpg',
   combo: '/images/placeholder-abaya.jpg',
   other: '/images/placeholder-abaya.jpg',
 };
