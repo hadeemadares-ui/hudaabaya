@@ -69,8 +69,22 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
       ? product.images[0]
       : defaultImg;
 
-  const [selectedVariantId, setSelectedVariantId] = useState<string>(initialProduct.variants[0]?.id || '');
-  const selectedVariant = product.variants.find((v) => v.id === selectedVariantId) || product.variants[0];
+  const variants: ProductVariant[] = Array.isArray(product?.variants) && product.variants.length > 0
+    ? product.variants
+    : [
+        {
+          id: `var-default-${product.id}`,
+          name: 'ขนาดมาตรฐาน',
+          sku: `HD-${(product.id || 'PROD').slice(-6).toUpperCase()}`,
+          price: (product as any).price || 0,
+          originalPrice: undefined,
+          costPrice: 0,
+          stockQuantity: 1,
+          color: (product as any).colors?.[0] || 'Original',
+        }
+      ];
+  const [selectedVariantId, setSelectedVariantId] = useState<string>(variants[0]?.id || '');
+  const selectedVariant = variants.find((v) => v.id === selectedVariantId) || variants[0];
   const [selectedImage, setSelectedImage] = useState<string>(initialImg);
   const [mediaTab, setMediaTab] = useState<'image' | 'video'>('image');
   const [quantity, setQuantity] = useState<number>(1);
@@ -106,8 +120,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
   };
 
   const handleAddToCart = () => {
-    if (selectedVariant.stockQuantity < quantity) {
-      alert(`ขออภัยค่ะ สินค้าไซส์ ${selectedVariant.name} มีสต๊อกคงเหลือเพียง ${selectedVariant.stockQuantity} ชิ้น`);
+    if (!selectedVariant || selectedVariant.stockQuantity < quantity) {
+      alert(`ขออภัยค่ะ สินค้านี้มีสต๊อกคงเหลือเพียง ${selectedVariant?.stockQuantity || 0} ชิ้น`);
       return;
     }
     addToCart(product, selectedVariant, quantity);
@@ -467,8 +481,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                   </span>
                   <button
                     type="button"
-                    onClick={() => setQuantity(Math.min(selectedVariant.stockQuantity, quantity + 1))}
-                    disabled={quantity >= selectedVariant.stockQuantity}
+                    onClick={() => setQuantity(Math.min(selectedVariant?.stockQuantity || 1, quantity + 1))}
+                    disabled={quantity >= (selectedVariant?.stockQuantity || 1)}
                     className="px-3.5 py-1.5 text-sm text-[#141312] hover:bg-stone-100 disabled:opacity-40 transition cursor-pointer"
                   >
                     +
@@ -482,12 +496,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
             <div className="space-y-3 pt-4 border-t border-stone-200">
               <button
                 type="button"
-                disabled={selectedVariant.stockQuantity <= 0}
+                disabled={!selectedVariant || selectedVariant.stockQuantity <= 0}
                 onClick={handleAddToCart}
                 className={`w-full py-4 text-xs tracking-[0.2em] uppercase font-medium transition flex items-center justify-center gap-2 ${
                   addedSuccess
                     ? 'bg-emerald-800 text-white'
-                    : selectedVariant.stockQuantity > 0
+                    : selectedVariant && selectedVariant.stockQuantity > 0
                     ? 'bg-[#141312] hover:bg-[#292624] text-white cursor-pointer'
                     : 'bg-stone-200 text-stone-500 cursor-not-allowed'
                 }`}
@@ -497,8 +511,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                     <Check className="w-4 h-4" />
                     <span>เพิ่มลงในถุงช็อปปิ้งแล้ว</span>
                   </>
-                ) : selectedVariant.stockQuantity > 0 ? (
-                  <span>เพิ่มลงในถุงช็อปปิ้ง — ฿{(selectedVariant.price * quantity).toLocaleString()}</span>
+                ) : selectedVariant && selectedVariant.stockQuantity > 0 ? (
+                  <span>เพิ่มลงในถุงช็อปปิ้ง — ฿{((selectedVariant.price || 0) * quantity).toLocaleString()}</span>
                 ) : (
                   <>
                     <AlertCircle className="w-4 h-4" />

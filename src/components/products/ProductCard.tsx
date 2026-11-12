@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Product } from '../../types';
 import { ProductModal } from './ProductModal';
 import { useShop } from '../../context/ShopContext';
+import { stripBottlePrefix } from '../../utils/productUtils';
 
 interface ProductCardProps {
   product: Product;
@@ -31,14 +32,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product: initialProduc
   const product = products.find((p) => p.id === initialProduct.id) || initialProduct;
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const validPrices = product.variants.map((v) => Number(v.price) || 0).filter((p) => p > 0);
-  const minPrice = validPrices.length > 0 ? Math.min(...validPrices) : (product.variants[0]?.price || 0);
-  const maxPrice = validPrices.length > 0 ? Math.max(...validPrices) : (product.variants[0]?.price || 0);
-  const totalStock = product.variants.reduce((sum, v) => sum + (Number(v.stockQuantity) || 0), 0);
+  const variants = Array.isArray(product?.variants) ? product.variants : [];
+  const validPrices = variants.map((v) => Number(v?.price) || 0).filter((p) => p > 0);
+  const minPrice = validPrices.length > 0 ? Math.min(...validPrices) : (variants[0]?.price || 0);
+  const maxPrice = validPrices.length > 0 ? Math.max(...validPrices) : (variants[0]?.price || 0);
+  const totalStock = variants.reduce((sum, v) => sum + (Number(v?.stockQuantity) || 0), 0);
 
-  const defaultImg = DEFAULT_CATEGORY_IMAGES[product.category] || DEFAULT_CATEGORY_IMAGES.abaya;
+  const defaultImg = DEFAULT_CATEGORY_IMAGES[product?.category] || DEFAULT_CATEGORY_IMAGES.abaya;
   const rawInitialImg =
-    product.images &&
+    product?.images &&
+    Array.isArray(product.images) &&
     product.images.length > 0 &&
     product.images[0] &&
     typeof product.images[0] === 'string' &&
@@ -134,9 +137,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product: initialProduc
             </h3>
 
             {/* Available Sizes Pill Strip */}
-            {product.variants.length > 0 && (
+            {variants.length > 0 && (
               <div className="pt-1 flex items-center gap-1.5 flex-wrap">
-                {product.variants.slice(0, 6).map((v) => (
+                {variants.slice(0, 6).map((v) => (
                   <span
                     key={v.id}
                     className={`text-[10px] px-1.5 py-0.5 border ${
@@ -145,11 +148,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product: initialProduc
                         : 'border-stone-100 text-stone-300 line-through'
                     }`}
                   >
-                    {v.name.replace('Size ', '')}
+                    {stripBottlePrefix(v?.name || '').replace('Size ', '')}
                   </span>
                 ))}
-                {product.variants.length > 6 && (
-                  <span className="text-[10px] text-stone-400">+{product.variants.length - 6}</span>
+                {variants.length > 6 && (
+                  <span className="text-[10px] text-stone-400">+{variants.length - 6}</span>
                 )}
               </div>
             )}

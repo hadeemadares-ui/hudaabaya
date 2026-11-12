@@ -15,17 +15,30 @@ export default function HomePageClient() {
   const { products, selectedCategory, searchQuery, isAdminMode, isAdminAuthenticated, storeSettings } = useShop();
 
   const filteredProducts = React.useMemo(() => {
+    if (!Array.isArray(products)) return [];
+    const query = (searchQuery || '').trim().toLowerCase();
+
     return products
       .filter((product) => {
+        if (!product) return false;
         const matchesCategory =
           selectedCategory === 'all' || product.category === selectedCategory;
 
+        if (!query) return matchesCategory;
+
+        const title = (product.title || '').toLowerCase();
+        const arabicTitle = product.arabicTitle || '';
+        const desc = (product.description || '').toLowerCase();
+        const variants = Array.isArray(product.variants) ? product.variants : [];
+        const matchesVariant = variants.some((v) =>
+          typeof v?.name === 'string' && v.name.toLowerCase().includes(query)
+        );
+
         const matchesSearch =
-          !searchQuery ||
-          product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (product.arabicTitle && product.arabicTitle.includes(searchQuery)) ||
-          product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.variants.some((v) => v.name.toLowerCase().includes(searchQuery.toLowerCase()));
+          title.includes(query) ||
+          arabicTitle.includes(query) ||
+          desc.includes(query) ||
+          matchesVariant;
 
         return matchesCategory && matchesSearch;
       })

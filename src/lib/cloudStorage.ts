@@ -35,10 +35,25 @@ function sanitizeImages(images: string[]): string[] {
 
 function sanitizeProducts(products: Product[]): Product[] {
   if (!Array.isArray(products)) return [];
-  return products.map((p) => ({
-    ...p,
-    images: sanitizeImages(p.images),
-  }));
+  return products.map((p) => {
+    if (!p) return p;
+    const variants = Array.isArray(p.variants) ? p.variants : [];
+    const cleanImages = (Array.isArray(p.images) ? p.images : []).map((img) => {
+      if (typeof img === 'string' && img.startsWith('data:image/') && img.length > 50000) {
+        return `/images/products/${p.id}.jpg`;
+      }
+      return img;
+    });
+
+    return {
+      ...p,
+      title: p.title || '',
+      description: p.description || '',
+      category: p.category || 'other',
+      variants,
+      images: sanitizeImages(cleanImages),
+    };
+  });
 }
 
 export async function fetchCloudProducts(): Promise<Product[]> {
