@@ -12,7 +12,7 @@ import { MOCK_REVIEWS } from '../data/mockProducts';
 import { sortProductsNatural } from '../utils/productUtils';
 
 export default function HomePageClient() {
-  const { products, selectedCategory, searchQuery, isAdminMode, isAdminAuthenticated, storeSettings } = useShop();
+  const { products, selectedCategory, searchQuery, isAdminMode, isAdminAuthenticated, storeSettings, isInitialSyncCompleted } = useShop();
 
   const filteredProducts = React.useMemo(() => {
     if (!Array.isArray(products)) return [];
@@ -75,12 +75,31 @@ export default function HomePageClient() {
                 </div>
 
                 <div className="text-xs text-stone-500 font-serif tracking-wider self-start md:self-auto">
-                  แสดง <span className="text-[#141312] font-semibold">{filteredProducts.length}</span> รายการ
+                  {!isInitialSyncCompleted ? (
+                    <span className="text-[#8C703E] font-medium inline-flex items-center gap-1.5 animate-pulse">
+                      <span className="w-2 h-2 rounded-full bg-[#8C703E] animate-ping" />
+                      กำลังเชื่อมต่อ Cloud Sync...
+                    </span>
+                  ) : (
+                    <>แสดง <span className="text-[#141312] font-semibold">{filteredProducts.length}</span> รายการ</>
+                  )}
                 </div>
               </div>
 
               {/* Products Grid */}
-              {filteredProducts.length === 0 ? (
+              {!isInitialSyncCompleted ? (
+                <div className="text-center py-24 bg-white/70 border border-stone-200/80 rounded-3xl space-y-4 shadow-sm animate-pulse max-w-xl mx-auto my-6">
+                  <div className="w-10 h-10 rounded-full border-2 border-[#8C703E] border-t-transparent animate-spin mx-auto shadow-sm" />
+                  <div className="space-y-1">
+                    <p className="font-serif text-base text-[#141312] font-semibold">
+                      กำลังเชื่อมต่อ Cloud Real-Time Sync...
+                    </p>
+                    <p className="text-xs text-stone-500 font-serif">
+                      กำลังดึงข้อมูลคอลเลกชันสินค้าล่าสุดจากเซิร์ฟเวอร์ กรุณารอสักครู่
+                    </p>
+                  </div>
+                </div>
+              ) : filteredProducts.length === 0 ? (
                 <div className="text-center py-20 bg-white border border-stone-200/80 space-y-3">
                   <PackageSearch className="w-8 h-8 text-stone-300 mx-auto stroke-[1.5]" />
                   <p className="font-serif text-base text-[#141312]">

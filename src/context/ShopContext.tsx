@@ -30,6 +30,8 @@ import { sortProductsNatural, stripBottlePrefix } from '../utils/productUtils';
 import { isMatchingLot } from '../utils/qrUtils';
 import { safeSetLocalStorage } from '../utils/storageUtils';
 
+const CURRENT_CATALOG_VERSION = 'v_80_cloud_sync_100_products';
+
 const DEFAULT_SETTINGS: StoreSettings = {
   storeName: 'HUDA ABAYA DUBAI',
   storeTagline: 'Haute Couture & Royal Dubai Oud',
@@ -178,6 +180,7 @@ interface ShopContextType {
   reconcileAndReturnBoothTransfer: (transferId: string, actualItems: BoothTransferItem[], note?: string) => void;
   syncStatus: 'synced' | 'syncing' | 'offline' | 'error';
   lastSyncTime: number;
+  isInitialSyncCompleted: boolean;
   forceRealtimeSync: (forceAll?: boolean, isManual?: boolean) => Promise<void>;
   customOptions: CustomOptions;
   saveCustomOption: (type: keyof CustomOptions, value: any) => void;
@@ -371,11 +374,12 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [products, setProducts] = useState<Product[]>(() => {
     if (typeof window !== 'undefined') {
+      const catalogVer = localStorage.getItem('huda_catalog_version');
       const savedProds = localStorage.getItem('huda_products');
-      if (savedProds) {
+      if (savedProds && catalogVer === CURRENT_CATALOG_VERSION) {
         try {
           const parsed = JSON.parse(savedProds);
-          if (Array.isArray(parsed) && parsed.length > 0) {
+          if (Array.isArray(parsed) && parsed.length >= INITIAL_PRODUCTS.length) {
             const sanitized = parsed.map((p: Product) => ({
               ...p,
               variants: Array.isArray(p.variants)
@@ -611,6 +615,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const pushTimeoutRef = useRef<any>(null);
   const pendingPushPayloadRef = useRef<Partial<RealtimeSyncPayload>>({});
   const isInitialSyncCompletedRef = useRef<boolean>(false);
+  const [isInitialSyncCompleted, setIsInitialSyncCompleted] = useState<boolean>(false);
   const isApplyingCloudSyncRef = useRef<boolean>(false);
   const deletedStockMovementIdsRef = useRef<Set<string>>(deletedStockMovementIds);
   useEffect(() => {
@@ -1407,6 +1412,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setTimeout(() => {
         isApplyingCloudSyncRef.current = false;
         isInitialSyncCompletedRef.current = true;
+        setIsInitialSyncCompleted(true);
       }, 80);
     }
   }
@@ -1956,8 +1962,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsAdminLoginModalOpen(true);
         }
 
-        // Restore and auto-upgrade saved products to full 78 master catalog with pristine CDN images
-        const CURRENT_CATALOG_VERSION = 'v_79_clean_edp_perfume_sizes';
+        // Restore and auto-upgrade saved products to full 100 master catalog directly synced with Cloud
         const savedProds = localStorage.getItem('huda_products');
         const catalogVer = localStorage.getItem('huda_catalog_version');
 
@@ -1975,11 +1980,11 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           try {
             const parsedProds = JSON.parse(savedProds);
             if (Array.isArray(parsedProds) && parsedProds.length > 0) {
-              // Sanitize: ensure no product uses old base64 or broken image
+              // Sanitize: ensure no product uses broken or empty image
               const sanitized = parsedProds.map((p: Product) => {
                 const master = masterMap.get(p.id);
-                const isBadImage = !p.images || !p.images[0] || p.images[0].startsWith('data:image') || p.images[0].length > 500;
-                if (isBadImage && master) {
+                const hasValidImage = Array.isArray(p.images) && p.images.length > 0 && typeof p.images[0] === 'string' && p.images[0].trim() !== '';
+                if (!hasValidImage && master) {
                   return { ...p, images: master.images };
                 }
                 return p;
@@ -2023,11 +2028,14 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         updatedAt: Math.max(Number(ov.updatedAt) || 0, Number(mv.updatedAt) || 0),
                       };
                     });
+                    const userImages = Array.isArray(p.images) && p.images.length > 0 && p.images[0]
+                      ? p.images
+                      : master.images;
                     mergedMap.set(p.id, {
                       ...master,
                       costPrice: typeof p.costPrice === 'number' ? p.costPrice : master.costPrice,
                       variants: mergedVariants,
-                      images: master.images, // ALWAYS enforce pristine, uncorrupted CDN image files
+                      images: userImages,
                     });
                   } else {
                     // Custom user-added product
@@ -2191,11 +2199,12 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       window.addEventListener('huda_orders_updated', handleCustomOrdersUpdate);
 
       // Initial immediate outbox flush & sync
-      forceRealtimeSync();
+      forceRealtimeSync(true, false);
 
       // Fallback: If network is slow or offline, activate sentinels after 1200ms
       const fallbackTimer = setTimeout(() => {
         isInitialSyncCompletedRef.current = true;
+        setIsInitialSyncCompleted(true);
       }, 1200);
 
       // Continuous ultra-fast realtime polling loop for instant cross-device updates (Mobile, Tablet, Desktop)
@@ -4712,6 +4721,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         reconcileAndReturnBoothTransfer,
         syncStatus,
         lastSyncTime,
+        isInitialSyncCompleted,
         forceRealtimeSync,
         customOptions,
         saveCustomOption,

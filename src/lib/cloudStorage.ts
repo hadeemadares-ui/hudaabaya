@@ -38,20 +38,13 @@ function sanitizeProducts(products: Product[]): Product[] {
   return products.map((p) => {
     if (!p) return p;
     const variants = Array.isArray(p.variants) ? p.variants : [];
-    const cleanImages = (Array.isArray(p.images) ? p.images : []).map((img) => {
-      if (typeof img === 'string' && img.startsWith('data:image/') && img.length > 50000) {
-        return `/images/products/${p.id}.jpg`;
-      }
-      return img;
-    });
-
     return {
       ...p,
       title: p.title || '',
       description: p.description || '',
       category: p.category || 'other',
       variants,
-      images: sanitizeImages(cleanImages),
+      images: sanitizeImages(p.images),
     };
   });
 }

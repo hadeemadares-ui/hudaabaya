@@ -166,19 +166,8 @@ const KNOWN_STATIC_IMAGE_PRODUCT_IDS = new Set([
 async function saveBundleToD1AndKV(env: any, bundle: SyncBundle): Promise<boolean> {
   let ok = false;
 
-  // 1. Optimize products and slim down bulky raw camera photos so both KV and D1 payloads remain lean (< 300KB)
-  const optimizedProducts = (bundle.products || []).map((p: any) => {
-    if (!Array.isArray(p.images) || !KNOWN_STATIC_IMAGE_PRODUCT_IDS.has(p.id)) {
-      return p;
-    }
-    const cleanImages = p.images.map((img: string) => {
-      if (typeof img === 'string' && (img.startsWith('data:image/') || img.includes('placeholder')) && KNOWN_STATIC_IMAGE_PRODUCT_IDS.has(p.id)) {
-        return '/images/products/' + p.id + '.jpg';
-      }
-      return img;
-    });
-    return { ...p, images: cleanImages };
-  });
+  // Preserve all product images 100% exactly as uploaded (user photos, URLs, and static paths)
+  const optimizedProducts = bundle.products || [];
 
   // Preserve compressed slips (up to 70KB base64), drop only oversized raw files (>70KB)
   const slimEventSchedules = (bundle.eventSchedules || []).map((s: any) => {

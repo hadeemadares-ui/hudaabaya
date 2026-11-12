@@ -707,6 +707,11 @@ export const AdminEventMarketManager: React.FC = () => {
   // Dedicated Bank Slip Compressor: Crystal clear text & QR, but ultra-lean (<35KB) to prevent localStorage quota crash
   const compressSlipSafely = (file: File): Promise<string> => {
     return new Promise((resolve) => {
+      if (!file || !file.type.startsWith('image/')) {
+        resolve('');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (event) => {
         const rawBase64 = event.target?.result as string;
@@ -715,18 +720,18 @@ export const AdminEventMarketManager: React.FC = () => {
           return;
         }
 
-        const img = new window.Image();
+        const img = new Image();
         img.onload = () => {
           try {
             const naturalW = img.naturalWidth || img.width || 0;
             const naturalH = img.naturalHeight || img.height || 0;
             if (naturalW <= 0 || naturalH <= 0) {
-              resolve(rawBase64.length < 50000 ? rawBase64 : '');
+              resolve(rawBase64.length < 40000 ? rawBase64 : '');
               return;
             }
 
-            // Max 600px width/height provides crisp bank slip text while keeping data URL ~25KB
-            const maxDim = 600;
+            // Max 500px width/height provides crisp bank slip text while keeping data URL ~20-30KB
+            const maxDim = 500;
             let targetW = naturalW;
             let targetH = naturalH;
             if (targetW > maxDim || targetH > maxDim) {
@@ -744,7 +749,7 @@ export const AdminEventMarketManager: React.FC = () => {
             canvas.height = Math.max(1, targetH);
             const ctx = canvas.getContext('2d');
             if (!ctx) {
-              resolve(rawBase64.length < 50000 ? rawBase64 : '');
+              resolve(rawBase64.length < 40000 ? rawBase64 : '');
               return;
             }
 
@@ -753,22 +758,35 @@ export const AdminEventMarketManager: React.FC = () => {
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-            let quality = 0.65;
+            let quality = 0.6;
             let compressed = canvas.toDataURL('image/jpeg', quality);
-            if (compressed.length > 55000) {
-              quality = 0.5;
+            if (compressed.length > 45000) {
+              quality = 0.45;
               compressed = canvas.toDataURL('image/jpeg', quality);
+            }
+            if (compressed.length > 55000) {
+              // Further resize canvas if still too large
+              const smallCanvas = document.createElement('canvas');
+              smallCanvas.width = Math.round(canvas.width * 0.75);
+              smallCanvas.height = Math.round(canvas.height * 0.75);
+              const smallCtx = smallCanvas.getContext('2d');
+              if (smallCtx) {
+                smallCtx.fillStyle = '#FFFFFF';
+                smallCtx.fillRect(0, 0, smallCanvas.width, smallCanvas.height);
+                smallCtx.drawImage(canvas, 0, 0, smallCanvas.width, smallCanvas.height);
+                compressed = smallCanvas.toDataURL('image/jpeg', 0.4);
+              }
             }
 
             resolve(compressed);
           } catch (e) {
             console.warn('compressSlipSafely error:', e);
-            resolve(rawBase64.length < 50000 ? rawBase64 : '');
+            resolve(rawBase64.length < 40000 ? rawBase64 : '');
           }
         };
 
         img.onerror = () => {
-          resolve(rawBase64.length < 50000 ? rawBase64 : '');
+          resolve(rawBase64.length < 40000 ? rawBase64 : '');
         };
 
         img.src = rawBase64;
@@ -783,8 +801,9 @@ export const AdminEventMarketManager: React.FC = () => {
   const handleDepositSlipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 15 * 1024 * 1024) {
-        alert('ไฟล์รูปภาพมีขนาดใหญ่เกิน 15MB กรุณาเลือกไฟล์ที่มีขนาดเล็กลงครับ');
+      if (file.size > 20 * 1024 * 1024) {
+        alert('ไฟล์รูปภาพมีขนาดใหญ่เกิน 20MB กรุณาเลือกไฟล์ที่มีขนาดเล็กลงครับ');
+        e.target.value = '';
         return;
       }
       try {
@@ -799,6 +818,7 @@ export const AdminEventMarketManager: React.FC = () => {
         alert('เกิดข้อผิดพลาดในการโหลดรูปภาพสลิป กรุณาลองใหม่อีกครั้ง');
       }
     }
+    e.target.value = '';
   };
 
   // View mode: 'calendar' (default), 'agenda', 'cards'
@@ -1198,9 +1218,14 @@ export const AdminEventMarketManager: React.FC = () => {
         return;
       }
 
-      const finalRentalFee = typeof eventRentalFee === 'number' ? eventRentalFee : (parseInt(eventRentalFee, 10) || 0);
-      const finalDepositAmount = typeof eventDepositAmount === 'number' ? eventDepositAmount : (parseInt(eventDepositAmount, 10) || 0);
-      const finalTravelExpense = typeof eventTravelExpense === 'number' ? eventTravelExpense : (parseInt(eventTravelExpense, 10) || 0);
+      const finalRentalFee = typeof eventRentalFee === 'number' ? eventRentalFee : (parseInt(String(eventRentalFee), 10) || 0);
+      const finalDepositAmount = typeof eventDepositAmount === 'number' ? eventDepositAmount : (parseInt(String(eventDepositAmount), 10) || 0);
+      const finalTravelExpense = typeof eventTravelExpense === 'number' ? eventTravelExpense : (parseInt(String(eventTravelExpense), 10) || 0);
+
+      // Clean slip url: guard against oversized/corrupted payload
+      const finalSlipUrl = (typeof eventDepositSlipUrl === 'string' && eventDepositSlipUrl.length <= 80000)
+        ? eventDepositSlipUrl
+        : '';
 
       if (editingScheduleId) {
         let updatedItem: EventSchedule | null = null;
@@ -1213,17 +1238,17 @@ export const AdminEventMarketManager: React.FC = () => {
               location: eventLocation.trim(),
               startDate: eventStartDate,
               endDate: eventEndDate,
-              operatingHours: eventHours.trim(),
+              operatingHours: eventHours.trim() || '10:00 - 22:00 น.',
               productsToPrepare: eventProducts.trim(),
               phonePromptPay: eventPhone.trim(),
               status: eventStatus === 'CANCELLED' ? 'CANCELLED' : (eventStartDate > new Date().toISOString().slice(0, 10) && eventStatus === 'ACTIVE' ? 'UPCOMING' : eventStatus),
               missedReason: eventStatus === 'CANCELLED' ? (eventMissedReason.trim() || 'ไม่ได้งาน / ไม่ได้ไป') : undefined,
-              salesTarget: eventSalesTarget,
-              assignedStaff: eventStaff.trim(),
+              salesTarget: typeof eventSalesTarget === 'number' ? eventSalesTarget : 30000,
+              assignedStaff: eventStaff.trim() || 'เจ้าของร้าน (Admin)',
               rentalFee: finalRentalFee,
               depositAmount: finalDepositAmount,
               travelExpense: finalTravelExpense > 0 ? finalTravelExpense : undefined,
-              depositSlipUrl: eventDepositSlipUrl,
+              depositSlipUrl: finalSlipUrl,
               googleMapsUrl: eventGoogleMapsUrl.trim(),
               organizerName: eventOrganizerName.trim() || undefined,
               organizerPhone: eventOrganizerPhone.trim() || undefined,
@@ -1242,6 +1267,9 @@ export const AdminEventMarketManager: React.FC = () => {
         if (updatedItem) {
           updateEventSchedule(updatedItem);
           setSelectedEventId(editingScheduleId);
+          if (selectedCalendarSchedule?.id === editingScheduleId) {
+            setSelectedCalendarSchedule(updatedItem);
+          }
         }
         alert(`บันทึกการแก้ไขตารางงาน "${eventTitle}" เรียบร้อยแล้ว!`);
       } else {
@@ -1252,18 +1280,18 @@ export const AdminEventMarketManager: React.FC = () => {
           location: eventLocation.trim(),
           startDate: eventStartDate,
           endDate: eventEndDate,
-          operatingHours: eventHours.trim(),
+          operatingHours: eventHours.trim() || '10:00 - 22:00 น.',
           productsToPrepare: eventProducts.trim(),
           phonePromptPay: eventPhone.trim(),
           status: eventStatus === 'CANCELLED' ? 'CANCELLED' : (eventStartDate > new Date().toISOString().slice(0, 10) && eventStatus === 'ACTIVE' ? 'UPCOMING' : eventStatus),
           missedReason: eventStatus === 'CANCELLED' ? (eventMissedReason.trim() || 'ไม่ได้งาน / ไม่ได้ไป') : undefined,
-          salesTarget: eventSalesTarget,
+          salesTarget: typeof eventSalesTarget === 'number' ? eventSalesTarget : 30000,
           actualSales: 0,
-          assignedStaff: eventStaff.trim(),
+          assignedStaff: eventStaff.trim() || 'เจ้าของร้าน (Admin)',
           rentalFee: finalRentalFee,
           depositAmount: finalDepositAmount,
           travelExpense: finalTravelExpense > 0 ? finalTravelExpense : undefined,
-          depositSlipUrl: eventDepositSlipUrl,
+          depositSlipUrl: finalSlipUrl,
           googleMapsUrl: eventGoogleMapsUrl.trim(),
           organizerName: eventOrganizerName.trim() || undefined,
           organizerPhone: eventOrganizerPhone.trim() || undefined,
@@ -2020,17 +2048,17 @@ export const AdminEventMarketManager: React.FC = () => {
                       >
                         <div className="flex items-center justify-between gap-1 leading-tight">
                           <span className="font-mono text-[9px] sm:text-[10px] font-black truncate">
-                            {s.operatingHours.split(' ')[0] || s.operatingHours}
+                            {(s.operatingHours || '').split(' ')[0] || s.operatingHours || '-'}
                           </span>
                           <span className="text-[9px] font-black px-1 rounded bg-black/10 shrink-0">
-                            {s.rentalFee === undefined || s.rentalFee === 0 ? 'ฟรี' : `฿${s.rentalFee?.toLocaleString()}`}
+                            {s.rentalFee === undefined || s.rentalFee === null || s.rentalFee === 0 ? 'ฟรี' : `฿${Number(s.rentalFee).toLocaleString()}`}
                           </span>
                         </div>
                         <div className="font-black text-[10px] sm:text-[11px] truncate leading-tight mt-0.5">
                           {s.title}
                         </div>
                         <div className="text-[9px] truncate opacity-90 leading-tight">
-                          📍 {s.location}
+                          📍 {s.location || '-'}
                         </div>
                         {s.productsToPrepare && (
                           <div className="text-[8px] sm:text-[9px] truncate opacity-85 leading-tight text-amber-950 mt-0.5">
@@ -2038,7 +2066,7 @@ export const AdminEventMarketManager: React.FC = () => {
                           </div>
                         )}
                         <div className="flex items-center gap-1 text-[8px] sm:text-[9px] pt-0.5 flex-wrap">
-                          {s.travelExpense !== undefined && s.travelExpense > 0 && (
+                          {typeof s.travelExpense === 'number' && s.travelExpense > 0 && (
                             <span className="bg-black/10 px-1 rounded font-mono">
                               🚗 ฿{s.travelExpense.toLocaleString()}
                             </span>
@@ -2238,11 +2266,11 @@ export const AdminEventMarketManager: React.FC = () => {
                             <div className="flex items-center justify-between">
                               <span className="text-stone-700">🎪 ค่าเช่าบูธ:</span>
                               <span className="font-mono font-black text-amber-950">
-                                {s.rentalFee === undefined || s.rentalFee === 0 ? 'ฟรี (ไม่มีค่าที่)' : `฿${s.rentalFee.toLocaleString()}`}
+                                {s.rentalFee ? `฿${Number(s.rentalFee).toLocaleString()}` : 'ฟรี (ไม่มีค่าที่)'}
                               </span>
                             </div>
 
-                            {s.travelExpense !== undefined && s.travelExpense > 0 && (
+                            {typeof s.travelExpense === 'number' && s.travelExpense > 0 && (
                               <div className="flex items-center justify-between text-stone-700">
                                 <span className="flex items-center gap-1">
                                   <Car className="w-3.5 h-3.5 text-amber-700" />
@@ -2263,12 +2291,12 @@ export const AdminEventMarketManager: React.FC = () => {
                               </div>
                             )}
 
-                            {s.depositAmount !== undefined && s.depositAmount > 0 && (
+                            {typeof s.depositAmount === 'number' && s.depositAmount > 0 && (
                               <div className="flex items-center justify-between pt-1 border-t border-amber-200 text-stone-700">
                                 <span>💰 เงินมัดจำค่าที่:</span>
                                 <span className="font-mono font-bold text-amber-900">
                                   ฿{s.depositAmount.toLocaleString()}
-                                  {s.rentalFee !== undefined && s.rentalFee > s.depositAmount && (
+                                  {typeof s.rentalFee === 'number' && s.rentalFee > s.depositAmount && (
                                     <span className="text-red-700 font-mono ml-1 text-[10px]">
                                       (คงเหลือวันงาน: ฿{(s.rentalFee - s.depositAmount).toLocaleString()})
                                     </span>
@@ -2399,7 +2427,7 @@ export const AdminEventMarketManager: React.FC = () => {
                           )}
 
                           {/* เป้าหมายยอดขาย */}
-                          {s.salesTarget && s.salesTarget > 0 && (
+                          {typeof s.salesTarget === 'number' && s.salesTarget > 0 && (
                             <div className="flex items-center justify-between text-[11px] font-black bg-stone-100/90 px-2.5 py-1 rounded-lg border border-stone-200">
                               <span className="text-stone-600">🎯 เป้าหมายยอดขาย:</span>
                               <span className="font-mono text-stone-900">฿{s.salesTarget.toLocaleString()}</span>
@@ -2413,7 +2441,7 @@ export const AdminEventMarketManager: React.FC = () => {
                                 <ArrowRightLeft className="w-3.5 h-3.5 text-purple-700" />
                                 <span>ปล่อยต่อให้: {s.transfereeName}</span>
                               </span>
-                              {s.transferPrice !== undefined && (
+                              {typeof s.transferPrice === 'number' && (
                                 <span className="font-mono font-black text-purple-900 bg-white px-2 py-0.5 rounded-md border border-purple-300">
                                   ฿{s.transferPrice.toLocaleString()}
                                 </span>
@@ -2574,8 +2602,8 @@ export const AdminEventMarketManager: React.FC = () => {
                                 )}
                               </td>
                               <td className="p-3 font-mono font-black text-amber-900 whitespace-nowrap">
-                                <div>{s.rentalFee === undefined || s.rentalFee === 0 ? 'ฟรี' : `฿${s.rentalFee.toLocaleString()}`}</div>
-                                {s.depositAmount !== undefined && s.depositAmount > 0 && (
+                                <div>{s.rentalFee ? `฿${Number(s.rentalFee).toLocaleString()}` : 'ฟรี'}</div>
+                                {typeof s.depositAmount === 'number' && s.depositAmount > 0 && (
                                   <div className="text-[10px] text-stone-500 font-bold">
                                     มัดจำ: ฿{s.depositAmount.toLocaleString()}
                                   </div>
@@ -2595,7 +2623,7 @@ export const AdminEventMarketManager: React.FC = () => {
                                 )}
                               </td>
                               <td className="p-3 font-mono font-black text-amber-800 whitespace-nowrap">
-                                {s.travelExpense !== undefined && s.travelExpense > 0 ? `฿${s.travelExpense.toLocaleString()}` : '-'}
+                                {typeof s.travelExpense === 'number' && s.travelExpense > 0 ? `฿${s.travelExpense.toLocaleString()}` : '-'}
                               </td>
                               <td className="p-3 font-mono font-black text-amber-950 whitespace-nowrap bg-amber-50/50">
                                 {((s.rentalFee || 0) > 0 || (s.travelExpense || 0) > 0)
@@ -2769,15 +2797,15 @@ export const AdminEventMarketManager: React.FC = () => {
                             <span>พนักงานรับผิดชอบ: {s.assignedStaff}</span>
                           </p>
                         )}
-                        {s.rentalFee !== undefined && (
+                        {s.rentalFee !== undefined && s.rentalFee !== null && (
                           <p className="flex items-center gap-1.5 font-black text-amber-950 bg-amber-50/90 px-2.5 py-1.5 rounded-xl border border-amber-300/80 shadow-xs">
                             <Tag className="w-4 h-4 text-amber-700 shrink-0" />
                             <span>
-                              ราคาค่าเช่าสถานที่ออกบูธ: <strong className="text-amber-900 font-serif font-black">{s.rentalFee === 0 ? 'ฟรี (ไม่มีค่าที่)' : `฿${s.rentalFee.toLocaleString()}`}</strong>
+                              ราคาค่าเช่าสถานที่ออกบูธ: <strong className="text-amber-900 font-serif font-black">{Number(s.rentalFee) === 0 ? 'ฟรี (ไม่มีค่าที่)' : `฿${Number(s.rentalFee).toLocaleString()}`}</strong>
                             </span>
                           </p>
                         )}
-                        {s.travelExpense !== undefined && s.travelExpense > 0 && (
+                        {typeof s.travelExpense === 'number' && s.travelExpense > 0 && (
                           <p className="flex items-center gap-1.5 font-black text-amber-950 bg-amber-50/90 px-2.5 py-1.5 rounded-xl border border-amber-300/80 shadow-xs">
                             <Car className="w-4 h-4 text-amber-700 shrink-0" />
                             <span>
@@ -2798,7 +2826,7 @@ export const AdminEventMarketManager: React.FC = () => {
                                 <ArrowRightLeft className="w-3.5 h-3.5 text-purple-700" />
                                 <span>ปล่อยต่อให้: <strong>{s.transfereeName}</strong></span>
                               </span>
-                              {s.transferPrice !== undefined && (
+                              {typeof s.transferPrice === 'number' && (
                                 <span className="font-mono font-black text-purple-900 bg-white px-2 py-0.5 rounded-md border border-purple-300">
                                   ฿{s.transferPrice.toLocaleString()}
                                 </span>
@@ -2809,17 +2837,17 @@ export const AdminEventMarketManager: React.FC = () => {
                             )}
                           </div>
                         )}
-                        {s.depositAmount !== undefined && s.depositAmount > 0 && (
+                        {typeof s.depositAmount === 'number' && s.depositAmount > 0 && (
                           <p className="flex items-center gap-1.5 font-black text-amber-950 bg-amber-100/70 px-2.5 py-1.5 rounded-xl border border-amber-300 shadow-xs">
                             <DollarSign className="w-4 h-4 text-amber-700 shrink-0" />
                             <span>
                               เงินมัดจำค่าที่: <strong className="text-amber-900 font-mono">฿{s.depositAmount.toLocaleString()}</strong>
-                              {s.rentalFee !== undefined && s.rentalFee > s.depositAmount && (
+                              {typeof s.rentalFee === 'number' && s.rentalFee > s.depositAmount && (
                                 <span className="text-red-700 font-mono ml-1 text-[11px]">
                                   (คงเหลือจ่ายวันงาน: ฿{(s.rentalFee - s.depositAmount).toLocaleString()})
                                 </span>
                               )}
-                              {s.rentalFee !== undefined && s.depositAmount >= s.rentalFee && (
+                              {typeof s.rentalFee === 'number' && s.depositAmount >= s.rentalFee && (
                                 <span className="text-emerald-700 font-bold ml-1 text-[11px]">
                                   (มัดจำครบแล้ว)
                                 </span>
@@ -2970,19 +2998,19 @@ export const AdminEventMarketManager: React.FC = () => {
                 <span>สถานที่: {selectedCalendarSchedule.location}</span>
               </p>
 
-              {selectedCalendarSchedule.rentalFee !== undefined && (
+              {selectedCalendarSchedule.rentalFee !== undefined && selectedCalendarSchedule.rentalFee !== null && (
                 <p className="flex items-center gap-2 font-black text-amber-950 bg-amber-100/70 p-2 rounded-xl border border-amber-300">
                   <Tag className="w-4 h-4 text-amber-700 shrink-0" />
                   <span>
                     ราคาค่าเช่าสถานที่ออกบูธ:{' '}
                     <strong className="text-amber-900 font-mono text-sm">
-                      {selectedCalendarSchedule.rentalFee === 0 ? 'ฟรี (ไม่มีค่าที่)' : `฿${selectedCalendarSchedule.rentalFee.toLocaleString()}`}
+                      {Number(selectedCalendarSchedule.rentalFee) === 0 ? 'ฟรี (ไม่มีค่าที่)' : `฿${Number(selectedCalendarSchedule.rentalFee).toLocaleString()}`}
                     </strong>
                   </span>
                 </p>
               )}
 
-              {selectedCalendarSchedule.travelExpense !== undefined && selectedCalendarSchedule.travelExpense > 0 && (
+              {typeof selectedCalendarSchedule.travelExpense === 'number' && selectedCalendarSchedule.travelExpense > 0 && (
                 <p className="flex items-center gap-2 font-black text-amber-950 bg-amber-100/70 p-2 rounded-xl border border-amber-300">
                   <Car className="w-4 h-4 text-amber-700 shrink-0" />
                   <span>
@@ -3083,7 +3111,7 @@ export const AdminEventMarketManager: React.FC = () => {
                 </div>
               )}
 
-              {selectedCalendarSchedule.depositAmount !== undefined && selectedCalendarSchedule.depositAmount > 0 && (
+              {typeof selectedCalendarSchedule.depositAmount === 'number' && selectedCalendarSchedule.depositAmount > 0 && (
                 <div className="bg-amber-100/80 p-2.5 rounded-xl border border-amber-300 text-xs font-black space-y-1">
                   <div className="flex items-center justify-between text-amber-950">
                     <span className="flex items-center gap-1.5">
@@ -3094,7 +3122,7 @@ export const AdminEventMarketManager: React.FC = () => {
                       ฿{selectedCalendarSchedule.depositAmount.toLocaleString()}
                     </span>
                   </div>
-                  {selectedCalendarSchedule.rentalFee !== undefined && (
+                  {typeof selectedCalendarSchedule.rentalFee === 'number' && (
                     <div className="text-[11px] text-stone-600 flex justify-between pt-0.5 border-t border-amber-200">
                       <span>คงเหลือชำระวันงาน:</span>
                       <span className="font-mono font-bold text-red-700">
@@ -4786,7 +4814,7 @@ export const AdminEventMarketManager: React.FC = () => {
                                 <strong className="text-rose-950">{entry.missedReason}</strong>
                               </div>
                             )}
-                            {entry.rentalFee ? (
+                            {typeof entry.rentalFee === 'number' && entry.rentalFee > 0 ? (
                               <div className="flex justify-between text-stone-700">
                                 <span>ค่าเช่าที่สอบถามไว้:</span>
                                 <span className="font-mono font-bold text-amber-950">฿{entry.rentalFee.toLocaleString()}</span>
@@ -4804,10 +4832,10 @@ export const AdminEventMarketManager: React.FC = () => {
                           <div className="flex justify-between text-stone-700">
                             <span>ค่าเช่าบูธ:</span>
                             <span className="font-mono font-bold text-amber-950">
-                              {entry.rentalFee ? `฿${entry.rentalFee.toLocaleString()}` : 'ฟรี / ไม่ระบุ'}
+                              {typeof entry.rentalFee === 'number' && entry.rentalFee > 0 ? `฿${entry.rentalFee.toLocaleString()}` : 'ฟรี / ไม่ระบุ'}
                             </span>
                           </div>
-                          {entry.travelExpense ? (
+                          {typeof entry.travelExpense === 'number' && entry.travelExpense > 0 ? (
                             <div className="flex justify-between text-stone-700">
                               <span>ค่าเดินทาง/น้ำมัน:</span>
                               <span className="font-mono font-bold text-stone-900">

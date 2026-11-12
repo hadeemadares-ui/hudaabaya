@@ -91,6 +91,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
   const [showSizeGuide, setShowSizeGuide] = useState<boolean>(false);
   const [addedSuccess, setAddedSuccess] = useState<boolean>(false);
 
+  useEffect(() => {
+    setSelectedImage(initialImg);
+  }, [initialImg]);
+
   const [isZoomOpen, setIsZoomOpen] = useState<boolean>(false);
   const [zoomScale, setZoomScale] = useState<number>(1);
   const [zoomOrigin, setZoomOrigin] = useState<{ x: number; y: number }>({ x: 50, y: 50 });

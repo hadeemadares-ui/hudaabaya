@@ -54,10 +54,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product: initialProduc
 
   useEffect(() => {
     const nextImg = optimizeImageUrl(rawInitialImg);
-    if (nextImg && nextImg !== imgSrc) {
-      setImgSrc(nextImg);
-    }
-  }, [rawInitialImg]);
+    setImgSrc(nextImg || defaultImg);
+  }, [rawInitialImg, defaultImg]);
 
   return (
     <>

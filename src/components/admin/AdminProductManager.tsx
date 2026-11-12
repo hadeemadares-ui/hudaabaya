@@ -62,6 +62,7 @@ export const AdminProductManager: React.FC = () => {
   const [isLotSearchModalOpen, setIsLotSearchModalOpen] = useState(false);
   const [isQRScannerStockInOpen, setIsQRScannerStockInOpen] = useState<boolean>(false);
   const [isBatchStockCountOpen, setIsBatchStockCountOpen] = useState<boolean>(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   const handleBatchStockSubmit = (items: BatchCountItem[], supplier: string, note: string, lotNum?: string) => {
     const validItems = items.filter((item) => item.countedQty > 0);
@@ -1380,14 +1381,14 @@ export const AdminProductManager: React.FC = () => {
     alert('ซิงก์ดึงข้อมูลสินค้าล่าสุดจากทุกเครื่องขึ้นคลาวด์และแสดงผลตรงกัน 100% เรียบร้อยแล้ว!');
   };
 
-  // High-Performance Multi-Device Image Compression Engine (Retina HD 1200px - iOS Safari / Android / Desktop)
+  // High-Performance Multi-Device Image Compression Engine (Retina HD 720px - iOS Safari / Android / Desktop)
   const compressImageFile = async (file: File): Promise<string> => {
     // 1. Modern native fast decoding via createImageBitmap (auto-handles orientation & iOS HEIC)
     try {
       if (typeof window !== 'undefined' && 'createImageBitmap' in window) {
         const bitmap = await createImageBitmap(file);
         const canvas = document.createElement('canvas');
-        const maxDim = 1200; // Crisp 1200px HD resolution (~90KB per image, perfectly fits within browser quota)
+        const maxDim = 720;
         let width = bitmap.width;
         let height = bitmap.height;
         if (width > maxDim || height > maxDim) {
@@ -1407,7 +1408,11 @@ export const AdminProductManager: React.FC = () => {
           ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(bitmap, 0, 0, width, height);
           bitmap.close();
-          return canvas.toDataURL('image/jpeg', 0.82);
+          let dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+          if (dataUrl.length > 70000) {
+            dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+          }
+          return dataUrl;
         }
       }
     } catch (e) {
@@ -1431,7 +1436,7 @@ export const AdminProductManager: React.FC = () => {
       img.onload = () => {
         try {
           const canvas = document.createElement('canvas');
-          const maxDim = 1200;
+          const maxDim = 720;
           let width = img.naturalWidth || img.width;
           let height = img.naturalHeight || img.height;
           if (width > maxDim || height > maxDim) {
@@ -1450,9 +1455,12 @@ export const AdminProductManager: React.FC = () => {
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(img, 0, 0, width, height);
-            const compressed = canvas.toDataURL('image/jpeg', 0.82);
+            let dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+            if (dataUrl.length > 70000) {
+              dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+            }
             URL.revokeObjectURL(objectUrl);
-            resolve(compressed);
+            resolve(dataUrl);
             return;
           }
         } catch (err) {}
@@ -1494,9 +1502,12 @@ export const AdminProductManager: React.FC = () => {
         soundFx.playSuccess();
         // Place newly photographed or selected image as the FIRST (Cover) image immediately!
         setImagesList((prev) => [...newImages, ...prev]);
+      } else {
+        alert('ไม่สามารถประมวลผลไฟล์รูปภาพนี้ได้ กรุณาลองเลือกรูปภาพใหม่ (รองรับ .jpg, .png, .webp)');
       }
     } catch (err) {
       console.error('Image processing error:', err);
+      alert('เกิดข้อผิดพลาดในการอ่านไฟล์รูปภาพ กรุณาลองอีกครั้ง');
     } finally {
       setIsProcessingImage(false);
       e.target.value = '';
@@ -1511,8 +1522,11 @@ export const AdminProductManager: React.FC = () => {
 
   const handleAddUrlImage = () => {
     if (newImageUrlInput.trim()) {
-      setImagesList((prev) => [...prev, newImageUrlInput.trim()]);
+      const url = newImageUrlInput.trim();
+      // Place newly added URL image as the FIRST (Cover) image immediately!
+      setImagesList((prev) => [url, ...prev]);
       setNewImageUrlInput('');
+      soundFx.playSuccess();
     }
   };
 
@@ -2184,10 +2198,13 @@ export const AdminProductManager: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-3">
                   <div className="flex items-center gap-3.5">
                     <img
-                      src={product.images[0]}
+                      src={product.images && product.images[0] ? product.images[0] : '/images/dubai_abaya_couture.jpg'}
                       alt={product.title}
                       loading="lazy"
                       decoding="async"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/images/dubai_abaya_couture.jpg';
+                      }}
                       className="w-16 h-20 object-contain p-1 rounded-xl border-2 border-amber-400 bg-stone-100 shrink-0 shadow-md"
                     />
                     <div>
@@ -2275,13 +2292,10 @@ export const AdminProductManager: React.FC = () => {
                     </button>
                     
                     <button
-                      onClick={() => {
-                        if (confirm(`คุณต้องการลบสินค้า "${product.title}" ออกจากคลังสินค้าใช่หรือไม่?\n\n*คำเตือน: การลบนี้จะทำการลบข้อมูลสินค้าออกจากคลังและหน้าคิดเงิน POS ทั่วโลก`)) {
-                          deleteProduct(product.id);
-                        }
-                      }}
+                      type="button"
+                      onClick={() => setProductToDelete(product)}
                       className="p-2 bg-red-100 hover:bg-red-200 text-red-950 border border-red-400 rounded-xl text-xs flex items-center gap-1 transition cursor-pointer"
-                      title="ลบสินค้าชนิดนี้ออกจากคลังสินค้าอย่างถาวร"
+                      title="ลบสินค้าชนิดนี้ออกจากคลังสินค้า"
                     >
                       <Trash2 className="w-4 h-4 text-red-700" />
                     </button>
@@ -5342,6 +5356,103 @@ export const AdminProductManager: React.FC = () => {
           setPerfumeLabelSelectedProduct(null);
         }}
       />
+
+      {/* Delete Product Confirmation Pop-up Modal */}
+      {productToDelete && (
+        <div
+          className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setProductToDelete(null)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-md w-full p-6 sm:p-7 space-y-6 shadow-2xl border-2 border-red-400 text-stone-950 relative animate-scaleUp"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close X Button in top-right */}
+            <button
+              type="button"
+              onClick={() => setProductToDelete(null)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition cursor-pointer"
+              title="ปิดหน้าต่าง (No)"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Warning Icon & Heading */}
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-full bg-red-100 border-2 border-red-300 flex items-center justify-center text-red-600 shrink-0 shadow-inner">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg sm:text-xl font-serif font-black text-red-900 leading-tight">
+                  คุณแน่ใจที่จะลบข้อมูลนี้ใช่หรือไม่
+                </h3>
+                <p className="text-xs text-stone-500 font-bold mt-0.5">
+                  ยืนยันการลบรายการสินค้าออกจากระบบ
+                </p>
+              </div>
+            </div>
+
+            {/* Product Detail Card Preview */}
+            <div className="bg-stone-50 border border-stone-200 rounded-xl p-3.5 flex items-center gap-3.5">
+              <img
+                src={productToDelete.images && productToDelete.images[0] ? productToDelete.images[0] : '/images/dubai_abaya_couture.jpg'}
+                alt={productToDelete.title}
+                className="w-14 h-16 object-contain p-1 rounded-lg border border-stone-300 bg-white shrink-0"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/images/dubai_abaya_couture.jpg';
+                }}
+              />
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-black uppercase text-amber-950 bg-amber-100 px-2 py-0.5 rounded border border-amber-300 inline-block mb-1">
+                  {getCategoryLabel(productToDelete.category)}
+                </span>
+                <h4 className="font-serif font-black text-sm text-stone-900 truncate">
+                  {productToDelete.title}
+                </h4>
+                <p className="text-[11px] text-stone-500">
+                  จำนวน {productToDelete.variants?.length || 0} ขนาด/ไซส์ (สต๊อกรวม {productToDelete.variants?.reduce((sum, v) => sum + (Number(v.stockQuantity) || 0), 0) || 0} ชิ้น)
+                </p>
+              </div>
+            </div>
+
+            {/* Danger Notice */}
+            <div className="p-3 bg-red-50/80 border border-red-200 rounded-xl text-xs text-red-800 space-y-1">
+              <p className="font-bold flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>คำเตือน: ข้อมูลนี้จะถูกลบออกจากคลังสินค้า หน้าร้าน และหน้าคิดเงิน (POS)</span>
+              </p>
+            </div>
+
+            {/* Action Buttons: Yes or No */}
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              {/* Button No */}
+              <button
+                type="button"
+                onClick={() => setProductToDelete(null)}
+                className="w-full py-3 px-4 bg-stone-100 hover:bg-stone-200 active:scale-95 text-stone-800 font-black rounded-xl text-sm sm:text-base border border-stone-300 transition shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <X className="w-4 h-4 text-stone-600" />
+                <span>No (ไม่ลบ)</span>
+              </button>
+
+              {/* Button Yes */}
+              <button
+                type="button"
+                onClick={() => {
+                  const id = productToDelete.id;
+                  setProductToDelete(null);
+                  deleteProduct(id);
+                  soundFx.playDelete();
+                }}
+                className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 active:scale-95 text-white font-black rounded-xl text-sm sm:text-base border border-red-700 transition shadow-md flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4 text-white" />
+                <span>Yes (ใช่ ลบข้อมูล)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <datalist id="product-color-preset-list">
         {currentCategoryColorOptions.map((colorName) => (

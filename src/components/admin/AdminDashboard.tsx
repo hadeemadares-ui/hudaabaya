@@ -13,6 +13,7 @@ import { AdminEventMarketManager } from './AdminEventMarketManager';
 import { AdminBoothStockManager } from './AdminBoothStockManager';
 import { AdminStaffManager } from './AdminStaffManager';
 import { BoothTimeReminderModal } from './BoothTimeReminderModal';
+import { AdminErrorBoundary } from '../common/AdminErrorBoundary';
 import { AuditLog } from '../../types';
 import { formatThaiDateTime } from '../../utils/dateUtils';
 
@@ -176,6 +177,7 @@ export const AdminDashboard: React.FC = () => {
     boothTransfers,
     currentStaff,
     staffUsers,
+    isInitialSyncCompleted,
   } = useShop();
 
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'settings' | 'pos' | 'logs' | 'reports' | 'suppliers' | 'events' | 'booth_stock' | 'staff'>(() => {
@@ -331,6 +333,7 @@ export const AdminDashboard: React.FC = () => {
       window.addEventListener('switch_admin_tab_reports', handleSwitchEvent);
       window.addEventListener('switch_admin_tab_suppliers_stock_in', handleSwitchSuppliersStockIn);
       window.addEventListener('switch_admin_tab_products', handleSwitchProducts);
+
       return () => {
         window.removeEventListener('switch_admin_tab_reports', handleSwitchEvent);
         window.removeEventListener('switch_admin_tab_suppliers_stock_in', handleSwitchSuppliersStockIn);
@@ -347,6 +350,29 @@ export const AdminDashboard: React.FC = () => {
       })
       .catch(() => {});
   }, [activeTab]);
+
+  if (!isInitialSyncCompleted) {
+    return (
+      <div className="bg-[#FAF9F6] border-b border-stone-200 py-20 text-[#141312] min-h-[500px] flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto px-6 py-10 bg-white border border-stone-200/90 shadow-sm rounded-2xl text-center space-y-4">
+          <div className="relative w-16 h-16 mx-auto">
+            <div className="w-16 h-16 rounded-full border-4 border-amber-400/20 border-t-amber-500 animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center font-serif text-amber-900 font-black text-xs tracking-wider">
+              ADMIN
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="font-serif font-black text-lg text-[#141312]">
+              กำลังเชื่อมต่อระบบ Cloud Real-Time Sync (หลังบ้าน)
+            </h3>
+            <p className="text-xs text-stone-600 leading-relaxed font-sans">
+              กำลังดึงข้อมูลสินค้า ({products.length > 0 ? `${products.length} รายการ` : '100 รายการ'}), ออเดอร์, และตารางงานล่าสุดจากเซิร์ฟเวอร์แบบเรียลไทม์...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#FAF9F6] border-b border-stone-200 py-8 text-[#141312]">
@@ -785,7 +811,11 @@ export const AdminDashboard: React.FC = () => {
           />
         )}
         {activeTab === 'products' && <AdminProductManager />}
-        {activeTab === 'events' && <AdminEventMarketManager />}
+        {activeTab === 'events' && (
+          <AdminErrorBoundary fallbackTitle="ระบบจัดการตารางออกบูธ/ตลาดนัด">
+            <AdminEventMarketManager />
+          </AdminErrorBoundary>
+        )}
         {activeTab === 'booth_stock' && (
           <AdminBoothStockManager
             onOpenPOSWithBooth={(boothId) => {

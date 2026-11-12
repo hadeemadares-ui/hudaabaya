@@ -171,19 +171,6 @@ async function saveProductsToKV(env: any, prods: any[], delIds: any[]) {
       bundle.version = now;
 
       let serialized = JSON.stringify(bundle);
-      // Only compress into D1 if statement exceeds 850KB, but keep KV completely pristine with full images
-      if (serialized.length >= 850000) {
-        bundle.products = prods.map((p: any) => {
-          // Do NOT touch products modified recently
-          if (p.updatedAt && p.updatedAt > 1794000000000) return p;
-          if (!KNOWN_STATIC_IMAGE_PRODUCT_IDS.has(p.id)) return p;
-          return {
-            ...p,
-            images: Array.isArray(p.images) ? p.images.map((img: string) => (typeof img === 'string' && img.startsWith('data:image/') && img.length > 500) ? ('/images/products/' + p.id + '.jpg') : img) : []
-          };
-        });
-        serialized = JSON.stringify(bundle);
-      }
 
       await env.DB.prepare(
         "INSERT INTO sync_store (key, val, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET val=excluded.val, updated_at=excluded.updated_at"
