@@ -28,6 +28,7 @@ import {
 } from '../lib/lineNotification';
 import { sortProductsNatural, stripBottlePrefix } from '../utils/productUtils';
 import { isMatchingLot } from '../utils/qrUtils';
+import { safeSetLocalStorage } from '../utils/storageUtils';
 
 const DEFAULT_SETTINGS: StoreSettings = {
   storeName: 'HUDA ABAYA DUBAI',
@@ -1222,7 +1223,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
               (a, b) => new Date(b.startDate || 0).getTime() - new Date(a.startDate || 0).getTime()
             );
             if (typeof window !== 'undefined') {
-              localStorage.setItem('huda_event_schedules', JSON.stringify(merged));
+              safeSetLocalStorage('huda_event_schedules', JSON.stringify(merged));
             }
             return merged;
           });
@@ -1428,7 +1429,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setEventSchedules((prev) => {
       const updated = [schedule, ...prev.filter((s) => s.id !== schedule.id)];
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_event_schedules', JSON.stringify(updated));
+        safeSetLocalStorage('huda_event_schedules', JSON.stringify(updated));
       }
       triggerBackgroundPush({ eventSchedules: updated });
       return updated;
@@ -1445,7 +1446,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setEventSchedules((prev) => {
       const updated = prev.map((s) => (s.id === schedule.id ? schedule : s));
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_event_schedules', JSON.stringify(updated));
+        safeSetLocalStorage('huda_event_schedules', JSON.stringify(updated));
       }
       triggerBackgroundPush({ eventSchedules: updated });
       return updated;
@@ -1469,7 +1470,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setEventSchedules((prev) => {
       const updated = prev.filter((s) => s.id !== scheduleId);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_event_schedules', JSON.stringify(updated));
+        safeSetLocalStorage('huda_event_schedules', JSON.stringify(updated));
       }
       triggerBackgroundPush({
         eventSchedules: updated,
@@ -1885,7 +1886,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setEventSchedules((prev) => {
       const next = typeof valueOrUpdater === 'function' ? valueOrUpdater(prev) : valueOrUpdater;
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_event_schedules', JSON.stringify(next));
+        safeSetLocalStorage('huda_event_schedules', JSON.stringify(next));
       }
       triggerBackgroundPush({ eventSchedules: next });
       return next;

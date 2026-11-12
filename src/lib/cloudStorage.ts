@@ -203,6 +203,34 @@ export async function saveCloudSettings(settings: Partial<StoreSettings>): Promi
   }
 }
 
+export function sanitizeEventSchedules(schedules: any[]): any[] {
+  if (!Array.isArray(schedules)) return [];
+  return schedules.map((s) => {
+    let depositSlipUrl = s.depositSlipUrl;
+    let transferSlipUrl = s.transferSlipUrl;
+    // Allow clean compressed slips up to 70,000 chars (~50KB base64), strip oversized raw base64
+    if (typeof depositSlipUrl === 'string' && depositSlipUrl.length > 70000) {
+      console.warn('Oversized depositSlipUrl stripped (>70KB):', s.id);
+      depositSlipUrl = '';
+    }
+    if (typeof transferSlipUrl === 'string' && transferSlipUrl.length > 70000) {
+      transferSlipUrl = '';
+    }
+    const coordinationPhotos = Array.isArray(s.coordinationPhotos)
+      ? s.coordinationPhotos.filter((cp: any) => {
+          const url = typeof cp === 'string' ? cp : cp?.url;
+          return typeof url === 'string' && url.length <= 70000;
+        })
+      : [];
+    return {
+      ...s,
+      depositSlipUrl,
+      transferSlipUrl,
+      coordinationPhotos,
+    };
+  });
+}
+
 // Master Real-Time Multi-Device Sync API
 export async function fetchRealtimeSync(clientVersion: number = 0, force: boolean = false): Promise<RealtimeSyncPayload | null> {
   try {
@@ -214,6 +242,9 @@ export async function fetchRealtimeSync(clientVersion: number = 0, force: boolea
     if (data?.success) {
       if (Array.isArray(data.products)) {
         data.products = sanitizeProducts(data.products);
+      }
+      if (Array.isArray(data.eventSchedules)) {
+        data.eventSchedules = sanitizeEventSchedules(data.eventSchedules);
       }
       return data;
     }
@@ -229,6 +260,9 @@ export async function pushRealtimeSync(payload: Partial<RealtimeSyncPayload>): P
     const cleanPayload = { ...payload };
     if (Array.isArray(cleanPayload.products)) {
       cleanPayload.products = sanitizeProducts(cleanPayload.products);
+    }
+    if (Array.isArray(cleanPayload.eventSchedules)) {
+      cleanPayload.eventSchedules = sanitizeEventSchedules(cleanPayload.eventSchedules);
     }
     const res = await fetch(`${base}/api/sync`, {
       method: 'POST',

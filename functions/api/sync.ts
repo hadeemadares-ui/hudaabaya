@@ -166,22 +166,7 @@ const KNOWN_STATIC_IMAGE_PRODUCT_IDS = new Set([
 async function saveBundleToD1AndKV(env: any, bundle: SyncBundle): Promise<boolean> {
   let ok = false;
 
-  // 1. Cloudflare KV has 25MB capacity: ALWAYS store the 100% full, pristine bundle with all user camera base64 photos intact!
-  const fullSerialized = JSON.stringify(bundle);
-  if (env?.HUDA_KV) {
-    try {
-      await Promise.all([
-        env.HUDA_KV.put('huda_sync_bundle', fullSerialized),
-        env.HUDA_KV.put('huda_sync_version', bundle.version.toString()),
-      ]);
-      ok = true;
-    } catch (err: any) {
-      console.warn('HUDA_KV save bundle notice:', err?.message);
-    }
-  }
-
-  // 2. Prepare payload for Cloudflare D1 (D1 has a 1MB query statement limit)
-  // Slim down bulky base64 slips and coordination photos so D1 payload is always lean (< 300KB) and never fails
+  // 1. Optimize products and slim down bulky raw camera photos so both KV and D1 payloads remain lean (< 300KB)
   const optimizedProducts = (bundle.products || []).map((p: any) => {
     if (!Array.isArray(p.images) || !KNOWN_STATIC_IMAGE_PRODUCT_IDS.has(p.id)) {
       return p;
@@ -195,37 +180,51 @@ async function saveBundleToD1AndKV(env: any, bundle: SyncBundle): Promise<boolea
     return { ...p, images: cleanImages };
   });
 
+  // Preserve compressed slips (up to 70KB base64), drop only oversized raw files (>70KB)
   const slimEventSchedules = (bundle.eventSchedules || []).map((s: any) => {
     let depositSlipUrl = s.depositSlipUrl;
     let transferSlipUrl = s.transferSlipUrl;
-    if (typeof depositSlipUrl === 'string' && depositSlipUrl.length > 25000) depositSlipUrl = '';
-    if (typeof transferSlipUrl === 'string' && transferSlipUrl.length > 25000) transferSlipUrl = '';
+    if (typeof depositSlipUrl === 'string' && depositSlipUrl.length > 70000) depositSlipUrl = '';
+    if (typeof transferSlipUrl === 'string' && transferSlipUrl.length > 70000) transferSlipUrl = '';
     const coordinationPhotos = Array.isArray(s.coordinationPhotos)
-      ? s.coordinationPhotos.filter((cp: string) => typeof cp === 'string' && cp.length < 25000)
+      ? s.coordinationPhotos.filter((cp: string) => typeof cp === 'string' && cp.length < 70000)
       : [];
     return { ...s, depositSlipUrl, transferSlipUrl, coordinationPhotos };
   });
 
   const slimOrders = (bundle.orders || []).map((o: any) => {
     let slipImageUrl = o.slipImageUrl;
-    if (typeof slipImageUrl === 'string' && slipImageUrl.length > 35000) slipImageUrl = '';
+    if (typeof slipImageUrl === 'string' && slipImageUrl.length > 70000) slipImageUrl = '';
     return { ...o, slipImageUrl };
   });
 
-  const d1Bundle: SyncBundle = {
+  const cleanBundle: SyncBundle = {
     ...bundle,
     products: optimizedProducts,
     eventSchedules: slimEventSchedules,
     orders: slimOrders,
   };
-  const d1Serialized = JSON.stringify(d1Bundle);
+  const serialized = JSON.stringify(cleanBundle);
+
+  // 2. Save optimized bundle to Cloudflare KV
+  if (env?.HUDA_KV) {
+    try {
+      await Promise.all([
+        env.HUDA_KV.put('huda_sync_bundle', serialized),
+        env.HUDA_KV.put('huda_sync_version', bundle.version.toString()),
+      ]);
+      ok = true;
+    } catch (err: any) {
+      console.warn('HUDA_KV save bundle notice:', err?.message);
+    }
+  }
 
   // 3. Save to D1
   if (env?.DB) {
     try {
       await env.DB.prepare(
         "INSERT INTO sync_store (key, val, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET val=excluded.val, updated_at=excluded.updated_at"
-      ).bind('huda_sync_bundle', d1Serialized, bundle.version).run();
+      ).bind('huda_sync_bundle', serialized, bundle.version).run();
 
       // Also persist dedicated huda_products row for instant atomic queries
       const prodsSerialized = JSON.stringify(optimizedProducts);

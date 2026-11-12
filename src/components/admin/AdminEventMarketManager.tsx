@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, MapPin, Clock, Plus, Store, User, Phone, DollarSign, Sparkles, CheckCircle2, AlertCircle, X, ChevronRight, ChevronLeft, Filter, Flame, Edit2, Trash2, ShoppingBag, Tag, List, LayoutGrid, Upload, Image as ImageIcon, ExternalLink, ArrowRightLeft, Car, Smartphone, Laptop, Check, Bell, BookUser, Search, Eye, ArrowLeft, ArrowRight, RefreshCw, MessageSquare, Send } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { formatThaiDateWithDay, getThaiDayName } from '../../utils/dateUtils';
+import { safeSetLocalStorage } from '../../utils/storageUtils';
 import { EventSchedule, EventCoordinationImage, CoordinationPhotoCategory } from '../../types';
 
 // Thai Full Months Data
@@ -403,7 +404,7 @@ export const AdminEventMarketManager: React.FC = () => {
       if (hasDiff) {
         setEventSchedules(normalized);
         if (typeof window !== 'undefined') {
-          localStorage.setItem('huda_event_schedules', JSON.stringify(normalized));
+          safeSetLocalStorage('huda_event_schedules', JSON.stringify(normalized));
         }
       }
     }
@@ -472,7 +473,7 @@ export const AdminEventMarketManager: React.FC = () => {
       setSchedules(reconciled);
       setEventSchedules(reconciled);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_event_schedules', JSON.stringify(reconciled));
+        safeSetLocalStorage('huda_event_schedules', JSON.stringify(reconciled));
       }
     }
   }, []);
@@ -703,6 +704,81 @@ export const AdminEventMarketManager: React.FC = () => {
     alert('บันทึกรูปภาพการติดต่อประสานงานเรียบร้อยแล้ว!');
   };
 
+  // Dedicated Bank Slip Compressor: Crystal clear text & QR, but ultra-lean (<35KB) to prevent localStorage quota crash
+  const compressSlipSafely = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const rawBase64 = event.target?.result as string;
+        if (!rawBase64) {
+          resolve('');
+          return;
+        }
+
+        const img = new window.Image();
+        img.onload = () => {
+          try {
+            const naturalW = img.naturalWidth || img.width || 0;
+            const naturalH = img.naturalHeight || img.height || 0;
+            if (naturalW <= 0 || naturalH <= 0) {
+              resolve(rawBase64.length < 50000 ? rawBase64 : '');
+              return;
+            }
+
+            // Max 600px width/height provides crisp bank slip text while keeping data URL ~25KB
+            const maxDim = 600;
+            let targetW = naturalW;
+            let targetH = naturalH;
+            if (targetW > maxDim || targetH > maxDim) {
+              if (targetW > targetH) {
+                targetH = Math.round((targetH * maxDim) / targetW);
+                targetW = maxDim;
+              } else {
+                targetW = Math.round((targetW * maxDim) / targetH);
+                targetH = maxDim;
+              }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, targetW);
+            canvas.height = Math.max(1, targetH);
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              resolve(rawBase64.length < 50000 ? rawBase64 : '');
+              return;
+            }
+
+            // Solid white background prevents transparent PNG/LINE screenshots from turning pure black
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            let quality = 0.65;
+            let compressed = canvas.toDataURL('image/jpeg', quality);
+            if (compressed.length > 55000) {
+              quality = 0.5;
+              compressed = canvas.toDataURL('image/jpeg', quality);
+            }
+
+            resolve(compressed);
+          } catch (e) {
+            console.warn('compressSlipSafely error:', e);
+            resolve(rawBase64.length < 50000 ? rawBase64 : '');
+          }
+        };
+
+        img.onerror = () => {
+          resolve(rawBase64.length < 50000 ? rawBase64 : '');
+        };
+
+        img.src = rawBase64;
+      };
+
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(file);
+    });
+  };
+
   // Handle deposit slip file upload with safe canvas compression
   const handleDepositSlipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -711,9 +787,16 @@ export const AdminEventMarketManager: React.FC = () => {
         alert('ไฟล์รูปภาพมีขนาดใหญ่เกิน 15MB กรุณาเลือกไฟล์ที่มีขนาดเล็กลงครับ');
         return;
       }
-      const compressedUrl = await compressImageSafely(file);
-      if (compressedUrl) {
-        setEventDepositSlipUrl(compressedUrl);
+      try {
+        const compressedUrl = await compressSlipSafely(file);
+        if (compressedUrl) {
+          setEventDepositSlipUrl(compressedUrl);
+        } else {
+          alert('ไม่สามารถประมวลผลรูปภาพสลิปได้ กรุณาลองเลือกรูปใหม่อีกครั้งครับ');
+        }
+      } catch (err: any) {
+        console.error('Slip upload error:', err);
+        alert('เกิดข้อผิดพลาดในการโหลดรูปภาพสลิป กรุณาลองใหม่อีกครั้ง');
       }
     }
   };
@@ -875,7 +958,7 @@ export const AdminEventMarketManager: React.FC = () => {
     setSchedules(updated);
     setEventSchedules(updated);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('huda_event_schedules', JSON.stringify(updated));
+      safeSetLocalStorage('huda_event_schedules', JSON.stringify(updated));
     }
   };
 
@@ -1109,98 +1192,103 @@ export const AdminEventMarketManager: React.FC = () => {
 
   const handleSaveNewEvent = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!eventTitle.trim()) {
-      alert('กรุณากรอกชื่อตารางงานด้วยครับ');
-      return;
-    }
-
-    const finalRentalFee = typeof eventRentalFee === 'number' ? eventRentalFee : (parseInt(eventRentalFee, 10) || 0);
-    const finalDepositAmount = typeof eventDepositAmount === 'number' ? eventDepositAmount : (parseInt(eventDepositAmount, 10) || 0);
-    const finalTravelExpense = typeof eventTravelExpense === 'number' ? eventTravelExpense : (parseInt(eventTravelExpense, 10) || 0);
-
-    if (editingScheduleId) {
-      let updatedItem: EventSchedule | null = null;
-      const updatedSchedules = schedules.map((s) => {
-        if (s.id === editingScheduleId) {
-          updatedItem = {
-            ...s,
-            title: eventTitle.trim(),
-            branchName: eventBranch,
-            location: eventLocation.trim(),
-            startDate: eventStartDate,
-            endDate: eventEndDate,
-            operatingHours: eventHours.trim(),
-            productsToPrepare: eventProducts.trim(),
-            phonePromptPay: eventPhone.trim(),
-            status: eventStatus === 'CANCELLED' ? 'CANCELLED' : (eventStartDate > new Date().toISOString().slice(0, 10) && eventStatus === 'ACTIVE' ? 'UPCOMING' : eventStatus),
-            missedReason: eventStatus === 'CANCELLED' ? (eventMissedReason.trim() || 'ไม่ได้งาน / ไม่ได้ไป') : undefined,
-            salesTarget: eventSalesTarget,
-            assignedStaff: eventStaff.trim(),
-            rentalFee: finalRentalFee,
-            depositAmount: finalDepositAmount,
-            travelExpense: finalTravelExpense > 0 ? finalTravelExpense : undefined,
-            depositSlipUrl: eventDepositSlipUrl,
-            googleMapsUrl: eventGoogleMapsUrl.trim(),
-            organizerName: eventOrganizerName.trim() || undefined,
-            organizerPhone: eventOrganizerPhone.trim() || undefined,
-            organizerLine: eventOrganizerLine.trim() || undefined,
-            boothNumber: eventBoothNumber.trim() || undefined,
-            organizerContact: eventOrganizerPhone.trim() || eventOrganizerName.trim() || undefined,
-            note: eventNote.trim(),
-            images: eventPhotos.length > 0 ? eventPhotos.map(p => p.url) : undefined,
-            coordinationPhotos: eventPhotos.length > 0 ? eventPhotos : undefined,
-          };
-          return updatedItem;
-        }
-        return s;
-      });
-      saveSchedulesToStorage(updatedSchedules);
-      if (updatedItem) {
-        updateEventSchedule(updatedItem);
-        setSelectedEventId(editingScheduleId);
+    try {
+      if (!eventTitle.trim()) {
+        alert('กรุณากรอกชื่อตารางงานด้วยครับ');
+        return;
       }
-      alert(`บันทึกการแก้ไขตารางงาน "${eventTitle}" เรียบร้อยแล้ว!`);
-    } else {
-      const newEvent: EventSchedule = {
-        id: `EVENT-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
-        title: eventTitle.trim(),
-        branchName: eventBranch,
-        location: eventLocation.trim(),
-        startDate: eventStartDate,
-        endDate: eventEndDate,
-        operatingHours: eventHours.trim(),
-        productsToPrepare: eventProducts.trim(),
-        phonePromptPay: eventPhone.trim(),
-        status: eventStatus === 'CANCELLED' ? 'CANCELLED' : (eventStartDate > new Date().toISOString().slice(0, 10) && eventStatus === 'ACTIVE' ? 'UPCOMING' : eventStatus),
-        missedReason: eventStatus === 'CANCELLED' ? (eventMissedReason.trim() || 'ไม่ได้งาน / ไม่ได้ไป') : undefined,
-        salesTarget: eventSalesTarget,
-        actualSales: 0,
-        assignedStaff: eventStaff.trim(),
-        rentalFee: finalRentalFee,
-        depositAmount: finalDepositAmount,
-        travelExpense: finalTravelExpense > 0 ? finalTravelExpense : undefined,
-        depositSlipUrl: eventDepositSlipUrl,
-        googleMapsUrl: eventGoogleMapsUrl.trim(),
-        organizerName: eventOrganizerName.trim() || undefined,
-        organizerPhone: eventOrganizerPhone.trim() || undefined,
-        organizerLine: eventOrganizerLine.trim() || undefined,
-        boothNumber: eventBoothNumber.trim() || undefined,
-        organizerContact: eventOrganizerPhone.trim() || eventOrganizerName.trim() || undefined,
-        note: eventNote.trim(),
-        images: eventPhotos.length > 0 ? eventPhotos.map(p => p.url) : undefined,
-        coordinationPhotos: eventPhotos.length > 0 ? eventPhotos : undefined,
-        createdAt: new Date().toISOString(),
-      };
 
-      saveSchedulesToStorage([newEvent, ...schedules]);
-      addEventSchedule(newEvent);
-      setSelectedEventId(newEvent.id);
-      setActiveBranch(newEvent.branchName);
-      alert(`เพิ่มตารางออกงาน "${eventTitle}" เรียบร้อยแล้ว!`);
+      const finalRentalFee = typeof eventRentalFee === 'number' ? eventRentalFee : (parseInt(eventRentalFee, 10) || 0);
+      const finalDepositAmount = typeof eventDepositAmount === 'number' ? eventDepositAmount : (parseInt(eventDepositAmount, 10) || 0);
+      const finalTravelExpense = typeof eventTravelExpense === 'number' ? eventTravelExpense : (parseInt(eventTravelExpense, 10) || 0);
+
+      if (editingScheduleId) {
+        let updatedItem: EventSchedule | null = null;
+        const updatedSchedules = schedules.map((s) => {
+          if (s.id === editingScheduleId) {
+            updatedItem = {
+              ...s,
+              title: eventTitle.trim(),
+              branchName: eventBranch,
+              location: eventLocation.trim(),
+              startDate: eventStartDate,
+              endDate: eventEndDate,
+              operatingHours: eventHours.trim(),
+              productsToPrepare: eventProducts.trim(),
+              phonePromptPay: eventPhone.trim(),
+              status: eventStatus === 'CANCELLED' ? 'CANCELLED' : (eventStartDate > new Date().toISOString().slice(0, 10) && eventStatus === 'ACTIVE' ? 'UPCOMING' : eventStatus),
+              missedReason: eventStatus === 'CANCELLED' ? (eventMissedReason.trim() || 'ไม่ได้งาน / ไม่ได้ไป') : undefined,
+              salesTarget: eventSalesTarget,
+              assignedStaff: eventStaff.trim(),
+              rentalFee: finalRentalFee,
+              depositAmount: finalDepositAmount,
+              travelExpense: finalTravelExpense > 0 ? finalTravelExpense : undefined,
+              depositSlipUrl: eventDepositSlipUrl,
+              googleMapsUrl: eventGoogleMapsUrl.trim(),
+              organizerName: eventOrganizerName.trim() || undefined,
+              organizerPhone: eventOrganizerPhone.trim() || undefined,
+              organizerLine: eventOrganizerLine.trim() || undefined,
+              boothNumber: eventBoothNumber.trim() || undefined,
+              organizerContact: eventOrganizerPhone.trim() || eventOrganizerName.trim() || undefined,
+              note: eventNote.trim(),
+              images: eventPhotos.length > 0 ? eventPhotos.map(p => p.url) : undefined,
+              coordinationPhotos: eventPhotos.length > 0 ? eventPhotos : undefined,
+            };
+            return updatedItem;
+          }
+          return s;
+        });
+        saveSchedulesToStorage(updatedSchedules);
+        if (updatedItem) {
+          updateEventSchedule(updatedItem);
+          setSelectedEventId(editingScheduleId);
+        }
+        alert(`บันทึกการแก้ไขตารางงาน "${eventTitle}" เรียบร้อยแล้ว!`);
+      } else {
+        const newEvent: EventSchedule = {
+          id: `EVENT-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+          title: eventTitle.trim(),
+          branchName: eventBranch,
+          location: eventLocation.trim(),
+          startDate: eventStartDate,
+          endDate: eventEndDate,
+          operatingHours: eventHours.trim(),
+          productsToPrepare: eventProducts.trim(),
+          phonePromptPay: eventPhone.trim(),
+          status: eventStatus === 'CANCELLED' ? 'CANCELLED' : (eventStartDate > new Date().toISOString().slice(0, 10) && eventStatus === 'ACTIVE' ? 'UPCOMING' : eventStatus),
+          missedReason: eventStatus === 'CANCELLED' ? (eventMissedReason.trim() || 'ไม่ได้งาน / ไม่ได้ไป') : undefined,
+          salesTarget: eventSalesTarget,
+          actualSales: 0,
+          assignedStaff: eventStaff.trim(),
+          rentalFee: finalRentalFee,
+          depositAmount: finalDepositAmount,
+          travelExpense: finalTravelExpense > 0 ? finalTravelExpense : undefined,
+          depositSlipUrl: eventDepositSlipUrl,
+          googleMapsUrl: eventGoogleMapsUrl.trim(),
+          organizerName: eventOrganizerName.trim() || undefined,
+          organizerPhone: eventOrganizerPhone.trim() || undefined,
+          organizerLine: eventOrganizerLine.trim() || undefined,
+          boothNumber: eventBoothNumber.trim() || undefined,
+          organizerContact: eventOrganizerPhone.trim() || eventOrganizerName.trim() || undefined,
+          note: eventNote.trim(),
+          images: eventPhotos.length > 0 ? eventPhotos.map(p => p.url) : undefined,
+          coordinationPhotos: eventPhotos.length > 0 ? eventPhotos : undefined,
+          createdAt: new Date().toISOString(),
+        };
+
+        saveSchedulesToStorage([newEvent, ...schedules]);
+        addEventSchedule(newEvent);
+        setSelectedEventId(newEvent.id);
+        setActiveBranch(newEvent.branchName);
+        alert(`เพิ่มตารางออกงาน "${eventTitle}" เรียบร้อยแล้ว!`);
+      }
+
+      setEditingScheduleId(null);
+      setIsAddEventModalOpen(false);
+    } catch (err: any) {
+      console.error('handleSaveNewEvent error:', err);
+      alert(`❌ เกิดข้อผิดพลาดในการบันทึก: ${err?.message || 'กรุณาลองใหม่อีกครั้ง'}`);
     }
-
-    setEditingScheduleId(null);
-    setIsAddEventModalOpen(false);
   };
 
   const handleAddBranch = (e: React.FormEvent) => {
@@ -4388,16 +4476,15 @@ export const AdminEventMarketManager: React.FC = () => {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (evt) => {
-                            if (typeof evt.target?.result === 'string') {
-                              setTransferSlipUrl(evt.target.result);
-                            }
-                          };
-                          reader.readAsDataURL(file);
+                          try {
+                            const compressed = await compressSlipSafely(file);
+                            if (compressed) setTransferSlipUrl(compressed);
+                          } catch (err) {
+                            console.error('Transfer slip compression error:', err);
+                          }
                         }
                       }}
                       className="w-full text-xs text-stone-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-purple-100 file:text-purple-900 hover:file:bg-purple-200 cursor-pointer"
