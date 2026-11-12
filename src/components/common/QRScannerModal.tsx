@@ -427,126 +427,12 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
           </button>
         </div>
 
-        {/* Scan Mode Switcher */}
-        <div className="flex items-center justify-between gap-1.5 bg-stone-100 p-1 rounded-2xl border border-stone-300 text-xs shrink-0">
-          <button
-            type="button"
-            onClick={() => setScanMode('continuous')}
-            className={`flex-1 py-1.5 px-2.5 rounded-xl font-black transition cursor-pointer flex items-center justify-center gap-1.5 ${
-              scanMode === 'continuous'
-                ? 'bg-gradient-to-r from-amber-400 to-amber-300 text-stone-950 shadow-xs border border-amber-500'
-                : 'text-stone-600 hover:text-stone-950'
-            }`}
-          >
-            <Zap className="w-3.5 h-3.5 text-amber-800" />
-            <span>⚡ สแกนรัวต่อเนื่อง ({(scanDelayMs / 1000).toFixed(2).replace(/\.00$/, '')} วิ)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setScanMode('single')}
-            className={`flex-1 py-1.5 px-2.5 rounded-xl font-black transition cursor-pointer flex items-center justify-center gap-1.5 ${
-              scanMode === 'single'
-                ? 'bg-amber-400 text-stone-950 shadow-xs border border-amber-500'
-                : 'text-stone-600 hover:text-stone-950'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>สแกนทีละชิ้น (แม่นยำ)</span>
-          </button>
-        </div>
-
-        {/* Scan Speed Adjustment Bar (ปรับความเร็วสแกน) */}
-        {scanMode === 'continuous' && (
-          <div className="bg-gradient-to-r from-amber-50/90 via-white to-amber-50/90 border border-amber-300 rounded-2xl p-2 sm:p-2.5 space-y-2 shrink-0 shadow-2xs">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <Gauge className="w-4 h-4 text-amber-800 shrink-0" />
-                <span className="text-[11px] font-black text-stone-900">
-                  ความเร็วการสแกน:
-                </span>
-                <span className="bg-amber-400 text-stone-950 font-mono font-black text-xs px-2 py-0.5 rounded-lg border border-amber-500 shadow-2xs">
-                  {(scanDelayMs / 1000).toFixed(2)} วิ
-                </span>
-                <span className="text-[10px] font-bold text-stone-600">
-                  {scanDelayMs <= 400 && '⚡ เร็วพิเศษ (ยิงรัวสต๊อก)'}
-                  {scanDelayMs > 400 && scanDelayMs <= 800 && '🚀 เร็วคล่องตัว'}
-                  {scanDelayMs > 800 && scanDelayMs <= 1400 && '⏱️ มาตรฐาน (แนะนำ)'}
-                  {scanDelayMs > 1400 && '🛡️ ช้า/ปลอดภัย (กันยิงเบิ้ล)'}
-                </span>
-              </div>
-
-              {/* Quick Stepper Buttons */}
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => updateScanDelay(Math.max(200, scanDelayMs - 100))}
-                  className="w-6 h-6 rounded-lg bg-stone-100 hover:bg-amber-200 text-stone-900 font-black text-xs flex items-center justify-center transition cursor-pointer border border-stone-300 shadow-2xs active:scale-95"
-                  title="เร็วขึ้น (-0.1 วิ)"
-                >
-                  -
-                </button>
-                <button
-                  type="button"
-                  onClick={() => updateScanDelay(Math.min(3000, scanDelayMs + 100))}
-                  className="w-6 h-6 rounded-lg bg-stone-100 hover:bg-amber-200 text-stone-900 font-black text-xs flex items-center justify-center transition cursor-pointer border border-stone-300 shadow-2xs active:scale-95"
-                  title="ช้าลง (+0.1 วิ)"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* 4 Speed Presets */}
-            <div className="grid grid-cols-4 gap-1 sm:gap-1.5">
-              {[
-                { label: '⚡ 0.35 วิ', desc: 'เร็วพิเศษ', ms: 350 },
-                { label: '🚀 0.70 วิ', desc: 'เร็วคล่องตัว', ms: 700 },
-                { label: '⏱️ 1.20 วิ', desc: 'มาตรฐาน', ms: 1200 },
-                { label: '🛡️ 2.00 วิ', desc: 'ช้า/ปลอดภัย', ms: 2000 },
-              ].map((p) => {
-                const isActive = Math.abs(scanDelayMs - p.ms) < 40;
-                return (
-                  <button
-                    key={p.ms}
-                    type="button"
-                    onClick={() => updateScanDelay(p.ms)}
-                    className={`py-1 px-1 rounded-xl font-black text-center transition cursor-pointer text-[10px] leading-tight border ${
-                      isActive
-                        ? 'bg-amber-400 text-stone-950 border-amber-600 shadow-xs ring-2 ring-amber-400/50 scale-[1.02]'
-                        : 'bg-white hover:bg-amber-50 text-stone-700 border-stone-300 hover:border-amber-400'
-                    }`}
-                  >
-                    <div className="font-mono font-black">{p.label}</div>
-                    <div className="text-[8px] sm:text-[9px] font-sans opacity-85">{p.desc}</div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Slider with Min/Max indicators */}
-            <div className="flex items-center gap-2 pt-0.5">
-              <span className="text-[9px] font-mono font-bold text-stone-500 shrink-0">0.2วิ (เร็วสุด)</span>
-              <input
-                type="range"
-                min="200"
-                max="3000"
-                step="50"
-                value={scanDelayMs}
-                onChange={(e) => updateScanDelay(Number(e.target.value))}
-                className="flex-1 accent-amber-500 cursor-pointer h-1.5 bg-stone-200 rounded-lg"
-                title={`ความเร็วสแกน: ${(scanDelayMs / 1000).toFixed(2)} วินาที`}
-              />
-              <span className="text-[9px] font-mono font-bold text-stone-500 shrink-0">3.0วิ (ช้าสุด)</span>
-            </div>
-          </div>
-        )}
-
         {/* Subtitle / Instructions */}
         <p className="text-[11px] text-stone-600 font-bold shrink-0">{subtitle}</p>
 
         {/* Modal Scrollable Body */}
         <div className="flex-1 overflow-y-auto space-y-3 pr-0.5">
-          {/* Viewfinder Camera Box */}
+          {/* Viewfinder Camera Box (กล้องสแกนขึ้นบนสุด) */}
           <div
             className={`relative w-full aspect-square sm:aspect-4/3 bg-stone-950 rounded-2xl overflow-hidden border-2 transition-all duration-150 ${
               isCooldownActive
@@ -862,6 +748,130 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
               </div>
             </div>
           )}
+
+          {/* Scan Settings: Mode Switcher & Speed Adjustment (ด้านล่าง) */}
+          <div className="bg-stone-50 border border-stone-200 rounded-2xl p-2.5 space-y-2.5 shrink-0 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black text-stone-800 flex items-center gap-1.5">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-amber-600" />
+                <span>⚙️ ตั้งค่าความเร็ว &amp; โหมดการสแกน</span>
+              </span>
+            </div>
+
+            {/* Scan Mode Switcher */}
+            <div className="flex items-center justify-between gap-1.5 bg-white p-1 rounded-xl border border-stone-300 text-xs shrink-0 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setScanMode('continuous')}
+                className={`flex-1 py-1.5 px-2.5 rounded-xl font-black transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                  scanMode === 'continuous'
+                    ? 'bg-gradient-to-r from-amber-400 to-amber-300 text-stone-950 shadow-xs border border-amber-500'
+                    : 'text-stone-600 hover:text-stone-950'
+                }`}
+              >
+                <Zap className="w-3.5 h-3.5 text-amber-800" />
+                <span>⚡ สแกนรัวต่อเนื่อง ({(scanDelayMs / 1000).toFixed(2).replace(/\.00$/, '')} วิ)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setScanMode('single')}
+                className={`flex-1 py-1.5 px-2.5 rounded-xl font-black transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                  scanMode === 'single'
+                    ? 'bg-amber-400 text-stone-950 shadow-xs border border-amber-500'
+                    : 'text-stone-600 hover:text-stone-950'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>สแกนทีละชิ้น (แม่นยำ)</span>
+              </button>
+            </div>
+
+            {/* Scan Speed Adjustment Bar (ปรับความเร็วสแกน) */}
+            {scanMode === 'continuous' && (
+              <div className="bg-white border border-amber-300/80 rounded-xl p-2 sm:p-2.5 space-y-2 shadow-2xs">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Gauge className="w-4 h-4 text-amber-800 shrink-0" />
+                    <span className="text-[11px] font-black text-stone-900">
+                      ความเร็วการสแกน:
+                    </span>
+                    <span className="bg-amber-400 text-stone-950 font-mono font-black text-xs px-2 py-0.5 rounded-lg border border-amber-500 shadow-2xs">
+                      {(scanDelayMs / 1000).toFixed(2)} วิ
+                    </span>
+                    <span className="text-[10px] font-bold text-stone-600">
+                      {scanDelayMs <= 400 && '⚡ เร็วพิเศษ (ยิงรัวสต๊อก)'}
+                      {scanDelayMs > 400 && scanDelayMs <= 800 && '🚀 เร็วคล่องตัว'}
+                      {scanDelayMs > 800 && scanDelayMs <= 1400 && '⏱️ มาตรฐาน (แนะนำ)'}
+                      {scanDelayMs > 1400 && '🛡️ ช้า/ปลอดภัย (กันยิงเบิ้ล)'}
+                    </span>
+                  </div>
+
+                  {/* Quick Stepper Buttons */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => updateScanDelay(Math.max(200, scanDelayMs - 100))}
+                      className="w-6 h-6 rounded-lg bg-stone-100 hover:bg-amber-200 text-stone-900 font-black text-xs flex items-center justify-center transition cursor-pointer border border-stone-300 shadow-2xs active:scale-95"
+                      title="เร็วขึ้น (-0.1 วิ)"
+                    >
+                      -
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateScanDelay(Math.min(3000, scanDelayMs + 100))}
+                      className="w-6 h-6 rounded-lg bg-stone-100 hover:bg-amber-200 text-stone-900 font-black text-xs flex items-center justify-center transition cursor-pointer border border-stone-300 shadow-2xs active:scale-95"
+                      title="ช้าลง (+0.1 วิ)"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* 4 Speed Presets */}
+                <div className="grid grid-cols-4 gap-1 sm:gap-1.5">
+                  {[
+                    { label: '⚡ 0.35 วิ', desc: 'เร็วพิเศษ', ms: 350 },
+                    { label: '🚀 0.70 วิ', desc: 'เร็วคล่องตัว', ms: 700 },
+                    { label: '⏱️ 1.20 วิ', desc: 'มาตรฐาน', ms: 1200 },
+                    { label: '🛡️ 2.00 วิ', desc: 'ช้า/ปลอดภัย', ms: 2000 },
+                  ].map((p) => {
+                    const isActive = Math.abs(scanDelayMs - p.ms) < 40;
+                    return (
+                      <button
+                        key={p.ms}
+                        type="button"
+                        onClick={() => updateScanDelay(p.ms)}
+                        className={`py-1 px-1 rounded-xl font-black text-center transition cursor-pointer text-[10px] leading-tight border ${
+                          isActive
+                            ? 'bg-amber-400 text-stone-950 border-amber-600 shadow-xs ring-2 ring-amber-400/50 scale-[1.02]'
+                            : 'bg-white hover:bg-amber-50 text-stone-700 border-stone-300 hover:border-amber-400'
+                        }`}
+                      >
+                        <div className="font-mono font-black">{p.label}</div>
+                        <div className="text-[8px] sm:text-[9px] font-sans opacity-85">{p.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Slider with Min/Max indicators */}
+                <div className="flex items-center gap-2 pt-0.5">
+                  <span className="text-[9px] font-mono font-bold text-stone-500 shrink-0">0.2วิ (เร็วสุด)</span>
+                  <input
+                    type="range"
+                    min="200"
+                    max="3000"
+                    step="50"
+                    value={scanDelayMs}
+                    onChange={(e) => updateScanDelay(Number(e.target.value))}
+                    className="flex-1 accent-amber-500 cursor-pointer h-1.5 bg-stone-200 rounded-lg"
+                    title={`ความเร็วสแกน: ${(scanDelayMs / 1000).toFixed(2)} วินาที`}
+                  />
+                  <span className="text-[9px] font-mono font-bold text-stone-500 shrink-0">3.0วิ (ช้าสุด)</span>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Camera Selector Toolbar */}
           {cameras.length > 1 && (
