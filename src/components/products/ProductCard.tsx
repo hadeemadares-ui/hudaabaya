@@ -92,6 +92,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product: initialProduc
             ) : null}
           </div>
 
+          {/* Video Indicator Badge */}
+          {product.videoUrl && (
+            <div className="absolute top-3 right-3 z-10">
+              <span className="bg-[#141312]/85 text-[#F5DEB3] border border-amber-500/50 text-[9px] tracking-wider uppercase px-2 py-0.5 rounded shadow-sm flex items-center gap-1 backdrop-blur-xs">
+                <span>🎬</span>
+                <span className="font-semibold">มีวิดีโอ</span>
+              </span>
+            </div>
+          )}
+
           {/* Subtle Quick Action Bar on Hover */}
           <div className="absolute inset-x-0 bottom-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
             <div className="w-full bg-[#141312]/90 text-white text-[11px] tracking-[0.15em] uppercase py-2.5 text-center backdrop-blur-xs">

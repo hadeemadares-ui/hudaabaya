@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Minus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp, FileSpreadsheet, ExternalLink, RefreshCw, CheckCircle, AlertCircle, HelpCircle, ChevronDown, Check, Lock, Unlock, KeyRound, Eye, EyeOff, ShieldAlert, PackagePlus, QrCode, Tag, Droplets, Copy } from 'lucide-react';
+import { Plus, Minus, Edit2, Trash2, Layers, X, Search, Filter, Camera, Image as ImageIcon, Link as LinkIcon, Sparkles, Palette, CheckCircle2, RotateCcw, TrendingUp, FileSpreadsheet, ExternalLink, RefreshCw, CheckCircle, AlertCircle, HelpCircle, ChevronDown, Check, Lock, Unlock, KeyRound, Eye, EyeOff, ShieldAlert, PackagePlus, QrCode, Tag, Droplets, Copy, Video } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CategoryType } from '../../types';
 import { VoiceInputButton } from '../common/VoiceInputButton';
@@ -695,6 +695,7 @@ export const AdminProductManager: React.FC = () => {
 
   const [fabric, setFabric] = useState('');
   const [imagesList, setImagesList] = useState<string[]>([]);
+  const [videoUrl, setVideoUrl] = useState<string>('');
   const [newImageUrlInput, setNewImageUrlInput] = useState<string>('');
   const [customVariantInput, setCustomVariantInput] = useState<string>('');
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -1379,14 +1380,14 @@ export const AdminProductManager: React.FC = () => {
     alert('ซิงก์ดึงข้อมูลสินค้าล่าสุดจากทุกเครื่องขึ้นคลาวด์และแสดงผลตรงกัน 100% เรียบร้อยแล้ว!');
   };
 
-  // High-Performance Multi-Device Image Compression Engine (iOS Safari / Android / Desktop)
+  // High-Performance Multi-Device Image Compression Engine (Ultra HD 2K 1600px - iOS Safari / Android / Desktop)
   const compressImageFile = async (file: File): Promise<string> => {
     // 1. Modern native fast decoding via createImageBitmap (auto-handles orientation & iOS HEIC)
     try {
       if (typeof window !== 'undefined' && 'createImageBitmap' in window) {
         const bitmap = await createImageBitmap(file);
         const canvas = document.createElement('canvas');
-        const maxDim = 800; // Crisp 800px HD resolution for luxury Dubai products
+        const maxDim = 1600; // Ultra HD 2K 1600px resolution for luxury Dubai abayas, fabrics & perfume bottles
         let width = bitmap.width;
         let height = bitmap.height;
         if (width > maxDim || height > maxDim) {
@@ -1402,9 +1403,11 @@ export const AdminProductManager: React.FC = () => {
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(bitmap, 0, 0, width, height);
           bitmap.close();
-          return canvas.toDataURL('image/jpeg', 0.82);
+          return canvas.toDataURL('image/jpeg', 0.88);
         }
       }
     } catch (e) {
@@ -1428,7 +1431,7 @@ export const AdminProductManager: React.FC = () => {
       img.onload = () => {
         try {
           const canvas = document.createElement('canvas');
-          const maxDim = 800;
+          const maxDim = 1600; // Ultra HD 2K 1600px
           let width = img.naturalWidth || img.width;
           let height = img.naturalHeight || img.height;
           if (width > maxDim || height > maxDim) {
@@ -1444,8 +1447,10 @@ export const AdminProductManager: React.FC = () => {
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           if (ctx) {
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(img, 0, 0, width, height);
-            const compressed = canvas.toDataURL('image/jpeg', 0.82);
+            const compressed = canvas.toDataURL('image/jpeg', 0.88);
             URL.revokeObjectURL(objectUrl);
             resolve(compressed);
             return;
@@ -1534,6 +1539,7 @@ export const AdminProductManager: React.FC = () => {
     setEditingDescIdx(null);
     setFabric('');
     setImagesList([]);
+    setVideoUrl('');
     setNewImageUrlInput('');
     setVariants([]);
     setEditingProduct(null);
@@ -1601,6 +1607,7 @@ export const AdminProductManager: React.FC = () => {
       fabric: fabric.trim() || '',
       origin: 'เมืองดูไบ, UAE',
       images: finalImages,
+      videoUrl: videoUrl.trim() || undefined,
       colors: uniqueColors,
       variants: variants.map((v, idx) => ({
         id: (editingProduct && editingProduct.variants[idx]?.id) ? editingProduct.variants[idx].id : `var-${Date.now()}-${idx}`,
@@ -1695,6 +1702,7 @@ export const AdminProductManager: React.FC = () => {
       fabric: fabric.trim() || '',
       origin: 'เมืองดูไบ, UAE',
       images: finalImages,
+      videoUrl: videoUrl.trim() || undefined,
       colors: uniqueColors,
       variants: savedVariants,
       rating: 5.0,
@@ -2246,6 +2254,7 @@ export const AdminProductManager: React.FC = () => {
                         setDescription(product.description || '');
                         setFabric(product.fabric || '');
                         setImagesList(Array.isArray(product.images) && product.images.length > 0 ? product.images : []);
+                        setVideoUrl(product.videoUrl || '');
                         setNewImageUrlInput('');
                         setVariants(
                           product.variants.map((v) => ({
@@ -3020,7 +3029,7 @@ export const AdminProductManager: React.FC = () => {
                   <div className="sm:col-span-2 space-y-3 p-4 bg-stone-50 rounded-2xl border-2 border-amber-400/50 shadow-md text-stone-950">
                     <div className="flex items-center justify-between">
                       <label className="block text-stone-950 font-black text-xs sm:text-sm">
-                        🖼️ รูปภาพสินค้า (เพิ่มได้หลายรูปภาพ / Smart Compressed HD)
+                        🖼️ รูปภาพสินค้า (ความละเอียด Ultra HD 2K คมชัดระดับสตูดิโอ)
                       </label>
                       <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
                         {imagesList.length} รูปภาพ
@@ -3164,6 +3173,32 @@ export const AdminProductManager: React.FC = () => {
                         </div>
                       </div>
                     )}
+
+                    {/* Video Advertising / Product Review Section */}
+                    <div className="pt-3 border-t border-amber-300/60 space-y-2">
+                      <div className="flex items-center justify-between flex-wrap gap-1">
+                        <label className="block text-stone-950 font-black text-xs sm:text-sm flex items-center gap-1.5">
+                          <Video className="w-4 h-4 text-amber-700" />
+                          <span>🎬 ลิงก์วิดีโอโฆษณา / รีวิวสินค้า (Advertising Video / Shorts / Reels)</span>
+                        </label>
+                        <span className="text-[10px] text-amber-800 font-extrabold bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
+                          (ไม่บังคับ - เพิ่มความน่าสนใจ &amp; ยอดขาย)
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="url"
+                          value={videoUrl}
+                          onChange={(e) => setVideoUrl(e.target.value)}
+                          placeholder="วางลิงก์วิดีโอ (เช่น YouTube, YouTube Shorts, TikTok, Reels หรือไฟล์ .mp4 โดยตรง)"
+                          className="w-full bg-white border-2 border-stone-400 rounded-xl p-2.5 text-stone-950 font-black text-xs pl-8 font-mono placeholder-stone-400 focus:outline-none focus:border-amber-500"
+                        />
+                        <Video className="w-4 h-4 text-amber-600 absolute left-2.5 top-3" />
+                      </div>
+                      <p className="text-[11px] text-stone-600 font-medium">
+                        ✨ เมื่อใส่ลิงก์ หน้าร้านจะแสดงป้ายกำกับ <b>&quot;🎬 มีวิดีโอ&quot;</b> และในหน้ารายละเอียดจะมีแท็บสลับรับชมวิดีโอความคมชัดสูงพร้อมเสียงทันที
+                      </p>
+                    </div>
                   </div>
 
                   <div className="sm:col-span-2 relative" ref={descriptionDropdownRef}>

@@ -24,6 +24,7 @@ export interface Product {
   origin?: string;
   costPrice?: number; // Optional Cost Price for product
   images: string[];
+  videoUrl?: string; // Optional direct MP4 video, YouTube, YouTube Shorts, TikTok, or Reels
   variants: ProductVariant[];
   colors?: string[]; // List of available colors
   featured?: boolean;

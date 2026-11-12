@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Check, ShieldCheck, Ruler, AlertCircle, Truck, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Check, ShieldCheck, Ruler, AlertCircle, Truck, ZoomIn, ZoomOut, RotateCcw, ChevronLeft, ChevronRight, Play, Video, Film, Image as ImageIcon, ExternalLink } from 'lucide-react';
 import { Product, ProductVariant } from '../../types';
 import { useShop } from '../../context/ShopContext';
 import { ColorIndicator } from '../../utils/colorUtils';
@@ -16,9 +16,23 @@ const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
   abaya: '/images/placeholder-abaya.jpg',
   kaftan: '/images/placeholder-abaya.jpg',
   perfume: '/images/placeholder-perfume.jpg',
-  incense: '/images/placeholder-perfume.jpg',
+  incense: '/images/placeholder-incense.jpg',
   combo: '/images/placeholder-abaya.jpg',
   other: '/images/placeholder-abaya.jpg',
+};
+
+const getYouTubeEmbedUrl = (url: string): string | null => {
+  if (!url) return null;
+  try {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
+    const match = url.match(regExp);
+    if (match && match[2].length === 11) {
+      return `https://www.youtube-nocookie.com/embed/${match[2]}?autoplay=1&rel=0&modestbranding=1`;
+    }
+  } catch {
+    return null;
+  }
+  return null;
 };
 
 export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProduct, onClose }) => {
@@ -58,6 +72,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
   const [selectedVariantId, setSelectedVariantId] = useState<string>(initialProduct.variants[0]?.id || '');
   const selectedVariant = product.variants.find((v) => v.id === selectedVariantId) || product.variants[0];
   const [selectedImage, setSelectedImage] = useState<string>(initialImg);
+  const [mediaTab, setMediaTab] = useState<'image' | 'video'>('image');
   const [quantity, setQuantity] = useState<number>(1);
   const [showSizeGuide, setShowSizeGuide] = useState<boolean>(false);
   const [addedSuccess, setAddedSuccess] = useState<boolean>(false);
@@ -133,65 +148,128 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
 
         <div className="grid grid-cols-1 md:grid-cols-12">
           
-          {/* Left Column: Portrait Gallery */}
+          {/* Left Column: Portrait Gallery & Advertising Video */}
           <div className="md:col-span-6 bg-[#F7F5F0] p-6 flex flex-col justify-between border-b md:border-b-0 md:border-r border-stone-200/80">
-            <div
-              className="relative aspect-[4/5] overflow-hidden bg-white border border-stone-200/60 cursor-crosshair group select-none"
-              onMouseEnter={() => setShowLoupe(true)}
-              onMouseLeave={() => setShowLoupe(false)}
-              onMouseMove={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                handlePointerMove(e.clientX - rect.left, e.clientY - rect.top, rect);
-              }}
-              onClick={() => {
-                setZoomScale(1);
-                setIsZoomOpen(true);
-              }}
-            >
-              <img
-                src={selectedImage}
-                alt={product.title}
-                onError={() => {
-                  if (selectedImage !== defaultImg) {
-                    setSelectedImage(defaultImg);
-                  }
+            {product.videoUrl && (
+              <div className="flex items-center gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => setMediaTab('image')}
+                  className={`flex-1 py-2 px-3 text-xs font-serif tracking-wider uppercase transition flex items-center justify-center gap-2 border cursor-pointer ${
+                    mediaTab === 'image'
+                      ? 'bg-[#141312] text-white border-[#141312] shadow-sm font-semibold'
+                      : 'bg-white/90 text-stone-700 border-stone-300 hover:bg-stone-100'
+                  }`}
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>ภาพถ่าย Ultra HD</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMediaTab('video')}
+                  className={`flex-1 py-2 px-3 text-xs font-serif tracking-wider uppercase transition flex items-center justify-center gap-2 border cursor-pointer ${
+                    mediaTab === 'video'
+                      ? 'bg-[#8C703E] text-white border-[#8C703E] shadow-sm font-semibold'
+                      : 'bg-white/90 text-[#8C703E] border-[#8C703E]/50 hover:bg-amber-50'
+                  }`}
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>🎬 วิดีโอโฆษณา / รีวิว</span>
+                </button>
+              </div>
+            )}
+
+            {mediaTab === 'video' && product.videoUrl ? (
+              <div className="relative aspect-[4/5] overflow-hidden bg-black border border-stone-200/60 flex items-center justify-center">
+                {getYouTubeEmbedUrl(product.videoUrl) ? (
+                  <iframe
+                    src={getYouTubeEmbedUrl(product.videoUrl)!}
+                    title={`${product.title} Video Review`}
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video
+                    src={product.videoUrl}
+                    controls
+                    autoPlay
+                    loop
+                    playsInline
+                    className="w-full h-full object-contain bg-black"
+                  >
+                    บราวเซอร์ของคุณไม่รองรับการเล่นวิดีโอ กรุณาเปิดลิงก์โดยตรง
+                  </video>
+                )}
+                <a
+                  href={product.videoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute top-2 right-2 bg-black/70 hover:bg-black text-white/90 px-2 py-1 rounded text-[10px] flex items-center gap-1 transition z-10"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  <span>เปิดเต็มจอ</span>
+                </a>
+              </div>
+            ) : (
+              <div
+                className="relative aspect-[4/5] overflow-hidden bg-white border border-stone-200/60 cursor-crosshair group select-none"
+                onMouseEnter={() => setShowLoupe(true)}
+                onMouseLeave={() => setShowLoupe(false)}
+                onMouseMove={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  handlePointerMove(e.clientX - rect.left, e.clientY - rect.top, rect);
                 }}
-                className="w-full h-full object-contain object-center transition duration-500 p-3"
-              />
-
-              {product.onSale && product.discountPercent && (
-                <span className="absolute top-3 left-3 bg-[#8C703E] text-white text-[10px] tracking-[0.15em] uppercase px-2.5 py-1 z-10">
-                  -{product.discountPercent}%
-                </span>
-              )}
-
-              {/* Subtle Magnifying Loupe */}
-              {showLoupe && (
-                <div
-                  style={{
-                    top: `${loupePos.y - 70}px`,
-                    left: `${loupePos.x - 70}px`,
-                    backgroundImage: `url(${selectedImage})`,
-                    backgroundPosition: `${loupePos.xPercent}% ${loupePos.yPercent}%`,
-                    backgroundSize: '360%',
-                  }}
-                  className="hidden sm:block absolute w-36 h-36 rounded-full border-2 border-[#141312] shadow-xl pointer-events-none z-30 bg-no-repeat bg-white"
-                />
-              )}
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
+                onClick={() => {
                   setZoomScale(1);
                   setIsZoomOpen(true);
                 }}
-                className="absolute bottom-3 right-3 bg-white/90 hover:bg-[#141312] hover:text-white text-[#141312] px-3 py-1.5 border border-stone-200 text-[10px] tracking-widest uppercase transition flex items-center gap-1.5 cursor-pointer z-10"
               >
-                <ZoomIn className="w-3.5 h-3.5" />
-                <span>ขยายภาพ</span>
-              </button>
-            </div>
+                <img
+                  src={selectedImage}
+                  alt={product.title}
+                  onError={() => {
+                    if (selectedImage !== defaultImg) {
+                      setSelectedImage(defaultImg);
+                    }
+                  }}
+                  className="w-full h-full object-contain object-center transition duration-500 p-3"
+                />
+
+                {product.onSale && product.discountPercent && (
+                  <span className="absolute top-3 left-3 bg-[#8C703E] text-white text-[10px] tracking-[0.15em] uppercase px-2.5 py-1 z-10">
+                    -{product.discountPercent}%
+                  </span>
+                )}
+
+                {/* Subtle Magnifying Loupe */}
+                {showLoupe && (
+                  <div
+                    style={{
+                      top: `${loupePos.y - 70}px`,
+                      left: `${loupePos.x - 70}px`,
+                      backgroundImage: `url(${selectedImage})`,
+                      backgroundPosition: `${loupePos.xPercent}% ${loupePos.yPercent}%`,
+                      backgroundSize: '360%',
+                    }}
+                    className="hidden sm:block absolute w-36 h-36 rounded-full border-2 border-[#141312] shadow-xl pointer-events-none z-30 bg-no-repeat bg-white"
+                  />
+                )}
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomScale(1);
+                    setIsZoomOpen(true);
+                  }}
+                  className="absolute bottom-3 right-3 bg-white/90 hover:bg-[#141312] hover:text-white text-[#141312] px-3 py-1.5 border border-stone-200 text-[10px] tracking-widest uppercase transition flex items-center gap-1.5 cursor-pointer z-10"
+                >
+                  <ZoomIn className="w-3.5 h-3.5" />
+                  <span>ขยายภาพ</span>
+                </button>
+              </div>
+            )}
 
             {/* Thumbnail Strip */}
             {product.images.length > 1 && (
@@ -199,9 +277,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                 {product.images.map((img, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setSelectedImage(img)}
+                    onClick={() => {
+                      setSelectedImage(img);
+                      setMediaTab('image');
+                    }}
                     className={`w-16 h-20 overflow-hidden border transition shrink-0 bg-white ${
-                      selectedImage === img ? 'border-[#141312]' : 'border-stone-200 opacity-60 hover:opacity-100'
+                      mediaTab === 'image' && selectedImage === img ? 'border-[#141312]' : 'border-stone-200 opacity-60 hover:opacity-100'
                     }`}
                   >
                     <img src={img} alt={`thumb-${idx}`} className="w-full h-full object-contain p-1" />
