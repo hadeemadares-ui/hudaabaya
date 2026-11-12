@@ -9,7 +9,7 @@ import { ColorIndicator } from '../../utils/colorUtils';
 
 interface ProductModalProps {
   product: Product;
-  onClose: () => void;
+  onClose: (e?: React.MouseEvent | React.TouchEvent | KeyboardEvent) => void;
 }
 
 const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
@@ -122,28 +122,50 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[99999] overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6 cursor-pointer"
+      className="fixed inset-0 z-[99999] overflow-y-auto bg-black/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
-          onClose();
+          e.stopPropagation();
+          e.preventDefault();
+          onClose(e);
         }
       }}
     >
+      {/* Floating Always-Visible Close Button (Stays fixed on screen on both Desktop & Mobile even when scrolling) */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          onClose(e);
+        }}
+        className="fixed top-3 right-3 sm:top-5 sm:right-5 z-[100005] bg-[#141312] hover:bg-[#8C703E] active:scale-95 text-white p-2.5 sm:px-4 sm:py-2.5 rounded-full shadow-2xl border-2 border-white/80 transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 backdrop-blur-sm group"
+        aria-label="ปิดหน้าต่างสินค้า (ESC)"
+        title="ปิดหน้าต่างสินค้า (ESC)"
+      >
+        <X className="w-5 h-5 pointer-events-none stroke-[2.5] group-hover:rotate-90 transition-transform duration-200" />
+        <span className="text-xs font-serif font-medium tracking-wider pr-1 hidden sm:inline pointer-events-none">
+          ปิด
+        </span>
+      </button>
+
       <div
         className="relative bg-white border border-stone-200 max-w-4xl w-full overflow-hidden shadow-2xl text-[#141312] my-3 sm:my-8 cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
+        {/* Card Header Close Button */}
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            onClose();
+            e.preventDefault();
+            onClose(e);
           }}
-          className="absolute top-4 right-4 z-50 bg-white/95 hover:bg-[#141312] text-[#141312] hover:text-white p-2.5 border border-stone-200 transition cursor-pointer"
+          className="absolute top-4 right-4 z-40 bg-white/95 hover:bg-[#141312] text-[#141312] hover:text-white p-2.5 border border-stone-200 shadow-sm transition cursor-pointer flex items-center justify-center"
           aria-label="ปิดหน้าต่าง"
+          title="ปิดหน้าต่าง"
         >
-          <X className="w-4 h-4" />
+          <X className="w-4 h-4 pointer-events-none stroke-[2]" />
         </button>
 
         <div className="grid grid-cols-1 md:grid-cols-12">
@@ -493,6 +515,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                   <Truck className="w-3.5 h-3.5 text-[#8C703E]" /> จัดส่งฟรีเมื่อช็อปครบ ฿2,000
                 </span>
               </div>
+
+              {/* Bottom Quick Close Button (Especially convenient for mobile users) */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onClose(e);
+                }}
+                className="w-full py-3 mt-1 text-center text-xs font-medium text-stone-600 hover:text-[#141312] border border-dashed border-stone-300 hover:border-stone-500 transition-colors flex items-center justify-center gap-1.5 cursor-pointer bg-stone-50 hover:bg-stone-100"
+              >
+                <X className="w-3.5 h-3.5 pointer-events-none stroke-[2]" />
+                <span className="pointer-events-none">✕ ปิดหน้าต่างสินค้านี้ (กลับไปเลือกดูต่อ)</span>
+              </button>
             </div>
 
           </div>
@@ -604,14 +640,18 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                 <RotateCcw className="w-4 h-4" />
               </button>
               <button
-                onClick={() => {
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
                   setIsZoomOpen(false);
                   setZoomScale(1);
                 }}
-                className="p-2 bg-white text-[#141312] transition cursor-pointer ml-2"
-                title="ปิด"
+                className="p-2 bg-white text-[#141312] hover:bg-[#8C703E] hover:text-white transition cursor-pointer ml-2 flex items-center justify-center"
+                title="ปิดรูปขยาย (ESC)"
+                aria-label="ปิดรูปขยาย"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4 pointer-events-none" />
               </button>
             </div>
           </div>

@@ -175,7 +175,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product: initialProduc
       </article>
 
       {isModalOpen && (
-        <ProductModal product={product} onClose={() => setIsModalOpen(false)} />
+        <ProductModal
+          product={product}
+          onClose={(e?: any) => {
+            if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
+            setIsModalOpen(false);
+          }}
+        />
       )}
     </>
   );
