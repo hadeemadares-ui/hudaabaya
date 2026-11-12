@@ -35,6 +35,10 @@ export interface ScannedFeedItem {
   quantity: number;
   maxStock?: number;
   price?: number;
+  status?: 'SUCCESS' | 'ERROR';
+  errorMessage?: string;
+  timestamp?: string;
+  rawCode?: string;
 }
 
 interface QRScannerModalProps {
@@ -47,6 +51,7 @@ interface QRScannerModalProps {
   scannedFeed?: ScannedFeedItem[];
   onAdjustQuantity?: (id: string, delta: number) => void;
   onDeleteItem?: (id: string) => void;
+  onClearFeed?: () => void;
 }
 
 export const QRScannerModal: React.FC<QRScannerModalProps> = ({
@@ -59,6 +64,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
   scannedFeed,
   onAdjustQuantity,
   onDeleteItem,
+  onClearFeed,
 }) => {
   const [cameras, setCameras] = useState<any[]>([]);
   const [selectedCameraId, setSelectedCameraId] = useState<string>('');
@@ -113,11 +119,28 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
     } catch (e) {}
   };
 
-  // Total quantity & total price in feed
-  const totalFeedQty = scannedFeed ? scannedFeed.reduce((sum, item) => sum + item.quantity, 0) : 0;
-  const totalFeedAmount = scannedFeed
-    ? scannedFeed.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0)
-    : 0;
+  const [feedFilter, setFeedFilter] = useState<'all' | 'success' | 'error'>('all');
+
+  // Success vs Error Items in feed
+  const successItems = React.useMemo(
+    () => (scannedFeed ? scannedFeed.filter((item) => item.status !== 'ERROR') : []),
+    [scannedFeed]
+  );
+  const errorItems = React.useMemo(
+    () => (scannedFeed ? scannedFeed.filter((item) => item.status === 'ERROR') : []),
+    [scannedFeed]
+  );
+
+  const filteredFeed = React.useMemo(() => {
+    if (!scannedFeed) return [];
+    if (feedFilter === 'success') return successItems;
+    if (feedFilter === 'error') return errorItems;
+    return scannedFeed;
+  }, [scannedFeed, feedFilter, successItems, errorItems]);
+
+  // Total quantity & total price in feed (from successfully scanned items)
+  const totalFeedQty = successItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalFeedAmount = successItems.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
 
   // Crisp sound beep using Web Audio API
   const playBeep = () => {
@@ -593,7 +616,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
             )}
           </div>
 
-          {/* Live Scanned Items Feed (รายการที่เพิ่งยิงเรียงลงมาอย่างสวยงาม) */}
+          {/* Live Scanned Items Feed (รายการยิงสะสม: ยิงติด / ยิงไม่ติด) */}
           {scannedFeed && scannedFeed.length > 0 && (
             <div className="bg-gradient-to-b from-stone-50 via-white to-amber-50/20 border-2 border-amber-300/80 rounded-3xl p-3 sm:p-4 space-y-3 shadow-md">
               {/* Header Feed Banner */}
@@ -604,34 +627,129 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
                   </div>
                   <div>
                     <h4 className="font-serif font-black text-xs sm:text-sm text-stone-950 flex items-center gap-1.5">
-                      <span>รายการที่สแกนสำเร็จ</span>
+                      <span>📋 รายการยิงสะสม</span>
                       <span className="bg-amber-200 text-stone-950 px-2 py-0.5 rounded-full text-[10px] font-sans font-black border border-amber-400">
-                        {scannedFeed.length} ชนิด
+                        {scannedFeed.length} ครั้ง
                       </span>
                     </h4>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[11px] font-black text-stone-800 bg-stone-100 px-2.5 py-1 rounded-xl border border-stone-200 shadow-2xs">
-                    รวม <strong className="text-blue-700 font-mono text-xs">{totalFeedQty}</strong> ชิ้น
+                  <span className="text-[11px] font-black text-emerald-950 bg-emerald-100 px-2.5 py-1 rounded-xl border border-emerald-300 shadow-2xs">
+                    🟢 ยิงติด <strong className="text-emerald-800 font-mono text-xs">{totalFeedQty}</strong> ชิ้น
                   </span>
-                  {totalFeedAmount > 0 && (
-                    <span className="text-[11px] font-black text-emerald-900 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-300 shadow-2xs">
-                      รวม <strong className="font-mono text-xs text-emerald-700">฿{totalFeedAmount.toLocaleString()}</strong>
+                  {errorItems.length > 0 && (
+                    <span className="text-[11px] font-black text-rose-950 bg-rose-100 px-2.5 py-1 rounded-xl border border-rose-300 shadow-2xs">
+                      🔴 ยิงไม่ติด <strong className="text-rose-800 font-mono text-xs">{errorItems.length}</strong> ครั้ง
                     </span>
                   )}
-                  <span className="text-[10px] font-black text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-300 flex items-center gap-1 animate-pulse shadow-2xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                    <span>ยิงต่อเนื่องได้เลย</span>
-                  </span>
+                  {totalFeedAmount > 0 && (
+                    <span className="text-[11px] font-black text-stone-900 bg-stone-100 px-2.5 py-1 rounded-xl border border-stone-200 shadow-2xs">
+                      รวม <strong className="font-mono text-xs text-stone-800">฿{totalFeedAmount.toLocaleString()}</strong>
+                    </span>
+                  )}
+                  {onClearFeed && (
+                    <button
+                      type="button"
+                      onClick={onClearFeed}
+                      className="text-[10px] font-black text-stone-500 hover:text-red-700 underline px-1 cursor-pointer"
+                    >
+                      ล้างประวัติ
+                    </button>
+                  )}
                 </div>
               </div>
 
+              {/* Filter Tabs if there are errors */}
+              {errorItems.length > 0 && (
+                <div className="flex items-center gap-1.5 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setFeedFilter('all')}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition cursor-pointer border ${
+                      feedFilter === 'all'
+                        ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
+                        : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-100'
+                    }`}
+                  >
+                    ทั้งหมด ({scannedFeed.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFeedFilter('success')}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition cursor-pointer border ${
+                      feedFilter === 'success'
+                        ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
+                        : 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                    }`}
+                  >
+                    🟢 ยิงติด ({successItems.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFeedFilter('error')}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition cursor-pointer border ${
+                      feedFilter === 'error'
+                        ? 'bg-rose-600 text-white border-rose-700 shadow-xs'
+                        : 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100'
+                    }`}
+                  >
+                    🔴 ยิงไม่ติด ({errorItems.length})
+                  </button>
+                </div>
+              )}
+
               {/* Items Card List (เรียงสวยงาม ตัวล่าสุดอยู่บนสุด) */}
               <div className="max-h-60 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
-                {scannedFeed.map((item, idx) => {
-                  const isLatest = idx === 0;
+                {filteredFeed.map((item, idx) => {
+                  const isLatest = idx === 0 && feedFilter === 'all';
+                  const isError = item.status === 'ERROR';
+
+                  if (isError) {
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-rose-50/95 border-2 border-rose-300 text-rose-950 shadow-2xs"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-11 h-11 rounded-xl bg-rose-200 border-2 border-rose-300 flex items-center justify-center text-rose-700 text-base font-black shrink-0">
+                            ✕
+                          </div>
+                          <div className="min-w-0 space-y-0.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[9px] font-black bg-rose-600 text-white px-2 py-0.5 rounded-md shadow-2xs">
+                                🔴 ยิงไม่ติด
+                              </span>
+                              <p className="text-xs sm:text-sm font-black text-rose-950 truncate leading-tight">
+                                {item.title}
+                              </p>
+                              {item.variantName && (
+                                <span className="text-[10px] text-stone-600 font-bold">
+                                  ({item.variantName})
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] font-black text-rose-800">
+                              {item.errorMessage || 'สินค้าหมดสต๊อก หรือไม่พบรหัสสินค้าในระบบ'}
+                            </p>
+                            {(item.sku || item.rawCode) && (
+                              <p className="text-[10px] font-mono text-stone-500 font-bold truncate">
+                                รหัสสแกน: {item.sku || item.rawCode}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {item.timestamp && (
+                          <span className="text-[10px] font-mono text-stone-400 font-bold shrink-0">
+                            {item.timestamp}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  }
+
                   return (
                     <div
                       key={item.id}
@@ -655,19 +773,17 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
                               👗
                             </div>
                           )}
-                          <span className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-stone-800 text-white font-mono text-[9px] font-black flex items-center justify-center shadow-2xs">
-                            {scannedFeed.length - idx}
+                          <span className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-emerald-700 text-white font-mono text-[9px] font-black flex items-center justify-center shadow-2xs">
+                            ✓
                           </span>
                         </div>
 
                         <div className="min-w-0 space-y-0.5">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            {isLatest && (
-                              <span className="text-[9px] font-black bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-2 py-0.5 rounded-md shadow-2xs flex items-center gap-1 animate-pulse">
-                                <Sparkles className="w-2.5 h-2.5" />
-                                <span>เพิ่งสแกน (+1)</span>
-                              </span>
-                            )}
+                            <span className="text-[9px] font-black bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-2 py-0.5 rounded-md shadow-2xs flex items-center gap-1">
+                              <Sparkles className="w-2.5 h-2.5" />
+                              <span>ยิงติด (+1)</span>
+                            </span>
                             <p className="text-xs sm:text-sm font-black text-stone-950 truncate leading-tight">
                               {item.title}
                             </p>

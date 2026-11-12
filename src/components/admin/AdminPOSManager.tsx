@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ShoppingBag, Search, Plus, Minus, Trash2, QrCode, CreditCard, Banknote, Printer, CheckCircle, Sparkles, Layers, RotateCcw, Box, User, Phone, DollarSign, Receipt, Check, ZoomIn, Eye, Maximize2, X, Upload, Camera, Image as ImageIcon, Tag, ShieldCheck, CheckCheck, Droplets } from 'lucide-react';
+import { ShoppingBag, Search, Plus, Minus, Trash2, QrCode, CreditCard, Banknote, Printer, CheckCircle, Sparkles, Layers, RotateCcw, Box, User, Phone, DollarSign, Receipt, Check, ZoomIn, Eye, Maximize2, X, Upload, Camera, Image as ImageIcon, Tag, ShieldCheck, CheckCheck, Droplets, AlertCircle, CheckCircle2, ChevronDown, ChevronUp, History, Zap } from 'lucide-react';
 import QRCode from 'qrcode';
 import { useShop } from '../../context/ShopContext';
 import { Product, ProductVariant, CartItem, Order, StaffUser, SlipVerificationData } from '../../types';
 import { DEFAULT_LOGO_BASE64 } from '../../data/logoData';
 import { sortProductsNatural } from '../../utils/productUtils';
 import { ColorIndicator, getEffectiveVariantColor } from '../../utils/colorUtils';
-import { QRScannerModal } from '../common/QRScannerModal';
+import { QRScannerModal, ScannedFeedItem } from '../common/QRScannerModal';
 import { resolveScannedProduct, isMatchingLot } from '../../utils/qrUtils';
 import { generatePromptPayPayload } from '../../utils/promptpayUtils';
 import { soundFx } from '../../lib/soundEffects';
@@ -139,10 +139,13 @@ export const AdminPOSManager: React.FC<AdminPOSManagerProps> = ({ initialBoothTr
   const [receiptCopies, setReceiptCopies] = useState<number>(2);
   const [receiptPaperWidth, setReceiptPaperWidth] = useState<'58mm' | '80mm'>('58mm');
 
-  // QR Code Scanner State & Toast
+  // QR Code Scanner State, Toast & Accumulated Scan Feed
   const [isQRScannerOpen, setIsQRScannerOpen] = useState<boolean>(false);
   const [scanToast, setScanToast] = useState<string | null>(null);
   const [isZoomQRModalOpen, setIsZoomQRModalOpen] = useState<boolean>(false);
+  const [scanHistoryLog, setScanHistoryLog] = useState<ScannedFeedItem[]>([]);
+  const [isScanHistoryOpen, setIsScanHistoryOpen] = useState<boolean>(true);
+  const [scanHistoryFilter, setScanHistoryFilter] = useState<'all' | 'success' | 'error'>('all');
 
   // POS Slip / Payment Proof Image Attachment State
   const [posSlipImage, setPosSlipImage] = useState<string>('');
@@ -376,51 +379,162 @@ export const AdminPOSManager: React.FC<AdminPOSManagerProps> = ({ initialBoothTr
     });
   };
 
-  // Barcode & QR Code Scan Handler for POS
+  // Barcode & QR Code Scan Handler for POS with Loud "TID!" and Accumulated Scan Feed
   const handleQRScan = (decodedText: string) => {
-    const match = resolveScannedProduct(decodedText, posAvailableProducts);
+    const rawCode = decodedText?.trim() || '';
+    if (!rawCode) return { success: false, message: 'รหัสว่างเปล่า' };
+
+    const timeStr = new Intl.DateTimeFormat('th-TH', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(new Date());
+
+    const match = resolveScannedProduct(rawCode, posAvailableProducts);
+
     if (match) {
-      if (match.variant.stockQuantity <= 0) {
+      const maxStock = match.variant.stockQuantity;
+      const lotInfo = match.lotNumber ? ` [ล็อต: ${match.lotNumber}]` : '';
+
+      // Check 1: Out of stock (0 or less)
+      if (maxStock <= 0) {
         soundFx.playScanError();
-        const msg = `ขออภัย สินค้า "${match.product.title} (${match.variant.name})" หมดสต๊อกแล้ว`;
+        const msg = `ขออภัย สินค้า "${match.product.title} (${match.variant.name})"${lotInfo} หมดสต๊อกแล้ว (คงเหลือ 0 ชิ้น)`;
         setScanToast(`❌ ${msg}`);
-        setTimeout(() => setScanToast(null), 3000);
-        return { success: false, message: `หมดสต๊อก: ${match.product.title}` };
+        setTimeout(() => setScanToast(null), 3500);
+
+        const errorItem: ScannedFeedItem = {
+          id: `err-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          title: match.product.title,
+          variantName: `${match.variant.name}${lotInfo}`,
+          sku: match.lotNumber ? `ล็อต: ${match.lotNumber}` : (match.variant.sku || undefined),
+          image: match.product.images?.[0],
+          quantity: 0,
+          maxStock: 0,
+          price: match.variant.price,
+          status: 'ERROR',
+          errorMessage: 'สินค้าหมดสต๊อกแล้ว (คงเหลือ 0 ชิ้น)',
+          timestamp: timeStr,
+          rawCode,
+        };
+        setScanHistoryLog((prev) => [errorItem, ...prev]);
+        return { success: false, message: `หมดสต๊อก (0 ชิ้น): ${match.product.title}` };
       }
+
+      // Check 2: Existing quantity in cart >= maxStock
+      const inCart = posCart.find(
+        (item) =>
+          item.productId === match.product.id &&
+          item.variantId === match.variant.id &&
+          (match.lotNumber ? isMatchingLot(item.lotNumber, match.lotNumber) || item.lotNumber === match.lotNumber : !item.lotNumber)
+      );
+      const currentCartQty = inCart ? inCart.quantity : 0;
+
+      if (currentCartQty >= maxStock) {
+        soundFx.playScanError();
+        const msg = `สินค้า "${match.product.title} (${match.variant.name})"${lotInfo} ในตะกร้าครบตามสต๊อกแล้ว (${currentCartQty}/${maxStock} ชิ้น)`;
+        setScanToast(`⚠️ ${msg}`);
+        setTimeout(() => setScanToast(null), 3500);
+
+        const errorItem: ScannedFeedItem = {
+          id: `err-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          title: match.product.title,
+          variantName: `${match.variant.name}${lotInfo}`,
+          sku: match.lotNumber ? `ล็อต: ${match.lotNumber}` : (match.variant.sku || undefined),
+          image: match.product.images?.[0],
+          quantity: currentCartQty,
+          maxStock,
+          price: match.variant.price,
+          status: 'ERROR',
+          errorMessage: `จำนวนในตะกร้าครบสต๊อกที่มีขายแล้ว (${currentCartQty}/${maxStock} ชิ้น)`,
+          timestamp: timeStr,
+          rawCode,
+        };
+        setScanHistoryLog((prev) => [errorItem, ...prev]);
+        return { success: false, message: `เกินจำนวนสต๊อก (${currentCartQty}/${maxStock})` };
+      }
+
+      // Success: add to cart & play loud authentic supermarket scanner beep
       handleAddToCart(match.product, match.variant, match.lotNumber);
       soundFx.playScanSuccess();
-      const lotInfo = match.lotNumber ? ` [ล็อต: ${match.lotNumber}]` : '';
-      setScanToast(`✓ สแกนสำเร็จ: เพิ่ม "${match.product.title} (${match.variant.name})"${lotInfo} ลงตะกร้าแล้ว!`);
+
+      const newQty = currentCartQty + 1;
+      setScanToast(`✓ ยิงติด! เพิ่ม "${match.product.title} (${match.variant.name})"${lotInfo} x${newQty} ลงตะกร้าแล้ว!`);
       setTimeout(() => setScanToast(null), 3000);
+
+      const feedId = `${match.product.id}__${match.variant.id}__${match.lotNumber || ''}`;
+      const successItem: ScannedFeedItem = {
+        id: feedId,
+        title: match.product.title,
+        variantName: `${match.variant.name}${lotInfo}`,
+        sku: match.lotNumber ? `ล็อต: ${match.lotNumber}` : (match.variant.sku || undefined),
+        image: match.product.images?.[0],
+        quantity: newQty,
+        maxStock,
+        price: match.variant.price,
+        status: 'SUCCESS',
+        timestamp: timeStr,
+        rawCode,
+      };
+
+      setScanHistoryLog((prev) => {
+        const remaining = prev.filter((item) => item.id !== feedId);
+        return [successItem, ...remaining];
+      });
+
       return { success: true, message: `${match.product.title} +1` };
     } else {
+      // Barcode / QR Code not found
       soundFx.playScanError();
-      const msg = `ไม่พบข้อมูลสินค้าที่ตรงกับรหัส "${decodedText}"`;
+      const msg = `ไม่พบข้อมูลสินค้าที่ตรงกับรหัส "${rawCode}" ในระบบ`;
       setScanToast(`⚠️ ${msg}`);
-      setTimeout(() => setScanToast(null), 3000);
-      return { success: false, message: `ไม่พบสินค้า "${decodedText}"` };
+      setTimeout(() => setScanToast(null), 3500);
+
+      const errorItem: ScannedFeedItem = {
+        id: `err-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        title: 'ไม่พบรหัสสินค้านี้ในระบบ',
+        variantName: `รหัสที่สแกน: ${rawCode}`,
+        quantity: 1,
+        status: 'ERROR',
+        errorMessage: `ไม่พบรหัส "${rawCode}" ในระบบสินค้าที่มีขาย`,
+        timestamp: timeStr,
+        rawCode,
+      };
+      setScanHistoryLog((prev) => [errorItem, ...prev]);
+
+      return { success: false, message: `ไม่พบสินค้า "${rawCode}"` };
     }
   };
 
-  // Live Scanned Feed for POS QR Scanner Modal (Latest scanned item at top)
-  const posScannedFeed = React.useMemo(() => {
-    return [...posCart].reverse().map((item) => {
-      const prod = posAvailableProducts.find((p) => p.id === item.productId);
-      const variant = prod?.variants.find((v) => v.id === item.variantId);
-      return {
-        id: `${item.productId}__${item.variantId}__${item.lotNumber || ''}`,
-        title: item.productTitle,
-        variantName: `${item.variantName}${item.lotNumber ? ` [ล็อต: ${item.lotNumber}]` : ''}`,
-        sku: item.lotNumber ? `ล็อต: ${item.lotNumber}` : undefined,
-        image: item.productImage,
-        quantity: item.quantity,
-        price: item.price,
-        maxStock: variant ? variant.stockQuantity : undefined,
-      };
-    });
-  }, [posCart, posAvailableProducts]);
+  const scanHistorySuccessCount = React.useMemo(() => {
+    return scanHistoryLog
+      .filter((item) => item.status !== 'ERROR')
+      .reduce((sum, item) => sum + (item.quantity || 1), 0);
+  }, [scanHistoryLog]);
+
+  const scanHistoryErrorCount = React.useMemo(() => {
+    return scanHistoryLog.filter((item) => item.status === 'ERROR').length;
+  }, [scanHistoryLog]);
+
+  const filteredScanHistoryLog = React.useMemo(() => {
+    if (scanHistoryFilter === 'success') {
+      return scanHistoryLog.filter((item) => item.status !== 'ERROR');
+    }
+    if (scanHistoryFilter === 'error') {
+      return scanHistoryLog.filter((item) => item.status === 'ERROR');
+    }
+    return scanHistoryLog;
+  }, [scanHistoryLog, scanHistoryFilter]);
 
   const handleAdjustFeedQty = (feedId: string, delta: number) => {
+    if (feedId.startsWith('err-')) {
+      if (delta < 0) {
+        setScanHistoryLog((prev) => prev.filter((item) => item.id !== feedId));
+      }
+      return;
+    }
+
     const [productId, variantId, lotNumber] = feedId.split('__');
     const targetProduct = posAvailableProducts.find((p) => p.id === productId);
     const targetVariant = targetProduct?.variants.find((v) => v.id === variantId);
@@ -442,9 +556,27 @@ export const AdminPOSManager: React.FC<AdminPOSManagerProps> = ({ initialBoothTr
         })
         .filter((i): i is CartItem => i !== null);
     });
+
+    setScanHistoryLog((prev) =>
+      prev
+        .map((item) => {
+          if (item.id === feedId) {
+            const newQty = item.quantity + delta;
+            if (newQty > maxStock) return item;
+            return newQty > 0 ? { ...item, quantity: newQty } : null;
+          }
+          return item;
+        })
+        .filter((i): i is ScannedFeedItem => i !== null)
+    );
   };
 
   const handleDeleteFeedItem = (feedId: string) => {
+    if (feedId.startsWith('err-')) {
+      setScanHistoryLog((prev) => prev.filter((item) => item.id !== feedId));
+      return;
+    }
+
     const [productId, variantId, lotNumber] = feedId.split('__');
     setPosCart((prev) =>
       prev.filter((item) => {
@@ -452,6 +584,7 @@ export const AdminPOSManager: React.FC<AdminPOSManagerProps> = ({ initialBoothTr
         return !(item.productId === productId && item.variantId === variantId && matchLot);
       })
     );
+    setScanHistoryLog((prev) => prev.filter((item) => item.id !== feedId));
   };
 
   // Quick Card Click: Add first available size
@@ -749,6 +882,7 @@ export const AdminPOSManager: React.FC<AdminPOSManagerProps> = ({ initialBoothTr
 
   const handleResetPOS = () => {
     setPosCart([]);
+    setScanHistoryLog([]);
     setDiscountInput(0);
     setCashReceived('');
     setPosSlipImage('');
@@ -985,9 +1119,16 @@ export const AdminPOSManager: React.FC<AdminPOSManagerProps> = ({ initialBoothTr
               <div className="relative flex-1">
                 <input
                   type="text"
-                  placeholder="พิมพ์ค้นหาชื่อแบบสินค้า หรือ ไซส์..."
+                  placeholder="พิมพ์ค้นหา หรือยิงบาร์โค้ดแล้วกด Enter..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && searchQuery.trim()) {
+                      e.preventDefault();
+                      handleQRScan(searchQuery.trim());
+                      setSearchQuery('');
+                    }
+                  }}
                   className="w-full bg-white border-2 border-stone-400 rounded-xl py-2.5 pl-9 pr-3 text-xs text-stone-950 font-black placeholder-stone-400 focus:outline-none focus:border-amber-500 font-mono"
                 />
                 <Search className="absolute left-3 top-3 w-3.5 h-3.5 text-amber-600" />
@@ -1335,6 +1476,238 @@ export const AdminPOSManager: React.FC<AdminPOSManagerProps> = ({ initialBoothTr
                 ))
               )}
             </div>
+
+            {/* ACCUMULATED SCAN FEED / HISTORY (รายการยิงสะสม ยิงติด / ยิงไม่ติด) */}
+            {scanHistoryLog.length > 0 ? (
+              <div className="rounded-2xl border-2 border-stone-300 bg-stone-50 overflow-hidden shadow-xs">
+                <div className="flex items-center justify-between p-2.5 bg-stone-100 border-b border-stone-200">
+                  <button
+                    type="button"
+                    onClick={() => setIsScanHistoryOpen(!isScanHistoryOpen)}
+                    className="flex items-center gap-2 text-xs font-black text-stone-900 cursor-pointer text-left"
+                  >
+                    <History className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>📋 รายการยิงสะสม</span>
+                    <div className="flex items-center gap-1 text-[10px]">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-black border border-emerald-300">
+                        🟢 ติด {scanHistorySuccessCount} ชิ้น
+                      </span>
+                      {scanHistoryErrorCount > 0 && (
+                        <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-900 font-black border border-rose-300">
+                          🔴 ไม่ติด {scanHistoryErrorCount} ครั้ง
+                        </span>
+                      )}
+                    </div>
+                    {isScanHistoryOpen ? (
+                      <ChevronUp className="w-3.5 h-3.5 text-stone-500" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5 text-stone-500" />
+                    )}
+                  </button>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setScanHistoryLog([])}
+                      className="text-[10px] text-stone-500 hover:text-stone-800 font-bold px-2 py-1 rounded-lg hover:bg-stone-200 transition cursor-pointer"
+                      title="ล้างประวัติการยิงสะสม"
+                    >
+                      ล้างประวัติ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsQRScannerOpen(true)}
+                      className="text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white font-black px-2 py-1 rounded-lg shadow-2xs transition cursor-pointer flex items-center gap-1"
+                      title="เปิดกล้องสแกน QR ต่อเนื่อง"
+                    >
+                      <Camera className="w-3 h-3" />
+                      <span>ยิงรัว</span>
+                    </button>
+                  </div>
+                </div>
+
+                {isScanHistoryOpen && (
+                  <div className="p-2 space-y-2 max-h-52 overflow-y-auto">
+                    {/* Filter Tabs if both success and errors exist */}
+                    {scanHistoryErrorCount > 0 && (
+                      <div className="flex items-center gap-1 text-[10px] font-black pb-1.5 border-b border-stone-200">
+                        <button
+                          type="button"
+                          onClick={() => setScanHistoryFilter('all')}
+                          className={`px-2 py-0.5 rounded-md cursor-pointer transition ${
+                            scanHistoryFilter === 'all'
+                              ? 'bg-stone-900 text-white shadow-2xs'
+                              : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-100'
+                          }`}
+                        >
+                          ทั้งหมด ({scanHistoryLog.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setScanHistoryFilter('success')}
+                          className={`px-2 py-0.5 rounded-md cursor-pointer transition ${
+                            scanHistoryFilter === 'success'
+                              ? 'bg-emerald-700 text-white shadow-2xs'
+                              : 'bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50'
+                          }`}
+                        >
+                          🟢 ยิงติด ({scanHistorySuccessCount})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setScanHistoryFilter('error')}
+                          className={`px-2 py-0.5 rounded-md cursor-pointer transition ${
+                            scanHistoryFilter === 'error'
+                              ? 'bg-rose-700 text-white shadow-2xs'
+                              : 'bg-white text-rose-700 border border-rose-200 hover:bg-rose-50'
+                          }`}
+                        >
+                          🔴 ยิงไม่ติด ({scanHistoryErrorCount})
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Scanned Items Feed */}
+                    {filteredScanHistoryLog.map((item, idx) => {
+                      const isLatest = idx === 0;
+                      const isError = item.status === 'ERROR';
+
+                      if (isError) {
+                        return (
+                          <div
+                            key={item.id}
+                            className={`p-2 rounded-xl flex items-center justify-between gap-2 border ${
+                              isLatest
+                                ? 'bg-rose-50 border-rose-400 ring-2 ring-rose-300/40'
+                                : 'bg-rose-50/70 border-rose-200'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-8 h-8 rounded-lg bg-rose-200 text-rose-800 flex items-center justify-center font-black shrink-0 text-xs shadow-2xs">
+                                ✕
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-[9px] font-black bg-rose-600 text-white px-1.5 py-0.2 rounded shadow-2xs">
+                                    🔴 ยิงไม่ติด
+                                  </span>
+                                  <strong className="text-xs font-black text-rose-950 truncate">
+                                    {item.title}
+                                  </strong>
+                                </div>
+                                <p className="text-[10px] text-rose-800 font-bold truncate">
+                                  {item.errorMessage || item.variantName}
+                                </p>
+                                {item.rawCode && (
+                                  <span className="font-mono text-[9px] text-stone-500">
+                                    รหัส: {item.rawCode}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0 text-right">
+                              {item.timestamp && (
+                                <span className="text-[9px] font-mono text-stone-500 font-bold">
+                                  {item.timestamp}
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteFeedItem(item.id)}
+                                className="p-1 text-stone-400 hover:text-rose-600 cursor-pointer"
+                                title="ปิดการแจ้งเตือนนี้"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div
+                          key={item.id}
+                          className={`p-2 rounded-xl flex items-center justify-between gap-2 border ${
+                            isLatest
+                              ? 'bg-emerald-50/90 border-emerald-400 ring-2 ring-emerald-300/40'
+                              : 'bg-white border-stone-200'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="relative shrink-0">
+                              {item.image ? (
+                                <img
+                                  src={item.image}
+                                  alt=""
+                                  className="w-8 h-8 rounded-lg object-cover border border-stone-200 shadow-2xs bg-stone-100"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center text-xs">
+                                  👗
+                                </div>
+                              )}
+                              <span className="absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full bg-emerald-700 text-white font-mono text-[8px] font-black flex items-center justify-center shadow-2xs">
+                                ✓
+                              </span>
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[9px] font-black bg-emerald-600 text-white px-1.5 py-0.2 rounded shadow-2xs">
+                                  🟢 ยิงติด (+1)
+                                </span>
+                                <strong className="text-xs font-black text-stone-950 truncate">
+                                  {item.title}
+                                </strong>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-[9px] text-stone-600 flex-wrap">
+                                {item.variantName && <span>{item.variantName}</span>}
+                                {item.price !== undefined && (
+                                  <span className="font-mono font-black text-emerald-800">
+                                    ฿{item.price.toLocaleString()}
+                                  </span>
+                                )}
+                                {item.maxStock !== undefined && (
+                                  <span className="text-stone-400 font-bold">
+                                    (คงเหลือ {item.maxStock})
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-xs font-mono font-black text-emerald-950 px-2 py-0.5 bg-emerald-100 rounded-lg border border-emerald-300">
+                              x{item.quantity}
+                            </span>
+                            {item.timestamp && (
+                              <span className="text-[9px] font-mono text-stone-500 font-bold">
+                                {item.timestamp}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="p-2.5 rounded-xl border border-dashed border-stone-300 bg-stone-50/70 flex items-center justify-between text-[11px] text-stone-600 font-bold">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>ระบบยิงคิดเงินพร้อมใช้ (ยิงติด = เสียงติ๊ดดังชัดเจน)</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsQRScannerOpen(true)}
+                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-black text-[10px] shadow-2xs flex items-center gap-1 cursor-pointer transition shrink-0"
+                >
+                  <Camera className="w-3 h-3" />
+                  <span>สแกน QR</span>
+                </button>
+              </div>
+            )}
 
             {/* Walk-in Customer Info */}
             <div className="grid grid-cols-2 gap-2 pt-2 border-t-2 border-amber-400/30">
@@ -2305,9 +2678,10 @@ export const AdminPOSManager: React.FC<AdminPOSManagerProps> = ({ initialBoothTr
         title="⚡ สแกน QR Code คิดเงิน POS (ยิงรัวต่อเนื่อง)"
         subtitle="นำกล้องส่องไปที่ป้ายสินค้าเพื่อยิงสินค้าลงตะกร้าคิดเงินอัตโนมัติ (ระบบเรียงรายการที่เพิ่งยิงลงมาให้เห็นชัดเจนทันที)"
         continuous={true}
-        scannedFeed={posScannedFeed}
+        scannedFeed={scanHistoryLog}
         onAdjustQuantity={handleAdjustFeedQty}
         onDeleteItem={handleDeleteFeedItem}
+        onClearFeed={() => setScanHistoryLog([])}
       />
 
       {/* SLIP MINI QR SCANNER MODAL (OPTION 2: SLIP VERIFY) */}

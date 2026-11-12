@@ -174,7 +174,8 @@ class SoundEffects {
     } catch (_) {}
   }
 
-  // High-pitch dual-tone chime for Successful QR Scan (Item In Stock & Added)
+  // High-performance Authentic POS Barcode Scanner Beep ("เสียงดังติ๊ด! ดังๆ ชัดเจน 100%")
+  // Emulates commercial high-speed laser cash register scanners (2450Hz sharp pulse at loud volume)
   public playScanSuccess() {
     try {
       const AudioCtx =
@@ -182,35 +183,40 @@ class SoundEffects {
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
       const now = ctx.currentTime;
 
-      // Note 1: 1046.5 Hz (C6)
+      // Primary crisp high-pitch tone: 2450 Hz (Laser Scanner "TID!")
       const osc1 = ctx.createOscillator();
       const gain1 = ctx.createGain();
       osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(1046.5, now);
-      gain1.gain.setValueAtTime(0.25, now);
-      gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+      osc1.frequency.setValueAtTime(2450, now);
+      // High volume punch (0.85) for loud & clear cashier feedback
+      gain1.gain.setValueAtTime(0.85, now);
+      gain1.gain.setValueAtTime(0.85, now + 0.08);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
       osc1.connect(gain1);
       gain1.connect(ctx.destination);
       osc1.start(now);
-      osc1.stop(now + 0.08);
+      osc1.stop(now + 0.11);
 
-      // Note 2: 1318.5 Hz (E6)
+      // Secondary punchy harmonic: 2900 Hz (adds crisp piercing laser bite)
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(1318.5, now + 0.07);
-      gain2.gain.setValueAtTime(0.28, now + 0.07);
-      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(2900, now);
+      gain2.gain.setValueAtTime(0.45, now);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
       osc2.connect(gain2);
       gain2.connect(ctx.destination);
-      osc2.start(now + 0.07);
-      osc2.stop(now + 0.22);
+      osc2.start(now);
+      osc2.stop(now + 0.09);
     } catch (_) {}
   }
 
-  // Low-pitch double buzzer for Failed QR Scan (Out of Stock / Invalid / Exceeded Limit)
+  // Distinct low-pitch double warning buzzer for Failed Scan (ยิงไม่ติด / หมดสต๊อก)
   public playScanError() {
     try {
       const AudioCtx =
@@ -218,31 +224,34 @@ class SoundEffects {
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
       const now = ctx.currentTime;
 
-      // Pulse 1: 160 Hz (Low Warning Buzzer)
+      // Pulse 1: 180 Hz Buzz
       const osc1 = ctx.createOscillator();
       const gain1 = ctx.createGain();
       osc1.type = 'sawtooth';
-      osc1.frequency.setValueAtTime(160, now);
-      gain1.gain.setValueAtTime(0.3, now);
+      osc1.frequency.setValueAtTime(180, now);
+      gain1.gain.setValueAtTime(0.55, now);
       gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
       osc1.connect(gain1);
       gain1.connect(ctx.destination);
       osc1.start(now);
       osc1.stop(now + 0.12);
 
-      // Pulse 2: 130 Hz (Second Warning Tone)
+      // Pulse 2: 130 Hz Buzz
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
       osc2.type = 'sawtooth';
       osc2.frequency.setValueAtTime(130, now + 0.14);
-      gain2.gain.setValueAtTime(0.35, now + 0.14);
-      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+      gain2.gain.setValueAtTime(0.65, now + 0.14);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.30);
       osc2.connect(gain2);
       gain2.connect(ctx.destination);
       osc2.start(now + 0.14);
-      osc2.stop(now + 0.32);
+      osc2.stop(now + 0.30);
     } catch (_) {}
   }
 }
