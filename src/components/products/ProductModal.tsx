@@ -13,12 +13,12 @@ interface ProductModalProps {
 }
 
 const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
-  abaya: '/images/placeholder-abaya.jpg',
-  kaftan: '/images/placeholder-abaya.jpg',
-  perfume: '/images/placeholder-perfume.jpg',
-  incense: '/images/placeholder-incense.jpg',
-  combo: '/images/placeholder-abaya.jpg',
-  other: '/images/placeholder-abaya.jpg',
+  abaya: '/images/dubai_abaya_couture.jpg',
+  kaftan: '/images/dubai_abaya_couture.jpg',
+  perfume: '/images/products/huda-prod-1791011240968-250.jpg',
+  incense: '/images/dubai_bukhoor.jpg',
+  combo: '/images/dubai_abaya_couture.jpg',
+  other: '/images/dubai_abaya_couture.jpg',
 };
 
 const getYouTubeEmbedUrl = (url: string): string | null => {

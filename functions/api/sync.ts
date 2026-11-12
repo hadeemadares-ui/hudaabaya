@@ -124,6 +124,7 @@ const KNOWN_STATIC_IMAGE_PRODUCT_IDS = new Set([
   'huda-prod-1791011400024-765',
   'huda-prod-1791011457320-220',
   'huda-prod-1791011503393-566',
+  'huda-prod-1791011564255-937',
   'huda-prod-1791011594237-608',
   'huda-prod-1791011630134-655',
   'huda-prod-1791011656065-663',
@@ -157,6 +158,9 @@ const KNOWN_STATIC_IMAGE_PRODUCT_IDS = new Set([
   'huda-prod-1792482658647-537',
   'huda-prod-1792482714344-684',
   'huda-prod-1793105433655-138',
+  'huda-prod-1794316876026-862',
+  'huda-prod-1794318257371-219',
+  'huda-prod-1794318895489-717',
 ]);
 
 async function saveBundleToD1AndKV(env: any, bundle: SyncBundle): Promise<boolean> {
@@ -177,25 +181,44 @@ async function saveBundleToD1AndKV(env: any, bundle: SyncBundle): Promise<boolea
   }
 
   // 2. Prepare payload for Cloudflare D1 (D1 has a 1MB query statement limit)
-  let d1Serialized = fullSerialized;
-  if (d1Serialized.length >= 850000) {
-    const optimizedProducts = (bundle.products || []).map((p: any) => {
-      // ONLY replace with static CDN path if the file ACTUALLY exists on disk!
-      // NEVER destroy user-uploaded / camera-captured images for custom or recently updated products!
-      if (p.updatedAt && p.updatedAt > 1794000000000) return p;
-      if (!Array.isArray(p.images) || !KNOWN_STATIC_IMAGE_PRODUCT_IDS.has(p.id)) {
-        return p;
+  // Slim down bulky base64 slips and coordination photos so D1 payload is always lean (< 300KB) and never fails
+  const optimizedProducts = (bundle.products || []).map((p: any) => {
+    if (!Array.isArray(p.images) || !KNOWN_STATIC_IMAGE_PRODUCT_IDS.has(p.id)) {
+      return p;
+    }
+    const cleanImages = p.images.map((img: string) => {
+      if (typeof img === 'string' && (img.startsWith('data:image/') || img.includes('placeholder')) && KNOWN_STATIC_IMAGE_PRODUCT_IDS.has(p.id)) {
+        return '/images/products/' + p.id + '.jpg';
       }
-      const cleanImages = p.images.map((img: string) => {
-        if (typeof img === 'string' && img.startsWith('data:image/') && img.length > 500) {
-          return '/images/products/' + p.id + '.jpg';
-        }
-        return img;
-      });
-      return { ...p, images: cleanImages };
+      return img;
     });
-    d1Serialized = JSON.stringify({ ...bundle, products: optimizedProducts });
-  }
+    return { ...p, images: cleanImages };
+  });
+
+  const slimEventSchedules = (bundle.eventSchedules || []).map((s: any) => {
+    let depositSlipUrl = s.depositSlipUrl;
+    let transferSlipUrl = s.transferSlipUrl;
+    if (typeof depositSlipUrl === 'string' && depositSlipUrl.length > 25000) depositSlipUrl = '';
+    if (typeof transferSlipUrl === 'string' && transferSlipUrl.length > 25000) transferSlipUrl = '';
+    const coordinationPhotos = Array.isArray(s.coordinationPhotos)
+      ? s.coordinationPhotos.filter((cp: string) => typeof cp === 'string' && cp.length < 25000)
+      : [];
+    return { ...s, depositSlipUrl, transferSlipUrl, coordinationPhotos };
+  });
+
+  const slimOrders = (bundle.orders || []).map((o: any) => {
+    let slipImageUrl = o.slipImageUrl;
+    if (typeof slipImageUrl === 'string' && slipImageUrl.length > 35000) slipImageUrl = '';
+    return { ...o, slipImageUrl };
+  });
+
+  const d1Bundle: SyncBundle = {
+    ...bundle,
+    products: optimizedProducts,
+    eventSchedules: slimEventSchedules,
+    orders: slimOrders,
+  };
+  const d1Serialized = JSON.stringify(d1Bundle);
 
   // 3. Save to D1
   if (env?.DB) {
@@ -203,6 +226,13 @@ async function saveBundleToD1AndKV(env: any, bundle: SyncBundle): Promise<boolea
       await env.DB.prepare(
         "INSERT INTO sync_store (key, val, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET val=excluded.val, updated_at=excluded.updated_at"
       ).bind('huda_sync_bundle', d1Serialized, bundle.version).run();
+
+      // Also persist dedicated huda_products row for instant atomic queries
+      const prodsSerialized = JSON.stringify(optimizedProducts);
+      await env.DB.prepare(
+        "INSERT INTO sync_store (key, val, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET val=excluded.val, updated_at=excluded.updated_at"
+      ).bind('huda_products', prodsSerialized, bundle.version).run();
+
       ok = true;
     } catch (err: any) {
       console.warn('D1 save notice:', err?.message);

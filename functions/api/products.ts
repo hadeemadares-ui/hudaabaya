@@ -32,9 +32,20 @@ async function getProductsFromKVOrMemory(env: any) {
     } catch (e) {}
   }
 
-  // 2. Try D1 sync_store bundle (dual persistent fallback)
+  // 2. Try D1 sync_store bundle or huda_products (dual persistent fallback)
   if (env?.DB) {
     try {
+      const prodRow: any = await env.DB.prepare(
+        "SELECT val FROM sync_store WHERE key = ?"
+      ).bind('huda_products').first();
+      if (prodRow?.val) {
+        const parsed = JSON.parse(prodRow.val);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          memoryProducts = parsed;
+          return { prods: memoryProducts, delIds: memoryDeletedIds };
+        }
+      }
+
       const row: any = await env.DB.prepare(
         "SELECT val FROM sync_store WHERE key = ?"
       ).bind('huda_sync_bundle').first();
@@ -80,6 +91,7 @@ const KNOWN_STATIC_IMAGE_PRODUCT_IDS = new Set([
   'huda-prod-1791011400024-765',
   'huda-prod-1791011457320-220',
   'huda-prod-1791011503393-566',
+  'huda-prod-1791011564255-937',
   'huda-prod-1791011594237-608',
   'huda-prod-1791011630134-655',
   'huda-prod-1791011656065-663',
@@ -113,6 +125,9 @@ const KNOWN_STATIC_IMAGE_PRODUCT_IDS = new Set([
   'huda-prod-1792482658647-537',
   'huda-prod-1792482714344-684',
   'huda-prod-1793105433655-138',
+  'huda-prod-1794316876026-862',
+  'huda-prod-1794318257371-219',
+  'huda-prod-1794318895489-717',
 ]);
 
 async function saveProductsToKV(env: any, prods: any[], delIds: any[]) {
@@ -173,6 +188,11 @@ async function saveProductsToKV(env: any, prods: any[], delIds: any[]) {
       await env.DB.prepare(
         "INSERT INTO sync_store (key, val, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET val=excluded.val, updated_at=excluded.updated_at"
       ).bind('huda_sync_bundle', serialized, bundle.version).run();
+
+      const prodsOnly = JSON.stringify(bundle.products || []);
+      await env.DB.prepare(
+        "INSERT INTO sync_store (key, val, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET val=excluded.val, updated_at=excluded.updated_at"
+      ).bind('huda_products', prodsOnly, bundle.version).run();
     } catch (e) {}
   }
 }

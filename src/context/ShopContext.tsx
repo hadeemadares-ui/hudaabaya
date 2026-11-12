@@ -18,6 +18,7 @@ import {
   fetchRealtimeSync,
   pushRealtimeSync,
 } from '../lib/cloudStorage';
+import { saveProductsToIDB, getProductsFromIDB } from '../lib/indexedDBStorage';
 import {
   sendLineNotification,
   formatNewOrderMessage,
@@ -261,17 +262,21 @@ const getTimestampMs = (val: any): number => {
 
 const safeSaveProductsToLocalStorage = (prods: Product[]) => {
   if (typeof window === 'undefined') return;
+  // Always asynchronously persist the full pristine products with full images to IndexedDB (multi-gigabyte capacity)
+  saveProductsToIDB(prods).catch(() => {});
+
   try {
     localStorage.setItem('huda_products', JSON.stringify(prods));
   } catch (err: any) {
-    console.warn('localStorage quota exceeded, saving lightweight cache:', err?.message);
+    console.warn('localStorage quota reached, keeping full copy in IndexedDB:', err?.message);
     try {
-      const lightweight = prods.map((p) => ({
-        ...p,
-        images: Array.isArray(p.images)
-          ? p.images.map((img) => (typeof img === 'string' && img.length > 50000) ? (p.category === 'perfume' ? '/images/placeholder-perfume.jpg' : '/images/placeholder-abaya.jpg') : img)
-          : [],
-      }));
+      // In localStorage, store only a minimal metadata cache if needed, NEVER replace images with placeholders
+      const lightweight = prods.map((p) => {
+        const cleanImages = Array.isArray(p.images)
+          ? p.images.map((img) => (typeof img === 'string' && img.startsWith('data:image/') && img.length > 50000 ? (p.images[0] || '') : img))
+          : [];
+        return { ...p, images: cleanImages };
+      });
       localStorage.setItem('huda_products', JSON.stringify(lightweight));
     } catch (e) {}
   }
