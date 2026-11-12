@@ -118,12 +118,28 @@ const KNOWN_STATIC_IMAGE_PRODUCT_IDS = new Set([
 async function saveProductsToKV(env: any, prods: any[], delIds: any[]) {
   memoryProducts = prods;
   memoryDeletedIds = delIds;
+  const now = Date.now();
+
   if (env?.HUDA_KV) {
     try {
+      // 1. Fetch current sync bundle from KV to preserve orders/settings, but update products & deletedIds
+      let existingBundle: any = { version: now, orders: [], stockMovements: [] };
+      try {
+        const rawBundle = await env.HUDA_KV.get('huda_sync_bundle');
+        if (rawBundle) {
+          existingBundle = JSON.parse(rawBundle);
+        }
+      } catch (e) {}
+
+      existingBundle.products = prods;
+      existingBundle.deletedIds = delIds;
+      existingBundle.version = now;
+
       await Promise.all([
         env.HUDA_KV.put('huda_products', JSON.stringify(prods)),
         env.HUDA_KV.put('huda_deleted_ids', JSON.stringify(delIds)),
-        env.HUDA_KV.put('huda_sync_version', Date.now().toString())
+        env.HUDA_KV.put('huda_sync_bundle', JSON.stringify(existingBundle)),
+        env.HUDA_KV.put('huda_sync_version', now.toString()),
       ]);
     } catch (e) {}
   }
@@ -134,14 +150,17 @@ async function saveProductsToKV(env: any, prods: any[], delIds: any[]) {
       const row: any = await env.DB.prepare(
         "SELECT val FROM sync_store WHERE key = ?"
       ).bind('huda_sync_bundle').first();
-      let bundle: any = row?.val ? JSON.parse(row.val) : { version: Date.now(), orders: [], stockMovements: [] };
+      let bundle: any = row?.val ? JSON.parse(row.val) : { version: now, orders: [], stockMovements: [] };
       bundle.products = prods;
       bundle.deletedIds = delIds;
-      bundle.version = Date.now();
+      bundle.version = now;
 
       let serialized = JSON.stringify(bundle);
+      // Only compress into D1 if statement exceeds 850KB, but keep KV completely pristine with full images
       if (serialized.length >= 850000) {
         bundle.products = prods.map((p: any) => {
+          // Do NOT touch products modified recently
+          if (p.updatedAt && p.updatedAt > 1794000000000) return p;
           if (!KNOWN_STATIC_IMAGE_PRODUCT_IDS.has(p.id)) return p;
           return {
             ...p,

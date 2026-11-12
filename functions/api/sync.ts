@@ -61,17 +61,14 @@ function getEmptyBundle(version = Date.now()): SyncBundle {
 }
 
 async function fetchBundleFromD1OrKV(env: any): Promise<SyncBundle | null> {
-  let kvBundle: SyncBundle | null = null;
-  let d1Bundle: SyncBundle | null = null;
-
-  // 1. Try Cloudflare KV (has 25MB capacity, stores complete multi-device data)
+  // 1. Try Cloudflare KV first (ultra fast 25MB edge cache - holds complete data)
   if (env?.HUDA_KV) {
     try {
       const raw = await env.HUDA_KV.get('huda_sync_bundle');
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === 'object') {
-          kvBundle = parsed as SyncBundle;
+          return parsed as SyncBundle;
         }
       }
     } catch (err: any) {
@@ -79,7 +76,7 @@ async function fetchBundleFromD1OrKV(env: any): Promise<SyncBundle | null> {
     }
   }
 
-  // 2. Try D1
+  // 2. Fallback to D1 ONLY if KV is completely empty or unavailable
   if (env?.DB) {
     try {
       const row: any = await env.DB.prepare(
@@ -88,7 +85,7 @@ async function fetchBundleFromD1OrKV(env: any): Promise<SyncBundle | null> {
       if (row?.val) {
         const parsed = JSON.parse(row.val);
         if (parsed && typeof parsed === 'object') {
-          d1Bundle = parsed as SyncBundle;
+          return parsed as SyncBundle;
         }
       }
     } catch (err: any) {
@@ -96,11 +93,7 @@ async function fetchBundleFromD1OrKV(env: any): Promise<SyncBundle | null> {
     }
   }
 
-  // Return whichever has the newer timestamped version!
-  if (kvBundle && d1Bundle) {
-    return (kvBundle.version || 0) >= (d1Bundle.version || 0) ? kvBundle : d1Bundle;
-  }
-  return kvBundle || d1Bundle || null;
+  return null;
 }
 
 // List of products that actually have static jpg files on disk (/images/products/[id].jpg)
@@ -188,7 +181,8 @@ async function saveBundleToD1AndKV(env: any, bundle: SyncBundle): Promise<boolea
   if (d1Serialized.length >= 850000) {
     const optimizedProducts = (bundle.products || []).map((p: any) => {
       // ONLY replace with static CDN path if the file ACTUALLY exists on disk!
-      // NEVER destroy user-uploaded / camera-captured images for custom products!
+      // NEVER destroy user-uploaded / camera-captured images for custom or recently updated products!
+      if (p.updatedAt && p.updatedAt > 1794000000000) return p;
       if (!Array.isArray(p.images) || !KNOWN_STATIC_IMAGE_PRODUCT_IDS.has(p.id)) {
         return p;
       }
@@ -364,12 +358,16 @@ export async function onRequestPost(context: any) {
       }
 
       if (Array.isArray(body.products)) {
+        // If a product is explicitly being added or updated, restore it (remove from deletedIds)
+        const incomingProdIds = new Set(body.products.map((p: any) => p.id));
+        updatedDeletedIds = updatedDeletedIds.filter((id: string) => !incomingProdIds.has(id));
+
         const prodMap = new Map<string, any>();
-        (cur.products || []).forEach((p: any) => prodMap.set(p.id, p));
+        (cur.products || []).forEach((p: any) => {
+          if (!incomingProdIds.has(p.id)) prodMap.set(p.id, p);
+        });
         body.products.forEach((p: any) => {
-          if (!updatedDeletedIds.includes(p.id)) {
-            prodMap.set(p.id, p);
-          }
+          prodMap.set(p.id, p);
         });
         updatedProducts = Array.from(prodMap.values()).filter((p: any) => !updatedDeletedIds.includes(p.id));
       }

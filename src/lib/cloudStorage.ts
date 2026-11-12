@@ -56,6 +56,23 @@ export async function fetchCloudProducts(): Promise<Product[]> {
   }
 }
 
+export async function saveCloudSingleProduct(product: Product): Promise<boolean> {
+  try {
+    const base = getBaseApiUrl();
+    const res = await fetch(`${base}/api/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_product',
+        product,
+      }),
+    });
+    return res.ok;
+  } catch (e) {
+    return false;
+  }
+}
+
 export async function saveCloudProducts(products: Product[]): Promise<boolean> {
   try {
     if (!Array.isArray(products) || products.length === 0) {

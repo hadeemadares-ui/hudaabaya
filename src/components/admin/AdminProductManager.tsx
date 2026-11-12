@@ -1380,14 +1380,14 @@ export const AdminProductManager: React.FC = () => {
     alert('ซิงก์ดึงข้อมูลสินค้าล่าสุดจากทุกเครื่องขึ้นคลาวด์และแสดงผลตรงกัน 100% เรียบร้อยแล้ว!');
   };
 
-  // High-Performance Multi-Device Image Compression Engine (Ultra HD 2K 1600px - iOS Safari / Android / Desktop)
+  // High-Performance Multi-Device Image Compression Engine (Retina HD 1200px - iOS Safari / Android / Desktop)
   const compressImageFile = async (file: File): Promise<string> => {
     // 1. Modern native fast decoding via createImageBitmap (auto-handles orientation & iOS HEIC)
     try {
       if (typeof window !== 'undefined' && 'createImageBitmap' in window) {
         const bitmap = await createImageBitmap(file);
         const canvas = document.createElement('canvas');
-        const maxDim = 1600; // Ultra HD 2K 1600px resolution for luxury Dubai abayas, fabrics & perfume bottles
+        const maxDim = 1200; // Crisp 1200px HD resolution (~90KB per image, perfectly fits within browser quota)
         let width = bitmap.width;
         let height = bitmap.height;
         if (width > maxDim || height > maxDim) {
@@ -1407,7 +1407,7 @@ export const AdminProductManager: React.FC = () => {
           ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(bitmap, 0, 0, width, height);
           bitmap.close();
-          return canvas.toDataURL('image/jpeg', 0.88);
+          return canvas.toDataURL('image/jpeg', 0.82);
         }
       }
     } catch (e) {
@@ -1431,7 +1431,7 @@ export const AdminProductManager: React.FC = () => {
       img.onload = () => {
         try {
           const canvas = document.createElement('canvas');
-          const maxDim = 1600; // Ultra HD 2K 1600px
+          const maxDim = 1200;
           let width = img.naturalWidth || img.width;
           let height = img.naturalHeight || img.height;
           if (width > maxDim || height > maxDim) {
@@ -1450,7 +1450,7 @@ export const AdminProductManager: React.FC = () => {
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(img, 0, 0, width, height);
-            const compressed = canvas.toDataURL('image/jpeg', 0.88);
+            const compressed = canvas.toDataURL('image/jpeg', 0.82);
             URL.revokeObjectURL(objectUrl);
             resolve(compressed);
             return;

@@ -222,52 +222,42 @@ export const INITIAL_PRODUCTS: Product[] = [
   },
   {
     "id": "huda-prod-1791011564255-937",
-    "title": "007 Greed aventus",
+    "title": "B007 Greed aventus",
     "arabicTitle": "",
     "category": "perfume",
-    "description": "สินค้าคุณภาพสูง นำเข้าจากเมืองดูไบ UAE แท้ 100%",
-    "fabric": "เครื่องหอม / ไม้หอมดูไบ (Bukhoor Dubai)",
+    "description": "สินค้าคุณภาพสูง นำเข้าจากเมืองดูไบ UAE แท้ 100% กลิ่นหรูหราสดชื่นเทียบเคียง Creed Aventus",
+    "fabric": "Oud Oil & Attar Perfume Dubai",
     "origin": "เมืองดูไบ, UAE",
     "images": [
-      "/images/placeholder-abaya.jpg"
+      "/images/products/huda-prod-1791011564255-937.jpg"
     ],
     "colors": [
-      "ไม้หอมอูดออริจินัล",
-      "สีทอง (Royal Gold)"
+      "กลิ่นดูไบออริจินัล"
     ],
     "variants": [
       {
         "id": "var-1791011564255-0",
-        "name": "กระปุก 50g (Standard Bukhoor)",
-        "sku": "HD-INC-50G",
-        "price": 0,
-        "costPrice": 0,
+        "name": "ลูกกลิ้ง 5 ml",
+        "sku": "HD-PRF-50ML",
+        "price": 300,
+        "costPrice": 67,
         "stockQuantity": 0,
-        "color": "ไม้หอมอูดออริจินัล"
+        "color": "กลิ่นดูไบออริจินัล"
       },
       {
         "id": "var-1791011564255-1",
-        "name": "กระปุก 100g (Premium Bukhoor)",
-        "sku": "HD-INC-100G",
-        "price": 0,
-        "costPrice": 0,
+        "name": "ลูกกลิ้ง 3 ml",
+        "sku": "HD-PERFUME-3ml",
+        "price": 200,
+        "costPrice": 49,
         "stockQuantity": 0,
-        "color": "ไม้หอมอูดออริจินัล"
-      },
-      {
-        "id": "var-1791011564255-2",
-        "name": "เซ็ตเตาเผาหอม + ถ่านหอมดูไบ",
-        "sku": "HD-INC-SET",
-        "price": 0,
-        "costPrice": 0,
-        "stockQuantity": 0,
-        "color": "สีทอง (Royal Gold)"
+        "color": "กลิ่นดูไบออริจินัล"
       }
     ],
     "rating": 5,
     "reviewsCount": 1,
     "isNew": true,
-    "updatedAt": 1791011564255
+    "updatedAt": 1794446000000
   },
   {
     "id": "huda-prod-1791011594237-608",

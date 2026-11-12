@@ -8,6 +8,7 @@ import { soundFx } from '../lib/soundEffects';
 import {
   fetchCloudProducts,
   saveCloudProducts,
+  saveCloudSingleProduct,
   fetchCloudDeletedIds,
   saveCloudDeletedIds,
   fetchCloudOrders,
@@ -256,6 +257,24 @@ const getTimestampMs = (val: any): number => {
     if (!isNaN(dateParsed)) return dateParsed;
   }
   return 0;
+};
+
+const safeSaveProductsToLocalStorage = (prods: Product[]) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('huda_products', JSON.stringify(prods));
+  } catch (err: any) {
+    console.warn('localStorage quota exceeded, saving lightweight cache:', err?.message);
+    try {
+      const lightweight = prods.map((p) => ({
+        ...p,
+        images: Array.isArray(p.images)
+          ? p.images.map((img) => (typeof img === 'string' && img.length > 50000) ? (p.category === 'perfume' ? '/images/placeholder-perfume.jpg' : '/images/placeholder-abaya.jpg') : img)
+          : [],
+      }));
+      localStorage.setItem('huda_products', JSON.stringify(lightweight));
+    } catch (e) {}
+  }
 };
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
@@ -894,15 +913,17 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   });
                 }
 
-                // Smart Image Protection: Never let cloud overwrite real camera/album photos with empty or fallback paths
-                const localHasCameraPhoto = Array.isArray(localProd.images) && localProd.images.some(img => typeof img === 'string' && img.startsWith('data:image/'));
-                const cloudHasCameraPhoto = Array.isArray(cloudProd.images) && cloudProd.images.some(img => typeof img === 'string' && img.startsWith('data:image/'));
+                // Conflict resolution for images: newer update ALWAYS wins, with safe non-empty fallback
+                const cloudHasImages = Array.isArray(cloudProd.images) && cloudProd.images.length > 0 && cloudProd.images.some(img => img && typeof img === 'string' && img.trim() !== '');
+                const localHasImages = Array.isArray(localProd.images) && localProd.images.length > 0 && localProd.images.some(img => img && typeof img === 'string' && img.trim() !== '');
 
-                let resolvedImages = cloudUpdated >= localUpdated ? cloudProd.images : localProd.images;
-                if (localHasCameraPhoto && !cloudHasCameraPhoto) {
-                  resolvedImages = localProd.images;
-                } else if (cloudHasCameraPhoto) {
+                let resolvedImages = localProd.images;
+                if (cloudUpdated >= localUpdated && cloudHasImages) {
                   resolvedImages = cloudProd.images;
+                } else if (!localHasImages && cloudHasImages) {
+                  resolvedImages = cloudProd.images;
+                } else if (!cloudHasImages && localHasImages) {
+                  resolvedImages = localProd.images;
                 }
 
                 mergedList.push({
@@ -920,11 +941,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
 
             const finalSorted = mergedList.sort(sortProductsNatural);
-            if (typeof window !== 'undefined') {
-              try {
-                localStorage.setItem('huda_products', JSON.stringify(finalSorted));
-              } catch (e) {}
-            }
+            safeSaveProductsToLocalStorage(finalSorted);
             return finalSorted;
           });
         }
@@ -4476,10 +4493,10 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProducts((prev) => {
       const updated = [timestamped, ...prev.filter((p) => p.id !== timestamped.id)].sort(sortProductsNatural);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_products', JSON.stringify(updated));
+        safeSaveProductsToLocalStorage(updated);
         syncChannelRef.current?.postMessage({ type: 'PRODUCTS_UPDATED', products: updated });
       }
-      saveCloudProducts(updated);
+      saveCloudSingleProduct(timestamped);
       triggerBackgroundPush({ products: updated }, true);
       return updated;
     });
@@ -4493,9 +4510,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProducts((prev) => {
       updatedProductsList = prev.map((p) => (p.id === timestamped.id ? timestamped : p)).sort(sortProductsNatural);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_products', JSON.stringify(updatedProductsList));
+        safeSaveProductsToLocalStorage(updatedProductsList);
       }
-      saveCloudProducts(updatedProductsList);
+      saveCloudSingleProduct(timestamped);
       return updatedProductsList;
     });
 
@@ -4559,7 +4576,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_products', JSON.stringify(updated));
+        safeSaveProductsToLocalStorage(updated);
         syncChannelRef.current?.postMessage({ type: 'PRODUCTS_UPDATED', products: updated });
       }
       saveCloudProducts(updated);
@@ -4583,7 +4600,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProducts((prev) => {
       const updated = prev.filter((p) => p.id !== productId);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('huda_products', JSON.stringify(updated));
+        safeSaveProductsToLocalStorage(updated);
       }
       saveCloudProducts(updated);
       saveCloudDeletedIds(updatedDeletedList);
