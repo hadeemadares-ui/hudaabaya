@@ -14,6 +14,7 @@ import { BatchStockCountModal, BatchCountItem } from './BatchStockCountModal';
 import { LotNumberManagerDropdown } from './LotNumberManagerDropdown';
 import { resolveScannedProduct } from '../../utils/qrUtils';
 import { soundFx } from '../../lib/soundEffects';
+import { uploadCloudImage } from '../../lib/cloudStorage';
 import { PerfumeDecantLabelModal } from './PerfumeDecantLabelModal';
 
 export interface CategoryOptionItem {
@@ -1492,8 +1493,9 @@ export const AdminProductManager: React.FC = () => {
         const file = files[i];
         if (file && (file.type.startsWith('image/') || file.name.match(/\.(jpg|jpeg|png|webp|heic|heif)$/i))) {
           const compressed = await compressImageFile(file);
-          if (compressed) {
-            newImages.push(compressed);
+          const cloudUrl = compressed ? await uploadCloudImage(compressed) : '';
+          if (cloudUrl) {
+            newImages.push(cloudUrl);
           }
         }
       }
@@ -1610,7 +1612,7 @@ export const AdminProductManager: React.FC = () => {
       : 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop';
 
     const validImages = imagesList.filter((img) => img && typeof img === 'string' && img.trim() !== '');
-    const finalImages = validImages.length > 0 ? validImages : [fallbackImage];
+    const finalImages = validImages;
 
     const newProductObj: Product = {
       id: editingProduct ? editingProduct.id : `huda-prod-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -1693,7 +1695,7 @@ export const AdminProductManager: React.FC = () => {
       : 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop';
 
     const validImages = imagesList.filter((img) => img && typeof img === 'string' && img.trim() !== '');
-    const finalImages = validImages.length > 0 ? validImages : [fallbackImage];
+    const finalImages = validImages;
 
     const prodId = editingProduct ? editingProduct.id : `huda-prod-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 

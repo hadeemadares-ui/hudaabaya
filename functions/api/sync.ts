@@ -382,9 +382,33 @@ export async function onRequestPost(context: any) {
 
         const prodMap = new Map<string, any>();
         (cur.products || []).forEach((p: any) => {
-          if (!incomingProdIds.has(p.id)) prodMap.set(p.id, p);
+          prodMap.set(p.id, p);
         });
-        body.products.forEach((p: any) => {
+        body.products.forEach((incoming: any) => {
+          if (!incoming || !incoming.id) return;
+          let p = incoming;
+          const existing = prodMap.get(p.id);
+          const incomingImgs = Array.isArray(p.images)
+            ? p.images.filter((i: any) => typeof i === 'string' && i.trim() !== '')
+            : [];
+          const hasRealExistingImg =
+            existing &&
+            Array.isArray(existing.images) &&
+            existing.images.some(
+              (i: string) =>
+                i &&
+                (i.startsWith('data:image/') ||
+                  i.startsWith('/images/products/') ||
+                  i.includes('/api/images'))
+            );
+          const isIncomingPlaceholder =
+            incomingImgs.length === 0 ||
+            (incomingImgs.length === 1 &&
+              incomingImgs[0].includes('photo-1592945403244') &&
+              p.category !== 'perfume');
+          if (hasRealExistingImg && isIncomingPlaceholder && !p._explicitImageClear) {
+            p = { ...p, images: existing.images };
+          }
           prodMap.set(p.id, p);
         });
         updatedProducts = Array.from(prodMap.values()).filter((p: any) => !updatedDeletedIds.includes(p.id));
@@ -566,6 +590,15 @@ export async function onRequestPost(context: any) {
 
     // 4. Save consolidated bundle to D1 & KV
     await saveBundleToD1AndKV(env, updatedBundle);
+
+    // 5. Automated rolling 14-day daily snapshot backup in Cloudflare KV (when products/orders update)
+    if (env?.HUDA_KV && (Array.isArray(body.products) || Array.isArray(body.orders))) {
+      try {
+        const bkkDate = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Bangkok' }).format(new Date());
+        const snapshotKey = `huda_sync_snapshot_${bkkDate}`;
+        await env.HUDA_KV.put(snapshotKey, JSON.stringify(updatedBundle), { expirationTtl: 1209600 });
+      } catch (snapErr) {}
+    }
 
     return new Response(
       JSON.stringify({

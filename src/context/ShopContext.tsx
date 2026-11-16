@@ -264,13 +264,25 @@ const getTimestampMs = (val: any): number => {
   return 0;
 };
 
+let localStorageSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
 const safeSaveProductsToLocalStorage = (prods: Product[]) => {
   if (typeof window === 'undefined') return;
   // Always asynchronously persist the full pristine products with full images to IndexedDB (multi-gigabyte capacity)
   saveProductsToIDB(prods).catch(() => {});
 
   try {
-    localStorage.setItem('huda_products', JSON.stringify(prods));
+    if (localStorageSaveTimer) clearTimeout(localStorageSaveTimer);
+    localStorageSaveTimer = setTimeout(() => {
+      try {
+        const json = JSON.stringify(prods);
+        if (json.length <= 4200000) {
+          localStorage.setItem('huda_products', json);
+        } else {
+          localStorage.removeItem('huda_products');
+        }
+      } catch (e) {}
+    }, 50);
   } catch (err: any) {
     console.warn('localStorage quota reached, keeping full copy in IndexedDB:', err?.message);
     try {
@@ -281,7 +293,7 @@ const safeSaveProductsToLocalStorage = (prods: Product[]) => {
           : [];
         return { ...p, images: cleanImages };
       });
-      localStorage.setItem('huda_products', JSON.stringify(lightweight));
+      localStorage.removeItem('huda_products');
     } catch (e) {}
   }
 };
@@ -2197,6 +2209,17 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       window.addEventListener('huda_products_updated', handleCustomProductsUpdate);
       window.addEventListener('huda_orders_updated', handleCustomOrdersUpdate);
+
+      // Hydrate full images from IndexedDB immediately while cloud sync runs
+      getProductsFromIDB()
+        .then((idbProds) => {
+          if (Array.isArray(idbProds) && idbProds.length > 0 && !isInitialSyncCompletedRef.current) {
+            const sortedIdb = idbProds.sort(sortProductsNatural);
+            productsRef.current = sortedIdb;
+            setProducts(sortedIdb);
+          }
+        })
+        .catch(() => {});
 
       // Initial immediate outbox flush & sync
       forceRealtimeSync(true, false);
@@ -4512,7 +4535,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         syncChannelRef.current?.postMessage({ type: 'PRODUCTS_UPDATED', products: updated });
       }
       saveCloudSingleProduct(timestamped);
-      triggerBackgroundPush({ products: updated }, true);
+      triggerBackgroundPush({ products: [timestamped] }, true);
       return updated;
     });
   };

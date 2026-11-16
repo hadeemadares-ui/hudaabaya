@@ -20,13 +20,33 @@ export function getBaseApiUrl(): string {
   return '';
 }
 
+export async function uploadCloudImage(dataUrl: string): Promise<string> {
+  if (!dataUrl || !dataUrl.startsWith('data:image/')) return dataUrl;
+  try {
+    const base = getBaseApiUrl();
+    const res = await fetch(`${base}/api/images`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dataUrl }),
+    });
+    if (!res.ok) return dataUrl;
+    const data = await res.json();
+    if (data?.success && data?.url) {
+      return base ? `${base}${data.url}` : data.url;
+    }
+  } catch (e) {
+    console.warn('Cloud image upload fallback to local dataUrl:', e);
+  }
+  return dataUrl;
+}
+
 function sanitizeImages(images: string[]): string[] {
   if (!Array.isArray(images) || images.length === 0) {
-    return ['https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop'];
+    return [];
   }
-  return images.map((img) => {
+  return images.filter((img) => typeof img === 'string' && img.trim() !== '').map((img) => {
     if (!img || typeof img !== 'string') {
-      return 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop';
+      return '';
     }
     // Always preserve user uploaded images 100%
     return img;
