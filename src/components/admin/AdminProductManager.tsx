@@ -1605,14 +1605,7 @@ export const AdminProductManager: React.FC = () => {
     }
 
     const uniqueColors = Array.from(new Set(variants.map((v) => v.color).filter(Boolean))) as string[];
-    const fallbackImage = (effectiveCategory === 'perfume' || category === 'perfume')
-      ? 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop'
-      : (effectiveCategory === 'incense' || category === 'incense')
-      ? '/images/placeholder-incense.jpg'
-      : 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop';
-
-    const validImages = imagesList.filter((img) => img && typeof img === 'string' && img.trim() !== '');
-    const finalImages = validImages.length > 0 ? validImages : [fallbackImage];
+    const finalImages = imagesList.filter((img) => img && typeof img === 'string' && img.trim() !== '');
 
     const newProductObj: Product = {
       id: editingProduct ? editingProduct.id : `huda-prod-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -1688,14 +1681,7 @@ export const AdminProductManager: React.FC = () => {
     }
 
     const uniqueColors = Array.from(new Set(variants.map((v) => v.color).filter(Boolean))) as string[];
-    const fallbackImage = (effectiveCategory === 'perfume' || category === 'perfume')
-      ? 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop'
-      : (effectiveCategory === 'incense' || category === 'incense')
-      ? '/images/placeholder-incense.jpg'
-      : 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop';
-
-    const validImages = imagesList.filter((img) => img && typeof img === 'string' && img.trim() !== '');
-    const finalImages = validImages.length > 0 ? validImages : [fallbackImage];
+    const finalImages = imagesList.filter((img) => img && typeof img === 'string' && img.trim() !== '');
 
     const prodId = editingProduct ? editingProduct.id : `huda-prod-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 

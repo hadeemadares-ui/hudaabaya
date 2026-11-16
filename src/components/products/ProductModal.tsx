@@ -12,15 +12,6 @@ interface ProductModalProps {
   onClose: (e?: React.MouseEvent | React.TouchEvent | KeyboardEvent) => void;
 }
 
-const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
-  abaya: '/images/dubai_abaya_couture.jpg',
-  kaftan: '/images/dubai_abaya_couture.jpg',
-  perfume: '/images/products/huda-prod-1791011240968-250.jpg',
-  incense: '/images/dubai_bukhoor.jpg',
-  combo: '/images/dubai_abaya_couture.jpg',
-  other: '/images/dubai_abaya_couture.jpg',
-};
-
 const getYouTubeEmbedUrl = (url: string): string | null => {
   if (!url) return null;
   try {
@@ -59,7 +50,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
     };
   }, [onClose]);
 
-  const defaultImg = DEFAULT_CATEGORY_IMAGES[product.category] || DEFAULT_CATEGORY_IMAGES.abaya;
   const initialImg =
     product.images &&
     product.images.length > 0 &&
@@ -67,7 +57,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
     typeof product.images[0] === 'string' &&
     product.images[0].trim() !== ''
       ? product.images[0]
-      : defaultImg;
+      : '';
 
   const variants: ProductVariant[] = Array.isArray(product?.variants) && product.variants.length > 0
     ? product.variants
@@ -261,21 +251,25 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                   handlePointerMove(e.clientX - rect.left, e.clientY - rect.top, rect);
                 }}
                 onClick={() => {
+                  if (!selectedImage) return;
                   setZoomScale(1);
                   setIsZoomOpen(true);
                 }}
               >
-                <img
-                  src={selectedImage}
-                  alt={product.title}
-                  onError={() => {
-                    if (selectedImage !== defaultImg) {
-                      setSelectedImage(defaultImg);
-                    }
-                  }}
-                  style={{ imageRendering: '-webkit-optimize-contrast' as any }}
-                  className="w-full h-full object-cover object-top sm:object-contain sm:object-center transition duration-500"
-                />
+                {selectedImage ? (
+                  <img
+                    src={selectedImage}
+                    alt={product.title}
+                    onError={() => setSelectedImage('')}
+                    style={{ imageRendering: '-webkit-optimize-contrast' as any }}
+                    className="w-full h-full object-cover object-top sm:object-contain sm:object-center transition duration-500"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-stone-400 p-6 text-center">
+                    <ImageIcon className="w-10 h-10 mb-2 opacity-40" />
+                    <span className="text-xs font-medium">ยังไม่มีรูปภาพสินค้า</span>
+                  </div>
+                )}
 
                 {product.onSale && product.discountPercent && (
                   <span className="absolute top-3 left-3 bg-[#8C703E] text-white text-[10px] tracking-[0.15em] uppercase px-2.5 py-1 z-10">
@@ -284,7 +278,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                 )}
 
                 {/* Subtle Magnifying Loupe */}
-                {showLoupe && (
+                {showLoupe && selectedImage && (
                   <div
                     style={{
                       top: `${loupePos.y - 70}px`,
@@ -297,18 +291,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                   />
                 )}
 
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setZoomScale(1);
-                    setIsZoomOpen(true);
-                  }}
-                  className="absolute bottom-3 right-3 bg-white/90 hover:bg-[#141312] hover:text-white text-[#141312] px-3 py-1.5 border border-stone-200 text-[10px] tracking-widest uppercase transition flex items-center gap-1.5 cursor-pointer z-10"
-                >
-                  <ZoomIn className="w-3.5 h-3.5" />
-                  <span>ขยายภาพ</span>
-                </button>
+                {selectedImage && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setZoomScale(1);
+                      setIsZoomOpen(true);
+                    }}
+                    className="absolute bottom-3 right-3 bg-white/90 hover:bg-[#141312] hover:text-white text-[#141312] px-3 py-1.5 border border-stone-200 text-[10px] tracking-widest uppercase transition flex items-center gap-1.5 cursor-pointer z-10"
+                  >
+                    <ZoomIn className="w-3.5 h-3.5" />
+                    <span>ขยายภาพ</span>
+                  </button>
+                )}
               </div>
             )}
 

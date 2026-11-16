@@ -10,15 +10,6 @@ interface ProductCardProps {
   product: Product;
 }
 
-const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
-  abaya: '/images/dubai_abaya_couture.jpg',
-  kaftan: '/images/dubai_abaya_couture.jpg',
-  perfume: '/images/products/huda-prod-1791011240968-250.jpg',
-  incense: '/images/dubai_bukhoor.jpg',
-  combo: '/images/dubai_abaya_couture.jpg',
-  other: '/images/dubai_abaya_couture.jpg',
-};
-
 const optimizeImageUrl = (url: string): string => {
   if (!url) return url;
   if (url.includes('images.unsplash.com')) {
@@ -38,7 +29,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product: initialProduc
   const maxPrice = validPrices.length > 0 ? Math.max(...validPrices) : (variants[0]?.price || 0);
   const totalStock = variants.reduce((sum, v) => sum + (Number(v?.stockQuantity) || 0), 0);
 
-  const defaultImg = DEFAULT_CATEGORY_IMAGES[product?.category] || DEFAULT_CATEGORY_IMAGES.abaya;
   const rawInitialImg =
     product?.images &&
     Array.isArray(product.images) &&
@@ -47,15 +37,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product: initialProduc
     typeof product.images[0] === 'string' &&
     product.images[0].trim() !== ''
       ? product.images[0]
-      : defaultImg;
+      : '';
 
   const initialImg = optimizeImageUrl(rawInitialImg);
   const [imgSrc, setImgSrc] = useState<string>(initialImg);
 
   useEffect(() => {
     const nextImg = optimizeImageUrl(rawInitialImg);
-    setImgSrc(nextImg || defaultImg);
-  }, [rawInitialImg, defaultImg]);
+    setImgSrc(nextImg);
+  }, [rawInitialImg]);
 
   return (
     <>
@@ -65,17 +55,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product: initialProduc
       >
         {/* Editorial Portrait Frame - Full Bleed High Definition Lookbook Image */}
         <div className="relative aspect-[3/4] overflow-hidden bg-[#F7F5F0] flex items-center justify-center">
-          <img
-            src={imgSrc}
-            alt={product.title}
-            onError={() => {
-              if (imgSrc !== defaultImg) {
-                setImgSrc(defaultImg);
-              }
-            }}
-            style={{ imageRendering: '-webkit-optimize-contrast' as any }}
-            className="w-full h-full object-cover object-top sm:object-center transform transition duration-500 ease-out group-hover:scale-[1.04] relative z-1"
-          />
+          {imgSrc ? (
+            <img
+              src={imgSrc}
+              alt={product.title}
+              onError={() => setImgSrc('')}
+              style={{ imageRendering: '-webkit-optimize-contrast' as any }}
+              className="w-full h-full object-cover object-top sm:object-center transform transition duration-500 ease-out group-hover:scale-[1.04] relative z-1"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center text-stone-400 p-4 text-center">
+              <span className="text-2xl mb-1 opacity-50">📷</span>
+              <span className="text-[11px] font-medium tracking-wide">ยังไม่มีรูปภาพ</span>
+            </div>
+          )}
 
           {/* Minimalist Editorial Status Tag */}
           <div className="absolute top-3 left-3 flex flex-col gap-1 z-10">
