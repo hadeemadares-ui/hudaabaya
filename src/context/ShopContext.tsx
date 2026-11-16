@@ -264,26 +264,26 @@ const getTimestampMs = (val: any): number => {
   return 0;
 };
 
-let localStorageSaveTimer: ReturnType<typeof setTimeout> | null = null;
-
 const safeSaveProductsToLocalStorage = (prods: Product[]) => {
   if (typeof window === 'undefined') return;
   // Always asynchronously persist the full pristine products with full images to IndexedDB (multi-gigabyte capacity)
   saveProductsToIDB(prods).catch(() => {});
 
-  // Defer localStorage write so UI updates & modal close happen instantly without blocking the main thread
-  if (localStorageSaveTimer) clearTimeout(localStorageSaveTimer);
-  localStorageSaveTimer = setTimeout(() => {
+  try {
+    localStorage.setItem('huda_products', JSON.stringify(prods));
+  } catch (err: any) {
+    console.warn('localStorage quota reached, keeping full copy in IndexedDB:', err?.message);
     try {
-      const json = JSON.stringify(prods);
-      if (json.length <= 4200000) {
-        localStorage.setItem('huda_products', json);
-      } else {
-        // NEVER save stripped/empty images into localStorage (IndexedDB holds the full HD copy!)
-        localStorage.removeItem('huda_products');
-      }
+      // In localStorage, store only a minimal metadata cache if needed, NEVER replace images with placeholders
+      const lightweight = prods.map((p) => {
+        const cleanImages = Array.isArray(p.images)
+          ? p.images.map((img) => (typeof img === 'string' && img.startsWith('data:image/') && img.length > 50000 ? (p.images[0] || '') : img))
+          : [];
+        return { ...p, images: cleanImages };
+      });
+      localStorage.setItem('huda_products', JSON.stringify(lightweight));
     } catch (e) {}
-  }, 50);
+  }
 };
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
@@ -793,38 +793,17 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const mergePendingArrayById = <T extends { id: string }>(
-    existing: T[] | undefined,
-    incoming: T[] | undefined
-  ): T[] | undefined => {
-    if (!incoming) return existing;
-    if (!existing || existing.length === 0) return incoming;
-    const map = new Map<string, T>();
-    existing.forEach((item) => map.set(item.id, item));
-    incoming.forEach((item) => map.set(item.id, item));
-    return Array.from(map.values());
-  };
-
   const triggerBackgroundPush = (payload: Partial<RealtimeSyncPayload>, immediate: boolean = false) => {
-    const cur = pendingPushPayloadRef.current;
     pendingPushPayloadRef.current = {
-      ...cur,
+      ...pendingPushPayloadRef.current,
       ...payload,
-      ...(payload.products ? { products: mergePendingArrayById(cur.products, payload.products) } : {}),
-      ...(payload.orders ? { orders: mergePendingArrayById(cur.orders, payload.orders) } : {}),
-      ...(payload.stockMovements ? { stockMovements: mergePendingArrayById(cur.stockMovements, payload.stockMovements) } : {}),
     };
     if (typeof window !== 'undefined') {
-      setTimeout(() => {
-        try {
-          const currentSaved = localStorage.getItem('huda_sync_outbox');
-          const parsed = currentSaved ? JSON.parse(currentSaved) : {};
-          const serialized = JSON.stringify({ ...parsed, ...pendingPushPayloadRef.current });
-          if (serialized.length <= 3500000) {
-            localStorage.setItem('huda_sync_outbox', serialized);
-          }
-        } catch (e) {}
-      }, 0);
+      try {
+        const currentSaved = localStorage.getItem('huda_sync_outbox');
+        const parsed = currentSaved ? JSON.parse(currentSaved) : {};
+        localStorage.setItem('huda_sync_outbox', JSON.stringify({ ...parsed, ...pendingPushPayloadRef.current }));
+      } catch (e) {}
     }
 
     const executePush = async () => {
@@ -2218,17 +2197,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       window.addEventListener('huda_products_updated', handleCustomProductsUpdate);
       window.addEventListener('huda_orders_updated', handleCustomOrdersUpdate);
-
-      // Hydrate full HD images from IndexedDB immediately while cloud sync runs
-      getProductsFromIDB()
-        .then((idbProds) => {
-          if (Array.isArray(idbProds) && idbProds.length > 0 && !isInitialSyncCompletedRef.current) {
-            const sortedIdb = idbProds.sort(sortProductsNatural);
-            productsRef.current = sortedIdb;
-            setProducts(sortedIdb);
-          }
-        })
-        .catch(() => {});
 
       // Initial immediate outbox flush & sync
       forceRealtimeSync(true, false);
@@ -4541,12 +4509,10 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const updated = [timestamped, ...prev.filter((p) => p.id !== timestamped.id)].sort(sortProductsNatural);
       if (typeof window !== 'undefined') {
         safeSaveProductsToLocalStorage(updated);
-        try {
-          syncChannelRef.current?.postMessage({ type: 'PRODUCTS_UPDATED', products: updated });
-        } catch (e) {}
+        syncChannelRef.current?.postMessage({ type: 'PRODUCTS_UPDATED', products: updated });
       }
-      // Delta push: send ONLY the new product instead of all 100+ products
-      triggerBackgroundPush({ products: [timestamped] }, true);
+      saveCloudSingleProduct(timestamped);
+      triggerBackgroundPush({ products: updated }, true);
       return updated;
     });
   };
@@ -4561,12 +4527,12 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (typeof window !== 'undefined') {
         safeSaveProductsToLocalStorage(updatedProductsList);
       }
+      saveCloudSingleProduct(timestamped);
       return updatedProductsList;
     });
 
-    // Update corresponding stock movements ONLY if title/variant/cost actually changed
+    // Update corresponding stock movements to keep Unsettled Sales Breakdown in sync
     let updatedMovementsList: StockMovement[] = [];
-    const changedMovements: StockMovement[] = [];
     setStockMovements((prevMovements) => {
       updatedMovementsList = prevMovements.map((m) => {
         if (m.productId === updatedProduct.id || m.productTitle === updatedProduct.title) {
@@ -4576,38 +4542,21 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const newCost = matchedVariant?.costPrice !== undefined && matchedVariant.costPrice > 0
             ? matchedVariant.costPrice
             : m.costPrice;
-          const newTitle = updatedProduct.title;
-          const newVariantName = matchedVariant?.name || m.variantName;
-          const newTotalCost = newCost * m.quantity;
-
-          if (
-            m.productTitle !== newTitle ||
-            m.variantName !== newVariantName ||
-            m.costPrice !== newCost ||
-            m.totalCost !== newTotalCost
-          ) {
-            const changed = {
-              ...m,
-              productTitle: newTitle,
-              variantName: newVariantName,
-              costPrice: newCost,
-              totalCost: newTotalCost,
-            };
-            changedMovements.push(changed);
-            return changed;
-          }
+          return {
+            ...m,
+            productTitle: updatedProduct.title,
+            variantName: matchedVariant?.name || m.variantName,
+            costPrice: newCost,
+            totalCost: newCost * m.quantity,
+          };
         }
         return m;
       });
 
-      if (changedMovements.length > 0 && typeof window !== 'undefined') {
-        setTimeout(() => {
-          try {
-            localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsList));
-          } catch (e) {}
-        }, 0);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('huda_stock_movements', JSON.stringify(updatedMovementsList));
       }
-      return changedMovements.length > 0 ? updatedMovementsList : prevMovements;
+      return updatedMovementsList;
     });
 
     if (typeof window !== 'undefined') {
@@ -4615,19 +4564,15 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         syncChannelRef.current?.postMessage({
           type: 'PRODUCTS_UPDATED',
           products: updatedProductsList,
-          ...(changedMovements.length > 0 ? { stockMovements: updatedMovementsList } : {}),
+          stockMovements: updatedMovementsList,
         });
       } catch (e) {}
     }
 
-    // Delta push: send ONLY the edited product (and changed movements if any) for 20x faster cloud sync
-    triggerBackgroundPush(
-      {
-        products: [timestamped],
-        ...(changedMovements.length > 0 ? { stockMovements: changedMovements } : {}),
-      },
-      true
-    );
+    triggerBackgroundPush({
+      products: updatedProductsList,
+      stockMovements: updatedMovementsList,
+    });
   };
 
   const updateVariantStock = (productId: string, variantId: string, newStock: number) => {

@@ -964,7 +964,11 @@ export const AdminSalesReportManager: React.FC = () => {
 
       updateProduct(updatedProduct);
     } else {
-      // Add product into catalog without generating fake sample images
+      // Add product into catalog if it was a test order item
+      const fallbackImage = editingProduct.category === 'perfume'
+        ? 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop'
+        : 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop';
+
       const newProdObj: Product = {
         id: editingProduct.productId || `huda-prod-${Date.now()}`,
         title: editingProduct.title,
@@ -973,7 +977,7 @@ export const AdminSalesReportManager: React.FC = () => {
         description: 'สินค้าคุณภาพสูง นำเข้าจากเมืองดูไบ UAE แท้ 100%',
         fabric: editingProduct.category === 'perfume' ? 'Oud Oil & Attar Perfume Dubai' : 'Nida Silk Dubai Original',
         origin: 'เมืองดูไบ, UAE',
-        images: [],
+        images: [fallbackImage],
         colors: ['สีดำ (Black)'],
         variants: [
           {

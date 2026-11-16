@@ -127,8 +127,7 @@ export const HeroBanner: React.FC = () => {
                   src={getSlideImage(active.category, active.image)}
                   alt={active.title}
                   onError={(e) => { const target = e.target as HTMLImageElement; if (target.src !== active.image) target.src = active.image; }}
-                  style={{ imageRendering: '-webkit-optimize-contrast' as any }}
-                  className="w-full h-full object-cover object-top sm:object-center transform transition duration-700 ease-out group-hover:scale-[1.03]"
+                  className="w-full h-full object-contain object-center transform transition duration-700 ease-out group-hover:scale-[1.03]"
                 />
               </div>
               

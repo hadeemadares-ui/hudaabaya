@@ -59,11 +59,11 @@ async function saveCloudProducts() {
     const sanitizedActive = active.map((p) => {
       const sanitizedImages = (p.images || []).map((img) => {
         if (!img || typeof img !== 'string') {
-          return '';
+          return 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop';
         }
         return img;
       });
-      return { ...p, images: sanitizedImages.filter((i) => i.trim() !== '') };
+      return { ...p, images: sanitizedImages };
     });
 
     await fetch(`https://api.restful-api.dev/objects/${CLOUD_PRODUCTS_ID}`, {

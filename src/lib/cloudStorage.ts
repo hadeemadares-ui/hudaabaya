@@ -22,9 +22,15 @@ export function getBaseApiUrl(): string {
 
 function sanitizeImages(images: string[]): string[] {
   if (!Array.isArray(images) || images.length === 0) {
-    return [];
+    return ['https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop'];
   }
-  return images.filter((img) => typeof img === 'string' && img.trim() !== '');
+  return images.map((img) => {
+    if (!img || typeof img !== 'string') {
+      return 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop';
+    }
+    // Always preserve user uploaded images 100%
+    return img;
+  });
 }
 
 function sanitizeProducts(products: Product[]): Product[] {

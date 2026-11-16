@@ -1381,28 +1381,14 @@ export const AdminProductManager: React.FC = () => {
     alert('ซิงก์ดึงข้อมูลสินค้าล่าสุดจากทุกเครื่องขึ้นคลาวด์และแสดงผลตรงกัน 100% เรียบร้อยแล้ว!');
   };
 
-  // Encode canvas to crisp WebP (35% smaller, faster sync) with universal JPEG fallback
-  const encodeCanvasUltraHD = (canvas: HTMLCanvasElement): string => {
-    let dataUrl = canvas.toDataURL('image/webp', 0.86);
-    if (!dataUrl.startsWith('data:image/webp')) {
-      dataUrl = canvas.toDataURL('image/jpeg', 0.88);
-    }
-    if (dataUrl.length > 420000) {
-      dataUrl = dataUrl.startsWith('data:image/webp')
-        ? canvas.toDataURL('image/webp', 0.78)
-        : canvas.toDataURL('image/jpeg', 0.82);
-    }
-    return dataUrl;
-  };
-
-  // Studio Ultra-HD Image Compression Engine (Retina Studio 1600px - iOS Safari / Android / Desktop)
+  // High-Performance Multi-Device Image Compression Engine (Retina HD 720px - iOS Safari / Android / Desktop)
   const compressImageFile = async (file: File): Promise<string> => {
     // 1. Modern native fast decoding via createImageBitmap (auto-handles orientation & iOS HEIC)
     try {
       if (typeof window !== 'undefined' && 'createImageBitmap' in window) {
         const bitmap = await createImageBitmap(file);
         const canvas = document.createElement('canvas');
-        const maxDim = 1600;
+        const maxDim = 720;
         let width = bitmap.width;
         let height = bitmap.height;
         if (width > maxDim || height > maxDim) {
@@ -1422,7 +1408,11 @@ export const AdminProductManager: React.FC = () => {
           ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(bitmap, 0, 0, width, height);
           bitmap.close();
-          return encodeCanvasUltraHD(canvas);
+          let dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+          if (dataUrl.length > 70000) {
+            dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+          }
+          return dataUrl;
         }
       }
     } catch (e) {
@@ -1446,7 +1436,7 @@ export const AdminProductManager: React.FC = () => {
       img.onload = () => {
         try {
           const canvas = document.createElement('canvas');
-          const maxDim = 1600;
+          const maxDim = 720;
           let width = img.naturalWidth || img.width;
           let height = img.naturalHeight || img.height;
           if (width > maxDim || height > maxDim) {
@@ -1465,7 +1455,10 @@ export const AdminProductManager: React.FC = () => {
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(img, 0, 0, width, height);
-            const dataUrl = encodeCanvasUltraHD(canvas);
+            let dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+            if (dataUrl.length > 70000) {
+              dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+            }
             URL.revokeObjectURL(objectUrl);
             resolve(dataUrl);
             return;
@@ -1487,18 +1480,23 @@ export const AdminProductManager: React.FC = () => {
     });
   };
 
-  // Smart Image Upload Handler for Camera & Gallery (Parallel Processing)
+  // Smart Image Upload Handler for Camera & Gallery
   const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isCamera = false) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     setIsProcessingImage(true);
     try {
-      const validFiles = Array.from(files).filter(
-        (file) => file && (file.type.startsWith('image/') || file.name.match(/\.(jpg|jpeg|png|webp|heic|heif)$/i))
-      );
-      const compressedResults = await Promise.all(validFiles.map((file) => compressImageFile(file)));
-      const newImages = compressedResults.filter((img): img is string => Boolean(img));
+      const newImages: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file && (file.type.startsWith('image/') || file.name.match(/\.(jpg|jpeg|png|webp|heic|heif)$/i))) {
+          const compressed = await compressImageFile(file);
+          if (compressed) {
+            newImages.push(compressed);
+          }
+        }
+      }
 
       if (newImages.length > 0) {
         soundFx.playSuccess();
@@ -1605,7 +1603,14 @@ export const AdminProductManager: React.FC = () => {
     }
 
     const uniqueColors = Array.from(new Set(variants.map((v) => v.color).filter(Boolean))) as string[];
-    const finalImages = imagesList.filter((img) => img && typeof img === 'string' && img.trim() !== '');
+    const fallbackImage = (effectiveCategory === 'perfume' || category === 'perfume')
+      ? 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop'
+      : (effectiveCategory === 'incense' || category === 'incense')
+      ? '/images/placeholder-incense.jpg'
+      : 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop';
+
+    const validImages = imagesList.filter((img) => img && typeof img === 'string' && img.trim() !== '');
+    const finalImages = validImages.length > 0 ? validImages : [fallbackImage];
 
     const newProductObj: Product = {
       id: editingProduct ? editingProduct.id : `huda-prod-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -1681,7 +1686,14 @@ export const AdminProductManager: React.FC = () => {
     }
 
     const uniqueColors = Array.from(new Set(variants.map((v) => v.color).filter(Boolean))) as string[];
-    const finalImages = imagesList.filter((img) => img && typeof img === 'string' && img.trim() !== '');
+    const fallbackImage = (effectiveCategory === 'perfume' || category === 'perfume')
+      ? 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=1000&auto=format&fit=crop'
+      : (effectiveCategory === 'incense' || category === 'incense')
+      ? '/images/placeholder-incense.jpg'
+      : 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1000&auto=format&fit=crop';
+
+    const validImages = imagesList.filter((img) => img && typeof img === 'string' && img.trim() !== '');
+    const finalImages = validImages.length > 0 ? validImages : [fallbackImage];
 
     const prodId = editingProduct ? editingProduct.id : `huda-prod-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 

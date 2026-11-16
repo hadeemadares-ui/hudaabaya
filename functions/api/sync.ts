@@ -382,25 +382,9 @@ export async function onRequestPost(context: any) {
 
         const prodMap = new Map<string, any>();
         (cur.products || []).forEach((p: any) => {
-          prodMap.set(p.id, p);
+          if (!incomingProdIds.has(p.id)) prodMap.set(p.id, p);
         });
         body.products.forEach((p: any) => {
-          const existing = prodMap.get(p.id);
-          const incomingImgs = Array.isArray(p.images)
-            ? p.images.filter((i: any) => typeof i === 'string' && i.trim() !== '')
-            : [];
-          const hasRealExistingImg =
-            existing &&
-            Array.isArray(existing.images) &&
-            existing.images.some((i: string) => i && (i.startsWith('data:image/') || i.startsWith('/images/products/')));
-          const isIncomingPlaceholder =
-            incomingImgs.length === 0 ||
-            (incomingImgs.length === 1 &&
-              incomingImgs[0].includes('photo-1592945403244') &&
-              p.category !== 'perfume');
-          if (hasRealExistingImg && isIncomingPlaceholder && !p._explicitImageClear) {
-            p = { ...p, images: existing.images };
-          }
           prodMap.set(p.id, p);
         });
         updatedProducts = Array.from(prodMap.values()).filter((p: any) => !updatedDeletedIds.includes(p.id));

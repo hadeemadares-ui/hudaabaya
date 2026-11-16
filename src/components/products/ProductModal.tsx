@@ -12,6 +12,15 @@ interface ProductModalProps {
   onClose: (e?: React.MouseEvent | React.TouchEvent | KeyboardEvent) => void;
 }
 
+const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
+  abaya: '/images/dubai_abaya_couture.jpg',
+  kaftan: '/images/dubai_abaya_couture.jpg',
+  perfume: '/images/products/huda-prod-1791011240968-250.jpg',
+  incense: '/images/dubai_bukhoor.jpg',
+  combo: '/images/dubai_abaya_couture.jpg',
+  other: '/images/dubai_abaya_couture.jpg',
+};
+
 const getYouTubeEmbedUrl = (url: string): string | null => {
   if (!url) return null;
   try {
@@ -50,6 +59,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
     };
   }, [onClose]);
 
+  const defaultImg = DEFAULT_CATEGORY_IMAGES[product.category] || DEFAULT_CATEGORY_IMAGES.abaya;
   const initialImg =
     product.images &&
     product.images.length > 0 &&
@@ -57,7 +67,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
     typeof product.images[0] === 'string' &&
     product.images[0].trim() !== ''
       ? product.images[0]
-      : '';
+      : defaultImg;
 
   const variants: ProductVariant[] = Array.isArray(product?.variants) && product.variants.length > 0
     ? product.variants
@@ -243,7 +253,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
               </div>
             ) : (
               <div
-                className="relative aspect-[4/5] overflow-hidden bg-stone-50 border border-stone-200/60 cursor-crosshair group select-none flex items-center justify-center"
+                className="relative aspect-[4/5] overflow-hidden bg-white border border-stone-200/60 cursor-crosshair group select-none"
                 onMouseEnter={() => setShowLoupe(true)}
                 onMouseLeave={() => setShowLoupe(false)}
                 onMouseMove={(e) => {
@@ -251,25 +261,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                   handlePointerMove(e.clientX - rect.left, e.clientY - rect.top, rect);
                 }}
                 onClick={() => {
-                  if (!selectedImage) return;
                   setZoomScale(1);
                   setIsZoomOpen(true);
                 }}
               >
-                {selectedImage ? (
-                  <img
-                    src={selectedImage}
-                    alt={product.title}
-                    onError={() => setSelectedImage('')}
-                    style={{ imageRendering: '-webkit-optimize-contrast' as any }}
-                    className="w-full h-full object-cover object-top sm:object-contain sm:object-center transition duration-500"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-stone-400 p-6 text-center">
-                    <ImageIcon className="w-10 h-10 mb-2 opacity-40" />
-                    <span className="text-xs font-medium">ยังไม่มีรูปภาพสินค้า</span>
-                  </div>
-                )}
+                <img
+                  src={selectedImage}
+                  alt={product.title}
+                  onError={() => {
+                    if (selectedImage !== defaultImg) {
+                      setSelectedImage(defaultImg);
+                    }
+                  }}
+                  className="w-full h-full object-contain object-center transition duration-500 p-3"
+                />
 
                 {product.onSale && product.discountPercent && (
                   <span className="absolute top-3 left-3 bg-[#8C703E] text-white text-[10px] tracking-[0.15em] uppercase px-2.5 py-1 z-10">
@@ -278,7 +283,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                 )}
 
                 {/* Subtle Magnifying Loupe */}
-                {showLoupe && selectedImage && (
+                {showLoupe && (
                   <div
                     style={{
                       top: `${loupePos.y - 70}px`,
@@ -291,20 +296,18 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                   />
                 )}
 
-                {selectedImage && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setZoomScale(1);
-                      setIsZoomOpen(true);
-                    }}
-                    className="absolute bottom-3 right-3 bg-white/90 hover:bg-[#141312] hover:text-white text-[#141312] px-3 py-1.5 border border-stone-200 text-[10px] tracking-widest uppercase transition flex items-center gap-1.5 cursor-pointer z-10"
-                  >
-                    <ZoomIn className="w-3.5 h-3.5" />
-                    <span>ขยายภาพ</span>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomScale(1);
+                    setIsZoomOpen(true);
+                  }}
+                  className="absolute bottom-3 right-3 bg-white/90 hover:bg-[#141312] hover:text-white text-[#141312] px-3 py-1.5 border border-stone-200 text-[10px] tracking-widest uppercase transition flex items-center gap-1.5 cursor-pointer z-10"
+                >
+                  <ZoomIn className="w-3.5 h-3.5" />
+                  <span>ขยายภาพ</span>
+                </button>
               </div>
             )}
 
@@ -322,12 +325,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                       mediaTab === 'image' && selectedImage === img ? 'border-[#141312]' : 'border-stone-200 opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img
-                      src={img}
-                      alt={`thumb-${idx}`}
-                      style={{ imageRendering: '-webkit-optimize-contrast' as any }}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={img} alt={`thumb-${idx}`} className="w-full h-full object-contain p-1" />
                   </button>
                 ))}
               </div>
@@ -708,9 +706,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                 style={{
                   transform: `scale(${zoomScale})`,
                   transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
-                  imageRendering: '-webkit-optimize-contrast' as any,
                 }}
-                className="max-h-[85vh] max-w-[92vw] object-contain transition-transform duration-200 shadow-2xl"
+                className="max-h-[82vh] max-w-[92vw] object-contain transition-transform duration-200"
               />
             </div>
 
