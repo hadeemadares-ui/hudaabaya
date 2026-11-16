@@ -22,7 +22,7 @@ const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
 const optimizeImageUrl = (url: string): string => {
   if (!url) return url;
   if (url.includes('images.unsplash.com')) {
-    return url.replace(/w=\d+/, 'w=500').replace(/q=\d+/, 'q=75');
+    return url.replace(/w=\d+/, 'w=1200').replace(/q=\d+/, 'q=85');
   }
   return url;
 };
@@ -63,8 +63,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product: initialProduc
         onClick={() => setIsModalOpen(true)}
         className="group bg-white border border-stone-200/80 hover:border-stone-400 transition-all duration-300 flex flex-col justify-between cursor-pointer"
       >
-        {/* Editorial Portrait Frame - Solid soft background, instant render, no blinking animation */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-[#F7F5F0] flex items-center justify-center p-2.5 sm:p-3">
+        {/* Editorial Portrait Frame - Full Bleed High Definition Lookbook Image */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-[#F7F5F0] flex items-center justify-center">
           <img
             src={imgSrc}
             alt={product.title}
@@ -73,7 +73,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product: initialProduc
                 setImgSrc(defaultImg);
               }
             }}
-            className="w-full h-full object-contain object-center transform transition duration-300 ease-out group-hover:scale-[1.03] relative z-1"
+            style={{ imageRendering: '-webkit-optimize-contrast' as any }}
+            className="w-full h-full object-cover object-top sm:object-center transform transition duration-500 ease-out group-hover:scale-[1.04] relative z-1"
           />
 
           {/* Minimalist Editorial Status Tag */}

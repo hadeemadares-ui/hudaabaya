@@ -1381,14 +1381,14 @@ export const AdminProductManager: React.FC = () => {
     alert('ซิงก์ดึงข้อมูลสินค้าล่าสุดจากทุกเครื่องขึ้นคลาวด์และแสดงผลตรงกัน 100% เรียบร้อยแล้ว!');
   };
 
-  // High-Performance Multi-Device Image Compression Engine (Retina HD 720px - iOS Safari / Android / Desktop)
+  // Studio Ultra-HD Image Compression Engine (Retina Studio 1600px - iOS Safari / Android / Desktop)
   const compressImageFile = async (file: File): Promise<string> => {
     // 1. Modern native fast decoding via createImageBitmap (auto-handles orientation & iOS HEIC)
     try {
       if (typeof window !== 'undefined' && 'createImageBitmap' in window) {
         const bitmap = await createImageBitmap(file);
         const canvas = document.createElement('canvas');
-        const maxDim = 720;
+        const maxDim = 1600;
         let width = bitmap.width;
         let height = bitmap.height;
         if (width > maxDim || height > maxDim) {
@@ -1408,9 +1408,9 @@ export const AdminProductManager: React.FC = () => {
           ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(bitmap, 0, 0, width, height);
           bitmap.close();
-          let dataUrl = canvas.toDataURL('image/jpeg', 0.78);
-          if (dataUrl.length > 70000) {
-            dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+          let dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+          if (dataUrl.length > 500000) {
+            dataUrl = canvas.toDataURL('image/jpeg', 0.82);
           }
           return dataUrl;
         }
@@ -1436,7 +1436,7 @@ export const AdminProductManager: React.FC = () => {
       img.onload = () => {
         try {
           const canvas = document.createElement('canvas');
-          const maxDim = 720;
+          const maxDim = 1600;
           let width = img.naturalWidth || img.width;
           let height = img.naturalHeight || img.height;
           if (width > maxDim || height > maxDim) {
@@ -1455,9 +1455,9 @@ export const AdminProductManager: React.FC = () => {
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(img, 0, 0, width, height);
-            let dataUrl = canvas.toDataURL('image/jpeg', 0.78);
-            if (dataUrl.length > 70000) {
-              dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+            let dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+            if (dataUrl.length > 500000) {
+              dataUrl = canvas.toDataURL('image/jpeg', 0.82);
             }
             URL.revokeObjectURL(objectUrl);
             resolve(dataUrl);

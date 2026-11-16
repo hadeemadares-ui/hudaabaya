@@ -253,7 +253,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
               </div>
             ) : (
               <div
-                className="relative aspect-[4/5] overflow-hidden bg-white border border-stone-200/60 cursor-crosshair group select-none"
+                className="relative aspect-[4/5] overflow-hidden bg-stone-50 border border-stone-200/60 cursor-crosshair group select-none flex items-center justify-center"
                 onMouseEnter={() => setShowLoupe(true)}
                 onMouseLeave={() => setShowLoupe(false)}
                 onMouseMove={(e) => {
@@ -273,7 +273,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                       setSelectedImage(defaultImg);
                     }
                   }}
-                  className="w-full h-full object-contain object-center transition duration-500 p-3"
+                  style={{ imageRendering: '-webkit-optimize-contrast' as any }}
+                  className="w-full h-full object-cover object-top sm:object-contain sm:object-center transition duration-500"
                 />
 
                 {product.onSale && product.discountPercent && (
@@ -325,7 +326,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                       mediaTab === 'image' && selectedImage === img ? 'border-[#141312]' : 'border-stone-200 opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt={`thumb-${idx}`} className="w-full h-full object-contain p-1" />
+                    <img
+                      src={img}
+                      alt={`thumb-${idx}`}
+                      style={{ imageRendering: '-webkit-optimize-contrast' as any }}
+                      className="w-full h-full object-cover"
+                    />
                   </button>
                 ))}
               </div>
@@ -706,8 +712,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({ product: initialProd
                 style={{
                   transform: `scale(${zoomScale})`,
                   transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
+                  imageRendering: '-webkit-optimize-contrast' as any,
                 }}
-                className="max-h-[82vh] max-w-[92vw] object-contain transition-transform duration-200"
+                className="max-h-[85vh] max-w-[92vw] object-contain transition-transform duration-200 shadow-2xl"
               />
             </div>
 
