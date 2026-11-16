@@ -1172,24 +1172,26 @@ export const AdminPOSManager: React.FC<AdminPOSManagerProps> = ({ initialBoothTr
               </button>
             </div>
 
-            <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
-              {['all', 'abaya', 'kaftan', 'perfume', 'incense', 'combo', 'other'].map((cat) => (
+            <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1.5 overscroll-x-contain">
+              {[
+                { id: 'all', label: 'ทั้งหมด' },
+                { id: 'abaya', label: 'ชุดอาบายะห์' },
+                { id: 'kaftan', label: 'ชุดคัฟทาน' },
+                { id: 'perfume', label: 'น้ำหอมดูไบ' },
+                { id: 'incense', label: 'เครื่องหอมดูไบ' },
+                { id: 'combo', label: 'เซ็ตสุดคุ้ม' },
+                { id: 'other', label: 'สินค้าอื่นๆ' },
+              ].map((cat) => (
                 <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer ${
-                    selectedCategory === cat
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer shrink-0 ${
+                    selectedCategory === cat.id
                       ? 'bg-amber-400 text-stone-950 border-2 border-amber-500 shadow-md'
                       : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
                   }`}
                 >
-                  {cat === 'all' && 'ทั้งหมด'}
-                  {cat === 'abaya' && 'ชุดอาบายะห์'}
-                  {cat === 'kaftan' && 'ชุดคัฟทาน'}
-                  {cat === 'perfume' && 'น้ำหอมดูไบ'}
-                  {cat === 'incense' && 'เครื่องหอมดูไบ'}
-                  {cat === 'combo' && 'เซ็ตสุดคุ้ม'}
-                  {cat === 'other' && 'สินค้าอื่นๆ'}
+                  {cat.label}
                 </button>
               ))}
             </div>

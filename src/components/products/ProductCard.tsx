@@ -122,6 +122,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product: initialProduc
                 {product.category === 'incense' && 'BUKHOOR'}
                 {product.category === 'combo' && 'GIFT ENSEMBLE'}
                 {product.category === 'other' && 'COLLECTION'}
+                {!['abaya', 'kaftan', 'perfume', 'incense', 'combo', 'other'].includes(product.category) && (product.category || 'COLLECTION').toUpperCase()}
               </span>
               {totalStock > 0 && (
                 <span className="text-stone-400 font-sans tracking-normal">

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Search, User, PackageSearch, Lock, QrCode, MapPin, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ShoppingBag, Search, User, PackageSearch, Lock, QrCode, MapPin, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useShop } from '../../context/ShopContext';
 import { CategoryType, CurrencyType } from '../../types';
 import { DEFAULT_LOGO_BASE64 } from '../../data/logoData';
@@ -62,6 +62,33 @@ export const Navbar: React.FC = () => {
     return () => window.removeEventListener('huda_categories_updated', loadCategories);
   }, []);
 
+  const navScrollRef = useRef<HTMLElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = () => {
+    const el = navScrollRef.current;
+    if (el) {
+      setCanScrollLeft(el.scrollLeft > 6);
+      setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 6);
+    }
+  };
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, [categories]);
+
+  const scrollNav = (direction: 'left' | 'right') => {
+    const el = navScrollRef.current;
+    if (el) {
+      const scrollAmount = 260;
+      el.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+      setTimeout(checkScroll, 320);
+    }
+  };
+
   const currencies: { id: CurrencyType; label: string }[] = [
     { id: 'THB', label: 'THB (฿)' },
     { id: 'AED', label: 'AED (د.إ)' },
@@ -84,8 +111,11 @@ export const Navbar: React.FC = () => {
     }
   };
 
-  const handleCategoryClick = (catId: CategoryType) => {
+  const handleCategoryClick = (catId: CategoryType, e?: React.MouseEvent<HTMLButtonElement>) => {
     setSelectedCategory(catId);
+    if (e?.currentTarget) {
+      e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
     if (!isAdminMode) {
       const catalogEl = document.getElementById('catalog-section');
       if (catalogEl) {
@@ -314,25 +344,61 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* Editorial Category Navigation Bar */}
-        <nav className="flex items-center justify-start md:justify-center gap-6 sm:gap-8 overflow-x-auto py-3 no-scrollbar border-t border-stone-200/80">
-          {categories.map((cat) => {
-            const isActive = selectedCategory === cat.id;
-            return (
+        {/* Editorial Category Navigation Bar with Smart Overflow Protection */}
+        <div className="relative border-t border-stone-200/80 -mx-4 sm:-mx-6 lg:-mx-8">
+          {/* Left Scroll Gradient & Button */}
+          {canScrollLeft && (
+            <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center pl-2 pr-6 bg-gradient-to-r from-[#FAF9F6] via-[#FAF9F6]/90 to-transparent pointer-events-none">
               <button
-                key={cat.id}
-                onClick={() => handleCategoryClick(cat.id)}
-                className={`relative py-1 text-xs sm:text-[13px] tracking-wide whitespace-nowrap transition-colors cursor-pointer ${
-                  isActive
-                    ? 'text-[#141312] font-semibold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1.5px] after:bg-[#141312]'
-                    : 'text-stone-500 hover:text-[#141312] font-normal'
-                }`}
+                type="button"
+                onClick={() => scrollNav('left')}
+                className="w-6 h-6 rounded-full bg-white border border-stone-300 shadow-md flex items-center justify-center text-stone-700 hover:text-black pointer-events-auto cursor-pointer transition hover:scale-105 active:scale-95"
+                title="เลื่อนหมวดหมู่ไปทางซ้าย"
+                aria-label="เลื่อนหมวดหมู่ไปทางซ้าย"
               >
-                {cat.label}
+                <ChevronLeft className="w-3.5 h-3.5" />
               </button>
-            );
-          })}
-        </nav>
+            </div>
+          )}
+
+          <nav
+            ref={navScrollRef}
+            onScroll={checkScroll}
+            className="flex items-center gap-4 sm:gap-6 lg:gap-8 overflow-x-auto py-3 no-scrollbar scroll-smooth overscroll-x-contain px-4 sm:px-6 lg:px-8 w-fit max-w-full mx-auto"
+          >
+            {categories.map((cat) => {
+              const isActive = selectedCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={(e) => handleCategoryClick(cat.id, e)}
+                  className={`relative py-1 text-xs sm:text-[13px] tracking-wide whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
+                    isActive
+                      ? 'text-[#141312] font-semibold after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1.5px] after:bg-[#141312]'
+                      : 'text-stone-500 hover:text-[#141312] font-normal'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Right Scroll Gradient & Button */}
+          {canScrollRight && (
+            <div className="absolute right-0 top-0 bottom-0 z-10 flex items-center pr-2 pl-6 bg-gradient-to-l from-[#FAF9F6] via-[#FAF9F6]/90 to-transparent pointer-events-none">
+              <button
+                type="button"
+                onClick={() => scrollNav('right')}
+                className="w-6 h-6 rounded-full bg-white border border-stone-300 shadow-md flex items-center justify-center text-stone-700 hover:text-black pointer-events-auto cursor-pointer transition hover:scale-105 active:scale-95"
+                title="เลื่อนหมวดหมู่ไปทางขวา"
+                aria-label="เลื่อนหมวดหมู่ไปทางขวา"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

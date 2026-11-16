@@ -14,6 +14,20 @@ import { sortProductsNatural } from '../utils/productUtils';
 export default function HomePageClient() {
   const { products, selectedCategory, searchQuery, isAdminMode, isAdminAuthenticated, storeSettings, isInitialSyncCompleted } = useShop();
 
+  const getCategoryTitle = (catId: string) => {
+    const titles: Record<string, string> = {
+      all: 'คอลเลกชันทั้งหมด (All Collections)',
+      abaya: 'อาบายะห์ดูไบ (Dubai Abaya)',
+      kaftan: 'คัฟทานดูไบ (Dubai Kaftan)',
+      perfume: 'น้ำหอมดูไบแท้ (Parfums d’Oud)',
+      incense: 'เครื่องหอมและไม้กฤษณา (Bukhoor)',
+      combo: 'เซ็ตของขวัญ (Curated Gift Sets)',
+      other: 'คอลเลกชันไลฟ์สไตล์ (Lifestyle)',
+    };
+    if (titles[catId]) return titles[catId];
+    return `คอลเลกชัน ${catId}`;
+  };
+
   const filteredProducts = React.useMemo(() => {
     if (!Array.isArray(products)) return [];
     const query = (searchQuery || '').trim().toLowerCase();
@@ -64,13 +78,7 @@ export default function HomePageClient() {
                     MAISON ARCHIVE & COLLECTION
                   </p>
                   <h2 className="text-2xl sm:text-3xl font-serif font-normal text-[#141312] tracking-wide">
-                    {selectedCategory === 'all' && 'คอลเลกชันทั้งหมด (All Collections)'}
-                    {selectedCategory === 'abaya' && 'อาบายะห์ดูไบ (Dubai Abaya)'}
-                    {selectedCategory === 'kaftan' && 'คัฟทานดูไบ (Dubai Kaftan)'}
-                    {selectedCategory === 'perfume' && 'น้ำหอมดูไบแท้ (Parfums d’Oud)'}
-                    {selectedCategory === 'incense' && 'เครื่องหอมและไม้กฤษณา (Bukhoor)'}
-                    {selectedCategory === 'combo' && 'เซ็ตของขวัญ (Curated Gift Sets)'}
-                    {selectedCategory === 'other' && 'คอลเลกชันไลฟ์สไตล์ (Lifestyle)'}
+                    {getCategoryTitle(selectedCategory)}
                   </h2>
                 </div>
 

@@ -2109,25 +2109,27 @@ export const AdminProductManager: React.FC = () => {
 
       {/* Admin Category Filter & Search Bar */}
       <div className="space-y-2 bg-white p-4 rounded-2xl border-2 border-amber-400/60 shadow-md text-stone-950">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-            <Filter className="w-4 h-4 text-amber-600 shrink-0 mr-1" />
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setAdminCategory(cat.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer ${
-                  adminCategory === cat.id
-                    ? 'bg-amber-400 text-stone-950 border-2 border-amber-500 shadow-md'
-                    : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 overscroll-x-contain">
+              <Filter className="w-4 h-4 text-amber-600 shrink-0 mr-1" />
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setAdminCategory(cat.id)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer shrink-0 ${
+                    adminCategory === cat.id
+                      ? 'bg-amber-400 text-stone-950 border-2 border-amber-500 shadow-md'
+                      : 'bg-white text-stone-950 hover:bg-stone-100 border-2 border-stone-300'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="relative w-full md:w-96 flex items-center gap-2">
+          <div className="relative w-full lg:w-96 flex items-center gap-2 shrink-0">
             <div className="relative flex-1">
               <input
                 type="text"
@@ -2197,8 +2199,8 @@ export const AdminProductManager: React.FC = () => {
                 id={`product-card-${product.id}`}
                 className="bg-white border-2 border-amber-400/60 rounded-2xl p-5 space-y-4 shadow-xl text-stone-950 transition scroll-mt-24"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-3">
-                  <div className="flex items-center gap-3.5">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-stone-200 pb-3">
+                  <div className="flex items-center gap-3.5 min-w-0 flex-1">
                     <img
                       src={product.images && product.images[0] ? product.images[0] : '/images/dubai_abaya_couture.jpg'}
                       alt={product.title}
@@ -2209,9 +2211,9 @@ export const AdminProductManager: React.FC = () => {
                       }}
                       className="w-16 h-20 object-contain p-1 rounded-xl border-2 border-amber-400 bg-stone-100 shrink-0 shadow-md"
                     />
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-black uppercase text-amber-950 bg-amber-100 px-2.5 py-0.5 rounded-lg border border-amber-400">
+                        <span className="text-xs font-black uppercase text-amber-950 bg-amber-100 px-2.5 py-0.5 rounded-lg border border-amber-400 shrink-0">
                           {getCategoryLabel(product.category)}
                         </span>
                         {product.colors && product.colors.length > 0 && (
@@ -2224,7 +2226,7 @@ export const AdminProductManager: React.FC = () => {
                           </div>
                         )}
                       </div>
-                      <h4 className="font-serif font-black text-base sm:text-lg text-stone-950 mt-1">
+                      <h4 className="font-serif font-black text-base sm:text-lg text-stone-950 mt-1 break-words">
                         {product.title}
                       </h4>
                       <p className="text-xs text-stone-800 font-extrabold mt-0.5">
@@ -2233,7 +2235,7 @@ export const AdminProductManager: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 self-end sm:self-center">
+                  <div className="flex items-center gap-2 flex-wrap shrink-0 self-start md:self-center">
                     {(product.category === 'perfume' || product.title.includes('น้ำหอม') || product.title.toLowerCase().includes('perfume')) && (
                       <button
                         type="button"
