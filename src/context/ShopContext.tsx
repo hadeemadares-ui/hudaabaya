@@ -279,21 +279,8 @@ const safeSaveProductsToLocalStorage = (prods: Product[]) => {
       if (json.length <= 4200000) {
         localStorage.setItem('huda_products', json);
       } else {
-        // Store lightweight metadata cache in localStorage without triggering QuotaExceededError
-        const lightweight = prods.map((p) => {
-          const cleanImages = Array.isArray(p.images)
-            ? p.images
-                .map((img) =>
-                  typeof img === 'string' && img.startsWith('data:image/') && img.length > 50000 ? '' : img
-                )
-                .filter(Boolean)
-            : [];
-          return { ...p, images: cleanImages };
-        });
-        const lightJson = JSON.stringify(lightweight);
-        if (lightJson.length <= 4200000) {
-          localStorage.setItem('huda_products', lightJson);
-        }
+        // NEVER save stripped/empty images into localStorage (IndexedDB holds the full HD copy!)
+        localStorage.removeItem('huda_products');
       }
     } catch (e) {}
   }, 50);
@@ -2231,6 +2218,17 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       window.addEventListener('huda_products_updated', handleCustomProductsUpdate);
       window.addEventListener('huda_orders_updated', handleCustomOrdersUpdate);
+
+      // Hydrate full HD images from IndexedDB immediately while cloud sync runs
+      getProductsFromIDB()
+        .then((idbProds) => {
+          if (Array.isArray(idbProds) && idbProds.length > 0 && !isInitialSyncCompletedRef.current) {
+            const sortedIdb = idbProds.sort(sortProductsNatural);
+            productsRef.current = sortedIdb;
+            setProducts(sortedIdb);
+          }
+        })
+        .catch(() => {});
 
       // Initial immediate outbox flush & sync
       forceRealtimeSync(true, false);
