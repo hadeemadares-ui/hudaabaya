@@ -537,6 +537,16 @@ export const AdminEventMarketManager: React.FC = () => {
   const [eventDepositSlipUrl, setEventDepositSlipUrl] = useState<string>('');
   const [eventGoogleMapsUrl, setEventGoogleMapsUrl] = useState<string>('');
   const [previewSlipModalUrl, setPreviewSlipModalUrl] = useState<string | null>(null);
+  const [previewGalleryList, setPreviewGalleryList] = useState<string[]>([]);
+
+  const handleOpenPreviewGallery = (activeUrl: string, allUrls?: string[]) => {
+    setPreviewSlipModalUrl(activeUrl);
+    if (allUrls && allUrls.length > 0) {
+      setPreviewGalleryList(allUrls);
+    } else {
+      setPreviewGalleryList([activeUrl]);
+    }
+  };
   const [eventNote, setEventNote] = useState<string>('');
 
   // Organizer / Venue Contact Info for Future & Re-booking
@@ -2455,13 +2465,28 @@ export const AdminEventMarketManager: React.FC = () => {
                               {s.depositSlipUrl && (
                                 <button
                                   type="button"
-                                  onClick={() => setPreviewSlipModalUrl(s.depositSlipUrl!)}
+                                  onClick={() => handleOpenPreviewGallery(s.depositSlipUrl!)}
                                   className="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-xl text-xs font-black flex items-center gap-1 transition shadow-2xs cursor-pointer"
                                 >
                                   <ImageIcon className="w-3.5 h-3.5 text-amber-700" />
                                   <span>🧾 ดูสลิปมัดจำ</span>
                                 </button>
                               )}
+                              {(() => {
+                                const photos = getNormalizedCoordinationPhotos(s);
+                                if (photos.length === 0) return null;
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenPreviewGallery(photos[0].url, photos.map(p => p.url))}
+                                    className="px-2.5 py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-950 border border-indigo-300 rounded-xl text-xs font-black flex items-center gap-1.5 transition shadow-2xs cursor-pointer"
+                                    title="กดดูรูปภาพการประสานงาน / ผังบูธ / แชทไลน์"
+                                  >
+                                    <Eye className="w-3.5 h-3.5 text-indigo-700" />
+                                    <span>📸 ดูรูปที่แนบ ({photos.length})</span>
+                                  </button>
+                                );
+                              })()}
                               {s.googleMapsUrl && (
                                 <a
                                   href={s.googleMapsUrl}
@@ -2672,7 +2697,7 @@ export const AdminEventMarketManager: React.FC = () => {
                                     type="button"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setPreviewSlipModalUrl(s.depositSlipUrl!);
+                                      handleOpenPreviewGallery(s.depositSlipUrl!);
                                     }}
                                     className="text-[10px] text-amber-800 hover:text-amber-950 font-bold inline-flex items-center gap-0.5 underline cursor-pointer"
                                   >
@@ -2680,6 +2705,25 @@ export const AdminEventMarketManager: React.FC = () => {
                                     <span>ดูสลิป</span>
                                   </button>
                                 )}
+                                {(() => {
+                                  const photos = getNormalizedCoordinationPhotos(s);
+                                  if (photos.length === 0) return null;
+                                  return (
+                                    <div>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleOpenPreviewGallery(photos[0].url, photos.map(p => p.url));
+                                        }}
+                                        className="text-[10px] text-indigo-700 hover:text-indigo-950 font-black inline-flex items-center gap-0.5 underline cursor-pointer"
+                                      >
+                                        <Eye className="w-2.5 h-2.5" />
+                                        <span>ดูรูปที่แนบ ({photos.length})</span>
+                                      </button>
+                                    </div>
+                                  );
+                                })()}
                               </td>
                               <td className="p-3 font-mono font-black text-amber-800 whitespace-nowrap">
                                 {typeof s.travelExpense === 'number' && s.travelExpense > 0 ? `฿${s.travelExpense.toLocaleString()}` : '-'}
@@ -2920,13 +2964,28 @@ export const AdminEventMarketManager: React.FC = () => {
                             {s.depositSlipUrl && (
                               <button
                                 type="button"
-                                onClick={() => setPreviewSlipModalUrl(s.depositSlipUrl!)}
+                                onClick={() => handleOpenPreviewGallery(s.depositSlipUrl!)}
                                 className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-300 rounded-lg text-[11px] font-black flex items-center gap-1 transition shadow-2xs cursor-pointer"
                               >
                                 <ImageIcon className="w-3.5 h-3.5 text-amber-700" />
                                 <span>ดูสลิปมัดจำ</span>
                               </button>
                             )}
+                            {(() => {
+                              const photos = getNormalizedCoordinationPhotos(s);
+                              if (photos.length === 0) return null;
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenPreviewGallery(photos[0].url, photos.map(p => p.url))}
+                                  className="px-2.5 py-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-950 border border-indigo-300 rounded-lg text-[11px] font-black flex items-center gap-1 transition shadow-2xs cursor-pointer"
+                                  title="กดดูรูปภาพที่แนบ"
+                                >
+                                  <Eye className="w-3.5 h-3.5 text-indigo-700" />
+                                  <span>📸 ดูรูปที่แนบ ({photos.length})</span>
+                                </button>
+                              );
+                            })()}
                             {s.googleMapsUrl && (
                               <a
                                 href={s.googleMapsUrl}
@@ -3312,15 +3371,27 @@ export const AdminEventMarketManager: React.FC = () => {
                           📸 รูปภาพการติดต่อประสานงาน & ผังบูธ ({photos.length} รูป)
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenPhotoManager(selectedCalendarSchedule)}
-                        className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[11px] rounded-xl flex items-center gap-1 shadow-xs transition cursor-pointer"
-                        title="เพิ่มรูปใหม่ ลบ หรือแก้ไขคำอธิบายรูปภาพนี้"
-                      >
-                        <Edit2 className="w-3 h-3" />
-                        <span>จัดการรูป (เพิ่ม/ลบ/แก้ไข)</span>
-                      </button>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {photos.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenPreviewGallery(photos[0].url, photos.map(p => p.url))}
+                            className="px-2.5 py-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-950 font-black text-[11px] rounded-xl border border-indigo-300 flex items-center gap-1 shadow-2xs transition cursor-pointer"
+                          >
+                            <Eye className="w-3 h-3 text-indigo-700" />
+                            <span>กดดูรูปขนาดเต็ม</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenPhotoManager(selectedCalendarSchedule)}
+                          className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[11px] rounded-xl flex items-center gap-1 shadow-xs transition cursor-pointer"
+                          title="เพิ่มรูปใหม่ ลบ หรือแก้ไขคำอธิบายรูปภาพนี้"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                          <span>จัดการรูป</span>
+                        </button>
+                      </div>
                     </div>
 
                     {photos.length === 0 ? (
@@ -4063,23 +4134,24 @@ export const AdminEventMarketManager: React.FC = () => {
                           >
                             <div className="flex gap-2.5">
                               {/* Thumbnail with overlay view button */}
-                              <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-stone-200 shrink-0 bg-stone-100 group">
-                                <img
-                                  src={photo.url}
-                                  alt=""
-                                  onClick={() => setPreviewSlipModalUrl(photo.url)}
-                                  className="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition"
-                                />
-                                <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/70 text-white font-mono text-[9px] font-bold">
-                                  #{idx + 1}
-                                </span>
+                              <div className="flex flex-col items-center gap-1.5 shrink-0">
+                                <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-stone-200 bg-stone-100 group cursor-pointer" onClick={() => handleOpenPreviewGallery(photo.url, eventPhotos.map(p => p.url))}>
+                                  <img
+                                    src={photo.url}
+                                    alt=""
+                                    className="w-full h-full object-cover group-hover:scale-105 transition"
+                                  />
+                                  <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/70 text-white font-mono text-[9px] font-bold">
+                                    #{idx + 1}
+                                  </span>
+                                </div>
                                 <button
                                   type="button"
-                                  onClick={() => setPreviewSlipModalUrl(photo.url)}
-                                  className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition"
-                                  title="ดูรูปขนาดเต็ม"
+                                  onClick={() => handleOpenPreviewGallery(photo.url, eventPhotos.map(p => p.url))}
+                                  className="text-[10px] font-black text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-md border border-indigo-200 inline-flex items-center gap-1 cursor-pointer transition shadow-2xs w-full justify-center"
                                 >
-                                  <Eye className="w-5 h-5" />
+                                  <Eye className="w-3 h-3 text-indigo-600" />
+                                  <span>กดดูรูปเต็ม</span>
                                 </button>
                               </div>
 
@@ -5076,23 +5148,24 @@ export const AdminEventMarketManager: React.FC = () => {
                     >
                       <div className="flex gap-3">
                         {/* Thumbnail */}
-                        <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-stone-200 shrink-0 bg-stone-100 group">
-                          <img
-                            src={photo.url}
-                            alt=""
-                            onClick={() => setPreviewSlipModalUrl(photo.url)}
-                            className="w-full h-full object-cover cursor-pointer group-hover:scale-105 transition"
-                          />
-                          <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/75 text-white font-mono text-[9px] font-bold">
-                            #{idx + 1}
-                          </span>
+                        <div className="flex flex-col items-center gap-1.5 shrink-0">
+                          <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-stone-200 bg-stone-100 group cursor-pointer" onClick={() => handleOpenPreviewGallery(photo.url, managerPhotos.map(p => p.url))}>
+                            <img
+                              src={photo.url}
+                              alt=""
+                              className="w-full h-full object-cover group-hover:scale-105 transition"
+                            />
+                            <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/75 text-white font-mono text-[9px] font-bold">
+                              #{idx + 1}
+                            </span>
+                          </div>
                           <button
                             type="button"
-                            onClick={() => setPreviewSlipModalUrl(photo.url)}
-                            className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition cursor-pointer"
-                            title="ดูรูปขนาดเต็ม"
+                            onClick={() => handleOpenPreviewGallery(photo.url, managerPhotos.map(p => p.url))}
+                            className="text-[10px] font-black text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-md border border-indigo-200 inline-flex items-center gap-1 cursor-pointer transition shadow-2xs w-full justify-center"
                           >
-                            <Eye className="w-5 h-5" />
+                            <Eye className="w-3 h-3 text-indigo-600" />
+                            <span>กดดูรูปเต็ม</span>
                           </button>
                         </div>
 
@@ -5292,20 +5365,25 @@ export const AdminEventMarketManager: React.FC = () => {
         </div>
       )}
 
-      {/* FULLSCREEN PREVIEW SLIP MODAL */}
+      {/* FULLSCREEN PREVIEW SLIP MODAL WITH MULTI-IMAGE GALLERY NAVIGATION */}
       {previewSlipModalUrl && (
         <div
-          className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 cursor-pointer animate-fadeIn"
+          className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 cursor-pointer animate-fadeIn select-none"
           onClick={() => setPreviewSlipModalUrl(null)}
         >
           <div
-            className="relative max-w-2xl w-full max-h-[94vh] bg-white p-4 sm:p-5 rounded-3xl shadow-2xl flex flex-col items-center cursor-default space-y-3 border-2 border-indigo-400 overflow-hidden"
+            className="relative max-w-3xl w-full max-h-[96vh] bg-white p-3 sm:p-5 rounded-3xl shadow-2xl flex flex-col items-center cursor-default space-y-3 border-2 border-indigo-400 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Header */}
             <div className="flex items-center justify-between w-full border-b-2 border-stone-200 pb-2.5">
               <span className="text-xs sm:text-sm font-black text-stone-900 flex items-center gap-1.5 truncate">
                 <ImageIcon className="w-4 h-4 text-indigo-700 shrink-0" />
-                <span className="truncate">ดูรูปภาพการประสานงาน / ผังบูธ / สลิปโอนเงิน (ขนาดเต็ม)</span>
+                <span className="truncate">
+                  {previewGalleryList.length > 1
+                    ? `รูปภาพขนาดเต็ม (${previewGalleryList.indexOf(previewSlipModalUrl) + 1} / ${previewGalleryList.length})`
+                    : 'รูปภาพขนาดเต็ม (หลักฐานสลิป / การติดต่อประสานงาน)'}
+                </span>
               </span>
               <div className="flex items-center gap-2 shrink-0">
                 <a
@@ -5322,19 +5400,73 @@ export const AdminEventMarketManager: React.FC = () => {
                   type="button"
                   onClick={() => setPreviewSlipModalUrl(null)}
                   className="p-1 rounded-full text-stone-600 hover:text-stone-950 hover:bg-stone-100 cursor-pointer border border-stone-300 transition"
-                  title="ปิด"
+                  title="ปิดหน้าต่าง"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
-            <div className="overflow-auto max-h-[76vh] w-full flex justify-center items-center p-2 bg-stone-100 rounded-2xl border border-stone-200">
+
+            {/* Main Image with Prev / Next Navigation Arrows */}
+            <div className="relative overflow-auto max-h-[74vh] w-full flex justify-center items-center p-2 bg-stone-900/5 rounded-2xl border border-stone-200 group">
+              {previewGalleryList.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const curIdx = previewGalleryList.indexOf(previewSlipModalUrl);
+                      const prevIdx = (curIdx - 1 + previewGalleryList.length) % previewGalleryList.length;
+                      setPreviewSlipModalUrl(previewGalleryList[prevIdx]);
+                    }}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/60 hover:bg-black/85 text-white z-10 transition shadow-lg cursor-pointer"
+                    title="รูปก่อนหน้า"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const curIdx = previewGalleryList.indexOf(previewSlipModalUrl);
+                      const nextIdx = (curIdx + 1) % previewGalleryList.length;
+                      setPreviewSlipModalUrl(previewGalleryList[nextIdx]);
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/60 hover:bg-black/85 text-white z-10 transition shadow-lg cursor-pointer"
+                    title="รูปถัดไป"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </>
+              )}
+
               <img
                 src={previewSlipModalUrl}
                 alt="รูปภาพขนาดเต็ม"
-                className="max-h-[72vh] w-auto max-w-full object-contain rounded-xl shadow-md"
+                className="max-h-[70vh] w-auto max-w-full object-contain rounded-xl shadow-md transition-all duration-200"
               />
             </div>
+
+            {/* Filmstrip Thumbnails if Multiple Photos */}
+            {previewGalleryList.length > 1 && (
+              <div className="w-full flex items-center justify-center gap-2 overflow-x-auto py-1 scrollbar-thin">
+                {previewGalleryList.map((imgUrl, i) => (
+                  <img
+                    key={i}
+                    src={imgUrl}
+                    alt=""
+                    onClick={() => setPreviewSlipModalUrl(imgUrl)}
+                    className={`w-12 h-12 rounded-lg object-cover cursor-pointer border-2 transition ${
+                      imgUrl === previewSlipModalUrl
+                        ? 'border-indigo-600 scale-105 shadow-md ring-2 ring-indigo-300'
+                        : 'border-stone-300 opacity-60 hover:opacity-100'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Footer Close Button */}
             <button
               type="button"
               onClick={() => setPreviewSlipModalUrl(null)}
