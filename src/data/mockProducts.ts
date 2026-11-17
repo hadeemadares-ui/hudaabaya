@@ -4675,38 +4675,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     "isNew": true,
     "updatedAt": 1794451318967
   },
-  {
-    "id": "huda-prod-1793105433655-138",
-    "title": "น้ำส้ม",
-    "arabicTitle": "",
-    "category": "abaya",
-    "description": "สินค้าคุณภาพสูง นำเข้าจากเมืองดูไบ UAE แท้ 100%",
-    "fabric": "Nida Silk Dubai Original (ผ้านิดาดูไบแท้)",
-    "origin": "เมืองดูไบ, UAE",
-    "images": [
-      "/images/products/huda-prod-1793105433655-138.jpg"
-    ],
-    "colors": [
-      "สีดำ (Black)"
-    ],
-    "variants": [
-      {
-        "id": "var-1793105433655-0",
-        "name": "Size 52 (ส่วนสูง ~150-155 ซม. / ยาว 52\")",
-        "sku": "HD-ABAYA-Size5215015552",
-        "price": 1250,
-        "costPrice": 900,
-        "stockQuantity": 0,
-        "color": "สีดำ (Black)",
-        "updatedAt": 1793179728340
-      }
-    ],
-    "rating": 5,
-    "reviewsCount": 1,
-    "isNew": true,
-    "updatedAt": 1794451318967
-  },
-  {
+    {
     "id": "huda-prod-1792325366241-6544",
     "title": "Lattafa YARA รุ่นดั้งเดิม (Yara White) ขนาด 100 ml EDP",
     "arabicTitle": "",

@@ -157,7 +157,6 @@ const KNOWN_STATIC_IMAGE_PRODUCT_IDS = new Set([
   'huda-prod-1792482523926-967',
   'huda-prod-1792482658647-537',
   'huda-prod-1792482714344-684',
-  'huda-prod-1793105433655-138',
   'huda-prod-1794316876026-862',
   'huda-prod-1794318257371-219',
   'huda-prod-1794318895489-717',
