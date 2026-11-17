@@ -221,25 +221,28 @@ export function sanitizeEventSchedules(schedules: any[]): any[] {
   return schedules.map((s) => {
     let depositSlipUrl = s.depositSlipUrl;
     let transferSlipUrl = s.transferSlipUrl;
-    // Allow clean compressed slips up to 70,000 chars (~50KB base64), strip oversized raw base64
-    if (typeof depositSlipUrl === 'string' && depositSlipUrl.length > 70000) {
-      console.warn('Oversized depositSlipUrl stripped (>70KB):', s.id);
+    // Allow clean compressed slips, dedicated /api/images KV URLs, and slips up to 250,000 chars
+    if (typeof depositSlipUrl === 'string' && depositSlipUrl.length > 250000) {
+      console.warn('Oversized depositSlipUrl stripped (>250KB):', s.id);
       depositSlipUrl = '';
     }
-    if (typeof transferSlipUrl === 'string' && transferSlipUrl.length > 70000) {
+    if (typeof transferSlipUrl === 'string' && transferSlipUrl.length > 250000) {
       transferSlipUrl = '';
     }
     const coordinationPhotos = Array.isArray(s.coordinationPhotos)
       ? s.coordinationPhotos.filter((cp: any) => {
+          if (!cp) return false;
           const url = typeof cp === 'string' ? cp : cp?.url;
-          return typeof url === 'string' && url.length <= 70000;
+          return typeof url === 'string' && (url.startsWith('/api/images') || url.startsWith('http') || url.length <= 500000);
         })
       : [];
+    const images = Array.isArray(s.images) ? s.images : undefined;
     return {
       ...s,
       depositSlipUrl,
       transferSlipUrl,
       coordinationPhotos,
+      images,
     };
   });
 }

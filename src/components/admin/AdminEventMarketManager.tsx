@@ -6,6 +6,7 @@ import { useShop } from '../../context/ShopContext';
 import { formatThaiDateWithDay, getThaiDayName } from '../../utils/dateUtils';
 import { safeSetLocalStorage } from '../../utils/storageUtils';
 import { EventSchedule, EventCoordinationImage, CoordinationPhotoCategory } from '../../types';
+import { uploadCloudImage } from '../../lib/cloudStorage';
 
 // Thai Full Months Data
 const THAI_MONTH_FULL = [
@@ -353,19 +354,47 @@ export const COORDINATION_CATEGORIES: {
 
 export const getNormalizedCoordinationPhotos = (schedule?: Partial<EventSchedule> | null): EventCoordinationImage[] => {
   if (!schedule) return [];
-  if (Array.isArray(schedule.coordinationPhotos) && schedule.coordinationPhotos.length > 0) {
-    return schedule.coordinationPhotos;
+  const list: EventCoordinationImage[] = [];
+  const seenUrls = new Set<string>();
+
+  if (Array.isArray(schedule.coordinationPhotos)) {
+    schedule.coordinationPhotos.forEach((p, idx) => {
+      if (!p) return;
+      const url = typeof p === 'string' ? p : p.url;
+      if (typeof url === 'string' && url.trim() && !seenUrls.has(url)) {
+        seenUrls.add(url);
+        list.push(
+          typeof p === 'string'
+            ? {
+                id: `photo-${idx}-${Date.now()}`,
+                url,
+                caption: '',
+                category: (idx === 0 ? 'layout' : 'other') as CoordinationPhotoCategory,
+                createdAt: schedule.createdAt || new Date().toISOString(),
+              }
+            : p
+        );
+      }
+    });
   }
-  if (Array.isArray(schedule.images) && schedule.images.length > 0) {
-    return schedule.images.map((url, idx) => ({
-      id: `photo-${idx}-${Date.now()}`,
-      url,
-      caption: '',
-      category: (idx === 0 ? 'layout' : 'other') as CoordinationPhotoCategory,
-      createdAt: new Date().toISOString(),
-    }));
+
+  // Seamlessly merge legacy schedule.images if not already in coordinationPhotos
+  if (Array.isArray(schedule.images)) {
+    schedule.images.forEach((url, idx) => {
+      if (typeof url === 'string' && url.trim() && !seenUrls.has(url)) {
+        seenUrls.add(url);
+        list.push({
+          id: `photo-legacy-${idx}-${Date.now()}`,
+          url,
+          caption: '',
+          category: (list.length === 0 ? 'layout' : 'other') as CoordinationPhotoCategory,
+          createdAt: schedule.createdAt || new Date().toISOString(),
+        });
+      }
+    });
   }
-  return [];
+
+  return list;
 };
 
 export const AdminEventMarketManager: React.FC = () => {
@@ -528,6 +557,7 @@ export const AdminEventMarketManager: React.FC = () => {
   // Quick Photo Manager Modal state (สำหรับเปิดจัดการรูปภาพโดยตรงจากหน้าดูรายละเอียดงาน หรือหน้าสมุดผู้จัด)
   const [photoManagerSchedule, setPhotoManagerSchedule] = useState<EventSchedule | null>(null);
   const [managerPhotos, setManagerPhotos] = useState<EventCoordinationImage[]>([]);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState<boolean>(false);
 
   // Manual LINE Notification State
   const [sendingLineEventId, setSendingLineEventId] = useState<string | null>(null);
@@ -634,31 +664,44 @@ export const AdminEventMarketManager: React.FC = () => {
     defaultCategory: CoordinationPhotoCategory = 'layout'
   ) => {
     if (!files || files.length === 0) return;
-    if (currentPhotos.length + files.length > 16) {
-      alert('สามารถแนบรูปภาพการติดต่อประสานงานได้สูงสุด 16 รูปภาพครับ');
+    if (currentPhotos.length + files.length > 24) {
+      alert('สามารถแนบรูปภาพการติดต่อประสานงานได้สูงสุด 24 รูปภาพต่ออีเวนต์ครับ');
       return;
     }
 
-    const fileList = Array.from(files);
-    for (let fIdx = 0; fIdx < fileList.length; fIdx++) {
-      const file = fileList[fIdx];
-      if (file.size > 15 * 1024 * 1024) {
-        alert(`ไฟล์ "${file.name}" มีขนาดใหญ่เกิน 15MB กรุณาเลือกไฟล์ที่มีขนาดเล็กลงครับ`);
-        continue;
+    setIsUploadingPhoto(true);
+    try {
+      const fileList = Array.from(files);
+      for (let fIdx = 0; fIdx < fileList.length; fIdx++) {
+        const file = fileList[fIdx];
+        if (file.size > 25 * 1024 * 1024) {
+          alert(`ไฟล์ "${file.name}" มีขนาดใหญ่เกิน 25MB กรุณาเลือกไฟล์ที่มีขนาดเล็กลงครับ`);
+          continue;
+        }
+
+        const compressedUrl = await compressImageSafely(file);
+        if (!compressedUrl) continue;
+
+        // Dedicated Cloud KV Storage upload for instant multi-device viewing and zero local quota bloat
+        let cloudUrl = compressedUrl;
+        try {
+          cloudUrl = await uploadCloudImage(compressedUrl);
+        } catch (err) {
+          console.warn('Fallback to local compressed image:', err);
+        }
+
+        const newPhoto: EventCoordinationImage = {
+          id: `PHOTO-${Date.now()}-${Math.floor(100 + Math.random() * 900)}-${fIdx}`,
+          url: cloudUrl,
+          category: defaultCategory,
+          caption: '',
+          createdAt: new Date().toISOString(),
+        };
+
+        targetSetter((prev) => [...prev, newPhoto]);
       }
-
-      const compressedUrl = await compressImageSafely(file);
-      if (!compressedUrl) continue;
-
-      const newPhoto: EventCoordinationImage = {
-        id: `PHOTO-${Date.now()}-${Math.floor(100 + Math.random() * 900)}-${fIdx}`,
-        url: compressedUrl,
-        category: defaultCategory,
-        caption: '',
-        createdAt: new Date().toISOString(),
-      };
-
-      targetSetter((prev) => [...prev, newPhoto]);
+    } finally {
+      setIsUploadingPhoto(false);
     }
   };
 
@@ -667,15 +710,27 @@ export const AdminEventMarketManager: React.FC = () => {
     file: File,
     targetSetter: React.Dispatch<React.SetStateAction<EventCoordinationImage[]>>
   ) => {
-    if (file.size > 15 * 1024 * 1024) {
-      alert(`ไฟล์ "${file.name}" มีขนาดใหญ่เกิน 15MB`);
+    if (file.size > 25 * 1024 * 1024) {
+      alert(`ไฟล์ "${file.name}" มีขนาดใหญ่เกิน 25MB`);
       return;
     }
 
-    const compressedUrl = await compressImageSafely(file);
-    if (!compressedUrl) return;
+    setIsUploadingPhoto(true);
+    try {
+      const compressedUrl = await compressImageSafely(file);
+      if (!compressedUrl) return;
 
-    targetSetter((prev) => prev.map((p) => p.id === photoId ? { ...p, url: compressedUrl } : p));
+      let cloudUrl = compressedUrl;
+      try {
+        cloudUrl = await uploadCloudImage(compressedUrl);
+      } catch (err) {
+        console.warn('Fallback to local compressed image:', err);
+      }
+
+      targetSetter((prev) => prev.map((p) => p.id === photoId ? { ...p, url: cloudUrl } : p));
+    } finally {
+      setIsUploadingPhoto(false);
+    }
   };
 
   // Quick Photo Manager Open / Save handlers
@@ -809,7 +864,11 @@ export const AdminEventMarketManager: React.FC = () => {
       try {
         const compressedUrl = await compressSlipSafely(file);
         if (compressedUrl) {
-          setEventDepositSlipUrl(compressedUrl);
+          let cloudUrl = compressedUrl;
+          try {
+            cloudUrl = await uploadCloudImage(compressedUrl);
+          } catch (e) {}
+          setEventDepositSlipUrl(cloudUrl);
         } else {
           alert('ไม่สามารถประมวลผลรูปภาพสลิปได้ กรุณาลองเลือกรูปใหม่อีกครั้งครับ');
         }
@@ -3977,6 +4036,13 @@ export const AdminEventMarketManager: React.FC = () => {
                   </div>
                 </div>
 
+                {isUploadingPhoto && (
+                  <div className="flex items-center justify-center gap-2 p-3 bg-indigo-100/90 text-indigo-950 rounded-xl border border-indigo-300 text-xs font-black animate-pulse">
+                    <RefreshCw className="w-4 h-4 animate-spin text-indigo-700" />
+                    <span>กำลังอัปโหลดและประมวลผลรูปภาพความละเอียดสูงขึ้น Cloud... กรุณารอสักครู่</span>
+                  </div>
+                )}
+
                 {/* Photos List with Full Edit, Replace, Reorder, and Caption */}
                 {eventPhotos.length === 0 ? (
                   <div className="bg-white/80 border-2 border-dashed border-indigo-300 rounded-2xl p-5 text-center text-stone-500 space-y-1.5">
@@ -4509,7 +4575,13 @@ export const AdminEventMarketManager: React.FC = () => {
                         if (file) {
                           try {
                             const compressed = await compressSlipSafely(file);
-                            if (compressed) setTransferSlipUrl(compressed);
+                            if (compressed) {
+                              let cloudUrl = compressed;
+                              try {
+                                cloudUrl = await uploadCloudImage(compressed);
+                              } catch (e) {}
+                              setTransferSlipUrl(cloudUrl);
+                            }
                           } catch (err) {
                             console.error('Transfer slip compression error:', err);
                           }
@@ -4979,6 +5051,13 @@ export const AdminEventMarketManager: React.FC = () => {
                 </div>
               </div>
 
+              {isUploadingPhoto && (
+                  <div className="flex items-center justify-center gap-2 p-3 bg-indigo-100/90 text-indigo-950 rounded-xl border border-indigo-300 text-xs font-black animate-pulse">
+                    <RefreshCw className="w-4 h-4 animate-spin text-indigo-700" />
+                    <span>กำลังอัปโหลดและประมวลผลรูปภาพความละเอียดสูงขึ้น Cloud... กรุณารอสักครู่</span>
+                  </div>
+                )}
+
               {/* Photos List */}
               {managerPhotos.length === 0 ? (
                 <div className="text-center py-10 px-4 bg-stone-50 rounded-2xl border-2 border-dashed border-stone-300 space-y-2">
@@ -5216,37 +5295,50 @@ export const AdminEventMarketManager: React.FC = () => {
       {/* FULLSCREEN PREVIEW SLIP MODAL */}
       {previewSlipModalUrl && (
         <div
-          className="fixed inset-0 z-60 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+          className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 cursor-pointer animate-fadeIn"
           onClick={() => setPreviewSlipModalUrl(null)}
         >
           <div
-            className="relative max-w-lg w-full max-h-[90vh] bg-white p-4 rounded-3xl shadow-2xl flex flex-col items-center cursor-default space-y-3 border-2 border-amber-400"
+            className="relative max-w-2xl w-full max-h-[94vh] bg-white p-4 sm:p-5 rounded-3xl shadow-2xl flex flex-col items-center cursor-default space-y-3 border-2 border-indigo-400 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between w-full border-b-2 border-amber-200 pb-2.5">
-              <span className="text-xs font-black text-stone-900 flex items-center gap-1.5">
-                <ImageIcon className="w-4 h-4 text-amber-700" />
-                <span>หลักฐานการโอนเงินมัดจำ (สลิปโอนเงิน)</span>
+            <div className="flex items-center justify-between w-full border-b-2 border-stone-200 pb-2.5">
+              <span className="text-xs sm:text-sm font-black text-stone-900 flex items-center gap-1.5 truncate">
+                <ImageIcon className="w-4 h-4 text-indigo-700 shrink-0" />
+                <span className="truncate">ดูรูปภาพการประสานงาน / ผังบูธ / สลิปโอนเงิน (ขนาดเต็ม)</span>
               </span>
-              <button
-                type="button"
-                onClick={() => setPreviewSlipModalUrl(null)}
-                className="p-1 rounded-full text-stone-600 hover:text-stone-950 hover:bg-stone-100 cursor-pointer border border-stone-300"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={previewSlipModalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 rounded-xl text-xs font-bold flex items-center gap-1 border border-indigo-200 transition"
+                  title="เปิดดูภาพในแท็บใหม่"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">เปิดแท็บใหม่</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewSlipModalUrl(null)}
+                  className="p-1 rounded-full text-stone-600 hover:text-stone-950 hover:bg-stone-100 cursor-pointer border border-stone-300 transition"
+                  title="ปิด"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
-            <div className="overflow-auto max-h-[72vh] w-full flex justify-center p-2 bg-stone-100 rounded-2xl border border-stone-200">
+            <div className="overflow-auto max-h-[76vh] w-full flex justify-center items-center p-2 bg-stone-100 rounded-2xl border border-stone-200">
               <img
                 src={previewSlipModalUrl}
-                alt="หลักฐานการโอนเงินมัดจำ"
-                className="max-h-[68vh] object-contain rounded-xl shadow-md"
+                alt="รูปภาพขนาดเต็ม"
+                className="max-h-[72vh] w-auto max-w-full object-contain rounded-xl shadow-md"
               />
             </div>
             <button
               type="button"
               onClick={() => setPreviewSlipModalUrl(null)}
-              className="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-black text-xs rounded-xl shadow-md border border-amber-500 cursor-pointer transition"
+              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs sm:text-sm rounded-xl shadow-md cursor-pointer transition"
             >
               ปิดหน้าต่างรูปภาพ
             </button>

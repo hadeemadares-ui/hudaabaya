@@ -172,12 +172,28 @@ async function saveBundleToD1AndKV(env: any, bundle: SyncBundle): Promise<boolea
   const slimEventSchedules = (bundle.eventSchedules || []).map((s: any) => {
     let depositSlipUrl = s.depositSlipUrl;
     let transferSlipUrl = s.transferSlipUrl;
-    if (typeof depositSlipUrl === 'string' && depositSlipUrl.length > 70000) depositSlipUrl = '';
-    if (typeof transferSlipUrl === 'string' && transferSlipUrl.length > 70000) transferSlipUrl = '';
+    if (typeof depositSlipUrl === 'string' && depositSlipUrl.length > 250000) depositSlipUrl = '';
+    if (typeof transferSlipUrl === 'string' && transferSlipUrl.length > 250000) transferSlipUrl = '';
     const coordinationPhotos = Array.isArray(s.coordinationPhotos)
-      ? s.coordinationPhotos.filter((cp: string) => typeof cp === 'string' && cp.length < 70000)
+      ? s.coordinationPhotos.filter((cp: any) => {
+          if (!cp) return false;
+          const url = typeof cp === 'string' ? cp : cp?.url;
+          return typeof url === 'string' && (url.startsWith('/api/images') || url.startsWith('http') || url.length <= 500000);
+        }).map((cp: any) => {
+          if (typeof cp === 'string') {
+            return {
+              id: `photo-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              url: cp,
+              category: 'layout',
+              caption: '',
+              createdAt: new Date().toISOString(),
+            };
+          }
+          return cp;
+        })
       : [];
-    return { ...s, depositSlipUrl, transferSlipUrl, coordinationPhotos };
+    const images = Array.isArray(s.images) ? s.images : undefined;
+    return { ...s, depositSlipUrl, transferSlipUrl, coordinationPhotos, images };
   });
 
   const slimOrders = (bundle.orders || []).map((o: any) => {
